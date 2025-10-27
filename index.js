@@ -1,3 +1,5 @@
+// import 'react-native-reanimated';
+
 /**
  * @format
  */
