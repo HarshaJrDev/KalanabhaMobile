@@ -1,202 +1,272 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useCallback, useState, memo } from 'react';
 import {
     View,
     Text,
     StyleSheet,
+    Pressable,
+    StatusBar,
     Dimensions,
-    TouchableOpacity,
     ImageBackground,
-    Animated,
+    Platform,
+    Image,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withSpring,
+    interpolate,
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { User, Truck } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/types';
-import FONTS from '../../utils/fonts';
-import { Truck, User } from 'lucide-react-native';
-import Logger from '../../utils/logger';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
 
-type SelectAccountScreenProp = NativeStackNavigationProp<RootStackParamList, 'SelectAccount'>;
+const { height } = Dimensions.get('window');
 
-const { width, height } = Dimensions.get('window');
-const BOX_WIDTH = width * 0.8;
+// ───────────────── TYPES ─────────────────
+type NavProp = NativeStackNavigationProp<RootStackParamList, 'SelectAccount'>;
+type AccountType = 'Customer' | 'Driver';
 
-const ACCOUNTS = [
+type Account = {
+    type: AccountType;
+    label: string;
+    description: string;
+    gradient: readonly [string, string];
+};
+
+// ───────────────── DESIGN SYSTEM ─────────────────
+const FONTS = {
+    PRIMARY_BOLD: 'Montserrat-Bold',
+    PRIMARY_MEDIUM: 'Montserrat-Medium',
+    PRIMARY_SEMIBOLD: 'Montserrat-SemiBold',
+} as const;
+
+const TYPOGRAPHY = {
+    h1: { fontFamily: FONTS.PRIMARY_BOLD, fontSize: 22 },
+    h2: { fontFamily: FONTS.PRIMARY_SEMIBOLD, fontSize: 17 },
+    body: { fontFamily: FONTS.PRIMARY_MEDIUM, fontSize: 13 },
+    button: { fontFamily: FONTS.PRIMARY_BOLD, fontSize: 16 },
+} as const;
+
+const SPACING = { md: 12, lg: 16, xl: 20 } as const;
+
+// ───────────────── DATA ─────────────────
+const ACCOUNTS: Account[] = [
     {
-        type: 'Customer' as const,
-        icon: User,
-        description: 'Order shipments, track deliveries, and manage your logistics easily.',
+        type: 'Customer',
+        label: 'Customer',
+        description: 'Book shipments and track deliveries.',
+        gradient: ['#2B3FD4', '#6366F1'],
     },
     {
-        type: 'Driver' as const,
-        icon: Truck,
-        description: 'Receive delivery requests, update statuses, and earn by delivering.',
+        type: 'Driver',
+        label: 'Driver',
+        description: 'Accept deliveries and earn efficiently.',
+        gradient: ['#FF6B2C', '#F59E0B'],
     },
 ];
 
-const THEME_COLOR = '#F25912';
+const ICONS = { Customer: User, Driver: Truck } as const;
 
-const SelectAccount = () => {
-    const navigation = useNavigation<SelectAccountScreenProp>();
-    const [selected, setSelected] = useState<typeof ACCOUNTS[number]['type'] | null>(null);
-    const scaleAnim = useRef(ACCOUNTS.map(() => new Animated.Value(1))).current;
+const IMAGES = {
+    Customer: 'https://images.pexels.com/photos/4246120/pexels-photo-4246120.jpeg',
+    Driver: 'https://images.pexels.com/photos/2199293/pexels-photo-2199293.jpeg',
+} as const;
 
-    const handleSelect = (index: number, accountType: typeof ACCOUNTS[number]['type']) => {
-        setSelected(accountType);
-        Logger.debug(`Selected account type: ${accountType}`);
-        Animated.sequence([
-            Animated.spring(scaleAnim[index], { toValue: 1.05, useNativeDriver: true }),
-            Animated.spring(scaleAnim[index], { toValue: 1, useNativeDriver: true }),
-        ]).start();
+// ───────────────── CARD ─────────────────
+type CardProps = {
+    item: Account;
+    selected: boolean;
+    onPress: () => void;
+};
+
+const AccountCard = memo(({ item, selected, onPress }: CardProps) => {
+    const Icon = ICONS[item.type];
+
+    // shared values (UI thread)
+    const scale = useSharedValue(1);
+    const rotateX = useSharedValue(0);
+    const rotateY = useSharedValue(0);
+
+    // gesture (parallax tilt)
+    const gesture = Gesture.Pan()
+        .onUpdate(e => {
+            rotateX.value = e.translationY / 20;
+            rotateY.value = -e.translationX / 20;
+        })
+        .onEnd(() => {
+            rotateX.value = withSpring(0);
+            rotateY.value = withSpring(0);
+        });
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [
+            { perspective: 800 },
+            { scale: withSpring(scale.value) },
+            { rotateX: `${rotateX.value}deg` },
+            { rotateY: `${rotateY.value}deg` },
+        ],
+    }));
+
+    const handlePressIn = () => {
+        scale.value = 0.96;
     };
 
-    const handleContinue = () => {
-        if (!selected) return;
-        navigation.navigate('OnBoarding');
-        Logger.debug(`Navigated to OnBoarding as ${selected}`);
+    const handlePressOut = () => {
+        scale.value = 1;
     };
 
     return (
-        <ImageBackground
-            source={{ uri: 'https://images.pexels.com/photos/9603487/pexels-photo-9603487.jpeg' }}
-            style={styles.background}
-            blurRadius={20}
-        >
-            <View style={styles.overlay} />
+        <GestureDetector gesture={gesture}>
+            <Animated.View style={[styles.card, animatedStyle]}>
+                <Pressable onPress={onPress} onPressIn={handlePressIn} onPressOut={handlePressOut}>
+                    <View style={[styles.cardInner, selected && styles.selected]}>
+                        {/* Background */}
+                        <Image source={{ uri: IMAGES[item.type] }} style={styles.bg} />
 
-            <Text style={styles.headerTitle}>Welcome to Kalanabha Logistics</Text>
-            <Text style={styles.subHeader}>Select your account type to get started</Text>
+                        <LinearGradient
+                            colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.9)']}
+                            style={StyleSheet.absoluteFillObject}
+                        />
 
-            <View style={styles.boxContainer}>
-                {ACCOUNTS.map((account, index) => {
-                    const IconComponent = account.icon;
-                    const isActive = selected === account.type;
+                        {/* Content */}
+                        <View style={styles.row}>
+                            <LinearGradient colors={item.gradient} style={styles.icon}>
+                                <Icon color="#fff" size={22} />
+                            </LinearGradient>
 
-                    return (
-                        <TouchableOpacity
-                            key={account.type}
-                            activeOpacity={0.9}
-                            onPress={() => handleSelect(index, account.type)}
-                        >
-                            <Animated.View
-                                style={[
-                                    styles.box,
-                                    {
-                                        borderColor: isActive ? THEME_COLOR : '#fff',
-                                        backgroundColor: isActive ? `${THEME_COLOR}20` : 'rgba(255,255,255,0.15)',
-                                        transform: [{ scale: scaleAnim[index] }],
-                                    },
-                                ]}
-                            >
-                                <View
-                                    style={[
-                                        styles.iconCircle,
-                                        { backgroundColor: isActive ? THEME_COLOR : 'rgba(255,255,255,0.2)' },
-                                    ]}
-                                >
-                                    <IconComponent color="#fff" width={36} height={36} />
-                                </View>
-                                <Text style={styles.boxText}>{account.type}</Text>
-                                <Text style={styles.boxDescription}>{account.description}</Text>
-                            </Animated.View>
-                        </TouchableOpacity>
-                    );
-                })}
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.title}>{item.label}</Text>
+                                <Text style={styles.desc}>{item.description}</Text>
+                            </View>
+                        </View>
+                    </View>
+                </Pressable>
+            </Animated.View>
+        </GestureDetector>
+    );
+});
+
+// ───────────────── SCREEN ─────────────────
+const SelectAccount = () => {
+    const navigation = useNavigation<NavProp>();
+    const [selected, setSelected] = useState<AccountType | null>(null);
+
+    const handleContinue = useCallback(() => {
+        if (!selected) return;
+        navigation.navigate('Login', { isDriver: selected === 'Driver' });
+    }, [selected]);
+
+    return (
+        <View style={styles.root}>
+            <StatusBar barStyle="light-content" translucent />
+
+            <ImageBackground
+                source={{ uri: 'https://images.pexels.com/photos/1427107/pexels-photo-1427107.jpeg' }}
+                style={StyleSheet.absoluteFillObject}
+                blurRadius={18}
+            />
+
+            <LinearGradient
+                colors={['rgba(10,12,50,0.6)', 'rgba(10,12,50,0.95)']}
+                style={StyleSheet.absoluteFillObject}
+            />
+
+            <View style={styles.header}>
+                <Text style={styles.brand}>Kalanabha Logistics</Text>
+                <Text style={styles.tagline}>Move Anything, Anywhere</Text>
             </View>
 
-            {selected && (
-                <TouchableOpacity
-                    style={styles.continueButton}
-                    onPress={handleContinue}
-                    activeOpacity={0.85}
+            <View>
+                {ACCOUNTS.map(item => (
+                    <AccountCard
+                        key={item.type}
+                        item={item}
+                        selected={selected === item.type}
+                        onPress={() => setSelected(item.type)}
+                    />
+                ))}
+            </View>
+
+            <Pressable disabled={!selected} onPress={handleContinue}>
+                <LinearGradient
+                    colors={
+                        selected
+                            ? ACCOUNTS.find(a => a.type === selected)!.gradient
+                            : ['#444', '#666']
+                    }
+                    style={[styles.button, { opacity: selected ? 1 : 0.5 }]}
                 >
-                    <Text style={styles.continueText}>Continue</Text>
-                </TouchableOpacity>
-            )}
-        </ImageBackground>
+                    <Text style={styles.buttonText}>
+                        Continue {selected ? `as ${selected}` : ''}
+                    </Text>
+                </LinearGradient>
+            </Pressable>
+        </View>
     );
 };
 
 export default SelectAccount;
 
+// ───────────────── STYLES ─────────────────
 const styles = StyleSheet.create({
-    background: {
+    root: {
         flex: 1,
-        justifyContent: 'flex-end',
-        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: SPACING.xl,
     },
-    overlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: '#00000055',
-    },
-    headerTitle: {
-        position: 'absolute',
-        top: 100,
-        fontFamily: FONTS.BOLD_PRIMARY,
-        fontSize: 32,
-        color: '#fff',
-        textAlign: 'center',
-        paddingHorizontal: 16,
-    },
-    subHeader: {
-        position: 'absolute',
-        top: 250,
-        fontFamily: FONTS.MEDIUM_PRIMARY,
-        fontSize: 16,
-        color: '#fff',
-        textAlign: 'center',
-        paddingHorizontal: 32,
-    },
-    boxContainer: {
-        width: '100%',
-        alignItems: 'center',
-        marginBottom: 150,
-        gap: 20,
-    },
-    box: {
-        width: BOX_WIDTH,
-        borderWidth: 2,
-        borderRadius: 20,
-        padding: 20,
-        alignItems: 'center',
 
+    header: {
+        marginTop: Platform.OS === 'ios' ? 90 : 70,
+        alignItems: 'center',
     },
-    iconCircle: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+
+    brand: { ...TYPOGRAPHY.h1, color: '#fff' },
+    tagline: { ...TYPOGRAPHY.body, color: '#aaa' },
+
+    card: {
+        marginBottom: SPACING.md,
+    },
+
+    cardInner: {
+        borderRadius: 18,
+        padding: SPACING.lg,
+        overflow: 'hidden',
+    },
+
+    selected: {
+        borderWidth: 1,
+        borderColor: '#fff',
+    },
+
+    bg: {
+        ...StyleSheet.absoluteFillObject,
+        opacity: 0.25,
+    },
+
+    row: {
+        flexDirection: 'row',
+        gap: SPACING.md,
+    },
+
+    icon: {
+        width: 52,
+        height: 52,
+        borderRadius: 14,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 12,
     },
-    boxText: {
-        fontFamily: FONTS.BOLD_PRIMARY,
-        fontSize: 22,
-        color: '#fff',
-        marginBottom: 6,
-    },
-    boxDescription: {
-        fontFamily: FONTS.PRIMARY,
-        fontSize: 14,
-        color: '#fff',
-        textAlign: 'center',
-    },
-    continueButton: {
-        position: 'absolute',
-        bottom: 40,
-        width: BOX_WIDTH,
-        backgroundColor: THEME_COLOR,
-        paddingVertical: 16,
+
+    title: { ...TYPOGRAPHY.h2, color: '#fff' },
+    desc: { ...TYPOGRAPHY.body, color: '#ccc' },
+
+    button: {
         borderRadius: 16,
+        paddingVertical: 16,
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOpacity: 0.3,
-        shadowOffset: { width: 0, height: 6 },
-        shadowRadius: 8,
-        elevation: 8,
     },
-    continueText: {
-        fontFamily: FONTS.BOLD_PRIMARY,
-        fontSize: 18,
-        color: '#fff',
-    },
+
+    buttonText: { ...TYPOGRAPHY.button, color: '#fff' },
 });

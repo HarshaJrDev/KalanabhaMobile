@@ -28,7 +28,7 @@ const Slider: React.FC<SliderProps> = ({ data, autoPlayInterval = 3000 }) => {
     const flatListRef = useRef<FlatList>(null);
     const intervalRef = useRef<NodeJS.Timer | null>(null);
 
-    // Auto scroll
+
     useEffect(() => {
         if (data.length <= 1) return;
 

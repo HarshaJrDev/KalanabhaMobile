@@ -1,59 +1,98 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import React, { memo } from 'react';
+import { StyleSheet } from 'react-native';
+import {
+    createBottomTabNavigator,
+} from '@react-navigation/bottom-tabs';
+
+import Animated, {
+    useAnimatedStyle,
+    withSpring,
+} from 'react-native-reanimated';
+
 import COLOR from '../../utils/color';
-import { Truck, User, Box, Plus, MessageCircleIcon } from 'lucide-react-native';
+import { Truck, User, Box, Plus } from 'lucide-react-native';
+
 import Home from '../HomeScreens/Home';
-import shipment from '../HomeScreens/shipment';
+import Shipment from '../HomeScreens/shipment';
 import Profile from '../HomeScreens/Profile';
-import addOrders from '../HomeScreens/addOrders';
-import message from '../HomeScreens/message';
+import AddOrders from '../HomeScreens/addOrders';
+import { RootStackParamList } from './types';
 
-const Tab = createBottomTabNavigator();
 
-const AddOrdersButton = ({ children, onPress }: any) => (
-    <TouchableOpacity
-        style={styles.addButtonContainer}
-        onPress={onPress}
-        activeOpacity={0.8}
-    >
-        {children}
-    </TouchableOpacity>
+
+const Tab = createBottomTabNavigator<RootStackParamList>();
+
+/* ----------------------------- ICON CONFIG ----------------------------- */
+
+const ICONS = {
+    Home: Truck,
+    Orders: Box,
+    AddOrder: Plus,
+    Profile: User,
+} as const;
+
+type TabName = keyof typeof ICONS;
+
+/* ----------------------------- ANIMATED ICON ----------------------------- */
+
+const TabIcon = memo(
+    ({
+        focused,
+        color,
+        size,
+        Icon,
+    }: {
+        focused: boolean;
+        color: string;
+        size: number;
+        Icon: React.ComponentType<any>;
+    }) => {
+        const animatedStyle = useAnimatedStyle(() => ({
+            transform: [
+                { scale: withSpring(focused ? 1.15 : 1) },
+                { translateY: withSpring(focused ? -4 : 0) },
+            ],
+        }));
+
+        return (
+            <Animated.View style={animatedStyle}>
+                <Icon color={color} width={size} height={size} />
+            </Animated.View>
+        );
+    }
 );
 
-const HomeTabs = () => {
+/* ----------------------------- MAIN NAV ----------------------------- */
+
+const HomeTabs: React.FC = () => {
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
                 headerShown: false,
+                tabBarShowLabel: false,
                 tabBarActiveTintColor: COLOR.PRIMARY,
                 tabBarInactiveTintColor: '#aaa',
                 tabBarStyle: styles.tabBar,
-                tabBarIcon: ({ color, size }) => {
-                    if (route.name === 'Home') return <Truck color={color} width={size} height={size} />;
-                    if (route.name === 'Orders') return <Box color={color} width={size} height={size} />;
-                    if (route.name === 'Profile') return <User color={color} width={size} height={size} />;
-                    if (route.name === 'message') return <MessageCircleIcon color={color} width={size} height={size} />;
-                    return null;
+
+                tabBarIcon: ({ color, size, focused }) => {
+                    const Icon = ICONS[route.name as TabName];
+
+                    if (!Icon) return null;
+
+                    return (
+                        <TabIcon
+                            focused={focused}
+                            color={color}
+                            size={size}
+                            Icon={Icon}
+                        />
+                    );
                 },
             })}
         >
             <Tab.Screen name="Home" component={Home} />
-            <Tab.Screen name="Orders" component={shipment} />
-            <Tab.Screen
-
-                name="addOrders"
-                component={addOrders}
-                options={{
-                    tabBarLabel: '',
-
-                    tabBarIcon: ({ color, size }) => (
-                        <Plus color="#fff" width={30} height={30} style={{ top: 8 }} />
-                    ),
-                    tabBarButton: (props) => <AddOrdersButton {...props} />,
-                }}
-            />
-            <Tab.Screen name="message" component={message} />
+            <Tab.Screen name="Orders" component={Shipment} />
+            <Tab.Screen name="AddOrder" component={AddOrders} />
             <Tab.Screen name="Profile" component={Profile} />
         </Tab.Navigator>
     );
@@ -61,26 +100,15 @@ const HomeTabs = () => {
 
 export default HomeTabs;
 
+/* ----------------------------- STYLES ----------------------------- */
+
 const styles = StyleSheet.create({
     tabBar: {
         height: 70,
         paddingBottom: 10,
         paddingTop: 10,
-        elevation: 5,
         backgroundColor: '#fff',
-    },
-    addButtonContainer: {
-        top: -30,
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: 70,
-        height: 70,
-        borderRadius: 35,
-        backgroundColor: COLOR.PRIMARY,
-        shadowColor: '#000',
-        shadowOpacity: 0.3,
-        shadowOffset: { width: 0, height: 5 },
-        shadowRadius: 5,
-        elevation: 5,
+        borderTopWidth: 0,
+        elevation: 8,
     },
 });

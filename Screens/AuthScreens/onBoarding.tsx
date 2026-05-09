@@ -3,148 +3,244 @@ import {
     View,
     Text,
     StyleSheet,
-    FlatList,
-    Dimensions,
     TouchableOpacity,
-    ImageBackground,
     Animated,
+    StatusBar,
+    Dimensions,
+    FlatList,
+    Platform,
 } from 'react-native';
-import { Truck, Box } from 'lucide-react-native';
-import FONTS from '../../utils/fonts';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
-import Logger from '../../utils/logger';
-import COLOR from '../../utils/color';
+
+const { width, height } = Dimensions.get('window');
 
 type OnBoardingScreenProp = NativeStackNavigationProp<RootStackParamList, 'OnBoarding'>;
 
-const { width, height } = Dimensions.get('window');
-const CARD_WIDTH = width * 0.9;
-const CARD_HEIGHT = height * 0.65;
-
-interface OnBoardingItem {
-    key: string;
-    title: string;
-    description: string;
-    icon?: 'truck' | 'box';
-    image: string;
-}
-
-const ONBOARDING_DATA: OnBoardingItem[] = [
+// ─── Slide data ─────────────────────────────────────────────────────────────────
+const SLIDES = [
     {
         key: '1',
-        title: 'Fast Delivery',
-        description: 'We ensure your goods reach quickly and safely.',
-        icon: 'truck',
-        image: 'https://images.pexels.com/photos/9603487/pexels-photo-9603487.jpeg',
+        emoji: '⚡',
+        title: 'Instant Booking',
+        subtitle: 'Ship anything in seconds',
+        description: 'Book a pickup in under 60 seconds. Choose your vehicle, set the address, and we handle the rest.',
+        gradient: ['#1A1F6B', '#2B3FD4', '#6366F1'] as const,
+        accentColor: '#818CF8',
+        features: [
+            { icon: '📦', text: 'Same-day pickup available' },
+            { icon: '🗺️', text: 'Door-to-door service' },
+            { icon: '💰', text: 'Transparent pricing' },
+        ],
+        illustration: '🚀',
+        orbColor: '#4F46E5',
     },
     {
         key: '2',
-        title: 'Supply Chain',
-        description: 'Efficient and transparent supply chain management.',
-        icon: 'box',
-        image: 'https://images.pexels.com/photos/9603487/pexels-photo-9603487.jpeg',
+        emoji: '📍',
+        title: 'Live GPS Tracking',
+        subtitle: 'Know exactly where it is',
+        description: 'Real-time tracking lets you follow your shipment at every step — from warehouse to your doorstep.',
+        gradient: ['#064E3B', '#059669', '#10B981'] as const,
+        accentColor: '#34D399',
+        features: [
+            { icon: '🛰️', text: 'Real-time GPS updates' },
+            { icon: '🔔', text: 'Instant notifications' },
+            { icon: '📱', text: 'Share tracking link' },
+        ],
+        illustration: '🗺️',
+        orbColor: '#059669',
     },
     {
         key: '3',
-        title: 'Smart Logistics',
-        description: 'Tracking and managing your shipments effortlessly.',
-        icon: 'truck',
-        image: 'https://images.pexels.com/photos/9603487/pexels-photo-9603487.jpeg',
+        emoji: '🛡️',
+        title: 'Safe & Insured',
+        subtitle: 'Protected every kilometre',
+        description: 'All shipments are fully insured. Our trained drivers and careful handling ensure your goods arrive intact.',
+        gradient: ['#7C2D12', '#EA580C', '#FB923C'] as const,
+        accentColor: '#FCA5A1',
+        features: [
+            { icon: '🔒', text: 'Full shipment insurance' },
+            { icon: '⭐', text: 'Verified drivers only' },
+            { icon: '📞', text: '24/7 customer support' },
+        ],
+        illustration: '🛡️',
+        orbColor: '#EA580C',
     },
 ];
 
+// ─── Component ─────────────────────────────────────────────────────────────────
 const OnBoarding = () => {
     const navigation = useNavigation<OnBoardingScreenProp>();
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const scrollX = useRef(new Animated.Value(0)).current;
+    const [currentIdx, setCurrentIdx] = useState(0);
     const flatListRef = useRef<FlatList>(null);
+    const scrollX = useRef(new Animated.Value(0)).current;
 
-    const handleNext = () => {
-        if (currentIndex < ONBOARDING_DATA.length - 1) {
-            flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
+    // Animations per slide
+    const slideAnims = useRef(SLIDES.map(() => ({
+        text: new Animated.Value(0),
+        slide: new Animated.Value(30),
+        scale: new Animated.Value(0.8),
+    }))).current;
+
+    // Animate current slide on mount
+    React.useEffect(() => {
+        animateIn(0);
+    }, []);
+
+    const animateIn = (idx: number) => {
+        const { text, slide, scale } = slideAnims[idx];
+        text.setValue(0);
+        slide.setValue(30);
+        scale.setValue(0.8);
+        Animated.parallel([
+            Animated.timing(text, { toValue: 1, duration: 450, useNativeDriver: true }),
+            Animated.spring(slide, { toValue: 0, tension: 55, friction: 9, useNativeDriver: true }),
+            Animated.spring(scale, { toValue: 1, tension: 55, friction: 9, useNativeDriver: true }),
+        ]).start();
+    };
+
+    const goNext = () => {
+        if (currentIdx < SLIDES.length - 1) {
+            const next = currentIdx + 1;
+            flatListRef.current?.scrollToIndex({ index: next, animated: true });
+            setCurrentIdx(next);
+            animateIn(next);
         } else {
-            navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-            Logger.debug('Completed OnBoarding');
+            navigation.reset({ index: 0, routes: [{ name: 'SelectAccount' }] });
         }
     };
 
-    const handleSkip = () => {
-        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-        Logger.debug('Skipped OnBoarding');
+    const goSkip = () => {
+        navigation.reset({ index: 0, routes: [{ name: 'SelectAccount' }] });
     };
 
-    const renderItem = ({ item }: { item: OnBoardingItem }) => {
-        const IconComponent = item.icon === 'truck' ? Truck : Box;
+    const slide = SLIDES[currentIdx];
+    const { text, slide: slideY, scale } = slideAnims[currentIdx];
 
+    const renderItem = ({ item, index }: { item: typeof SLIDES[0]; index: number }) => {
+        const anim = slideAnims[index];
         return (
-            <View style={[styles.cardWrapper, { width }]}>
-                <ImageBackground
-                    source={{ uri: item.image }}
-                    style={styles.card}
-                    imageStyle={{ borderRadius: 24 }}
-                >
-                    <View style={styles.overlay} />
-                    <View style={styles.iconCircle}>
-                        <IconComponent color="#fff" width={36} height={36} />
+            <View style={{ width }}>
+                <Animated.View style={[styles.slideContent, {
+                    opacity: anim.text,
+                    transform: [{ translateY: anim.slide }, { scale: anim.scale }],
+                }]}>
+                    {/* Big illustration orb */}
+                    <View style={[styles.illustrationOrb, { backgroundColor: item.orbColor + '30' }]}>
+                        <View style={[styles.illustrationOrbInner, { backgroundColor: item.orbColor + '50' }]}>
+                            <Text style={styles.illustrationEmoji}>{item.illustration}</Text>
+                        </View>
                     </View>
-                    <Text style={styles.title}>{item.title}</Text>
-                    <Text style={styles.description}>{item.description}</Text>
-                </ImageBackground>
-            </View>
-        );
-    };
 
-    const renderPagination = () => {
-        return (
-            <View style={styles.pagination}>
-                {ONBOARDING_DATA.map((_, i) => {
-                    const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
-                    const dotWidth = scrollX.interpolate({
-                        inputRange,
-                        outputRange: [8, 24, 8],
-                        extrapolate: 'clamp',
-                    });
-                    const opacity = scrollX.interpolate({
-                        inputRange,
-                        outputRange: [0.3, 1, 0.3],
-                        extrapolate: 'clamp',
-                    });
-                    return <Animated.View key={i.toString()} style={[styles.dot, { width: dotWidth, opacity }]} />;
-                })}
+                    {/* Label pill */}
+                    <View style={styles.labelPill}>
+                        <Text style={styles.labelEmoji}>{item.emoji}</Text>
+                        <Text style={styles.labelText}>{item.subtitle}</Text>
+                    </View>
+
+                    {/* Title */}
+                    <Text style={styles.slideTitle}>{item.title}</Text>
+                    <Text style={styles.slideDesc}>{item.description}</Text>
+
+                    {/* Feature list */}
+                    <View style={styles.featuresList}>
+                        {item.features.map((f, fi) => (
+                            <Animated.View
+                                key={fi}
+                                style={[styles.featureRow, {
+                                    opacity: anim.text,
+                                    transform: [{ translateX: anim.slide }],
+                                }]}
+                            >
+                                <View style={[styles.featureIconWrap, { backgroundColor: item.orbColor + '25' }]}>
+                                    <Text style={{ fontSize: 14 }}>{f.icon}</Text>
+                                </View>
+                                <Text style={styles.featureText}>{f.text}</Text>
+                            </Animated.View>
+                        ))}
+                    </View>
+                </Animated.View>
             </View>
         );
     };
 
     return (
-        <View style={styles.container}>
+        <View style={styles.root}>
+            <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+
+            {/* Full-screen gradient background that transitions with slides */}
+            <Animated.View style={StyleSheet.absoluteFillObject}>
+                <LinearGradient
+                    colors={SLIDES[currentIdx].gradient}
+                    style={StyleSheet.absoluteFillObject}
+                    start={{ x: 0.2, y: 0 }}
+                    end={{ x: 0.8, y: 1 }}
+                />
+            </Animated.View>
+
+            {/* Decorative circles */}
+            <View style={styles.decoCircle1} />
+            <View style={styles.decoCircle2} />
+            <View style={styles.decoCircle3} />
+
+            {/* Skip button */}
+            <View style={styles.topBar}>
+                <TouchableOpacity onPress={goSkip} style={styles.skipBtn} activeOpacity={0.8}>
+                    <Text style={styles.skipText}>Skip</Text>
+                </TouchableOpacity>
+                <View style={styles.stepIndicator}>
+                    <Text style={styles.stepText}>{currentIdx + 1} / {SLIDES.length}</Text>
+                </View>
+            </View>
+
+            {/* Slides */}
             <Animated.FlatList
                 ref={flatListRef}
-                data={ONBOARDING_DATA}
+                data={SLIDES}
                 renderItem={renderItem}
                 horizontal
                 pagingEnabled
+                scrollEnabled={false}
                 showsHorizontalScrollIndicator={false}
+                keyExtractor={item => item.key}
                 onScroll={Animated.event(
                     [{ nativeEvent: { contentOffset: { x: scrollX } } }],
                     { useNativeDriver: false }
                 )}
-                onMomentumScrollEnd={(event) => {
-                    const index = Math.round(event.nativeEvent.contentOffset.x / width);
-                    setCurrentIndex(index);
-                }}
-                keyExtractor={(item) => item.key}
+                style={{ flex: 1 }}
+                contentContainerStyle={{ alignItems: 'center' }}
             />
 
-            {renderPagination()}
+            {/* Bottom controls */}
+            <View style={styles.bottomBar}>
+                {/* Dot indicators */}
+                <View style={styles.dots}>
+                    {SLIDES.map((_, i) => {
+                        const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
+                        const dotW = scrollX.interpolate({ inputRange, outputRange: [6, 22, 6], extrapolate: 'clamp' });
+                        const dotOp = scrollX.interpolate({ inputRange, outputRange: [0.3, 1, 0.3], extrapolate: 'clamp' });
+                        return (
+                            <Animated.View key={i} style={[styles.dot, { width: dotW, opacity: dotOp }]} />
+                        );
+                    })}
+                </View>
 
-            <View style={styles.buttonContainer}>
-                <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-                    <Text style={styles.skipText}>Skip</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleNext} style={styles.nextButton}>
-                    <Text style={styles.nextText}>{currentIndex === ONBOARDING_DATA.length - 1 ? 'Start' : 'Next'}</Text>
+                {/* Next button */}
+                <TouchableOpacity onPress={goNext} activeOpacity={0.9}>
+                    <View style={styles.nextBtn}>
+                        <LinearGradient
+                            colors={['rgba(255,255,255,0.3)', 'rgba(255,255,255,0.15)']}
+                            style={styles.nextBtnInner}
+                            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                        >
+                            <Text style={styles.nextBtnText}>
+                                {currentIdx === SLIDES.length - 1 ? 'Get Started 🚀' : 'Next →'}
+                            </Text>
+                        </LinearGradient>
+                    </View>
                 </TouchableOpacity>
             </View>
         </View>
@@ -153,84 +249,42 @@ const OnBoarding = () => {
 
 export default OnBoarding;
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: COLOR.PRIMARY
-    },
-    cardWrapper: {
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    card: {
-        width: CARD_WIDTH,
-        height: CARD_HEIGHT,
-        borderRadius: 24,
-        justifyContent: 'flex-end',
-        padding: 24,
-        overflow: 'hidden',
-    },
-    overlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0,0,0,0.35)',
-        borderRadius: 24,
-    },
-    iconCircle: {
-        position: 'absolute',
-        top: 30,
-        alignSelf: 'center',
-        width: 70,
-        height: 70,
-        borderRadius: 35,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    title: {
-        fontFamily: FONTS.BOLD_PRIMARY,
-        fontSize: 26,
-        color: '#fff',
-        textAlign: 'center',
-        marginBottom: 12,
-    },
-    description: {
-        fontFamily: FONTS.PRIMARY,
-        fontSize: 16,
-        color: '#fff',
-        textAlign: 'center',
-    },
-    pagination: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        marginVertical: 16,
-        gap: 8,
-    },
-    dot: {
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: '#fff',
-    },
-    buttonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingHorizontal: 32,
-        paddingBottom: 32,
-    },
-    skipButton: {},
-    skipText: {
-        color: '#fff',
-        fontFamily: FONTS.MEDIUM_PRIMARY,
-        fontSize: 16,
-    },
-    nextButton: {
-        backgroundColor: '#fff',
-        borderRadius: 24,
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-    },
-    nextText: {
-        color: '#000',
-        fontFamily: FONTS.BOLD_PRIMARY,
-        fontSize: 16,
-    },
+    root: { flex: 1, backgroundColor: '#1A1F6B' },
+
+    decoCircle1: { position: 'absolute', top: -80, right: -60, width: 250, height: 250, borderRadius: 125, backgroundColor: 'rgba(255,255,255,0.04)' },
+    decoCircle2: { position: 'absolute', top: height * 0.3, left: -80, width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(255,255,255,0.04)' },
+    decoCircle3: { position: 'absolute', bottom: -60, right: -40, width: 220, height: 220, borderRadius: 110, backgroundColor: 'rgba(255,255,255,0.03)' },
+
+    topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingTop: Platform.OS === 'ios' ? 58 : 42, paddingBottom: 10 },
+    skipBtn: { paddingHorizontal: 14, paddingVertical: 8, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+    skipText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+    stepIndicator: { backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 },
+    stepText: { color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: '700' },
+
+    slideContent: { flex: 1, paddingHorizontal: 28, paddingTop: 10, alignItems: 'center', width },
+
+    illustrationOrb: { width: 180, height: 180, borderRadius: 90, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+    illustrationOrbInner: { width: 130, height: 130, borderRadius: 65, alignItems: 'center', justifyContent: 'center' },
+    illustrationEmoji: { fontSize: 60 },
+
+    labelPill: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 7, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+    labelEmoji: { fontSize: 14 },
+    labelText: { color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: '700' },
+
+    slideTitle: { color: '#fff', fontSize: 30, fontWeight: '900', textAlign: 'center', letterSpacing: 0.3, marginBottom: 12 },
+    slideDesc: { color: 'rgba(255,255,255,0.65)', fontSize: 14, textAlign: 'center', lineHeight: 21, fontWeight: '500', marginBottom: 28 },
+
+    featuresList: { width: '100%', gap: 10 },
+    featureRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 14, padding: 13, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' },
+    featureIconWrap: { width: 38, height: 38, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+    featureText: { color: '#fff', fontSize: 13, fontWeight: '600', flex: 1 },
+
+    bottomBar: { paddingHorizontal: 24, paddingBottom: Platform.OS === 'ios' ? 44 : 28, gap: 20 },
+    dots: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 7 },
+    dot: { height: 6, borderRadius: 3, backgroundColor: '#fff' },
+    nextBtn: { overflow: 'hidden', borderRadius: 18, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.35)' },
+    nextBtnInner: { paddingVertical: 17, alignItems: 'center', paddingHorizontal: 40 },
+    nextBtnText: { color: '#fff', fontSize: 16, fontWeight: '800', letterSpacing: 0.3 },
 });

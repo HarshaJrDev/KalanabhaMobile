@@ -1,114 +1,211 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
-import { Truck, Box } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    StatusBar,
+    Dimensions,
+    ImageBackground,
+} from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withTiming,
+    withSpring,
+    interpolate,
+    runOnJS,
+} from 'react-native-reanimated';
+import { Package, Truck, Map, Link2 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
-import FONTS from '../../utils/fonts';
-
-
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 
-type SplashScreenProp = NativeStackNavigationProp<RootStackParamList, 'Splash'>;
-const WORDS = ['Kalanabha', 'Logistics', 'Transport', 'Supply Chain'];
-const LETTER_DELAY = 170;
-const WORD_DELAY = 1000;
+const { width } = Dimensions.get('window');
 
-const Splash = () => {
-    const navigation = useNavigation<SplashScreenProp>();
-    const [currentWordIndex, setCurrentWordIndex] = useState(0);
-    const [displayedText, setDisplayedText] = useState('');
+type Nav = NativeStackNavigationProp<RootStackParamList, 'Splash'>;
 
-    const opacityAnim = useRef(new Animated.Value(0)).current;
-    const translateYAnim = useRef(new Animated.Value(20)).current;
 
-    useEffect(() => {
-        let timeoutIds: NodeJS.Timeout[] = [];
+const SEQUENCE = [
+    { label: 'Kalanabha', sub: 'Welcome', icon: Package },
+    { label: 'Logistics', sub: 'Smart Delivery', icon: Truck },
+    { label: 'Transport', sub: 'Across India', icon: Map },
+    { label: 'Supply Chain', sub: 'End to End', icon: Link2 },
+];
 
-        const animateWord = (word: string) => {
-            setDisplayedText('');
+const DURATION = 900;
 
-            word.split('').forEach((char, index) => {
-                const timeout = setTimeout(() => {
-                    setDisplayedText((prev) => prev + char);
-
-                    opacityAnim.setValue(0);
-                    translateYAnim.setValue(10);
-
-                    Animated.parallel([
-                        Animated.timing(opacityAnim, {
-                            toValue: 1,
-                            duration: 250,
-                            useNativeDriver: true,
-                        }),
-                        Animated.timing(translateYAnim, {
-                            toValue: 0,
-                            duration: 250,
-                            useNativeDriver: true,
-                        }),
-                    ]).start();
-
-                    // Last letter logic
-                    if (index === word.length - 1) {
-                        const nextWordTimeout = setTimeout(() => {
-                            if (currentWordIndex === WORDS.length - 1) {
-                                // Finished all words → navigate
-                                navigation.replace('SelectAccount');
-                            } else {
-                                setCurrentWordIndex((prev) => prev + 1);
-                            }
-                        }, WORD_DELAY);
-                        timeoutIds.push(nextWordTimeout);
-                    }
-                }, index * LETTER_DELAY);
-
-                timeoutIds.push(timeout);
-            });
-        };
-
-        animateWord(WORDS[currentWordIndex]);
-
-        return () => {
-            timeoutIds.forEach(clearTimeout);
-        };
-    }, [currentWordIndex]);
-
-    const renderIcon = () => {
-        const word = WORDS[currentWordIndex].toLowerCase();
-        if (word.includes('logistics')) return <Truck color="#fff" width={36} height={36} />;
-        if (word.includes('transport')) return <Truck color="#fff" width={36} height={36} />;
-        if (word.includes('supply')) return <Box color="#fff" width={36} height={36} />;
-        return null;
-    };
-
-    return (
-        <View style={styles.container}>
-            {renderIcon()}
-            <Animated.Text
-                style={[
-                    styles.text,
-                    { opacity: opacityAnim, transform: [{ translateY: translateYAnim }] },
-                ]}
-            >
-                {displayedText}
-            </Animated.Text>
-        </View>
-    );
+const FONTS = {
+    BOLD: 'Montserrat-Bold',
+    SEMI: 'Montserrat-SemiBold',
+    MEDIUM: 'Montserrat-Medium',
 };
 
-export default Splash;
+// ───────────────── SCREEN ─────────────────
+export default function Splash() {
+    const navigation = useNavigation<Nav>();
+    const [index, setIndex] = useState(0);
 
+    // UI-thread animations
+    const opacity = useSharedValue(0);
+    const translateY = useSharedValue(30);
+    const scale = useSharedValue(0.9);
+
+    const progress = useSharedValue(0);
+
+    // animate word
+    useEffect(() => {
+        opacity.value = 0;
+        translateY.value = 30;
+        scale.value = 0.9;
+
+        opacity.value = withTiming(1, { duration: 300 });
+        translateY.value = withSpring(0);
+        scale.value = withSpring(1);
+
+        const timer = setTimeout(() => {
+            if (index < SEQUENCE.length - 1) {
+                runOnJS(setIndex)(index + 1);
+            } else {
+                navigation.replace('SelectAccount');
+            }
+        }, DURATION);
+
+        return () => clearTimeout(timer);
+    }, [index]);
+
+    // progress animation
+    useEffect(() => {
+        progress.value = withTiming(1, {
+            duration: SEQUENCE.length * DURATION,
+        });
+    }, []);
+
+    const animatedWord = useAnimatedStyle(() => ({
+        opacity: opacity.value,
+        transform: [
+            { translateY: translateY.value },
+            { scale: scale.value },
+        ],
+    }));
+
+    const progressStyle = useAnimatedStyle(() => ({
+        width: `${interpolate(progress.value, [0, 1], [0, 100])}%`,
+    }));
+
+    const CurrentIcon = SEQUENCE[index].icon;
+
+    return (
+        <View style={styles.root}>
+            <StatusBar barStyle="light-content" translucent />
+
+            <ImageBackground
+                source={{
+                    uri: 'https://images.pexels.com/photos/1427107/pexels-photo-1427107.jpeg',
+                }}
+                style={StyleSheet.absoluteFillObject}
+                blurRadius={18}
+            />
+
+            <LinearGradient
+                colors={['#1A1F6B', '#2B3FD4']}
+                style={StyleSheet.absoluteFillObject}
+            />
+
+            {/* LOGO */}
+            <View style={styles.logoWrap}>
+                <LinearGradient
+                    colors={['#FF6B2C', '#F59E0B']}
+                    style={styles.logo}
+                >
+                    <Truck color="#fff" size={28} />
+                </LinearGradient>
+            </View>
+
+            {/* WORD */}
+            <Animated.View style={[styles.center, animatedWord]}>
+                <CurrentIcon color="#fff" size={32} />
+
+                <Text style={styles.title}>
+                    {SEQUENCE[index].label}
+                </Text>
+
+                <Text style={styles.sub}>
+                    {SEQUENCE[index].sub}
+                </Text>
+            </Animated.View>
+
+            {/* PROGRESS */}
+            <View style={styles.progressTrack}>
+                <Animated.View style={[styles.progressFill, progressStyle]} />
+            </View>
+
+            {/* TAGLINE */}
+            <Text style={styles.tagline}>
+                Move Anything. Anywhere.
+            </Text>
+        </View>
+    );
+}
+
+// ───────────────── STYLES ─────────────────
 const styles = StyleSheet.create({
-    container: {
+    root: {
         flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    logoWrap: {
+        position: 'absolute',
+        top: 120,
+    },
+
+    logo: {
+        width: 64,
+        height: 64,
+        borderRadius: 18,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F25912',
-        gap: 16,
     },
-    text: {
-        fontFamily: FONTS.BOLD_PRIMARY,
-        fontSize: 40,
-        letterSpacing: 2,
+
+    center: {
+        alignItems: 'center',
+        gap: 10,
+    },
+
+    title: {
+        fontFamily: FONTS.BOLD,
+        fontSize: 34,
         color: '#fff',
+    },
+
+    sub: {
+        fontFamily: FONTS.MEDIUM,
+        fontSize: 14,
+        color: '#ccc',
+    },
+
+    progressTrack: {
+        position: 'absolute',
+        bottom: 90,
+        width: width * 0.5,
+        height: 3,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 2,
+        overflow: 'hidden',
+    },
+
+    progressFill: {
+        height: '100%',
+        backgroundColor: '#FF6B2C',
+    },
+
+    tagline: {
+        position: 'absolute',
+        bottom: 40,
+        fontFamily: FONTS.SEMI,
+        fontSize: 12,
+        color: 'rgba(255,255,255,0.5)',
     },
 });

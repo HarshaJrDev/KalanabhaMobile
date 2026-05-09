@@ -28,12 +28,10 @@ const styles = StyleSheet.create({
         marginRight: S(5),
         alignItems: "center",
         justifyContent: "center",
-        padding: S(5),
-
     },
     icon: {
-        width: S(40),
-        height: S(40),
+        width: S(25),
+        height: S(25),
         marginBottom: S(8),
     },
     cardText: {
