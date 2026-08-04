@@ -33,6 +33,10 @@ export class UsersService {
     return this.usersRepository.findOnlineDrivers();
   }
 
+  findOnlineDriversForMatching(vehicleType: string) {
+    return this.usersRepository.findOnlineDriversForMatching(vehicleType);
+  }
+
   async createDriver(dto: CreateDriverDto) {
     const existing = await this.usersRepository.findByEmail(dto.email);
     if (existing) {

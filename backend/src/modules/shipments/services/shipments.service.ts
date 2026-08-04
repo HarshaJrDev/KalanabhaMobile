@@ -2,14 +2,24 @@ import { ConflictException, ForbiddenException, Injectable, NotFoundException } 
 import { randomUUID } from 'crypto';
 import { ShipmentsRepository } from '../repositories/shipments.repository';
 import { CreateShipmentDto } from '../dto/create-shipment.dto';
+import { QuoteShipmentDto } from '../dto/quote-shipment.dto';
 import { PricingService } from '../../pricing/services/pricing.service';
+import { DispatchService } from './dispatch.service';
 
 @Injectable()
 export class ShipmentsService {
   constructor(
     private readonly shipmentsRepository: ShipmentsRepository,
     private readonly pricingService: PricingService,
+    private readonly dispatchService: DispatchService,
   ) {}
+
+  // Mirrors Rapido's "see fare before you book" — same PricingService.quote
+  // the create() flow uses internally, exposed standalone so the mobile app
+  // can show a price on a confirm screen before the order is actually placed.
+  quote(dto: QuoteShipmentDto) {
+    return this.pricingService.quote(dto);
+  }
 
   async create(customerId: string, dto: CreateShipmentDto) {
     const duplicate = await this.shipmentsRepository.findDuplicate(
@@ -32,7 +42,19 @@ export class ShipmentsService {
     const shipmentId = `SHP-${randomUUID().slice(0, 8).toUpperCase()}`;
     const trackingId = `KL${Date.now()}`;
 
-    return this.shipmentsRepository.create(customerId, dto, { shipmentId, trackingId, price, distanceKm });
+    const shipment = await this.shipmentsRepository.create(customerId, dto, {
+      shipmentId,
+      trackingId,
+      price,
+      distanceKm,
+    });
+
+    // Rapido-style: try to silently assign the nearest available driver
+    // right away. If none is found nearby, the shipment stays SEARCHING
+    // and drivers can still pick it up manually from the pool.
+    const autoMatched = await this.dispatchService.autoMatch(shipment.id, dto.pickup, dto.vehicleType);
+
+    return autoMatched ?? shipment;
   }
 
   async findById(id: string, requesterId: string, requesterRole: string) {

@@ -50,6 +50,8 @@ import auth from '@react-native-firebase/auth';
 import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { registerFCMToken, setupFCMListeners } from '../../utils/cm';
 import { Shipment } from '../../shipment/types';
+import { useFareEstimate, FareEstimate } from '../../src/location/useFareEstimate';
+import { autoMatchShipment } from '../../shipment/actions';
 const COLORS = {
     primary: '#1d4ed8',
     primaryDark: '#1e3a8a',
@@ -592,7 +594,7 @@ const pkgStyles = StyleSheet.create({
 // ─── STEP 4: ORDER DETAILS + REVIEW ──────────────────────────────────────────
 
 const StepOrderDetails = ({
-    data, onChange, onBack, allData, submitting, onSubmit,
+    data, onChange, onBack, allData, submitting, onSubmit, fareEstimate,
 }: {
     data: OrderDetailsForm;
     onChange: <K extends keyof OrderDetailsForm>(key: K, val: OrderDetailsForm[K]) => void;
@@ -600,11 +602,14 @@ const StepOrderDetails = ({
     allData: AllOrderData;
     submitting: boolean;
     onSubmit: () => void;
+    fareEstimate: FareEstimate;
 }) => {
-    const priceMap = { standard: 99, express: 199, 'same-day': 349 };
     const insuranceFee = allData.package.insurance ? 49 : 0;
     const fragileHandling = allData.package.fragile ? 29 : 0;
-    const basePrice = priceMap[data.serviceType];
+    // Real, distance-based fare from the pickup/drop coordinates + the
+    // selected vehicle's rate card — falls back to a flat estimate only
+    // while the geocode/quote is still loading or failed.
+    const basePrice = fareEstimate.price ?? { standard: 99, express: 199, 'same-day': 349 }[data.serviceType];
     const total = basePrice + insuranceFee + fragileHandling;
 
     return (
@@ -712,6 +717,37 @@ const StepOrderDetails = ({
                 />
             </View>
 
+            {/* ── Hero fare card ── */}
+            <LinearGradient
+                colors={[COLORS.primary, COLORS.primaryDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={odStyles.fareHero}
+            >
+                <View style={odStyles.fareHeroRow}>
+                    <Text style={odStyles.fareHeroIcon}>
+                        {VEHICLE_TYPES.find(v => v.key === data.vehicleType)?.icon}
+                    </Text>
+                    <View style={{ flex: 1 }}>
+                        <Text style={odStyles.fareHeroLabel}>
+                            {fareEstimate.loading ? 'Calculating your fare…' : 'Estimated Fare'}
+                        </Text>
+                        {fareEstimate.loading ? (
+                            <ActivityIndicator color="#fff" style={{ alignSelf: 'flex-start', marginTop: 6 }} />
+                        ) : (
+                            <Text style={odStyles.fareHeroPrice}>
+                                ₹{(fareEstimate.price ?? 0) + (allData.package.insurance ? 49 : 0) + (allData.package.fragile ? 29 : 0)}
+                            </Text>
+                        )}
+                    </View>
+                    {fareEstimate.distanceKm != null && (
+                        <View style={odStyles.fareHeroChip}>
+                            <Text style={odStyles.fareHeroChipText}>{fareEstimate.distanceKm} km</Text>
+                        </View>
+                    )}
+                </View>
+            </LinearGradient>
+
             {/* ── Order Summary Review ── */}
             <View style={odStyles.reviewSection}>
                 <SectionHeader title="Order Summary" subtitle="Review before confirming" />
@@ -776,11 +812,10 @@ const StepOrderDetails = ({
 
                     <View style={odStyles.summDivider} />
 
-                    {/* Price breakdown */}
-                    <View style={odStyles.summRow}>
-                        <Text style={odStyles.summKey}>Base ({SERVICE_TYPES.find(s => s.key === data.serviceType)?.label})</Text>
-                        <Text style={odStyles.summVal}>₹{basePrice}</Text>
-                    </View>
+                    {/* Price breakdown — base fare shown in the hero card above */}
+                    {fareEstimate.error && (
+                        <Text style={odStyles.fareError}>⚠ {fareEstimate.error} — showing a flat estimate instead</Text>
+                    )}
                     {insuranceFee > 0 && (
                         <View style={odStyles.summRow}>
                             <Text style={odStyles.summKey}>Insurance</Text>
@@ -804,8 +839,8 @@ const StepOrderDetails = ({
             <NavButtons
                 onBack={onBack}
                 onNext={onSubmit}
-                nextLabel="Place Order"
-                loading={submitting}
+                nextLabel={fareEstimate.loading ? 'Calculating fare…' : 'Place Order'}
+                loading={submitting || fareEstimate.loading}
             />
         </ScrollView>
     );
@@ -898,6 +933,32 @@ const odStyles = StyleSheet.create({
     },
     totalLabel: { fontSize: 14, fontWeight: '700', color: COLORS.primaryDark },
     totalValue: { fontSize: 20, fontWeight: '800', color: COLORS.primary },
+    fareError: { fontSize: 11, color: COLORS.warning, marginTop: -4, marginBottom: 8 },
+
+    // ── Hero fare card (Rapido-style "confirm ride" price display)
+    fareHero: {
+        borderRadius: RADIUS.xl,
+        padding: 18,
+        marginBottom: 4,
+        shadowColor: COLORS.primaryDark,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.25,
+        shadowRadius: 14,
+        elevation: 6,
+    },
+    fareHeroRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    fareHeroIcon: { fontSize: 34 },
+    fareHeroLabel: { fontSize: 12, color: 'rgba(255,255,255,0.8)', fontWeight: '600', letterSpacing: 0.3 },
+    fareHeroPrice: { fontSize: 30, color: '#fff', fontWeight: '800', marginTop: 2 },
+    fareHeroChip: {
+        backgroundColor: 'rgba(255,255,255,0.18)',
+        borderRadius: RADIUS.full,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.3)',
+    },
+    fareHeroChipText: { color: '#fff', fontSize: 12, fontWeight: '700' },
 });
 
 // ─── SUCCESS MODAL ────────────────────────────────────────────────────────────
@@ -1088,8 +1149,14 @@ const NewOrder = () => {
     const slideAnim = useRef(new Animated.Value(0)).current;
     const fadeAnim = useRef(new Animated.Value(1)).current;
 
-
-
+    // Real, distance-based fare — geocodes once sender/receiver addresses
+    // are filled in, independent of which step is currently showing so it's
+    // ready by the time the user reaches Review instead of loading there.
+    const fareEstimate = useFareEstimate(
+        sender.address ? `${sender.address}, ${sender.city}` : '',
+        receiver.address ? `${receiver.address}, ${receiver.city}` : '',
+        orderDetails.vehicleType,
+    );
 
     // Register FCM token when customer opens this screen
     useEffect(() => {
@@ -1158,6 +1225,11 @@ const NewOrder = () => {
             const user = auth().currentUser;
             if (!user) throw new Error('Not authenticated');
 
+            if (!fareEstimate.pickup || !fareEstimate.drop || fareEstimate.price == null) {
+                Alert.alert('Fare not ready', 'Please wait for the fare estimate to finish calculating.');
+                return;
+            }
+
             const userMeta: FirestoreUserMeta = {
                 uid: user.uid,
                 email: user.email,
@@ -1204,18 +1276,18 @@ const NewOrder = () => {
 
                 pickup: {
                     address: sender.address,
-                    // lat: safeNumber(sender?.lat),
-                    // lng: safeNumber(sender?.lng),
+                    lat: fareEstimate.pickup.lat,
+                    lng: fareEstimate.pickup.lng,
                 },
 
                 drop: {
                     address: receiver.address,
-                    // lat: safeNumber(receiver?.lat),
-                    // lng: safeNumber(receiver?.lng),
+                    lat: fareEstimate.drop.lat,
+                    lng: fareEstimate.drop.lng,
                 },
 
-                price: safeNumber(pkg?.price),
-                // distanceKm: safeNumber(pkg?.distanceKm),
+                price: fareEstimate.price,
+                distanceKm: fareEstimate.distanceKm ?? 0,
 
                 sender,
                 receiver,
@@ -1249,6 +1321,17 @@ const NewOrder = () => {
             setShowSuccess(true);
 
             log(scope, 'SUCCESS', { docId: ref.id });
+
+            // Best-effort Rapido-style auto-match — never blocks the order
+            // confirmation the customer already saw. If it fails or no
+            // driver is nearby, the shipment simply stays in the manual
+            // "searching" pool.
+            autoMatchShipment({
+                shipmentId: ref.id,
+                trackingId: tid,
+                pickup: fareEstimate.pickup!,
+                vehicleType: orderDetails.vehicleType,
+            }).catch(e => logError('AUTO_MATCH', e));
         } catch (err: unknown) {
             logError(scope, err);
 
@@ -1262,7 +1345,7 @@ const NewOrder = () => {
             setSubmitting(false);
             log(scope, 'END');
         }
-    }, [sender, receiver, pkg, orderDetails]);
+    }, [sender, receiver, pkg, orderDetails, fareEstimate]);
 
     const handleDone = useCallback(() => {
         setShowSuccess(false);
@@ -1318,6 +1401,7 @@ const NewOrder = () => {
                             allData={allData}
                             submitting={submitting}
                             onSubmit={handleSubmit}
+                            fareEstimate={fareEstimate}
                         />
                     )}
                 </Animated.View>

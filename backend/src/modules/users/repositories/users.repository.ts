@@ -54,6 +54,22 @@ export class UsersRepository {
     return this.prisma.user.findMany({ where: { role: 'DRIVER', isOnline: true }, select: SAFE_USER_SELECT });
   }
 
+  // Candidates for auto-match: online, right vehicle type, and has reported
+  // a location recently enough to trust (see TrackingModule). Busy-driver
+  // filtering happens in DispatchService, which also owns the shipment table.
+  findOnlineDriversForMatching(vehicleType: string) {
+    return this.prisma.user.findMany({
+      where: {
+        role: 'DRIVER',
+        isOnline: true,
+        vehicleType: { equals: vehicleType, mode: 'insensitive' },
+        lastLat: { not: null },
+        lastLng: { not: null },
+      },
+      select: { id: true, displayName: true, phone: true, rating: true, lastLat: true, lastLng: true },
+    });
+  }
+
   findByEmail(email: string) {
     return this.prisma.user.findUnique({ where: { email } });
   }

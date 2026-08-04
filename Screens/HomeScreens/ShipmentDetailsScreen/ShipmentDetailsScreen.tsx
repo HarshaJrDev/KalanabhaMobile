@@ -16,6 +16,8 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
+import { useLiveDriverLocation } from '../../../src/location/useLiveDriverLocation';
+import { haversineDistanceKm } from '../../../utils/geo';
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
 const C = {
@@ -98,6 +100,16 @@ const DEMO: any = {
 // ─── Prop types ─────────────────────────────────────────────────────────────────
 type RouteParams = { id?: string };
 
+const formatTimeAgo = (date: Date | null): string => {
+    if (!date) return 'just now';
+    const seconds = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
+    if (seconds < 10) return 'just now';
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    return `${Math.round(minutes / 60)}h ago`;
+};
+
 // ═══════════════════════════════════════════════════════════════════════════════
 const ShipmentDetailsScreen = () => {
     const navigation = useNavigation();
@@ -107,6 +119,20 @@ const ShipmentDetailsScreen = () => {
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [copied, setCopied] = useState(false);
+
+    // Rapido-style live tracking — only listens while a driver is actually
+    // assigned and out on the delivery (real Firestore status strings use
+    // underscores: 'accepted' / 'in_transit', unlike this screen's own
+    // display-only STATUS map below which uses hyphens for labels).
+    const isDriverEnRoute = data?.status === 'accepted' || data?.status === 'in_transit';
+    const liveDriverLocation = useLiveDriverLocation(isDriverEnRoute ? data?.dispatch?.driverId : null);
+    const distanceToDriverKm =
+        liveDriverLocation && data?.pickup?.lat != null && data?.pickup?.lng != null
+            ? haversineDistanceKm(
+                { lat: data.pickup.lat, lng: data.pickup.lng },
+                { lat: liveDriverLocation.lat, lng: liveDriverLocation.lng }
+            )
+            : null;
 
     // Animations
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -377,6 +403,35 @@ const ShipmentDetailsScreen = () => {
         </AnimatedCard>
     );
 
+    const renderLiveTracking = () => {
+        if (!liveDriverLocation) return null;
+
+        return (
+            <AnimatedCard anim={cardAnims[1]} fade={cardFades[1]}>
+                <View style={styles.cardHeader}>
+                    <Text style={styles.cardTitle}>Live Tracking</Text>
+                    <View style={styles.liveBadge}>
+                        <Animated.View style={[styles.liveDot, { transform: [{ scale: pulseAnim }] }]} />
+                        <Text style={styles.liveBadgeText}>LIVE</Text>
+                    </View>
+                </View>
+                <View style={styles.liveTrackingRow}>
+                    <Text style={styles.liveTrackingEmoji}>🏍️</Text>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.liveTrackingMain}>
+                            {distanceToDriverKm != null
+                                ? `Driver is ${distanceToDriverKm.toFixed(1)} km away`
+                                : 'Driver location received'}
+                        </Text>
+                        <Text style={styles.liveTrackingSub}>
+                            Updated {formatTimeAgo(liveDriverLocation.updatedAt)}
+                        </Text>
+                    </View>
+                </View>
+            </AnimatedCard>
+        );
+    };
+
     const renderPackage = () => (
         <AnimatedCard anim={cardAnims[2]} fade={cardFades[2]}>
             <Text style={styles.cardTitle}>Package Details</Text>
@@ -460,6 +515,7 @@ const ShipmentDetailsScreen = () => {
                 <View style={styles.body}>
                     {renderTimeline()}
                     {renderRoute()}
+                    {renderLiveTracking()}
                     {renderPackage()}
                     {renderPayment()}
                     {renderActions()}
@@ -541,6 +597,15 @@ const styles = StyleSheet.create({
     cardTitle: { fontSize: RF(15), fontWeight: '800', color: C.text, marginBottom: H(14), letterSpacing: 0.2 },
 
     trackingId: { fontSize: RF(12), color: C.primary, fontWeight: '700', backgroundColor: C.primaryLight, paddingHorizontal: S(10), paddingVertical: H(4), borderRadius: W(10) },
+
+    // ── Live tracking
+    liveBadge: { flexDirection: 'row', alignItems: 'center', gap: S(5), backgroundColor: C.successLight, paddingHorizontal: S(9), paddingVertical: H(4), borderRadius: W(10) },
+    liveDot: { width: W(7), height: W(7), borderRadius: W(4), backgroundColor: C.success },
+    liveBadgeText: { fontSize: RF(10), fontWeight: '800', color: C.success, letterSpacing: 0.5 },
+    liveTrackingRow: { flexDirection: 'row', alignItems: 'center', gap: S(12) },
+    liveTrackingEmoji: { fontSize: RF(28) },
+    liveTrackingMain: { fontSize: RF(14), fontWeight: '700', color: C.text },
+    liveTrackingSub: { fontSize: RF(12), color: C.textMid, marginTop: H(2) },
 
     // ── Timeline
     timeline: { paddingLeft: S(4) },
