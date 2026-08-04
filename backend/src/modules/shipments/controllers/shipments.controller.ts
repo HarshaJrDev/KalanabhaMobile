@@ -6,6 +6,7 @@ import { Roles } from '../../auth/guards/roles.decorator';
 import { ShipmentsService } from '../services/shipments.service';
 import { DispatchService } from '../services/dispatch.service';
 import { CreateShipmentDto } from '../dto/create-shipment.dto';
+import { QuoteShipmentDto } from '../dto/quote-shipment.dto';
 import { AssignShipmentDto } from '../dto/assign-shipment.dto';
 import { ApiResponseBuilder } from '../../../shared/api-response/api-response';
 
@@ -24,6 +25,14 @@ export class ShipmentsController {
   async create(@Req() req: any, @Body() dto: CreateShipmentDto) {
     const shipment = await this.shipmentsService.create(req.user.sub, dto);
     return ApiResponseBuilder.success(shipment, 'Shipment created');
+  }
+
+  // Mirrors Rapido's fare-estimate-before-booking screen — price/distance
+  // only, no shipment is created. Used by the order flow's confirm step.
+  @Post('quote')
+  async quote(@Body() dto: QuoteShipmentDto) {
+    const quote = await this.shipmentsService.quote(dto);
+    return ApiResponseBuilder.success(quote);
   }
 
   // Mirrors Screens/HomeScreens/Home.tsx / shipment.tsx active-shipments query.

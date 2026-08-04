@@ -30,6 +30,7 @@ import { parseFirestoreDate } from '../../../utils/firestoreDate';
 
 import { registerFCMToken, setupFCMListeners } from '../../../utils/cm';
 import { safeNumber } from '../../../utils/parsers';
+import { useDriverLiveLocation } from '../../../src/location/useDriverLiveLocation';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -57,6 +58,18 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
 
 
 
+
+    // Rapido-style live tracking: only pings location while this driver has
+    // a shipment actively accepted/in_transit — not just because they're
+    // online, to avoid draining battery for idle drivers browsing orders.
+    const hasActiveDelivery = useMemo(
+        () =>
+            shipments.some(
+                s => s.driverId === user?.uid && (s.status === 'accepted' || s.status === 'in_transit')
+            ),
+        [shipments, user]
+    );
+    useDriverLiveLocation(hasActiveDelivery);
 
     // Register driver FCM token on mount
     useEffect(() => {

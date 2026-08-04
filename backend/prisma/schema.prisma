@@ -54,6 +54,13 @@ model User {
   documentsVerified Boolean  @default(false)
   createdByAdmin    Boolean  @default(false)
 
+  // Live location — driver app pings this while on an active delivery
+  // (Rapido-style live tracking). Only ever holds the latest position,
+  // not a history — see TrackingModule.
+  lastLat         Float?
+  lastLng         Float?
+  lastLocationAt  DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
