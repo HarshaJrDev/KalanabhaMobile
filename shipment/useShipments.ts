@@ -1,38 +1,24 @@
-import { useEffect, useState } from 'react';
-import firestore from '@react-native-firebase/firestore';
-import { Shipment } from './types';
-import { mapShipment } from '../utils/parsers';
+import { useMyShipments } from '../features/shipments/hooks';
 
-
+/**
+ * @deprecated Prefer `useMyShipments` from features/shipments/hooks directly
+ * (it exposes the full TanStack Query result: refetch, isFetching, etc).
+ * Kept for existing call sites expecting `{ data, loading, error }`.
+ *
+ * Was a Firestore onSnapshot listener on `shipments` where status in
+ * [searching, accepted, in_transit] — now GET /shipments/mine, polled
+ * (see features/shipments/hooks.ts for why: no shipment-list push channel).
+ */
 export const useShipments = (): {
-    data: Shipment[];
+    data: import('./types').Shipment[];
     loading: boolean;
     error: string | null;
 } => {
-    const [data, setData] = useState<Shipment[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { data, isLoading, error } = useMyShipments();
 
-    useEffect(() => {
-        const unsubscribe = firestore()
-            .collection('shipments')
-            .where('status', 'in', ['searching', 'accepted', 'in_transit'])
-            .orderBy('createdAt', 'desc')
-            .limit(50)
-            .onSnapshot(
-                (snap) => {
-                    const mapped = snap.docs.map(mapShipment);
-                    setData(mapped);
-                    setLoading(false);
-                },
-                (err) => {
-                    setError(err.message);
-                    setLoading(false);
-                }
-            );
-
-        return unsubscribe;
-    }, []);
-
-    return { data, loading, error };
+    return {
+        data: data ?? [],
+        loading: isLoading,
+        error: error ? error.message : null,
+    };
 };

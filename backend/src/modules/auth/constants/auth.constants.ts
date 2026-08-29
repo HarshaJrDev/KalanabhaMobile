@@ -1,4 +1,0 @@
-export const AUTH_CONSTANTS = {
-  ACCESS_TOKEN_TTL: '15m',
-  REFRESH_TOKEN_TTL: '30d',
-};

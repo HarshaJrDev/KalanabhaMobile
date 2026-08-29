@@ -4,16 +4,21 @@ export const storage = createMMKV();
 
 // Keys
 const TOKEN_KEY = 'access_token';
+const REFRESH_TOKEN_KEY = 'refresh_token';
 const USER_KEY = 'auth_user';
 const ONBOARDING_KEY = 'has_seen_onboarding';
 
+// Shape returned by GET /users/me (see kalanabhaBackend UserEntity) —
+// only the fields the app actually reads are declared here.
 export interface StoredUser {
-    uid: string;
+    id: string;
     email: string;
+    role: 'CUSTOMER' | 'DRIVER' | 'ADMIN' | 'DISPATCHER' | 'WAREHOUSE';
+    displayName: string | null;
 }
 
 // ----------------------
-// TOKEN
+// ACCESS TOKEN
 // ----------------------
 export const setToken = (token: string): void => {
     storage.set(TOKEN_KEY, token);
@@ -24,7 +29,22 @@ export const getToken = (): string | null => {
 };
 
 export const clearToken = (): void => {
-    storage.remove(TOKEN_KEY); // ✅ correct for your version
+    storage.remove(TOKEN_KEY);
+};
+
+// ----------------------
+// REFRESH TOKEN
+// ----------------------
+export const setRefreshToken = (token: string): void => {
+    storage.set(REFRESH_TOKEN_KEY, token);
+};
+
+export const getRefreshToken = (): string | null => {
+    return storage.getString(REFRESH_TOKEN_KEY) ?? null;
+};
+
+export const clearRefreshToken = (): void => {
+    storage.remove(REFRESH_TOKEN_KEY);
 };
 
 // ----------------------
@@ -70,5 +90,6 @@ export const clearOnboarding = (): void => {
 // ----------------------
 export const clearAuth = (): void => {
     storage.remove(TOKEN_KEY);
+    storage.remove(REFRESH_TOKEN_KEY);
     storage.remove(USER_KEY);
 };

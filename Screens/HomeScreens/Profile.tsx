@@ -81,12 +81,13 @@ const ProfileScreen = () => {
                 <Text style={styles.title}>My Profile</Text>
 
                 <TouchableOpacity style={styles.profileRow} activeOpacity={0.9}>
+                    {/* kalanabhaBackend's User model has no profile-photo field yet — always the placeholder */}
                     <Image
-                        source={{ uri: user?.photoURL || 'https://randomuser.me/api/portraits/men/32.jpg' }}
+                        source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }}
                         style={styles.avatar}
                     />
                     <View style={styles.profileInfo}>
-                        <Text style={styles.name}>{user?.email || 'Islam Mohiy'}</Text>
+                        <Text style={styles.name}>{user?.displayName || user?.email || 'Guest'}</Text>
                         <Text style={styles.phone}>01014384429</Text>
                     </View>
                     <LinearGradient

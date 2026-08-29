@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
     View,
     Text,
@@ -17,8 +17,9 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
+import { useMyShipments } from '../../features/shipments/hooks';
+import { useUnreadNotificationCount } from '../../features/notifications/hooks';
+import { useAuthStore } from '../../features/store/authStore';
 import {
     MapPin,
     Bell,
@@ -85,6 +86,21 @@ const SPACING = {
     xxl: 24,
 };
 
+// Adapts features/shipments' backend-shaped Shipment (nested pickup/drop,
+// underscored status) to this screen's local display shape.
+const toHomeShipment = (s: import('../../shipment/types').Shipment): Shipment => ({
+    id: s.id,
+    userId: s.userId,
+    from: s.pickup.address,
+    to: s.drop.address,
+    status: s.status === 'in_transit' ? 'in-transit' : (s.status as Shipment['status']),
+    trackingId: s.trackingId,
+    orderId: s.shipmentId,
+    type: (s.vehicleType as Shipment['type']) ?? 'mini',
+    createdAt: s.createdAt,
+    expiresAt: 0,
+});
+
 const STATUS_CONFIG: Record<string, { color: string; bg: string; icon: any; label: string }> = {
     searching: { color: COLORS.warning, bg: '#FEF3C7', icon: Clock, label: 'Pending' },
     accepted: { color: COLORS.primary, bg: '#EFF6FF', icon: Truck, label: 'Accepted' },
@@ -100,17 +116,37 @@ type HomeScreenProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 const HomeScreen: React.FC = () => {
     const navigation = useNavigation<HomeScreenProp>();
 
+    // Backend-backed data (Screen -> hook -> API client -> typed response -> cache -> UI)
+    const authUser = useAuthStore((s) => s.user);
+    const {
+        data: myShipments,
+        isLoading: shipmentsLoading,
+        isRefetching: shipmentsRefetching,
+        refetch: refetchShipments,
+    } = useMyShipments();
+    const { data: unreadCount, refetch: refetchUnreadCount } = useUnreadNotificationCount();
+
+    const activeShipments = useMemo<Shipment[]>(
+        () => (myShipments ?? []).map(toHomeShipment),
+        [myShipments],
+    );
+    const pendingCount = useMemo(
+        () => activeShipments.filter((s) => s.status === 'searching').length,
+        [activeShipments],
+    );
+    // NOTE: kalanabhaBackend has no "count my delivered shipments" endpoint
+    // yet (GET /shipments/mine only returns active ones) — left at 0 rather
+    // than inventing one. Revisit once that exists.
+    const deliveredCount = 0;
+    const notifCount = unreadCount ?? 0;
+    const loading = shipmentsLoading;
+    const refreshing = shipmentsRefetching;
+
     // States
     const [userName, setUserName] = useState('User');
-    const [activeShipments, setActiveShipments] = useState<Shipment[]>([]);
-    const [deliveredCount, setDeliveredCount] = useState(0);
-    const [pendingCount, setPendingCount] = useState(0);
-    const [refreshing, setRefreshing] = useState(false);
-    const [notifCount, setNotifCount] = useState(0);
     const [searchText, setSearchText] = useState('');
     const [selectedTruck, setSelectedTruck] = useState('mini');
     const [promoIndex, setPromoIndex] = useState(0);
-    const [loading, setLoading] = useState(true);
 
     // Animations
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -169,79 +205,16 @@ const HomeScreen: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
-    // Real Firebase data fetching
+    // Display name comes from the authenticated backend user, not Firebase.
     useEffect(() => {
-        const initData = async () => {
-            const user = auth().currentUser;
-            if (!user) {
-                setLoading(false);
-                return;
-            }
-
-            // Set user name
-            if (user.displayName) {
-                setUserName(user.displayName.split(' ')[0]);
-            }
-
-            const uid = user.uid;
-
-            // Active shipments listener
-            const activeUnsub = firestore()
-                .collection('shipments')
-                .where('userId', '==', uid)
-                .where('status', 'in', ['searching', 'accepted', 'in-transit'])
-                .orderBy('createdAt', 'desc')
-                .limit(5)
-                .onSnapshot(async (snapshot) => {
-                    const shipments: Shipment[] = [];
-                    for (const doc of snapshot.docs) {
-                        const data = doc.data() as Omit<Shipment, 'id'>;
-
-
-
-                        shipments.push({
-                            id: doc.id,
-                            ...data,
-                        });
-                    }
-
-                    setActiveShipments(shipments);
-                    setPendingCount(shipments.filter(s => s.status === 'searching').length);
-                    setLoading(false);
-                });
-
-            // Delivered count
-            const deliveredUnsub = firestore()
-                .collection('shipments')
-                .where('userId', '==', uid)
-                .where('status', '==', 'delivered')
-                .onSnapshot((snapshot) => {
-                    setDeliveredCount(snapshot.size);
-                });
-
-            // Notifications count
-            const notifUnsub = firestore()
-                .collection('notifications')
-                .where('userId', '==', uid)
-                .where('read', '==', false)
-                .onSnapshot((snapshot) => {
-                    setNotifCount(snapshot?.size);
-                });
-
-            return () => {
-                activeUnsub();
-                deliveredUnsub();
-                notifUnsub();
-            };
-        };
-
-        initData();
-    }, []);
+        if (authUser?.displayName) {
+            setUserName(authUser.displayName.split(' ')[0]);
+        }
+    }, [authUser?.displayName]);
 
     const onRefresh = useCallback(async () => {
-        setRefreshing(true);
-        setTimeout(() => setRefreshing(false), 1200);
-    }, []);
+        await Promise.all([refetchShipments(), refetchUnreadCount()]);
+    }, [refetchShipments, refetchUnreadCount]);
 
     const getGreeting = () => {
         const hour = new Date().getHours();

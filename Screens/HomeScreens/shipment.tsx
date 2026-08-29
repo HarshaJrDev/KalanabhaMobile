@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
     Text,
@@ -15,8 +15,8 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import firestore from '@react-native-firebase/firestore';
-import auth from '@react-native-firebase/auth';
+import { useMyShipments } from '../../features/shipments/hooks';
+import type { Shipment as MyShipment } from '../../shipment/types';
 import Animated, {
     FadeInDown,
     FadeInUp,
@@ -147,11 +147,30 @@ const TABS = [
 type HomeScreenProp = NativeStackNavigationProp<RootStackParamList, 'Shipment'>;
 
 // ─── Main Component ──────────────────────────────────────────────────────────
+// features/shipments' BackendShipment mapped to this screen's loosely-typed
+// display shape — mirrors the old Firestore doc shape closely enough that
+// the render code below needed no changes.
+// NOTE: GET /shipments/mine only returns active shipments (SEARCHING/
+// ACCEPTED/IN_TRANSIT) — kalanabhaBackend has no "full shipment history"
+// endpoint yet, so the Delivered/Expired tabs stay empty until one exists.
+const toListItem = (s: MyShipment) => ({
+    id: s.id,
+    status: s.status === 'in_transit' ? 'in-transit' : s.status,
+    trackingId: s.trackingId,
+    orderId: s.shipmentId,
+    vehicleType: s.vehicleType,
+    package: s.package,
+    from: s.from,
+    to: s.to,
+    price: s.price,
+    createdAt: { seconds: Math.floor(new Date(s.createdAt).getTime() / 1000) },
+});
+
 const ShipmentScreen = () => {
     const navigation = useNavigation<HomeScreenProp>();
     const [activeTab, setActiveTab] = useState('all');
-    const [shipments, setShipments] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data: rawShipments, isLoading: loading } = useMyShipments();
+    const shipments = useMemo(() => (rawShipments ?? []).map(toListItem), [rawShipments]);
     const [sortBy, setSortBy] = useState<'date' | 'status'>('date');
     const [showSort, setShowSort] = useState(false);
 
@@ -177,37 +196,12 @@ const ShipmentScreen = () => {
         listFade.value = withTiming(1, { duration: 400 });
     };
 
-    // Firebase data fetching
+    // Re-run the list entrance animation whenever the backend-sourced list changes.
     useEffect(() => {
-        const uid = auth().currentUser?.uid;
-        if (!uid) {
-            setLoading(false);
+        if (!loading) {
             animateList();
-            return;
         }
-
-        const unsub = firestore()
-            .collection('shipments')
-            .where('userId', '==', uid)
-            .orderBy('createdAt', 'desc')
-            .onSnapshot(
-                (snap) => {
-                    const data = snap.docs.map((d) => ({
-                        id: d.id,
-                        ...d.data(),
-                    }));
-                    setShipments(data);
-                    setLoading(false);
-                    animateList();
-                },
-                () => {
-                    setLoading(false);
-                    animateList();
-                }
-            );
-
-        return () => unsub();
-    }, []);
+    }, [loading, shipments]);
 
     // Handle tab change
     const handleTabChange = (key: string) => {

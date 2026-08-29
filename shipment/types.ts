@@ -73,7 +73,10 @@ export interface Shipment {
     status: ShipmentStatus;
     dispatch: DispatchInfo | null;
 
-    userMeta: UserMeta;
+    // Not returned by kalanabhaBackend (no per-shipment customer snapshot
+    // endpoint) — only ever populated when parsed straight from a Firestore
+    // shipment doc via utils/parsers.ts::mapShipment.
+    userMeta?: UserMeta;
 
     createdAt: string; // ISO (normalized)
     updatedAt: string;
