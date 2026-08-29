@@ -8,13 +8,27 @@ const REFRESH_TOKEN_KEY = 'refresh_token';
 const USER_KEY = 'auth_user';
 const ONBOARDING_KEY = 'has_seen_onboarding';
 
-// Shape returned by GET /users/me (see kalanabhaBackend UserEntity) —
-// only the fields the app actually reads are declared here.
+// Shape returned by GET /users/me — mirrors kalanabhaBackend's UserEntity
+// field-for-field (verified against a running instance) rather than only
+// the subset the app happened to read at the time this was first written.
 export interface StoredUser {
     id: string;
     email: string;
     role: 'CUSTOMER' | 'DRIVER' | 'ADMIN' | 'DISPATCHER' | 'WAREHOUSE';
     displayName: string | null;
+    phone: string | null;
+    address: string | null;
+    customerType: string | null;
+    isOnline: boolean;
+    fcmToken: string | null;
+    vehicleType: string | null;
+    licenseNumber: string | null;
+    rating: number | null;
+    totalDeliveries: number;
+    documentsVerified: boolean;
+    createdByAdmin: boolean;
+    createdAt: string;
+    updatedAt: string;
 }
 
 // ----------------------

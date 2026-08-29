@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import Geolocation from 'react-native-geolocation-service';
-import { pingLocation } from '../../features/tracking/api/tracking.api';
+import { pingLocation } from '@features/tracking/api/tracking.api';
 
 // Rapido-style live tracking: while the driver has an active delivery,
 // periodically POST /tracking/ping (kalanabhaBackend TrackingController) so

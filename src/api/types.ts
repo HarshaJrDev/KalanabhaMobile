@@ -21,6 +21,20 @@ export interface NestErrorResponse {
     error?: string;
 }
 
+/**
+ * Mirrors kalanabhaBackend/src/shared/pagination/pagination.dto.ts's
+ * PaginatedResult<T> — the shape list endpoints that support paging return
+ * (GET /shipments/admin, GET /users/drivers, GET /audit-logs) instead of a
+ * bare array.
+ */
+export interface PaginatedResult<T> {
+    items: T[];
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+}
+
 export class ApiError extends Error {
     readonly status?: number;
     readonly errors?: string[];
