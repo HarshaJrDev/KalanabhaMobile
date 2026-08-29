@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import firestore from '@react-native-firebase/firestore';
 import { forwardGeocode } from '../services/location';
-import { haversineDistanceKm } from '../../utils/geo';
+import { quoteShipment } from '@features/shipments/api/shipments.api';
+import { ApiError } from '@api/types';
 
 export interface FareEstimate {
     loading: boolean;
@@ -14,24 +14,29 @@ export interface FareEstimate {
 
 const IDLE: FareEstimate = { loading: false, price: null, distanceKm: null, pickup: null, drop: null, error: null };
 
-const DEFAULT_BASE_RATE = 49;
-const DEFAULT_RATE_PER_KM = 8;
-
 // Real, distance-based fare estimate (Rapido-style "see price before you
-// book"), replacing the flat per-service-type price that used to be shown
-// on the order review step. Geocodes the typed pickup/drop addresses (the
-// form only captures free text, no coordinates) and prices them against the
-// same `vehicleConfigs` collection the admin dashboard manages.
+// book"). Geocodes the typed pickup/drop addresses (the form only captures
+// free text, no coordinates) via Nominatim, then prices them through the
+// same POST /shipments/quote endpoint (kalanabhaBackend PricingService)
+// that the actual booking flow uses server-side — not a separate,
+// client-computed price that could drift from what the backend charges.
+//
+// Previously read pricing from a Firestore `vehicleConfigs` collection that
+// nothing populates any more (vehicle pricing lives in Postgres since the
+// backend migration) — every quote silently fell back to hardcoded
+// defaults regardless of the real per-vehicle rates. Fixed to call the
+// backend directly.
 export const useFareEstimate = (
     pickupAddress: string,
     dropAddress: string,
-    vehicleType: string
+    vehicleType: string,
+    serviceType: string,
 ): FareEstimate => {
     const [estimate, setEstimate] = useState<FareEstimate>(IDLE);
     const requestId = useRef(0);
 
     useEffect(() => {
-        if (!pickupAddress.trim() || !dropAddress.trim() || !vehicleType) {
+        if (!pickupAddress.trim() || !dropAddress.trim() || !vehicleType || !serviceType) {
             setEstimate(IDLE);
             return;
         }
@@ -41,10 +46,9 @@ export const useFareEstimate = (
 
         const run = async () => {
             try {
-                const [pickup, drop, configSnap] = await Promise.all([
+                const [pickup, drop] = await Promise.all([
                     forwardGeocode(pickupAddress),
                     forwardGeocode(dropAddress),
-                    firestore().collection('vehicleConfigs').get(),
                 ]);
 
                 if (currentRequest !== requestId.current) return;
@@ -54,34 +58,27 @@ export const useFareEstimate = (
                     return;
                 }
 
-                const config = configSnap.docs
-                    .map(d => d.data() as { name?: string; baseRate?: number; ratePerKm?: number; active?: boolean })
-                    .find(c => (c.name ?? '').toLowerCase() === vehicleType.toLowerCase());
-
-                const baseRate = config?.baseRate ?? DEFAULT_BASE_RATE;
-                const ratePerKm = config?.ratePerKm ?? DEFAULT_RATE_PER_KM;
-
-                const distanceKm = haversineDistanceKm(pickup, drop);
-                const price = Math.round(baseRate + distanceKm * ratePerKm);
+                const quote = await quoteShipment({ pickup, drop, vehicleType, serviceType });
 
                 if (currentRequest !== requestId.current) return;
 
                 setEstimate({
                     loading: false,
-                    price,
-                    distanceKm: Math.round(distanceKm * 100) / 100,
+                    price: quote.price,
+                    distanceKm: quote.distanceKm,
                     pickup,
                     drop,
                     error: null,
                 });
-            } catch {
+            } catch (err) {
                 if (currentRequest !== requestId.current) return;
-                setEstimate({ ...IDLE, error: 'Failed to estimate fare' });
+                const message = err instanceof ApiError ? err.message : 'Failed to estimate fare';
+                setEstimate({ ...IDLE, error: message });
             }
         };
 
         run();
-    }, [pickupAddress, dropAddress, vehicleType]);
+    }, [pickupAddress, dropAddress, vehicleType, serviceType]);
 
     return estimate;
 };

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useShipmentLocation, useTrackingSocket } from '../../features/tracking/hooks';
+import { useShipmentLocation, useTrackingSocket } from '@features/tracking/hooks';
 
 export interface LiveDriverLocation {
     lat: number;
