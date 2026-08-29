@@ -1,12 +1,11 @@
 import { useEffect, useRef } from 'react';
 import Geolocation from 'react-native-geolocation-service';
-import firestore from '@react-native-firebase/firestore';
-import auth from '@react-native-firebase/auth';
+import { pingLocation } from '../../features/tracking/api/tracking.api';
 
 // Rapido-style live tracking: while the driver has an active delivery,
-// periodically push their position onto their own `users/{uid}` doc so a
-// customer watching ShipmentDetailsScreen sees it update in near-real-time
-// (see useLiveDriverLocation on the customer side, which listens to this).
+// periodically POST /tracking/ping (kalanabhaBackend TrackingController) so
+// a customer watching ShipmentDetailsScreen sees it update in near-real-time
+// via the tracking socket (see useTrackingSocket on the customer side).
 export const useDriverLiveLocation = (isActive: boolean): void => {
     const watchId = useRef<number | null>(null);
 
@@ -19,27 +18,13 @@ export const useDriverLiveLocation = (isActive: boolean): void => {
             return;
         }
 
-        const user = auth().currentUser;
-        if (!user) return;
-
         watchId.current = Geolocation.watchPosition(
             position => {
                 const { latitude, longitude } = position.coords;
-                firestore()
-                    .collection('users')
-                    .doc(user.uid)
-                    .set(
-                        {
-                            lastLat: latitude,
-                            lastLng: longitude,
-                            lastLocationAt: firestore.FieldValue.serverTimestamp(),
-                        },
-                        { merge: true }
-                    )
-                    .catch(() => {
-                        // Non-critical — a missed ping just means a stale
-                        // marker on the customer's side until the next one.
-                    });
+                pingLocation(latitude, longitude).catch(() => {
+                    // Non-critical — a missed ping just means a stale
+                    // marker on the customer's side until the next one.
+                });
             },
             error => {
                 if (__DEV__) console.warn('[useDriverLiveLocation] error', error);

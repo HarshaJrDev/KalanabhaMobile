@@ -26,10 +26,6 @@ import { normalizeError } from '../../utils/error';
 import { useAlert } from '../../ui/alert/useAlert';
 import AlertBanner from '../../ui/alert/AlertBanner';
 
-// Firebase
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
-
 type FormState = {
     name: string;
     email: string;
@@ -60,7 +56,6 @@ const Signup = () => {
     const [form, setForm] = useState<FormState>(INITIAL_FORM);
     const [errors, setErrors] = useState<FormErrors>({});
     const [type, setType] = useState<UserType>('HOME');
-    const [firebaseLoading, setFirebaseLoading] = useState(false);
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(30)).current;
@@ -94,93 +89,39 @@ const Signup = () => {
     }, [form]);
 
     const isDisabled = useMemo(() =>
-        isPending || firebaseLoading || Object.values(form).some(v => !v),
-        [form, isPending, firebaseLoading]
+        isPending || Object.values(form).some(v => !v),
+        [form, isPending]
     );
 
-    const handleSubmit = useCallback(async () => {
-        const LOG_TAG = '[SignupFlow]';
-
-        console.log(`${LOG_TAG} START`);
-
+    // NOTE: kalanabhaBackend's RegisterDto only accepts email/password/
+    // displayName/role — phone, address, and account `type` (collected
+    // below for UX/future use) have no field to land in yet on the
+    // backend, so they are intentionally not sent here.
+    const handleSubmit = useCallback(() => {
         clear();
 
         if (!validate()) {
-            console.warn(`${LOG_TAG} VALIDATION_FAILED`, { form });
             show('Please fix the highlighted fields');
             return;
         }
 
-        try {
-            setFirebaseLoading(true);
-
-            console.log(`${LOG_TAG} FIREBASE_AUTH_START`, {
-                email: form.email,
-            });
-
-            // 1️⃣ Firebase Auth
-            const userCredential = await auth().createUserWithEmailAndPassword(
-                form.email,
-                form.password
-            );
-
-            console.log(`${LOG_TAG} FIREBASE_AUTH_SUCCESS`, {
-                uid: userCredential.user.uid,
-            });
-
-            // 2️⃣ Update profile
-            await userCredential.user.updateProfile({
-                displayName: form.name,
-            });
-
-            console.log(`${LOG_TAG} PROFILE_UPDATED`);
-
-            // 3️⃣ Firestore write
-            const payload = {
-                uid: userCredential.user.uid,
-                name: form.name,
-                email: form.email,
-                phone: form.phone,
-                address: form.address,
-                type,
-                createdAt: firestore.FieldValue.serverTimestamp(),
-            };
-
-            console.log(`${LOG_TAG} FIRESTORE_WRITE_START`, payload);
-
-            await firestore()
-                .collection('users')
-                .doc(userCredential.user.uid)
-                .set(payload);
-
-            console.log(`${LOG_TAG} FIRESTORE_WRITE_SUCCESS`);
-
-            show('Account created successfully!', 'success');
-        } catch (firebaseError: unknown) {
-            console.error(`${LOG_TAG} FIREBASE_FAILED`, firebaseError);
-
-            // 🔥 classify error (important)
-            const message = normalizeError(firebaseError);
-            console.warn(`${LOG_TAG} FALLBACK_TRIGGERED`, { message });
-
-            mutate(
-                { ...form, type },
-                {
-                    onSuccess: () => {
-                        console.log(`${LOG_TAG} BACKEND_SUCCESS`);
-                        show('Account created successfully!', 'success');
-                    },
-                    onError: (err) => {
-                        console.error(`${LOG_TAG} BACKEND_FAILED`, err);
-                        show(normalizeError(err));
-                    },
-                }
-            );
-        } finally {
-            console.log(`${LOG_TAG} END`);
-            setFirebaseLoading(false);
-        }
-    }, [form, type, mutate, validate, show, clear]);
+        mutate(
+            {
+                email: form.email.trim().toLowerCase(),
+                password: form.password,
+                displayName: form.name.trim(),
+                role: 'customer',
+            },
+            {
+                onSuccess: () => {
+                    show('Account created successfully!', 'success');
+                },
+                onError: (err) => {
+                    show(normalizeError(err));
+                },
+            }
+        );
+    }, [form, mutate, validate, show, clear]);
 
     const handleLocation = useCallback(() => {
         getAddress(address => {
@@ -189,7 +130,7 @@ const Signup = () => {
         });
     }, [getAddress, update, show]);
 
-    const isLoading = isPending || firebaseLoading;
+    const isLoading = isPending;
 
     return (
         <KeyboardAvoidingView

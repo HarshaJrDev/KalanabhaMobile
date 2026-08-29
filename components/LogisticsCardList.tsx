@@ -31,9 +31,16 @@ import {
     Truck,
     Zap,
 } from 'lucide-react-native';
-import firestore from '@react-native-firebase/firestore';
-import auth from '@react-native-firebase/auth';
 import { ScrollView, TextInput } from 'react-native-gesture-handler';
+import { useAuthStore } from '../features/store/authStore';
+import {
+    acceptShipment as acceptShipmentRequest,
+    cancelShipment as cancelShipmentRequest,
+    completeDelivery as completeDeliveryRequest,
+    startDelivery as startDeliveryRequest,
+} from '../features/shipments/api/shipments.api';
+import { useChatMessages, useChatSocket, useSendMessage } from '../features/chat/hooks';
+import { normalizeError } from '../utils/error';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -66,9 +73,11 @@ export interface LogisticsItem {
     customerPhone?: string;
 }
 
+// Role now comes from the backend-authenticated user (features/store/authStore),
+// not "is Firebase signed in" — every user is signed in via the backend now.
 const useUserRole = (): UserRole => {
-    const user = auth().currentUser;
-    return user ? 'driver' : 'customer';
+    const role = useAuthStore((s) => s.user?.role);
+    return role === 'DRIVER' ? 'driver' : 'customer';
 };
 
 
@@ -102,74 +111,50 @@ const ActionButton: React.FC<{
     );
 });
 
+// POST /shipments/:id/cancel — kalanabhaBackend allows either the owning
+// customer or an admin/dispatcher; the guard is enforced server-side.
 const useCustomerActions = () => {
     const onCancel = useCallback(async (id: string) => {
         try {
-            await firestore().collection('shipments').doc(id).update({
-                status: 'cancelled',
-                updatedAt: firestore.FieldValue.serverTimestamp(),
-            });
+            await cancelShipmentRequest(id);
             Alert.alert('✅ Cancelled', 'Order cancelled successfully');
-        } catch (err: any) {
-            Alert.alert('Error', err.message || 'Failed to cancel order');
+        } catch (err) {
+            Alert.alert('Error', normalizeError(err));
         }
     }, []);
 
     return { onCancel };
 };
 
+// POST /shipments/:id/{accept,start,complete} — kalanabhaBackend's
+// DispatchService does the same atomic "status must still be X" guard
+// server-side that the old Firestore transaction did client-side, so a
+// driver can no longer race or spoof an accept.
 const useDriverActions = () => {
     const onAccept = useCallback(async (id: string) => {
         try {
-            const user = auth().currentUser;
-            if (!user) throw new Error('Not authenticated');
-
-            const ref = firestore().collection('shipments').doc(id);
-
-            await firestore().runTransaction(async (tx) => {
-                const doc = await tx.get(ref);
-                if (!doc.exists) throw new Error('Shipment not found');
-
-                const data = doc.data();
-                if (data?.status !== 'searching') {
-                    throw new Error('Already taken by another driver');
-                }
-
-                tx.update(ref, {
-                    status: 'accepted',
-                    'dispatch.driverId': user.uid,
-                    'dispatch.driverName': user.displayName || 'Driver',
-                    'dispatch.acceptedAt': firestore.FieldValue.serverTimestamp(),
-                });
-            });
-
+            await acceptShipmentRequest(id);
             Alert.alert('✅ Accepted', 'Order accepted! Start delivery.');
-        } catch (err: any) {
-            Alert.alert('Failed', err.message || 'Order already taken');
+        } catch (err) {
+            Alert.alert('Failed', normalizeError(err) || 'Order already taken');
         }
     }, []);
 
     const onStartDelivery = useCallback(async (id: string) => {
         try {
-            await firestore().collection('shipments').doc(id).update({
-                status: 'in_transit',
-                'dispatch.startedAt': firestore.FieldValue.serverTimestamp(),
-            });
+            await startDeliveryRequest(id);
             Alert.alert('🚚 Started', 'Delivery in progress');
         } catch (err) {
-            Alert.alert('Error', 'Failed to start delivery');
+            Alert.alert('Error', normalizeError(err) || 'Failed to start delivery');
         }
     }, []);
 
     const onCompleteDelivery = useCallback(async (id: string) => {
         try {
-            await firestore().collection('shipments').doc(id).update({
-                status: 'delivered',
-                'dispatch.completedAt': firestore.FieldValue.serverTimestamp(),
-            });
+            await completeDeliveryRequest(id);
             Alert.alert('✅ Delivered', 'Delivery completed!');
         } catch (err) {
-            Alert.alert('Error', 'Failed to complete delivery');
+            Alert.alert('Error', normalizeError(err) || 'Failed to complete delivery');
         }
     }, []);
 
@@ -210,92 +195,29 @@ const LogisticsCard: React.FC<{
     const price = useMemo(() => `₹${item.price.toFixed(0)}`, [item.price]);
     const [chatOpen, setChatOpen] = useState(false);
     const [chatMsg, setChatMsg] = useState('');
-    const [msgs, setMsgs] = useState<any[]>([]);
 
 
-
-
-
-    const currentUserId = auth().currentUser?.uid;
+    const currentUserId = useAuthStore((s) => s.user?.id);
 
     const isAssignedToMe =
         item.driverId === currentUserId;
 
 
-    useEffect(() => {
-        if (!chatOpen) return;
-        const unsub = firestore()
-            .collection('shipments')
-            .doc(item.id)
-            .collection('messages')
-            .orderBy('createdAt', 'asc')
-            .onSnapshot(snap => {
-                setMsgs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-            });
-        return () => unsub();
-    }, [chatOpen, item.id]);
+    // Backend-wired shipment chat (GET/POST /shipments/:id/messages +
+    // ChatGateway socket for live delivery). This panel previously had a
+    // working Firestore listener/send but was never actually mounted in the
+    // JSX below (dead code, unreachable) — now wired to the real backend
+    // AND rendered in the action area.
+    const { data: msgs = [] } = useChatMessages(chatOpen ? item.id : undefined);
+    useChatSocket(chatOpen ? item.id : undefined);
+    const { mutate: sendMessage, isPending: sending } = useSendMessage(item.id);
 
-
-    const sendMsg = async () => {
-        if (!chatMsg.trim()) return;
-        const user = auth().currentUser;
-        await firestore()
-            .collection('shipments')
-            .doc(item.id)
-            .collection('messages')
-            .add({
-                text: chatMsg.trim(),
-                senderId: user?.uid,
-                senderName: user?.displayName ?? 'Driver',
-                createdAt: firestore.FieldValue.serverTimestamp(),
-                shipmentId: item.id,
-            });
+    const sendMsg = () => {
+        const text = chatMsg.trim();
+        if (!text) return;
+        sendMessage(text);
         setChatMsg('');
     };
-
-    // Add this JSX after the action bar:
-    {
-        chatOpen && (
-            <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 10 }}>
-                <ScrollView style={{ maxHeight: 150 }} showsVerticalScrollIndicator={false}>
-                    {msgs.map(m => (
-                        <View key={m.id} style={{
-                            alignSelf: m.senderName === 'Driver' ? 'flex-end' : 'flex-start',
-                            backgroundColor: m.senderName === 'Driver' ? '#2563EB' : '#F3F4F6',
-                            borderRadius: 8, padding: 8, marginBottom: 6, maxWidth: '75%',
-                        }}>
-                            <Text style={{ color: m.senderName === 'Driver' ? '#fff' : '#1F2937', fontSize: 12 }}>
-                                {m.text}
-                            </Text>
-                        </View>
-                    ))}
-                </ScrollView>
-                <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                    <TextInput
-                        value={chatMsg}
-                        onChangeText={setChatMsg}
-                        placeholder="Message..."
-                        placeholderTextColor="#9CA3AF"
-                        style={{
-                            flex: 1, borderWidth: 1, borderColor: '#E5E7EB',
-                            borderRadius: 8, paddingHorizontal: 10, height: 36, fontSize: 13,
-                        }}
-                    />
-                    <TouchableOpacity onPress={sendMsg} style={{
-                        backgroundColor: '#2563EB', borderRadius: 8,
-                        paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center',
-                    }}>
-                        <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>Send</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        )
-    }
-    <TouchableOpacity onPress={() => setChatOpen(o => !o)} style={{ marginTop: 8 }}>
-        <Text style={{ color: '#2563EB', fontSize: 12, fontWeight: '600' }}>
-            {chatOpen ? 'Close chat ↑' : '💬 Chat with customer / admin'}
-        </Text>
-    </TouchableOpacity>
 
     const onNavigate = useCallback(() => {
         openGoogleMapsDirections(item.pickup, item.drop).catch(console.error);
@@ -423,6 +345,49 @@ const LogisticsCard: React.FC<{
                         />
                     )}
                 </View>
+
+                {/* Shipment chat — GET/POST /shipments/:id/messages, live via ChatGateway */}
+                <TouchableOpacity onPress={() => setChatOpen(o => !o)} style={{ marginTop: 8 }}>
+                    <Text style={{ color: '#2563EB', fontSize: 12, fontWeight: '600' }}>
+                        {chatOpen ? 'Close chat ↑' : '💬 Chat with customer / admin'}
+                    </Text>
+                </TouchableOpacity>
+
+                {chatOpen && (
+                    <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 10 }}>
+                        <ScrollView style={{ maxHeight: 150 }} showsVerticalScrollIndicator={false}>
+                            {msgs.map(m => (
+                                <View key={m.id} style={{
+                                    alignSelf: m.senderId === currentUserId ? 'flex-end' : 'flex-start',
+                                    backgroundColor: m.senderId === currentUserId ? '#2563EB' : '#F3F4F6',
+                                    borderRadius: 8, padding: 8, marginBottom: 6, maxWidth: '75%',
+                                }}>
+                                    <Text style={{ color: m.senderId === currentUserId ? '#fff' : '#1F2937', fontSize: 12 }}>
+                                        {m.text}
+                                    </Text>
+                                </View>
+                            ))}
+                        </ScrollView>
+                        <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                            <TextInput
+                                value={chatMsg}
+                                onChangeText={setChatMsg}
+                                placeholder="Message..."
+                                placeholderTextColor="#9CA3AF"
+                                style={{
+                                    flex: 1, borderWidth: 1, borderColor: '#E5E7EB',
+                                    borderRadius: 8, paddingHorizontal: 10, height: 36, fontSize: 13,
+                                }}
+                            />
+                            <TouchableOpacity onPress={sendMsg} disabled={sending} style={{
+                                backgroundColor: '#2563EB', borderRadius: 8, opacity: sending ? 0.6 : 1,
+                                paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center',
+                            }}>
+                                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>Send</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                )}
             </View>
         </Animated.View>
     );
@@ -436,20 +401,6 @@ export const LogisticsCardList: React.FC<{ data: LogisticsItem[]; refreshControl
         const isDriver = useUserRole() === 'driver';
         const customerActions = useCustomerActions();
         const driverActions = useDriverActions();
-
-
-        const [chatOpen, setChatOpen] = useState(false);
-        const [chatMsg, setChatMsg] = useState('');
-        const [msgs, setMsgs] = useState<any[]>([]);
-
-
-
-
-
-
-
-
-
 
         const renderItem = useCallback(
 

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import firestore from '@react-native-firebase/firestore';
+import { useMemo } from 'react';
+import { useShipmentLocation, useTrackingSocket } from '../../features/tracking/hooks';
 
 export interface LiveDriverLocation {
     lat: number;
@@ -7,41 +7,18 @@ export interface LiveDriverLocation {
     updatedAt: Date | null;
 }
 
-// Customer-side counterpart to useDriverLiveLocation: listens to the
-// assigned driver's own `users/{driverId}` doc for the lastLat/lastLng the
-// driver app has been writing, so ShipmentDetailsScreen can show a live
-// "driver is nearby" indicator (Rapido-style) without a full map.
-export const useLiveDriverLocation = (driverId: string | null | undefined): LiveDriverLocation | null => {
-    const [location, setLocation] = useState<LiveDriverLocation | null>(null);
+// Customer-side counterpart to useDriverLiveLocation: GET /shipments/:id/location
+// seeds the last-known position, then the tracking socket (TrackingGateway)
+// keeps it live — replaces the old Firestore onSnapshot on the driver's own
+// `users/{driverId}` doc, keyed by shipmentId instead of driverId (matches
+// how the backend's tracking room is scoped).
+export const useLiveDriverLocation = (shipmentId: string | null | undefined): LiveDriverLocation | null => {
+    const id = shipmentId ?? undefined;
+    const { data } = useShipmentLocation(id);
+    useTrackingSocket(id);
 
-    useEffect(() => {
-        if (!driverId) {
-            setLocation(null);
-            return;
-        }
-
-        const unsub = firestore()
-            .collection('users')
-            .doc(driverId)
-            .onSnapshot(
-                doc => {
-                    const data = doc.data();
-                    if (!data || typeof data.lastLat !== 'number' || typeof data.lastLng !== 'number') {
-                        setLocation(null);
-                        return;
-                    }
-
-                    setLocation({
-                        lat: data.lastLat,
-                        lng: data.lastLng,
-                        updatedAt: data.lastLocationAt?.toDate?.() ?? null,
-                    });
-                },
-                () => setLocation(null)
-            );
-
-        return () => unsub();
-    }, [driverId]);
-
-    return location;
+    return useMemo(() => {
+        if (!data) return null;
+        return { lat: data.lat, lng: data.lng, updatedAt: new Date(data.updatedAt) };
+    }, [data]);
 };

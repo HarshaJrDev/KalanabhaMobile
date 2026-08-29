@@ -46,12 +46,11 @@ import {
     Package,
     CircleCheck,
 } from 'lucide-react-native';
-import auth from '@react-native-firebase/auth';
-import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { registerFCMToken, setupFCMListeners } from '../../utils/cm';
-import { Shipment } from '../../shipment/types';
 import { useFareEstimate, FareEstimate } from '../../src/location/useFareEstimate';
-import { autoMatchShipment } from '../../shipment/actions';
+import { createShipment } from '../../features/shipments/api/shipments.api';
+import { safeNumber } from '../../utils/parsers';
+import { normalizeError } from '../../utils/error';
 const COLORS = {
     primary: '#1d4ed8',
     primaryDark: '#1e3a8a',
@@ -126,24 +125,6 @@ type AllOrderData = {
     receiver: ReceiverForm;
     package: PackageForm;
     orderDetails: OrderDetailsForm;
-};
-
-type SubmitPayload = {
-    userId: string;
-    trackingId: string;
-    sender: unknown;
-    receiver: unknown;
-    package: unknown;
-    serviceType: string;
-    vehicleType: string;
-    paymentMode: string;
-    pickupSlot: string;
-    notes?: string;
-    status: 'pending';
-    from: string;
-    to: string;
-    createdAt: FirebaseFirestoreTypes.FieldValue;
-    updatedAt: FirebaseFirestoreTypes.FieldValue;
 };
 
 const log = (scope: string, message: string, data?: unknown) => {
@@ -1208,13 +1189,10 @@ const NewOrder = () => {
         sender, receiver, package: pkg, orderDetails,
     }), [sender, receiver, pkg, orderDetails]);
 
-    type FirestoreUserMeta = {
-        uid: string;
-        email?: string | null;
-        phoneNumber?: string | null;
-        displayName?: string | null;
-    };
-
+    // POST /shipments — kalanabhaBackend ShipmentsService.create already
+    // does the duplicate guard (same customer/from/to/pickupSlot while
+    // searching/accepted) AND the Rapido-style auto-match server-side, so
+    // neither needs doing client-side any more.
     const handleSubmit = useCallback(async (): Promise<void> => {
         const scope = 'CREATE_SHIPMENT';
 
@@ -1222,125 +1200,41 @@ const NewOrder = () => {
             log(scope, 'START');
             setSubmitting(true);
 
-            const user = auth().currentUser;
-            if (!user) throw new Error('Not authenticated');
-
             if (!fareEstimate.pickup || !fareEstimate.drop || fareEstimate.price == null) {
                 Alert.alert('Fare not ready', 'Please wait for the fare estimate to finish calculating.');
                 return;
             }
 
-            const userMeta: FirestoreUserMeta = {
-                uid: user.uid,
-                email: user.email,
-                phoneNumber: user.phoneNumber,
-                displayName: user.displayName,
-            };
-
-            const tid = `KL${Date.now().toString().slice(-8)}`;
-
-            const from = `${sender.address}, ${sender.city}`;
-            const to = `${receiver.address}, ${receiver.city}`;
-
-            // ✅ duplicate guard (good logic, keep it)
-            const duplicateQuery = await firestore()
-                .collection('shipments')
-                .where('userId', '==', user.uid)
-                .where('from', '==', from)
-                .where('to', '==', to)
-                .where('pickupSlot', '==', orderDetails.pickupSlot)
-                .where('status', 'in', ['searching', 'accepted'])
-                .limit(1)
-                .get();
-
-            if (!duplicateQuery.empty) {
-                Alert.alert('Duplicate Order', 'This shipment already exists.');
-                return;
-            }
-
-            const safeNumber = (val: unknown, fallback = 0): number => {
-                if (typeof val === 'number' && !Number.isNaN(val)) return val;
-                if (typeof val === 'string') {
-                    const parsed = Number(val);
-                    return Number.isNaN(parsed) ? fallback : parsed;
-                }
-                return fallback;
-            };
-
-            const payload: Omit<Shipment, 'id'> = {
-                userId: user.uid,
-                trackingId: tid,
-
+            const shipment = await createShipment({
                 goodsType: pkg?.category ?? 'General',
                 weightKg: safeNumber(pkg?.weight),
-
                 pickup: {
                     address: sender.address,
                     lat: fareEstimate.pickup.lat,
                     lng: fareEstimate.pickup.lng,
                 },
-
                 drop: {
                     address: receiver.address,
                     lat: fareEstimate.drop.lat,
                     lng: fareEstimate.drop.lng,
                 },
-
-                price: fareEstimate.price,
-                distanceKm: fareEstimate.distanceKm ?? 0,
-
                 sender,
                 receiver,
-                package: pkg,
-
-                from,
-                to,
-
+                package: { category: pkg?.category, weight: safeNumber(pkg?.weight) },
                 serviceType: orderDetails.serviceType,
                 vehicleType: orderDetails.vehicleType,
                 paymentMode: orderDetails.paymentMode,
                 pickupSlot: orderDetails.pickupSlot,
                 notes: orderDetails.notes,
+            });
 
-                status: 'searching',
-                dispatch: null, // ❗ avoid empty object → causes type ambiguity
-
-                userMeta,
-
-                createdAt: firestore.FieldValue.serverTimestamp(),
-                updatedAt: firestore.FieldValue.serverTimestamp(),
-            };
-
-            const ref = await firestore()
-                .collection('shipments')
-                .add(payload);
-
-            await ref.update({ shipmentId: ref.id });
-
-            setTrackingId(tid);
+            setTrackingId(shipment.trackingId);
             setShowSuccess(true);
 
-            log(scope, 'SUCCESS', { docId: ref.id });
-
-            // Best-effort Rapido-style auto-match — never blocks the order
-            // confirmation the customer already saw. If it fails or no
-            // driver is nearby, the shipment simply stays in the manual
-            // "searching" pool.
-            autoMatchShipment({
-                shipmentId: ref.id,
-                trackingId: tid,
-                pickup: fareEstimate.pickup!,
-                vehicleType: orderDetails.vehicleType,
-            }).catch(e => logError('AUTO_MATCH', e));
+            log(scope, 'SUCCESS', { id: shipment.id });
         } catch (err: unknown) {
             logError(scope, err);
-
-            const message =
-                err instanceof Error
-                    ? err.message
-                    : 'Failed to place order. Please try again.';
-
-            Alert.alert('Error', message);
+            Alert.alert('Error', normalizeError(err));
         } finally {
             setSubmitting(false);
             log(scope, 'END');

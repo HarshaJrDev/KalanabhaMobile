@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import firestore from '@react-native-firebase/firestore';
+import { useShipment } from '../../../features/shipments/hooks';
 import { useLiveDriverLocation } from '../../../src/location/useLiveDriverLocation';
 import { haversineDistanceKm } from '../../../utils/geo';
 
@@ -116,16 +116,18 @@ const ShipmentDetailsScreen = () => {
     const route = useRoute<RouteProp<{ params: RouteParams }, 'params'>>();
     const shipmentId = route?.params?.id;
 
-    const [data, setData] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+    // Screen -> hook -> shipments.api -> GET /shipments/:id -> typed Shipment -> cache -> UI
+    const { data: shipment, isLoading: shipmentLoading } = useShipment(shipmentId);
+    const loading = !!shipmentId && shipmentLoading;
+    const data: any = shipment ?? (loading ? null : DEMO);
     const [copied, setCopied] = useState(false);
 
     // Rapido-style live tracking — only listens while a driver is actually
-    // assigned and out on the delivery (real Firestore status strings use
+    // assigned and out on the delivery (backend status strings use
     // underscores: 'accepted' / 'in_transit', unlike this screen's own
     // display-only STATUS map below which uses hyphens for labels).
     const isDriverEnRoute = data?.status === 'accepted' || data?.status === 'in_transit';
-    const liveDriverLocation = useLiveDriverLocation(isDriverEnRoute ? data?.dispatch?.driverId : null);
+    const liveDriverLocation = useLiveDriverLocation(isDriverEnRoute ? shipmentId : null);
     const distanceToDriverKm =
         liveDriverLocation && data?.pickup?.lat != null && data?.pickup?.lng != null
             ? haversineDistanceKm(
@@ -166,64 +168,13 @@ const ShipmentDetailsScreen = () => {
         ]).start();
     };
 
-    // Firebase fetch
+    // Re-run the entrance animation once the backend-sourced shipment (or
+    // the no-id DEMO fallback) is ready to render.
     useEffect(() => {
-        const scope = 'SHIPMENT_DETAILS';
-
-        if (!shipmentId) {
-            console.log(scope, 'NO ID → DEMO MODE');
-            setData(DEMO);
-            setLoading(false);
+        if (!loading) {
             runEntrance();
-            return;
         }
-
-        console.log(scope, 'SUBSCRIBE', { shipmentId });
-
-        const unsub = firestore()
-            .collection('shipments')
-            .doc(shipmentId)
-            .onSnapshot(
-                doc => {
-                    if (!doc.exists) {
-                        console.log(scope, 'DOC NOT FOUND');
-                        setData(DEMO);
-                    } else {
-                        const d = doc.data();
-
-                        console.log(scope, 'DATA RECEIVED', {
-                            id: doc.id,
-                            status: d?.status,
-                            from: d?.from,
-                            to: d?.to,
-                        });
-
-                        setData({
-                            id: doc.id,
-                            ...d,
-                        });
-                    }
-
-                    setLoading(false);
-                    runEntrance();
-                },
-                error => {
-                    console.log(scope, 'ERROR', {
-                        message: error.message,
-                        code: error.message,
-                    });
-
-                    setData(DEMO);
-                    setLoading(false);
-                    runEntrance();
-                }
-            );
-
-        return () => {
-            console.log(scope, 'UNSUBSCRIBE');
-            unsub();
-        };
-    }, [shipmentId]);
+    }, [loading, shipment]);
 
     const copyToClipboard = (text: string) => {
         Clipboard.setString(text);

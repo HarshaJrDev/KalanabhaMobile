@@ -5,25 +5,22 @@ import {
     StyleSheet,
     Pressable,
     StatusBar,
-    Dimensions,
-    ImageBackground,
     Platform,
-    Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Animated, {
+    FadeInDown,
+    FadeInUp,
     useSharedValue,
     useAnimatedStyle,
     withSpring,
-    interpolate,
+    withTiming,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { User, Truck } from 'lucide-react-native';
+import { User, Truck, Check, ChevronRight } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
-
-const { height } = Dimensions.get('window');
 
 // ───────────────── TYPES ─────────────────
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'SelectAccount'>;
@@ -37,6 +34,16 @@ type Account = {
 };
 
 // ───────────────── DESIGN SYSTEM ─────────────────
+const COLORS = {
+    bgTop: '#0B1130',
+    bgBottom: '#050714',
+    card: 'rgba(255,255,255,0.06)',
+    cardBorder: 'rgba(255,255,255,0.10)',
+    white: '#FFFFFF',
+    muted: 'rgba(255,255,255,0.56)',
+    faint: 'rgba(255,255,255,0.38)',
+} as const;
+
 const FONTS = {
     PRIMARY_BOLD: 'Montserrat-Bold',
     PRIMARY_MEDIUM: 'Montserrat-Medium',
@@ -44,108 +51,87 @@ const FONTS = {
 } as const;
 
 const TYPOGRAPHY = {
-    h1: { fontFamily: FONTS.PRIMARY_BOLD, fontSize: 22 },
-    h2: { fontFamily: FONTS.PRIMARY_SEMIBOLD, fontSize: 17 },
+    h1: { fontFamily: FONTS.PRIMARY_BOLD, fontSize: 24 },
+    tagline: { fontFamily: FONTS.PRIMARY_MEDIUM, fontSize: 13 },
+    h2: { fontFamily: FONTS.PRIMARY_SEMIBOLD, fontSize: 16 },
     body: { fontFamily: FONTS.PRIMARY_MEDIUM, fontSize: 13 },
     button: { fontFamily: FONTS.PRIMARY_BOLD, fontSize: 16 },
 } as const;
 
-const SPACING = { md: 12, lg: 16, xl: 20 } as const;
+const SPACING = { sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 } as const;
 
 // ───────────────── DATA ─────────────────
 const ACCOUNTS: Account[] = [
     {
         type: 'Customer',
         label: 'Customer',
-        description: 'Book shipments and track deliveries.',
-        gradient: ['#2B3FD4', '#6366F1'],
+        description: 'Book shipments and track deliveries in real time.',
+        gradient: ['#4F5BFF', '#6D28D9'],
     },
     {
         type: 'Driver',
         label: 'Driver',
-        description: 'Accept deliveries and earn efficiently.',
-        gradient: ['#FF6B2C', '#F59E0B'],
+        description: 'Accept trips, deliver, and earn on your schedule.',
+        gradient: ['#FF7A45', '#F59E0B'],
     },
 ];
 
 const ICONS = { Customer: User, Driver: Truck } as const;
 
-const IMAGES = {
-    Customer: 'https://images.pexels.com/photos/4246120/pexels-photo-4246120.jpeg',
-    Driver: 'https://images.pexels.com/photos/2199293/pexels-photo-2199293.jpeg',
-} as const;
-
 // ───────────────── CARD ─────────────────
 type CardProps = {
     item: Account;
+    index: number;
     selected: boolean;
     onPress: () => void;
 };
 
-const AccountCard = memo(({ item, selected, onPress }: CardProps) => {
+const AccountCard = memo(({ item, index, selected, onPress }: CardProps) => {
     const Icon = ICONS[item.type];
-
-    // shared values (UI thread)
     const scale = useSharedValue(1);
-    const rotateX = useSharedValue(0);
-    const rotateY = useSharedValue(0);
-
-    // gesture (parallax tilt)
-    const gesture = Gesture.Pan()
-        .onUpdate(e => {
-            rotateX.value = e.translationY / 20;
-            rotateY.value = -e.translationX / 20;
-        })
-        .onEnd(() => {
-            rotateX.value = withSpring(0);
-            rotateY.value = withSpring(0);
-        });
 
     const animatedStyle = useAnimatedStyle(() => ({
-        transform: [
-            { perspective: 800 },
-            { scale: withSpring(scale.value) },
-            { rotateX: `${rotateX.value}deg` },
-            { rotateY: `${rotateY.value}deg` },
-        ],
+        transform: [{ scale: scale.value }],
     }));
 
     const handlePressIn = () => {
-        scale.value = 0.96;
+        scale.value = withSpring(0.97, { damping: 18, stiffness: 260 });
     };
-
     const handlePressOut = () => {
-        scale.value = 1;
+        scale.value = withSpring(1, { damping: 18, stiffness: 260 });
     };
 
     return (
-        <GestureDetector gesture={gesture}>
-            <Animated.View style={[styles.card, animatedStyle]}>
-                <Pressable onPress={onPress} onPressIn={handlePressIn} onPressOut={handlePressOut}>
-                    <View style={[styles.cardInner, selected && styles.selected]}>
-                        {/* Background */}
-                        <Image source={{ uri: IMAGES[item.type] }} style={styles.bg} />
+        <Animated.View
+            entering={FadeInDown.delay(150 + index * 90).duration(450).springify().damping(16)}
+            style={animatedStyle}
+        >
+            <Pressable
+                onPress={onPress}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                android_ripple={{ color: 'rgba(255,255,255,0.08)' }}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                accessibilityLabel={`${item.label} account`}
+                style={[styles.cardInner, selected && styles.cardInnerSelected]}
+            >
+                <LinearGradient colors={item.gradient} style={styles.icon}>
+                    <Icon color={COLORS.white} size={22} strokeWidth={2.25} />
+                </LinearGradient>
 
-                        <LinearGradient
-                            colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.9)']}
-                            style={StyleSheet.absoluteFillObject}
-                        />
+                <View style={styles.cardText}>
+                    <Text style={styles.title}>{item.label}</Text>
+                    <Text style={styles.desc} numberOfLines={2}>
+                        {item.description}
+                    </Text>
+                </View>
 
-                        {/* Content */}
-                        <View style={styles.row}>
-                            <LinearGradient colors={item.gradient} style={styles.icon}>
-                                <Icon color="#fff" size={22} />
-                            </LinearGradient>
-
-                            <View style={{ flex: 1 }}>
-                                <Text style={styles.title}>{item.label}</Text>
-                                <Text style={styles.desc}>{item.description}</Text>
-                            </View>
-                        </View>
-                    </View>
-                </Pressable>
-            </Animated.View>
-        </GestureDetector>
+                <View style={[styles.radio, selected && styles.radioSelected]}>
+                    {selected && <Check color={COLORS.white} size={13} strokeWidth={3} />}
+                </View>
+            </Pressable>
+        </Animated.View>
     );
 });
 
@@ -154,56 +140,92 @@ const SelectAccount = () => {
     const navigation = useNavigation<NavProp>();
     const [selected, setSelected] = useState<AccountType | null>(null);
 
+    const buttonScale = useSharedValue(1);
+    const buttonAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: buttonScale.value }],
+        opacity: withTiming(selected ? 1 : 0.45, { duration: 200 }),
+    }));
+
+    const handleSelect = useCallback((type: AccountType) => {
+        setSelected(type);
+    }, []);
+
     const handleContinue = useCallback(() => {
         if (!selected) return;
         navigation.navigate('Login', { isDriver: selected === 'Driver' });
-    }, [selected]);
+    }, [selected, navigation]);
+
+    const activeGradient = selected
+        ? ACCOUNTS.find(a => a.type === selected)!.gradient
+        : (['#2A2E45', '#2A2E45'] as const);
 
     return (
         <View style={styles.root}>
-            <StatusBar barStyle="light-content" translucent />
-
-            <ImageBackground
-                source={{ uri: 'https://images.pexels.com/photos/1427107/pexels-photo-1427107.jpeg' }}
-                style={StyleSheet.absoluteFillObject}
-                blurRadius={18}
-            />
+            <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
             <LinearGradient
-                colors={['rgba(10,12,50,0.6)', 'rgba(10,12,50,0.95)']}
+                colors={[COLORS.bgTop, COLORS.bgBottom]}
                 style={StyleSheet.absoluteFillObject}
             />
 
-            <View style={styles.header}>
-                <Text style={styles.brand}>Kalanabha Logistics</Text>
-                <Text style={styles.tagline}>Move Anything, Anywhere</Text>
-            </View>
-
-            <View>
-                {ACCOUNTS.map(item => (
-                    <AccountCard
-                        key={item.type}
-                        item={item}
-                        selected={selected === item.type}
-                        onPress={() => setSelected(item.type)}
-                    />
-                ))}
-            </View>
-
-            <Pressable disabled={!selected} onPress={handleContinue}>
-                <LinearGradient
-                    colors={
-                        selected
-                            ? ACCOUNTS.find(a => a.type === selected)!.gradient
-                            : ['#444', '#666']
-                    }
-                    style={[styles.button, { opacity: selected ? 1 : 0.5 }]}
+            <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+                <Animated.View
+                    entering={FadeInUp.duration(500).springify().damping(18)}
+                    style={styles.header}
                 >
-                    <Text style={styles.buttonText}>
-                        Continue {selected ? `as ${selected}` : ''}
-                    </Text>
-                </LinearGradient>
-            </Pressable>
+                    <Text style={styles.brand}>Kalanabha Logistics</Text>
+                    <Text style={styles.tagline}>Move Anything, Anywhere</Text>
+                </Animated.View>
+
+                <View style={styles.content}>
+                    <Animated.Text
+                        entering={FadeInDown.delay(80).duration(400)}
+                        style={styles.prompt}
+                    >
+                        How will you be using the app?
+                    </Animated.Text>
+
+                    <View style={styles.cardList}>
+                        {ACCOUNTS.map((item, index) => (
+                            <AccountCard
+                                key={item.type}
+                                item={item}
+                                index={index}
+                                selected={selected === item.type}
+                                onPress={() => handleSelect(item.type)}
+                            />
+                        ))}
+                    </View>
+                </View>
+
+                <Animated.View entering={FadeInUp.delay(260).duration(450)}>
+                    <Pressable
+                        disabled={!selected}
+                        onPress={handleContinue}
+                        onPressIn={() => {
+                            if (selected) buttonScale.value = withSpring(0.98, { damping: 18, stiffness: 260 });
+                        }}
+                        onPressOut={() => {
+                            buttonScale.value = withSpring(1, { damping: 18, stiffness: 260 });
+                        }}
+                        hitSlop={8}
+                    >
+                        <Animated.View style={buttonAnimatedStyle}>
+                            <LinearGradient
+                                colors={activeGradient}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.button}
+                            >
+                                <Text style={styles.buttonText}>
+                                    {selected ? `Continue as ${selected}` : 'Select an account type'}
+                                </Text>
+                                {selected && <ChevronRight color={COLORS.white} size={18} strokeWidth={2.5} />}
+                            </LinearGradient>
+                        </Animated.View>
+                    </Pressable>
+                </Animated.View>
+            </SafeAreaView>
         </View>
     );
 };
@@ -212,61 +234,80 @@ export default SelectAccount;
 
 // ───────────────── STYLES ─────────────────
 const styles = StyleSheet.create({
-    root: {
+    root: { flex: 1, backgroundColor: COLORS.bgBottom },
+    safe: {
         flex: 1,
+        paddingHorizontal: SPACING.xl,
         justifyContent: 'space-between',
-        padding: SPACING.xl,
     },
 
     header: {
-        marginTop: Platform.OS === 'ios' ? 90 : 70,
         alignItems: 'center',
+        marginTop: Platform.OS === 'ios' ? SPACING.xl : SPACING.xxl,
+        marginBottom: SPACING.lg,
+    },
+    brand: { ...TYPOGRAPHY.h1, color: COLORS.white, letterSpacing: 0.2 },
+    tagline: { ...TYPOGRAPHY.tagline, color: COLORS.muted, marginTop: 4 },
+
+    content: { flex: 1, justifyContent: 'center' },
+    prompt: {
+        ...TYPOGRAPHY.h2,
+        color: COLORS.white,
+        marginBottom: SPACING.lg,
+        textAlign: 'center',
     },
 
-    brand: { ...TYPOGRAPHY.h1, color: '#fff' },
-    tagline: { ...TYPOGRAPHY.body, color: '#aaa' },
-
-    card: {
-        marginBottom: SPACING.md,
-    },
+    cardList: { gap: SPACING.md },
 
     cardInner: {
-        borderRadius: 18,
-        padding: SPACING.lg,
-        overflow: 'hidden',
-    },
-
-    selected: {
-        borderWidth: 1,
-        borderColor: '#fff',
-    },
-
-    bg: {
-        ...StyleSheet.absoluteFillObject,
-        opacity: 0.25,
-    },
-
-    row: {
         flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 18,
+        padding: SPACING.md,
+        backgroundColor: COLORS.card,
+        borderWidth: 1,
+        borderColor: COLORS.cardBorder,
         gap: SPACING.md,
+    },
+    cardInnerSelected: {
+        borderColor: 'rgba(255,255,255,0.55)',
+        backgroundColor: 'rgba(255,255,255,0.10)',
     },
 
     icon: {
-        width: 52,
-        height: 52,
+        width: 50,
+        height: 50,
         borderRadius: 14,
         justifyContent: 'center',
         alignItems: 'center',
     },
 
-    title: { ...TYPOGRAPHY.h2, color: '#fff' },
-    desc: { ...TYPOGRAPHY.body, color: '#ccc' },
+    cardText: { flex: 1, gap: 3 },
+    title: { ...TYPOGRAPHY.h2, color: COLORS.white },
+    desc: { ...TYPOGRAPHY.body, color: COLORS.faint, lineHeight: 17 },
 
-    button: {
-        borderRadius: 16,
-        paddingVertical: 16,
+    radio: {
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        borderWidth: 1.5,
+        borderColor: 'rgba(255,255,255,0.3)',
         alignItems: 'center',
+        justifyContent: 'center',
+    },
+    radioSelected: {
+        borderColor: 'transparent',
+        backgroundColor: '#22C55E',
     },
 
-    buttonText: { ...TYPOGRAPHY.button, color: '#fff' },
+    button: {
+        flexDirection: 'row',
+        borderRadius: 16,
+        paddingVertical: 17,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        marginBottom: SPACING.sm,
+    },
+    buttonText: { ...TYPOGRAPHY.button, color: COLORS.white },
 });

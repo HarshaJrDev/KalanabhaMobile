@@ -37,15 +37,15 @@ import AppButton from '../../components/AppButton';
 import { CustomLoader } from '../../components/CustomLoader';
 import { useLogin } from '../../hooks/useLogin';
 
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
 import messaging from '@react-native-firebase/messaging';
+import { apiClient } from '../../src/api/client';
 
 import { RootStackParamList } from '../navigation/types';
-import { setToken, setUser } from '../../src/services/storage';
+import type { StoredUser } from '../../src/services/storage';
 
-// ─── FCM token helper (inline — no separate util file needed) ─────────────────
-const saveFCMToken = async (uid: string, role: 'customer' | 'driver') => {
+// ─── FCM token registration (backend, not Firestore) ──────────────────────────
+// Mirrors utils/cm.ts::registerFCMToken — PATCH /users/me/fcm-token.
+const saveFCMToken = async () => {
     try {
         const status = await messaging().requestPermission();
         const enabled =
@@ -54,14 +54,16 @@ const saveFCMToken = async (uid: string, role: 'customer' | 'driver') => {
         if (!enabled) return;
         const token = await messaging().getToken();
         if (!token) return;
-        await firestore()
-            .collection('users')
-            .doc(uid)
-            .set({ fcmToken: token, role, updatedAt: firestore.FieldValue.serverTimestamp() }, { merge: true });
+        await apiClient.patch('/users/me/fcm-token', { fcmToken: token });
     } catch (e) {
         // Non-critical — silently ignore
     }
 };
+
+// Backend role is the source of truth for where to land the user —
+// route.params.isDriver only decides which copy/UI this screen shows.
+const homeRouteForRole = (role: StoredUser['role']) =>
+    role === 'DRIVER' ? 'DriverTabs' : 'Home';
 
 // ─── Social login options (customer only) ────────────────────────────────────
 const SOCIAL_LOGINS = [
@@ -118,68 +120,22 @@ const Login = () => {
         mutate(
             { email: email.trim().toLowerCase(), password: password.trim() },
             {
-                onSuccess: async () => {
-                    try {
-                        const user = auth().currentUser;
+                onSuccess: async (user) => {
+                    // FCM registration is best-effort and shouldn't block navigation.
+                    saveFCMToken();
 
-                        if (!user?.uid) {
-                            throw new Error('Invalid user session');
-                        }
-
-                        const role = isDriver ? 'driver' : 'customer';
-
-                        // ✅ 1. Persist user in MMKV (CRITICAL)
-                        setToken(user.uid); // session key (temporary approach)
-
-                        setUser({
-                            uid: user.uid,
-                            email: user.email ?? '',
-                        });
-
-                        // ✅ 2. Sync role to Firestore
-                        await firestore()
-                            .collection('users')
-                            .doc(user.uid)
-                            .set(
-                                {
-                                    role,
-                                    updatedAt: firestore.FieldValue.serverTimestamp(),
-                                },
-                                { merge: true }
-                            );
-
-                        // ✅ 3. Register FCM
-                        await saveFCMToken(user.uid, role);
-
-                        // ✅ 4. Reset navigation (clean stack)
-                        navigation.reset({
-                            index: 0,
-                            routes: [
-                                {
-                                    name: role === 'driver' ? 'DriverTabs' : 'Home',
-                                },
-                            ],
-                        });
-                    } catch (err) {
-                        console.error('Login post-process error:', err);
-
-                        // fallback navigation
-                        navigation.reset({
-                            index: 0,
-                            routes: [{ name: isDriver ? 'DriverTabs' : 'Home' }],
-                        });
-                    }
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: homeRouteForRole(user.role) as never }],
+                    });
                 },
 
-                onError: (err: Error) => {
-                    const msg =
-                        err.message.includes('password')
-                            ? 'Incorrect password. Please try again.'
-                            : err.message.includes('user-not-found') || err.message.includes('no user')
-                                ? 'No account found with this email.'
-                                : err.message;
-
-                    setError(msg);
+                onError: (err) => {
+                    // ApiError.message already carries the backend's message
+                    // (AuthService throws "Invalid credentials" for both a
+                    // wrong email and a wrong password, matching the backend
+                    // deliberately not distinguishing the two).
+                    setError(err.message);
                 },
 
                 onSettled: () => setLoading(false),

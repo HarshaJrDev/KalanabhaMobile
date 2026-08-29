@@ -1,9 +1,13 @@
 // utils/fcm.ts
 import messaging from '@react-native-firebase/messaging';
-import firestore from '@react-native-firebase/firestore';
-import auth from '@react-native-firebase/auth';
+import { apiClient } from '../src/api/client';
+import { getToken as getAccessToken } from '../src/services/storage';
 
-export const registerFCMToken = async (role: 'customer' | 'driver') => {
+// Mirrors PATCH /users/me/fcm-token — kalanabhaBackend UsersController.
+// `role` is unused server-side now (the backend already knows the caller's
+// role from their JWT); kept in the signature so call sites don't need to
+// change.
+export const registerFCMToken = async (_role: 'customer' | 'driver') => {
     try {
         const authStatus = await messaging().requestPermission();
         const enabled =
@@ -11,24 +15,12 @@ export const registerFCMToken = async (role: 'customer' | 'driver') => {
             authStatus === messaging.AuthorizationStatus.PROVISIONAL;
         if (!enabled) return;
 
-        const token = await messaging().getToken();
-        const user = auth().currentUser;
-        if (!user || !token) return;
+        const fcmToken = await messaging().getToken();
+        if (!fcmToken || !getAccessToken()) return;
 
-        await firestore()
-            .collection('users')
-            .doc(user.uid)
-            .set(
-                {
-                    fcmToken: token,
-                    role,
-                    isOnline: true,
-                    updatedAt: firestore.FieldValue.serverTimestamp(),
-                },
-                { merge: true }
-            );
+        await apiClient.patch('/users/me/fcm-token', { fcmToken });
 
-        console.log('[FCM] Token registered:', token);
+        console.log('[FCM] Token registered:', fcmToken);
     } catch (e) {
         console.error('[FCM] registerFCMToken error:', e);
     }

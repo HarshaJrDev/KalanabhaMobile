@@ -1,8 +1,8 @@
 // components/DriverHeader.tsx
 import React from 'react';
 import { View, Text, StyleSheet, Switch, ViewStyle } from 'react-native';
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
+import { useAuthStore } from '../features/store/authStore';
+import { apiClient } from '../src/api/client';
 
 interface DriverHeaderProps {
     earnings: number;
@@ -17,14 +17,16 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
     isOnline,
     style,
 }) => {
-    const user = auth().currentUser;
+    const user = useAuthStore((s) => s.user);
 
+    // PATCH /users/me/online-status — kalanabhaBackend UsersController
+    // (driver-role guarded server-side).
     const toggleOnline = async (value: boolean) => {
-        if (!user) return;
-        await firestore().collection('users').doc(user.uid).set(
-            { isOnline: value, updatedAt: firestore.FieldValue.serverTimestamp() },
-            { merge: true }
-        );
+        try {
+            await apiClient.patch('/users/me/online-status', { isOnline: value });
+        } catch (e) {
+            console.error('[DriverHeader] toggleOnline error:', e);
+        }
     };
 
     return (

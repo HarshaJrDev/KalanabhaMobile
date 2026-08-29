@@ -1,86 +1,40 @@
-// src/hooks/useLogin.ts
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { login } from '../features/auth/api/auth.api';
+import type { LoginPayload } from '../features/auth/types';
+import { getMe } from '../features/users/api/users.api';
+import { useAuthStore } from '../features/store/authStore';
+import { setRefreshToken, setToken, type StoredUser } from '../src/services/storage';
+import { ApiError } from '../src/api/types';
+import { meQueryKey } from './useMe';
 
-import { useMutation } from '@tanstack/react-query';
-import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
+// Screen -> useLogin -> auth.api/users.api -> POST /auth/login + GET /users/me
+// -> typed StoredUser -> authStore + MMKV + query cache -> UI
+const loginAndFetchProfile = async (payload: LoginPayload): Promise<StoredUser> => {
+    const tokens = await login(payload);
 
-// --------------------
-// Types
-// --------------------
-export interface LoginPayload {
-    email: string;
-    password: string;
-}
+    // Tokens must be persisted before calling /users/me — the request
+    // interceptor reads the access token straight out of storage.
+    setToken(tokens.accessToken);
+    setRefreshToken(tokens.refreshToken);
 
-export interface LoginResponse {
-    user: FirebaseAuthTypes.User;
-}
-
-// --------------------
-// Error Normalization
-// --------------------
-class AuthError extends Error {
-    constructor(message: string) {
-        super(message);
-        this.name = 'AuthError';
-    }
-}
-
-const normalizeFirebaseError = (error: unknown): AuthError => {
-    const err = error as { code?: string; message?: string };
-
-    switch (err.code) {
-        case 'auth/invalid-email':
-            return new AuthError('Invalid email format');
-        case 'auth/user-not-found':
-            return new AuthError('User not found');
-        case 'auth/wrong-password':
-            return new AuthError('Incorrect password');
-        case 'auth/too-many-requests':
-            return new AuthError('Too many attempts. Try again later');
-        default:
-            return new AuthError(err.message || 'Login failed');
-    }
+    return getMe();
 };
 
-// --------------------
-// API Layer
-// --------------------
-const loginUser = async (
-    payload: LoginPayload,
-    signal?: AbortSignal
-): Promise<LoginResponse> => {
-    if (signal?.aborted) {
-        throw new AuthError('Request cancelled');
-    }
-
-    try {
-        const response = await auth().signInWithEmailAndPassword(
-            payload.email,
-            payload.password
-        );
-
-        if (!response.user) {
-            throw new AuthError('Authentication failed');
-        }
-
-        return { user: response.user };
-    } catch (error) {
-        throw normalizeFirebaseError(error);
-    }
-};
-
-// --------------------
-// Hook
-// --------------------
 export const useLogin = () => {
-    return useMutation<LoginResponse, AuthError, LoginPayload>({
-        mutationFn: ({ email, password }) => loginUser({ email, password }),
+    const setUser = useAuthStore((s) => s.setUser);
+    const queryClient = useQueryClient();
 
-        retry: 1, // avoid aggressive retries on auth
+    return useMutation<StoredUser, ApiError, LoginPayload>({
+        mutationFn: loginAndFetchProfile,
+        retry: false,
         networkMode: 'online',
 
+        onSuccess: (user) => {
+            setUser(user);
+            queryClient.setQueryData(meQueryKey, user);
+        },
+
         onError: (error) => {
-            // Centralized logging (Flipper compatible)
             if (__DEV__) {
                 console.error('[useLogin]', error.message);
             }

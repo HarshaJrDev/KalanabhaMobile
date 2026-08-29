@@ -1,12 +1,12 @@
-// hooks/useLogout.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import auth from '@react-native-firebase/auth';
+import { useNavigation } from '@react-navigation/native';
+import { Alert } from 'react-native';
+import { logout as logoutRequest } from '../features/auth/api/auth.api';
 import { useAuthStore } from '../features/store/authStore';
 import { clearAuth } from '../src/services/storage';
-import { useNavigation } from '@react-navigation/native';
-import { StackActions } from '@react-navigation/native';
-import { Alert } from 'react-native';
 
+// Screen -> useLogout -> auth.api -> POST /auth/logout (revokes refresh
+// tokens server-side) -> clear MMKV + store + cache -> UI
 export const useLogout = () => {
     const clearUser = useAuthStore((s) => s.logout);
     const navigation = useNavigation();
@@ -15,32 +15,29 @@ export const useLogout = () => {
     return useMutation({
         mutationFn: async () => {
             try {
-                // 1. Firebase sign out
-                await auth().signOut();
-
-                // 2. Clear local storage
-                clearAuth(); // Tokens, user, onboarding
-
-                // 3. Clear Zustand store
-                clearUser();
-
-                // 4. Clear React Query cache
-                await queryClient.clear(); // Removes ALL queries (user data, etc.)
-
-                console.log('✅ Logout complete');
+                await logoutRequest();
             } catch (error) {
-                console.error('❌ Logout error:', error);
-                throw error;
+                // Best-effort: even if the server call fails (e.g. token
+                // already expired), still clear local session below so the
+                // user isn't stuck logged in on-device.
+                if (__DEV__) {
+                    console.warn('[useLogout] server logout failed', error);
+                }
             }
+
+            clearAuth();
+            clearUser();
+            await queryClient.clear();
         },
 
         onSuccess: () => {
-            // 5. Reset navigation to Login (clears entire stack)
-            navigation.navigate('SelectAccount')
+            navigation.navigate('SelectAccount' as never);
         },
 
         onError: (error) => {
-            console.error('Logout failed:', error);
+            if (__DEV__) {
+                console.error('[useLogout]', error);
+            }
             Alert.alert('Logout Error', 'Please try again');
         },
     });

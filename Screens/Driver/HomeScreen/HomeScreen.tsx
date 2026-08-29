@@ -11,8 +11,8 @@ import {
     TouchableOpacity,
     Alert,
 } from 'react-native';
-import firestore from '@react-native-firebase/firestore';
-import auth from '@react-native-firebase/auth';
+import { useSearchingShipments } from '../../../features/shipments/hooks';
+import { useAuthStore } from '../../../features/store/authStore';
 import Animated, {
     FadeIn,
     FadeOut,
@@ -36,15 +36,51 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface HomeScreenProps { }
 
+// Adapts features/shipments' mapped Shipment (shipment/types.ts shape) to
+// this screen's LogisticsItem, which LogisticsCardList renders.
+const toLogisticsItem = (s: import('../../../shipment/types').Shipment): LogisticsItem => ({
+    id: s.id,
+    goodsType: s.goodsType,
+    weightKg: s.weightKg,
+    pickup: s.pickup,
+    drop: s.drop,
+    price: s.price,
+    distanceKm: s.distanceKm,
+    status: s.status,
+    createdAt: s.createdAt,
+    driverName: s.dispatch?.driverName,
+    driverRating: s.dispatch?.driverRating,
+    driverId: s.dispatch?.driverId ?? '',
+    driverPhone: s.dispatch?.driverPhone,
+    customerName: s.sender?.name ?? 'Customer',
+    customerPhone: s.sender?.phone,
+});
+
 const HomeScreen: React.FC<HomeScreenProps> = () => {
-    // ━━━━━ States
-    const [shipments, setShipments] = useState<LogisticsItem[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [todayEarnings, setTodayEarnings] = useState(0);
-    const [deliveredToday, setDeliveredToday] = useState(0);
-    const [user, setUser] = useState<any>(null);
+    // Screen -> hook -> shipments.api -> GET /shipments/searching -> cache -> UI
+    const user = useAuthStore((s) => s.user);
+    const {
+        data: searchingShipments,
+        isLoading: loading,
+        isRefetching: refreshing,
+        error: shipmentsError,
+        refetch: refetchShipments,
+    } = useSearchingShipments();
+
+    const shipments = useMemo<LogisticsItem[]>(
+        () => (searchingShipments ?? []).map(toLogisticsItem),
+        [searchingShipments],
+    );
+    const error = shipmentsError ? shipmentsError.message : null;
+
+    // NOTE: kalanabhaBackend has no endpoint returning "shipments currently
+    // assigned to me" for a driver (GET /shipments/mine is customer-scoped,
+    // GET /shipments/searching is the unassigned pool only) — so today's
+    // earnings/delivered-count can't be computed client-side any more the
+    // way the old all-shipments Firestore listener did. Left at 0 pending
+    // a driver-scoped shipments endpoint, rather than inventing one here.
+    const todayEarnings = 0;
+    const deliveredToday = 0;
     const [isOnline, setIsOnline] = useState(true);
 
     // ━━━━━ Animations
@@ -62,10 +98,16 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     // Rapido-style live tracking: only pings location while this driver has
     // a shipment actively accepted/in_transit — not just because they're
     // online, to avoid draining battery for idle drivers browsing orders.
+    // NOTE: `shipments` here is the SEARCHING pool only (see above), which
+    // by definition never contains a shipment already assigned to this
+    // driver — so this always evaluates false until a driver-scoped
+    // "my active delivery" endpoint exists on the backend. Left as `isOnline`
+    // is not a substitute (would ping even while idle-browsing), so this
+    // stays off rather than pinging incorrectly.
     const hasActiveDelivery = useMemo(
         () =>
             shipments.some(
-                s => s.driverId === user?.uid && (s.status === 'accepted' || s.status === 'in_transit')
+                s => s.driverId === user?.id && (s.status === 'accepted' || s.status === 'in_transit')
             ),
         [shipments, user]
     );
@@ -83,167 +125,16 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
         });
         return () => unsub();
     }, []);
-    // ━━━━━ Firebase Real-time Subscription
-    useEffect(() => {
-        const currentUser = auth().currentUser;
-
-        if (!currentUser) {
-            setLoading(false);
-            setError('Not authenticated');
-            return;
-        }
-
-        setUser(currentUser);
-        setError(null);
-
-        try {
-            const q = firestore()
-                .collection('shipments')
-                .where('status', 'in', ['searching', 'accepted', 'in_transit'])
-                .orderBy('createdAt', 'desc')
-                .limit(50);
-            const unsubscribeShipments = q.onSnapshot(
-                (snapshot) => {
-                    if (!snapshot?.docs) {
-                        setShipments([]);
-                        setLoading(false);
-                        return;
-                    }
-
-                    const data: LogisticsItem[] = [];
-                    let earnings = 0;
-                    let deliveredCount = 0;
-
-                    snapshot.docs.forEach((doc) => {
-                        try {
-                            const shipmentData = doc.data();
-
-                            if (!shipmentData || typeof shipmentData !== 'object') {
-                                return;
-                            }
-
-                            const shipment: LogisticsItem = {
-                                id: doc.id,
-
-                                goodsType:
-                                    shipmentData.goodsType ??
-                                    shipmentData.package?.type ??
-                                    'Unknown',
-
-                                weightKg: safeNumber(
-                                    shipmentData.package?.weight ?? shipmentData.weightKg
-                                ),
-
-                                pickup: shipmentData.pickup ?? {
-                                    address:
-                                        shipmentData.sender?.address ??
-                                        shipmentData.from ??
-                                        'Unknown',
-                                    lat: safeNumber(shipmentData.sender?.lat),
-                                    lng: safeNumber(shipmentData.sender?.lng),
-                                },
-
-                                drop: shipmentData.drop ?? {
-                                    address:
-                                        shipmentData.receiver?.address ??
-                                        shipmentData.to ??
-                                        'Unknown',
-                                    lat: safeNumber(shipmentData.receiver?.lat),
-                                    lng: safeNumber(shipmentData.receiver?.lng),
-                                },
-
-                                price: safeNumber(shipmentData.price),
-                                distanceKm: safeNumber(shipmentData.distanceKm),
-
-                                status: shipmentData.status ?? 'pending',
-
-                                createdAt:
-                                    parseFirestoreDate(shipmentData.createdAt) ??
-                                    new Date().toISOString(),
-
-                                expiresAt: parseFirestoreDate(shipmentData.expiresAt),
-
-                                etaMinutes: safeNumber(
-                                    shipmentData.etaMinutes,
-                                    Math.random() * 45 + 10
-                                ),
-
-                                driverName:
-                                    shipmentData.dispatch?.driverName ?? 'Unassigned',
-
-                                driverId: shipmentData.dispatch?.driverId,
-                                driverRating: safeNumber(
-                                    shipmentData.dispatch?.driverRating,
-                                    4.8
-                                ),
-                                driverPhone: shipmentData.dispatch?.driverPhone,
-
-                                customerName:
-                                    shipmentData.sender?.name ??
-                                    shipmentData.userMeta?.displayName ??
-                                    'Customer',
-
-                                customerPhone:
-                                    shipmentData.sender?.phone ??
-                                    shipmentData.userMeta?.phoneNumber,
-                            };
-
-                            data.push(shipment);
-
-                            if (
-                                shipmentData.dispatch?.driverId ===
-                                currentUser.uid
-                            ) {
-                                earnings += shipmentData.price ?? 0;
-
-                                if (shipment.status === 'delivered') {
-                                    deliveredCount++;
-                                }
-                            }
-                        } catch (docError) {
-                            console.error(
-                                '[HomeScreen] Error processing document:',
-                                docError
-                            );
-                        }
-                    });
-
-                    setShipments(data);
-                    setTodayEarnings(earnings);
-                    setDeliveredToday(deliveredCount);
-                    setLoading(false);
-                    setError(null);
-                },
-                (error) => {
-                    console.error('[HomeScreen] Firestore error:', error);
-                    setError(error?.message || 'Failed to load shipments');
-                    setLoading(false);
-                    setShipments([]);
-                }
-            );
-
-            return () => unsubscribeShipments();
-        } catch (err) {
-            console.error('[HomeScreen] Setup error:', err);
-            setError('Failed to initialize');
-            setLoading(false);
-        }
-    }, []);
 
     // ━━━━━ Pull to Refresh
-    const onRefresh = useCallback(async () => {
-        setRefreshing(true);
-        // Simulate refresh delay
-        setTimeout(() => setRefreshing(false), 1200);
-    }, []);
+    const onRefresh = useCallback(() => {
+        refetchShipments();
+    }, [refetchShipments]);
 
     // ━━━━━ Retry handler
     const onRetry = useCallback(() => {
-        setError(null);
-        setLoading(true);
-        // This will re-trigger the useEffect
-        window.location.reload?.();
-    }, []);
+        refetchShipments();
+    }, [refetchShipments]);
 
     // ━━━━━ Animated styles
     const headerAnimStyle = useAnimatedStyle(() => ({
