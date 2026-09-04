@@ -14,12 +14,21 @@ export interface FareEstimate {
 
 const IDLE: FareEstimate = { loading: false, price: null, distanceKm: null, pickup: null, drop: null, error: null };
 
+export interface KnownCoords {
+    lat: number;
+    lng: number;
+}
+
 // Real, distance-based fare estimate (Rapido-style "see price before you
-// book"). Geocodes the typed pickup/drop addresses (the form only captures
-// free text, no coordinates) via Nominatim, then prices them through the
-// same POST /shipments/quote endpoint (kalanabhaBackend PricingService)
-// that the actual booking flow uses server-side — not a separate,
-// client-computed price that could drift from what the backend charges.
+// book"). Geocodes the typed pickup/drop addresses (via Nominatim) unless
+// the caller already knows real coordinates for them — addOrders.tsx's
+// place picker (GET /settings/service-areas, admin-managed) supplies known
+// center coordinates for its listed localities, which skips geocoding (and
+// the failure mode it has: an address Nominatim can't resolve, or a flaky
+// network call) entirely for those. Either way, the price itself always comes from the same
+// POST /shipments/quote endpoint (kalanabhaBackend PricingService) the
+// actual booking flow uses server-side — never a separate, client-computed
+// price that could drift from what the backend charges.
 //
 // Previously read pricing from a Firestore `vehicleConfigs` collection that
 // nothing populates any more (vehicle pricing lives in Postgres since the
@@ -31,6 +40,8 @@ export const useFareEstimate = (
     dropAddress: string,
     vehicleType: string,
     serviceType: string,
+    pickupCoords?: KnownCoords | null,
+    dropCoords?: KnownCoords | null,
 ): FareEstimate => {
     const [estimate, setEstimate] = useState<FareEstimate>(IDLE);
     const requestId = useRef(0);
@@ -47,8 +58,8 @@ export const useFareEstimate = (
         const run = async () => {
             try {
                 const [pickup, drop] = await Promise.all([
-                    forwardGeocode(pickupAddress),
-                    forwardGeocode(dropAddress),
+                    pickupCoords ? Promise.resolve(pickupCoords) : forwardGeocode(pickupAddress),
+                    dropCoords ? Promise.resolve(dropCoords) : forwardGeocode(dropAddress),
                 ]);
 
                 if (currentRequest !== requestId.current) return;
@@ -78,7 +89,7 @@ export const useFareEstimate = (
         };
 
         run();
-    }, [pickupAddress, dropAddress, vehicleType, serviceType]);
+    }, [pickupAddress, dropAddress, vehicleType, serviceType, pickupCoords?.lat, pickupCoords?.lng, dropCoords?.lat, dropCoords?.lng]);
 
     return estimate;
 };
