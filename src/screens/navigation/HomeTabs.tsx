@@ -1,9 +1,7 @@
-import React, { memo, useMemo } from 'react';
-import { StyleSheet } from 'react-native';
+import React, { memo } from 'react';
 import {
     createBottomTabNavigator,
 } from '@react-navigation/bottom-tabs';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Animated, {
     useAnimatedStyle,
@@ -18,6 +16,7 @@ import Shipment from '../HomeScreens/shipment';
 import Profile from '../HomeScreens/Profile';
 import AddOrders from '../HomeScreens/addOrders';
 import { RootStackParamList } from './types';
+import { useTabBarStyle } from './useTabBarStyle';
 
 
 
@@ -67,15 +66,7 @@ const TabIcon = memo(
 
 const HomeTabs: React.FC = () => {
     const { colors } = useAppTheme();
-    // The device's own on-screen nav bar (Android's back/home/recents, or
-    // the iOS home indicator) sits in this inset — without adding it to the
-    // tab bar's height/padding, that system chrome visually overlaps this
-    // custom tab bar instead of sitting below it (the "3 buttons
-    // overlapping" bug: the OS nav buttons were drawn on top of our own
-    // icons because the bar was a fixed 70px with no room reserved for
-    // them).
-    const insets = useSafeAreaInsets();
-    const styles = useMemo(() => makeStyles(colors, insets.bottom), [colors, insets.bottom]);
+    const tabBarStyle = useTabBarStyle(colors.SURFACE);
 
     return (
         <Tab.Navigator
@@ -84,7 +75,7 @@ const HomeTabs: React.FC = () => {
                 tabBarShowLabel: false,
                 tabBarActiveTintColor: colors.PRIMARY,
                 tabBarInactiveTintColor: colors.GRAY,
-                tabBarStyle: styles.tabBar,
+                tabBarStyle,
 
                 tabBarIcon: ({ color, size, focused }) => {
                     const Icon = ICONS[route.name as TabName];
@@ -111,16 +102,3 @@ const HomeTabs: React.FC = () => {
 };
 
 export default HomeTabs;
-
-/* ----------------------------- STYLES ----------------------------- */
-
-const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], bottomInset: number) => StyleSheet.create({
-    tabBar: {
-        height: 60 + bottomInset,
-        paddingBottom: Math.max(bottomInset, 10),
-        paddingTop: 10,
-        backgroundColor: colors.SURFACE,
-        borderTopWidth: 0,
-        elevation: 8,
-    },
-});

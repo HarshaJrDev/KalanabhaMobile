@@ -43,6 +43,7 @@ import {
 } from '@features/shipments/api/shipments.api';
 import { useChatMessages, useChatSocket, useSendMessage } from '@features/chat/hooks';
 import { normalizeError } from '@utils/error';
+import { useTabBarContentPadding } from '../screens/navigation/useTabBarStyle';
 import { showToast } from '@ui/alert/toastStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -454,6 +455,11 @@ export const LogisticsCardList: React.FC<{ data: LogisticsItem[]; refreshControl
             [isDriver, customerActions, driverActions]
         );
 
+        // Had no bottom padding at all — the last card in this list (used
+        // on every tab-hosted "Nearby Orders"/"My Orders" screen) sat
+        // right behind the bottom tab bar instead of scrolling clear of it.
+        const bottomPadding = useTabBarContentPadding();
+
         return (
             <FlashList
                 data={Array.isArray(data) ? data : []}
@@ -462,6 +468,7 @@ export const LogisticsCardList: React.FC<{ data: LogisticsItem[]; refreshControl
                 // estimatedItemSize={240}
                 showsVerticalScrollIndicator={false}
                 refreshControl={refreshControl}
+                contentContainerStyle={{ paddingBottom: bottomPadding }}
             />
         );
     };

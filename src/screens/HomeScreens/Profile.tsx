@@ -30,6 +30,7 @@ import { useMyShipmentHistory } from '@features/shipments/hooks';
 import { useAuthStore } from '@features/store/authStore';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
+import { useTabBarContentPadding } from '../navigation/useTabBarStyle';
 import AppTextInput from '../../components/ui/AppTextInput';
 import AppButton from '../../components/ui/AppButton';
 import { showToast } from '@ui/alert/toastStore';
@@ -44,6 +45,10 @@ const ProfileScreen = () => {
     const navigation = useNavigation();
     const user = useAuthStore((s) => s.user); // From Zustand
     const [editVisible, setEditVisible] = useState(false);
+    // This screen lives under the bottom tab bar (HomeTabs.tsx "Profile")
+    // — the menu ScrollView had no bottom padding at all, so the last
+    // menu item (Logout) sat right behind the bar.
+    const tabBarPadding = useTabBarContentPadding();
 
     // Real stats — GET /shipments/mine/history (every shipment this
     // customer has ever made, any status). Was hardcoded (102/78) before.
@@ -151,7 +156,11 @@ const ProfileScreen = () => {
             </View>
 
             {/* Menu List */}
-            <ScrollView style={styles.menuScroll} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                style={styles.menuScroll}
+                contentContainerStyle={{ paddingBottom: tabBarPadding }}
+                showsVerticalScrollIndicator={false}
+            >
                 {menuItems.map((item, index) => (
                     <TouchableOpacity
                         key={index}
