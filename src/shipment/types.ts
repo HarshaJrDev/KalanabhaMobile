@@ -80,6 +80,10 @@ export interface Shipment {
     status: ShipmentStatus;
     dispatch: DispatchInfo | null;
 
+    // 'PARCEL' (default) | 'HOUSE_SHIFTING' — Porter-style movers booking.
+    category: string;
+    helpersCount: number;
+
     // Not returned by kalanabhaBackend (no per-shipment customer snapshot
     // endpoint) — only ever populated when parsed straight from a Firestore
     // shipment doc via utils/parsers.ts::mapShipment.

@@ -76,6 +76,8 @@ const toLogisticsItem = (s: import('@shipment/types').Shipment): LogisticsItem =
     driverPhone: s.dispatch?.driverPhone,
     customerName: s.sender?.name ?? 'Customer',
     customerPhone: s.sender?.phone,
+    category: s.category,
+    helpersCount: s.helpersCount,
 });
 
 const HomeScreen: React.FC<HomeScreenProps> = () => {
@@ -324,7 +326,9 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                 {showIncomingCard && incomingRequest && (
                     <Animated.View entering={FadeIn} style={styles.incomingCard}>
                         <View style={styles.incomingHeaderRow}>
-                            <Text style={styles.incomingHeaderText}>INCOMING LOAD REQUEST</Text>
+                            <Text style={styles.incomingHeaderText}>
+                                {incomingRequest.category === 'HOUSE_SHIFTING' ? 'INCOMING MOVE REQUEST' : 'INCOMING LOAD REQUEST'}
+                            </Text>
                             <TouchableOpacity onPress={() => setDismissedIncomingId(incomingRequest.id)} hitSlop={8}>
                                 <X size={16} color="#9CA3AF" />
                             </TouchableOpacity>
@@ -364,9 +368,18 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                         </View>
 
                         <View style={styles.incomingVehicleRow}>
-                            <Text style={styles.incomingVehicleText}>
-                                {incomingRequest.vehicleType} · Up to {incomingRequest.package?.weight ?? incomingRequest.weightKg} kg
-                            </Text>
+                            {incomingRequest.category === 'HOUSE_SHIFTING' ? (
+                                // No real weight for a house move (never measured) —
+                                // showing "Up to 0 kg" would read as a bug. Helper
+                                // count is the real number this job actually carries.
+                                <Text style={styles.incomingVehicleText}>
+                                    {incomingRequest.vehicleType} · {incomingRequest.helpersCount} helper{incomingRequest.helpersCount === 1 ? '' : 's'} needed
+                                </Text>
+                            ) : (
+                                <Text style={styles.incomingVehicleText}>
+                                    {incomingRequest.vehicleType} · Up to {incomingRequest.package?.weight ?? incomingRequest.weightKg} kg
+                                </Text>
+                            )}
                             <Text style={styles.incomingPackageText} numberOfLines={1}>
                                 {incomingRequest.package?.category ?? incomingRequest.goodsType}
                             </Text>

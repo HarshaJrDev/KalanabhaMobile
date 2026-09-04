@@ -74,6 +74,9 @@ export interface LogisticsItem {
     expiresAt?: string;
     customerName?: string;
     customerPhone?: string;
+    // 'PARCEL' (default) | 'HOUSE_SHIFTING' — Porter-style movers booking.
+    category?: string;
+    helpersCount?: number;
 }
 
 // Role now comes from the backend-authenticated user (features/store/authStore),
@@ -261,7 +264,12 @@ const LogisticsCard: React.FC<{
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.headerTitle} numberOfLines={1}>
-                                {item.goodsType} • {item.weightKg?.toFixed(1) ?? '0'}kg
+                                {/* House Shifting has no real weight (never
+                                    measured) — showing "0.0kg" there would
+                                    read as a bug, not "not applicable". */}
+                                {item.category === 'HOUSE_SHIFTING'
+                                    ? `${item.goodsType} • ${item.helpersCount ?? 0} helper${item.helpersCount === 1 ? '' : 's'}`
+                                    : `${item.goodsType} • ${item.weightKg?.toFixed(1) ?? '0'}kg`}
                             </Text>
                             <Text style={styles.headerSubtitle} numberOfLines={1}>
                                 {isDriver ? item.customerName : item.driverName}
