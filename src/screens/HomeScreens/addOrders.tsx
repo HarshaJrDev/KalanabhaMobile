@@ -54,6 +54,7 @@ import {
     type LucideIcon,
 } from 'lucide-react-native';
 import { registerFCMToken, setupFCMListeners } from '@utils/cm';
+import { useVehicleConfigs } from '@features/settings/hooks';
 import { useFareEstimate, FareEstimate } from '@location/useFareEstimate';
 import { createShipment } from '@features/shipments/api/shipments.api';
 import { safeNumber } from '@utils/parsers';
@@ -129,7 +130,10 @@ type PackageForm = {
 
 type OrderDetailsForm = {
     serviceType: 'standard' | 'express' | 'same-day';
-    vehicleType: 'bike' | 'van' | 'truck';
+    // Not a fixed union any more — real VehicleConfig rows (admin-managed),
+    // so a type the admin renames/adds/deactivates is picked up here without
+    // a mobile release. See VEHICLE_ICON_BY_NAME below for the icon mapping.
+    vehicleType: string;
     paymentMode: 'prepaid' | 'cod' | 'credit';
     notes: string;
     pickupDate: string;
@@ -190,11 +194,15 @@ const makeServiceTypes = (COLORS: OrderColors): { key: OrderDetailsForm['service
     { key: 'same-day', label: 'Same Day', desc: 'Deliver today', price: '₹349', days: 'Today', color: COLORS.success },
 ];
 
-const VEHICLE_TYPES: { key: OrderDetailsForm['vehicleType']; label: string; icon: LucideIcon; desc: string }[] = [
-    { key: 'bike', label: 'Bike', icon: Bike, desc: 'Up to 10 kg' },
-    { key: 'van', label: 'Van', icon: Car, desc: 'Up to 300 kg' },
-    { key: 'truck', label: 'Truck', icon: Truck, desc: 'Up to 5000 kg' },
-];
+// VehicleConfig.icon is a free-text string set by whichever admin created
+// the row (seen values: "Bike"/"Van"/"Truck"), not a Lucide icon key — maps
+// the real config's `name` to a matching glyph. Same mapping as Home.tsx.
+const VEHICLE_ICON_BY_NAME: Record<string, LucideIcon> = {
+    bike: Bike,
+    van: Car,
+    truck: Truck,
+};
+const vehicleIconFor = (name: string): LucideIcon => VEHICLE_ICON_BY_NAME[name.toLowerCase()] ?? Truck;
 
 const PAYMENT_MODES: { key: OrderDetailsForm['paymentMode']; label: string; icon: LucideIcon }[] = [
     { key: 'prepaid', label: 'Online / UPI', icon: CreditCard },
@@ -621,6 +629,27 @@ const StepOrderDetails = ({
     const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
     const odStyles = useMemo(() => makeOdStyles(COLORS), [COLORS]);
     const SERVICE_TYPES = useMemo(() => makeServiceTypes(COLORS), [COLORS]);
+    // Real, admin-managed vehicle types (GET /settings/vehicle-configs) —
+    // previously a hardcoded bike/van/truck array here, so renaming, adding,
+    // or deactivating a vehicle type in the admin panel never reached this
+    // screen at all.
+    const { data: vehicleConfigsData } = useVehicleConfigs();
+    const activeVehicleConfigs = useMemo(
+        () => (vehicleConfigsData ?? []).filter((v) => v.active),
+        [vehicleConfigsData],
+    );
+    // If the currently-selected type was deactivated/renamed/removed since
+    // the form's default was set, fall back to the first active config
+    // rather than silently submitting a vehicle type the backend will
+    // reject as "unknown or inactive" at quote/booking time.
+    useEffect(() => {
+        if (activeVehicleConfigs.length === 0) return;
+        const stillValid = activeVehicleConfigs.some((v) => v.name.toLowerCase() === data.vehicleType.toLowerCase());
+        if (!stillValid) {
+            onChange('vehicleType', activeVehicleConfigs[0].name.toLowerCase());
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeVehicleConfigs]);
     const insuranceFee = allData.package.insurance ? 49 : 0;
     const fragileHandling = allData.package.fragile ? 29 : 0;
     // Real, distance-based fare from the pickup/drop coordinates + the
@@ -661,27 +690,28 @@ const StepOrderDetails = ({
             {/* Vehicle Type */}
             <SectionHeader title="Vehicle Type" subtitle="Select based on package weight" />
             <View style={odStyles.vehicleRow}>
-                {VEHICLE_TYPES.map(vt => (
-                    <TouchableOpacity
-                        key={vt.key}
-                        onPress={() => onChange('vehicleType', vt.key)}
-                        style={[
-                            odStyles.vehicleCard,
-                            data.vehicleType === vt.key && odStyles.vehicleCardActive,
-                        ]}
-                        activeOpacity={0.8}
-                    >
-                        <vt.icon
-                            color={data.vehicleType === vt.key ? COLORS.primary : COLORS.textSecondary}
-                            size={22}
-                            style={odStyles.vehicleIcon}
-                        />
-                        <Text style={[odStyles.vehicleLabel, data.vehicleType === vt.key && { color: COLORS.primary }]}>
-                            {vt.label}
-                        </Text>
-                        <Text style={odStyles.vehicleDesc}>{vt.desc}</Text>
-                    </TouchableOpacity>
-                ))}
+                {activeVehicleConfigs.map((vt) => {
+                    const VtIcon = vehicleIconFor(vt.name);
+                    const isSelected = data.vehicleType.toLowerCase() === vt.name.toLowerCase();
+                    return (
+                        <TouchableOpacity
+                            key={vt.id}
+                            onPress={() => onChange('vehicleType', vt.name.toLowerCase())}
+                            style={[odStyles.vehicleCard, isSelected && odStyles.vehicleCardActive]}
+                            activeOpacity={0.8}
+                        >
+                            <VtIcon
+                                color={isSelected ? COLORS.primary : COLORS.textSecondary}
+                                size={22}
+                                style={odStyles.vehicleIcon}
+                            />
+                            <Text style={[odStyles.vehicleLabel, isSelected && { color: COLORS.primary }]}>
+                                {vt.name}
+                            </Text>
+                            <Text style={odStyles.vehicleDesc}>Up to {vt.maxWeight} kg</Text>
+                        </TouchableOpacity>
+                    );
+                })}
             </View>
 
             {/* Payment Mode */}
@@ -751,10 +781,8 @@ const StepOrderDetails = ({
             >
                 <View style={odStyles.fareHeroRow}>
                     {(() => {
-                        const VehicleIcon = VEHICLE_TYPES.find(v => v.key === data.vehicleType)?.icon;
-                        return VehicleIcon ? (
-                            <VehicleIcon color="#fff" size={34} style={odStyles.fareHeroIcon} />
-                        ) : null;
+                        const VehicleIcon = vehicleIconFor(data.vehicleType);
+                        return <VehicleIcon color="#fff" size={34} style={odStyles.fareHeroIcon} />;
                     })()}
                     <View style={{ flex: 1 }}>
                         <Text style={odStyles.fareHeroLabel}>
@@ -833,7 +861,10 @@ const StepOrderDetails = ({
                     )}
                     <View style={odStyles.summRow}>
                         <Text style={odStyles.summKey}>Vehicle</Text>
-                        <Text style={odStyles.summVal}>{VEHICLE_TYPES.find(v => v.key === data.vehicleType)?.label}</Text>
+                        <Text style={odStyles.summVal}>
+                            {activeVehicleConfigs.find((v) => v.name.toLowerCase() === data.vehicleType.toLowerCase())?.name
+                                ?? data.vehicleType}
+                        </Text>
                     </View>
                     <View style={odStyles.summRow}>
                         <Text style={odStyles.summKey}>Pickup Slot</Text>
