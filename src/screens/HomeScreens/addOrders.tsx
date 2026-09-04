@@ -55,6 +55,7 @@ import {
 } from 'lucide-react-native';
 import { registerFCMToken, setupFCMListeners } from '@utils/cm';
 import { useVehicleConfigs } from '@features/settings/hooks';
+import { useAuthStore } from '@features/store/authStore';
 import { useFareEstimate, FareEstimate } from '@location/useFareEstimate';
 import { createShipment } from '@features/shipments/api/shipments.api';
 import { safeNumber } from '@utils/parsers';
@@ -1224,10 +1225,22 @@ const NewOrder = () => {
         | { pickup?: string; drop?: string; vehicleType?: string }
         | undefined;
 
+    // Real logged-in customer's profile (GET /users/me, hydrated into the
+    // auth store) — the sender is almost always the account holder
+    // themselves, so pre-filling name/phone/email/address from their real
+    // profile saves re-typing every single order instead of starting blank.
+    // Still fully editable — someone booking on a business's behalf can
+    // change any field.
+    const user = useAuthStore((s) => s.user);
+
     const [step, setStep] = useState(0);
-    const [sender, setSender] = useState<SenderForm>(
-        prefill?.pickup ? { ...INIT_SENDER, address: prefill.pickup } : INIT_SENDER,
-    );
+    const [sender, setSender] = useState<SenderForm>(() => ({
+        ...INIT_SENDER,
+        name: user?.displayName ?? INIT_SENDER.name,
+        phone: user?.phone ?? INIT_SENDER.phone,
+        email: user?.email ?? INIT_SENDER.email,
+        address: prefill?.pickup ?? user?.address ?? INIT_SENDER.address,
+    }));
     const [receiver, setReceiver] = useState<ReceiverForm>(
         prefill?.drop ? { ...INIT_RECEIVER, address: prefill.drop } : INIT_RECEIVER,
     );
