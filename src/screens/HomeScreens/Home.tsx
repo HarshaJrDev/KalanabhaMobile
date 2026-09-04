@@ -307,6 +307,7 @@ const HomeScreen: React.FC = () => {
                 {recentDeliveredTrips.length > 0 && (
                     <RecentTrips
                         trips={recentDeliveredTrips}
+                        vehicleConfigs={vehicleConfigs ?? []}
                         onBookAgain={goBookAgain}
                         onViewAll={() => (navigation as any).navigate('Orders')}
                         colors={COLORS}
