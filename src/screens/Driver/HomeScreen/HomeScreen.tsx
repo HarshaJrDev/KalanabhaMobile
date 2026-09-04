@@ -34,6 +34,7 @@ import {
     Wallet,
     MessageCircle,
     Fuel,
+    FileText,
     ShieldAlert,
     MapPin,
     Navigation,
@@ -129,6 +130,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     // regardless of the real, persisted User.isOnline value (and never
     // reflected a toggle made from another device/session).
     const isOnline = useAuthStore((s) => s.user?.isOnline ?? false);
+    const documentsVerified = useAuthStore((s) => s.user?.documentsVerified ?? false);
 
     // First searching-pool request becomes the "Incoming Load Request"
     // hero card below, matching what the reference mockup highlights —
@@ -431,6 +433,27 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                     <View style={{ flex: 1 }}>
                         <Text style={styles.fuelCardTitle}>Find Fuel Stations</Text>
                         <Text style={styles.fuelCardSub}>Nearby petrol bunks · log a fill-up</Text>
+                    </View>
+                    <View style={styles.fuelOpenPill}>
+                        <Text style={styles.chatPillText}>Open</Text>
+                    </View>
+                </TouchableOpacity>
+
+                {/* 📄 My Documents — real KYC upload/status (GET /files/
+                    driver-documents/mine), previously had no mobile screen
+                    at all despite the backend fully supporting it. */}
+                <TouchableOpacity
+                    style={styles.fuelCard}
+                    onPress={() => (navigation as any).navigate('DriverDocuments')}
+                >
+                    <View style={[styles.fuelIconWrap, { backgroundColor: documentsVerified ? '#DCFCE7' : '#FEF3C7' }]}>
+                        <FileText color={documentsVerified ? '#16A34A' : '#F59E0B'} size={18} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.fuelCardTitle}>My Documents</Text>
+                        <Text style={styles.fuelCardSub}>
+                            {documentsVerified ? 'Verified' : 'Upload for admin review'}
+                        </Text>
                     </View>
                     <View style={styles.fuelOpenPill}>
                         <Text style={styles.chatPillText}>Open</Text>

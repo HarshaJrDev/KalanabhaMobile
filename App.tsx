@@ -133,6 +133,7 @@ import DriverTabs from '@screens/Driver/HomeScreen/HomeScreenDrive';
 import DriverSettingsScreen from '@screens/Driver/SettingsScreen';
 import DriverTripsScreen from '@screens/Driver/TripsScreen';
 import FuelStationsScreen from '@screens/Driver/FuelStationsScreen';
+import DriverDocumentsScreen from '@screens/Driver/DriverDocumentsScreen';
 import RatingScreen from '@screens/HomeScreens/RatingScreen';
 import CustomerSettingsScreen from '@screens/HomeScreens/SettingsScreen';
 import TransactionsScreen from '@screens/HomeScreens/TransactionsScreen';
@@ -231,6 +232,7 @@ const App = () => {
                 <Stack.Screen name="DriverSettings" component={DriverSettingsScreen} />
                 <Stack.Screen name="DriverTrips" component={DriverTripsScreen} />
                 <Stack.Screen name="FuelStations" component={FuelStationsScreen} />
+                <Stack.Screen name="DriverDocuments" component={DriverDocumentsScreen} />
                 <Stack.Screen name="Rating" component={RatingScreen} />
                 <Stack.Screen name="Settings" component={CustomerSettingsScreen} />
                 <Stack.Screen name="Transactions" component={TransactionsScreen} />

@@ -35,6 +35,10 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string/>
+	<key>NSCameraUsageDescription</key>
+	<string>Kalanabha uses your camera to let drivers photograph KYC documents (license, RC, insurance) for verification.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Kalanabha needs access to your photo library so drivers can upload existing photos of KYC documents.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
