@@ -1,7 +1,8 @@
 // AppLoader.tsx — canonical full-screen loading overlay. Extracted verbatim
 // from CustomLoader.tsx (single source of truth for this pattern).
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, Modal, ActivityIndicator, Animated } from 'react-native';
+import { useAppTheme } from '@theme/ThemeContext';
 
 export interface AppLoaderProps {
     visible: boolean;
@@ -9,6 +10,8 @@ export interface AppLoaderProps {
 }
 
 export const AppLoader = ({ visible, message = 'Loading...' }: AppLoaderProps) => {
+    const { colors } = useAppTheme();
+    const styles = useMemo(() => makeStyles(colors.PRIMARY), [colors.PRIMARY]);
     const scaleValue = new Animated.Value(0);
     const rotateValue = new Animated.Value(0);
     const fadeAnim = new Animated.Value(0);
@@ -83,7 +86,7 @@ export const AppLoader = ({ visible, message = 'Loading...' }: AppLoaderProps) =
 
                     {/* Inner spinner */}
                     <Animated.View style={[styles.spinner, { transform: [{ rotate }] }]}>
-                        <ActivityIndicator size="large" color="#007AFF" />
+                        <ActivityIndicator size="large" color={colors.PRIMARY} />
                     </Animated.View>
 
                     {/* Dots */}
@@ -102,71 +105,75 @@ export const AppLoader = ({ visible, message = 'Loading...' }: AppLoaderProps) =
     );
 };
 
-const styles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    container: {
-        width: 100,
-        height: 100,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    outerRing: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        borderWidth: 4,
-        borderColor: 'rgba(0, 122, 255, 0.3)',
-        borderTopColor: '#007AFF',
-        position: 'absolute',
-    },
-    spinner: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#007AFF',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 8,
-        elevation: 10,
-    },
-    dots: {
-        position: 'absolute',
-        width: 100,
-        height: 100,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    dot: {
-        position: 'absolute',
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: '#007AFF',
-    },
-    dot1: {
-        top: 10,
-    },
-    dot2: {
-        right: 10,
-    },
-    dot3: {
-        bottom: 10,
-    },
-    message: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-        marginTop: 24,
-        textAlign: 'center',
-    },
-});
+// Rebranded from a hardcoded iOS-blue (#007AFF) spinner to the app's own
+// brand orange (§4/§7) — computed per-render from useAppTheme() so it also
+// tracks a future primary-color change (e.g. dark mode) automatically.
+const makeStyles = (primary: string) =>
+    StyleSheet.create({
+        overlay: {
+            flex: 1,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        container: {
+            width: 100,
+            height: 100,
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        outerRing: {
+            width: 100,
+            height: 100,
+            borderRadius: 50,
+            borderWidth: 4,
+            borderColor: `${primary}4D`,
+            borderTopColor: primary,
+            position: 'absolute',
+        },
+        spinner: {
+            width: 60,
+            height: 60,
+            borderRadius: 30,
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            shadowColor: primary,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.4,
+            shadowRadius: 8,
+            elevation: 10,
+        },
+        dots: {
+            position: 'absolute',
+            width: 100,
+            height: 100,
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        dot: {
+            position: 'absolute',
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: primary,
+        },
+        dot1: {
+            top: 10,
+        },
+        dot2: {
+            right: 10,
+        },
+        dot3: {
+            bottom: 10,
+        },
+        message: {
+            color: 'white',
+            fontSize: 16,
+            fontWeight: '600',
+            marginTop: 24,
+            textAlign: 'center',
+        },
+    });
 
 export default AppLoader;

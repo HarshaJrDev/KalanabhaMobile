@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import {
     useMarkAllNotificationsRead,
@@ -7,9 +7,12 @@ import {
 } from '@features/notifications/hooks';
 import type { BackendNotification } from '@features/notifications/types';
 import { AsyncState } from '@components/AsyncState';
+import { useAppTheme } from '@theme/ThemeContext';
 
 // Screen -> hook -> notifications.api -> GET /notifications/mine -> cache -> UI
 const NotificationScreen = () => {
+    const { colors } = useAppTheme();
+    const styles = useMemo(() => makeStyles(colors), [colors]);
     const { data: notifications, isLoading, isRefetching, refetch, error } = useMyNotifications();
     const { mutate: markRead } = useMarkNotificationRead();
     const { mutate: markAllRead, isPending: markingAll } = useMarkAllNotificationsRead();
@@ -56,8 +59,10 @@ const NotificationScreen = () => {
 
 export default NotificationScreen;
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F8F9FA' },
+// Computed from useAppTheme() so this screen repaints correctly in dark
+// mode instead of staying pinned to the light palette baked at import.
+const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.BACKGROUND },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -65,17 +70,17 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 14,
     },
-    headerTitle: { fontSize: 18, fontWeight: '700', color: '#111827' },
-    markAllText: { color: '#2563EB', fontSize: 13, fontWeight: '600' },
+    headerTitle: { fontSize: 18, fontWeight: '700', color: colors.TEXT_PRIMARY },
+    markAllText: { color: colors.PRIMARY, fontSize: 13, fontWeight: '600' },
     card: {
-        backgroundColor: '#fff',
+        backgroundColor: colors.SURFACE,
         marginHorizontal: 16,
         marginBottom: 10,
         padding: 14,
         borderRadius: 12,
     },
-    cardUnread: { borderLeftWidth: 3, borderLeftColor: '#2563EB' },
-    title: { fontSize: 14, fontWeight: '700', color: '#111827' },
-    body: { fontSize: 13, color: '#4B5563', marginTop: 4 },
-    time: { fontSize: 11, color: '#9CA3AF', marginTop: 6 },
+    cardUnread: { borderLeftWidth: 3, borderLeftColor: colors.PRIMARY },
+    title: { fontSize: 14, fontWeight: '700', color: colors.TEXT_PRIMARY },
+    body: { fontSize: 13, color: colors.TEXT_SECONDARY, marginTop: 4 },
+    time: { fontSize: 11, color: colors.GRAY, marginTop: 6 },
 });

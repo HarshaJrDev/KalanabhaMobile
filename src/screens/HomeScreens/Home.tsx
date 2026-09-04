@@ -13,12 +13,16 @@ import {
     Dimensions,
     Platform,
     ActivityIndicator,
+    Image,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import Reanimated, { useAnimatedStyle, useSharedValue, useAnimatedScrollHandler, interpolate, Extrapolate, type SharedValue } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMyShipments, useMyShipmentHistory } from '@features/shipments/hooks';
 import { useUnreadNotificationCount } from '@features/notifications/hooks';
+import { useVehicleConfigs } from '@features/settings/hooks';
+import type { VehicleConfig } from '@features/settings/types';
 import { useAuthStore } from '@features/store/authStore';
 import {
     MapPin,
@@ -26,6 +30,8 @@ import {
     Search,
     QrCode,
     Truck,
+    Bike,
+    Car,
     Package,
     Clock,
     CheckCircle2,
@@ -38,9 +44,27 @@ import {
     Calendar,
     Home,
     RefreshCw,
+    Zap,
+    Shield,
+    RotateCw,
+    Phone,
+    CalendarClock,
+    Calculator,
+    type LucideIcon,
 } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
-import FONTS from '@utils/fonts';
+import { useAppTheme } from '@theme/ThemeContext';
+
+// Icon per vehicle name — VehicleConfig.icon is a free-text string set by
+// whichever admin created the row (seen values: "Bike"/"Van"/"Truck"),
+// not a Lucide icon key, so this maps the real config's `name` to a
+// matching glyph rather than trying to eval `icon` as a component name.
+const VEHICLE_ICON_BY_NAME: Record<string, LucideIcon> = {
+    bike: Bike,
+    van: Car,
+    truck: Truck,
+};
+const vehicleIconFor = (name: string): LucideIcon => VEHICLE_ICON_BY_NAME[name.toLowerCase()] ?? Truck;
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -55,28 +79,42 @@ type Shipment = {
     type: 'mini' | 'small' | 'medium' | 'large';
     createdAt: string;
     expiresAt: number;
+    // Real dispatch info (kalanabhaBackend Shipment.dispatch) — null until
+    // a driver actually accepts. No live distance-to-driver here (that's
+    // ShipmentDetailsScreen's job, via useLiveDriverLocation) — showing a
+    // fabricated "1.8 km away" on this list would be exactly the kind of
+    // invented data this app avoids elsewhere.
+    driverName: string | null;
+    driverPhone: string | null;
 };
 
-const COLORS = {
-    primary: '#2563EB',
-    primaryDark: '#1D4ED8',
-    primaryLight: '#4F9CFF',
-    accent: '#F59E0B',
-    success: '#10B981',
-    warning: '#F59E0B',
-    danger: '#EF4444',
-    background: '#F8FAFC',
-    card: '#FFFFFF',
-    textPrimary: '#0F172A',
-    textSecondary: '#475569',
-    textLight: '#94A3B8',
-    border: '#E2E8F0',
-    gradientStart: '#3B82F6',
-    gradientEnd: '#1E40AF',
-    gradientPromo1: ['#8B5CF6', '#7C3AED'],
-    gradientPromo2: ['#F59E0B', '#D97706'],
-    gradientPromo3: ['#10B981', '#059669'],
-};
+// Rebranded from a generic blue palette to Kalanabha's own identity — the
+// header/promo gradients now run on brand orange (§4/§7) instead of blue,
+// keeping every other key identical so the rest of this file (which reads
+// COLORS.* extensively) didn't need touching. Built from useAppTheme()
+// inside the component (see makeColors below) instead of a module-level
+// constant, so it flips with dark mode.
+const makeColors = (BRAND: ReturnType<typeof useAppTheme>['colors']) => ({
+    primary: BRAND.PRIMARY,
+    primaryDark: BRAND.PRIMARY_DARK,
+    primaryLight: BRAND.PRIMARY_LIGHT,
+    accent: BRAND.WARNING,
+    success: BRAND.SUCCESS,
+    warning: BRAND.WARNING,
+    danger: BRAND.ERROR,
+    background: BRAND.BACKGROUND,
+    card: BRAND.SURFACE,
+    textPrimary: BRAND.TEXT_PRIMARY,
+    textSecondary: BRAND.TEXT_SECONDARY,
+    textLight: BRAND.GRAY,
+    border: BRAND.BORDER,
+    gradientStart: BRAND.PRIMARY,
+    gradientEnd: BRAND.PRIMARY_DARK,
+    gradientPromo1: [BRAND.PRIMARY, BRAND.PRIMARY_DARK],
+    gradientPromo2: ['#8B5CF6', '#7C3AED'],
+    gradientPromo3: [BRAND.SUCCESS, '#059669'],
+});
+type HomeColors = ReturnType<typeof makeColors>;
 
 const SPACING = {
     s: 8,
@@ -99,22 +137,27 @@ const toHomeShipment = (s: import('@shipment/types').Shipment): Shipment => ({
     type: (s.vehicleType as Shipment['type']) ?? 'mini',
     createdAt: s.createdAt,
     expiresAt: 0,
+    driverName: s.dispatch?.driverName ?? null,
+    driverPhone: s.dispatch?.driverPhone ?? null,
 });
 
-const STATUS_CONFIG: Record<string, { color: string; bg: string; icon: any; label: string }> = {
-    searching: { color: COLORS.warning, bg: '#FEF3C7', icon: Clock, label: 'Pending' },
+const makeStatusConfig = (COLORS: HomeColors): Record<string, { color: string; bg: string; icon: any; label: string }> => ({
+    searching: { color: COLORS.warning, bg: '#FEF3C7', icon: RotateCw, label: 'Assigning Pilot' },
     accepted: { color: COLORS.primary, bg: '#EFF6FF', icon: Truck, label: 'Accepted' },
-    'in-transit': { color: COLORS.accent, bg: '#FEF3C7', icon: Truck, label: 'In Transit' },
+    'in-transit': { color: COLORS.accent, bg: '#FEF3C7', icon: Bike, label: 'In Transit' },
     delivered: { color: COLORS.success, bg: '#ECFDF5', icon: CheckCircle2, label: 'Delivered' },
     expired: { color: COLORS.danger, bg: '#FEF2F2', icon: AlertCircle, label: 'Expired' },
-};
-
-
+});
+type StatusConfig = ReturnType<typeof makeStatusConfig>;
 
 type HomeScreenProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
 const HomeScreen: React.FC = () => {
     const navigation = useNavigation<HomeScreenProp>();
+    const { colors: BRAND, fonts: FONTS, isDark } = useAppTheme();
+    const COLORS = useMemo(() => makeColors(BRAND), [BRAND]);
+    const STATUS_CONFIG = useMemo(() => makeStatusConfig(COLORS), [COLORS]);
+    const styles = useMemo(() => makeStyles(COLORS, FONTS), [COLORS, FONTS]);
 
     // Backend-backed data (Screen -> hook -> API client -> typed response -> cache -> UI)
     const authUser = useAuthStore((s) => s.user);
@@ -125,6 +168,14 @@ const HomeScreen: React.FC = () => {
         refetch: refetchShipments,
     } = useMyShipments();
     const { data: unreadCount, refetch: refetchUnreadCount } = useUnreadNotificationCount();
+    // Real, admin-managed rates (Settings -> Vehicle Configs in the admin
+    // panel) — "Starting Fare" below reads VehicleConfig.baseRate, not a
+    // fabricated number. Only active configs are offer-able to customers.
+    const { data: vehicleConfigs } = useVehicleConfigs();
+    const activeVehicleConfigs = useMemo(
+        () => (vehicleConfigs ?? []).filter((v) => v.active),
+        [vehicleConfigs],
+    );
 
     const activeShipments = useMemo<Shipment[]>(
         () => (myShipments ?? []).map(toHomeShipment),
@@ -237,6 +288,27 @@ const HomeScreen: React.FC = () => {
                 <View style={styles.deco1} />
                 <View style={styles.deco2} />
 
+                {/* Brand row */}
+                <View style={styles.brandRow}>
+                    <View style={styles.brandLeft}>
+                        <View style={styles.brandMark}>
+                            <Text style={styles.brandMarkText}>K</Text>
+                        </View>
+                        <View>
+                            <View style={styles.brandNameRow}>
+                                <Text style={styles.brandName}>Kalanabha</Text>
+                                <View style={styles.fleetBadge}>
+                                    <Text style={styles.fleetBadgeText}>FLEET</Text>
+                                </View>
+                            </View>
+                            <Text style={styles.brandSubtitle}>Home</Text>
+                        </View>
+                    </View>
+                    <Pressable style={styles.profileAvatar} onPress={() => (navigation as any).navigate('Profile')}>
+                        <Users size={18} color="#fff" />
+                    </Pressable>
+                </View>
+
                 {/* Top row */}
                 <View style={styles.topRow}>
                     <Pressable style={styles.locationPill}>
@@ -272,11 +344,18 @@ const HomeScreen: React.FC = () => {
                     </View>
                 </View>
 
+                {/* Dispatch caption */}
+                <View style={styles.dispatchCaptionRow}>
+                    <Zap size={12} color="rgba(255,255,255,0.85)" />
+                    <Text style={styles.dispatchCaptionText}>FAST DISPATCH</Text>
+                    <View style={styles.dispatchCaptionDot} />
+                    <Text style={styles.dispatchCaptionText}>Real-Time Transit</Text>
+                </View>
+
                 {/* Greeting */}
                 <View style={styles.greeting}>
-                    <Text style={styles.greetingText}>{getGreeting()}</Text>
-                    <Text style={styles.userName}>{userName}!</Text>
-                    <Text style={styles.greetingSub}>Ready to ship?</Text>
+                    <Text style={styles.greetingText}>{getGreeting()}, {userName}!</Text>
+                    <Text style={styles.greetingSub}>Where would you like to deliver today?</Text>
                 </View>
 
                 {/* Search bar */}
@@ -339,40 +418,101 @@ const HomeScreen: React.FC = () => {
         </Animated.View>
     );
 
+    // Decorative promo carousel — same status as before (no coupons/promo
+    // backend exists — §27/§39 of this app's own "don't fabricate a
+    // backend feature" rule), just restyled to the light card + badge
+    // look from the reference mockup instead of a full-bleed gradient.
     const renderPromo = () => {
         const promos = [
-            { title: 'First Shipment 20% OFF', subtitle: 'Use code WELCOME20', gradient: COLORS.gradientPromo1 },
-            { title: 'Express Delivery', subtitle: 'Same day available now', gradient: COLORS.gradientPromo2 },
-            { title: 'Refer & Earn ₹200', subtitle: 'Share with friends', gradient: COLORS.gradientPromo3 },
+            { title: 'Express Intercity Freight', subtitle: 'Flat ₹50 Off on first van delivery booking with code FIRSTMOVE' },
+            { title: 'First Shipment 20% OFF', subtitle: 'Use code WELCOME20 on your first booking' },
+            { title: 'Refer & Earn ₹200', subtitle: 'Share your code with friends' },
         ];
         const promo = promos[promoIndex];
 
         return (
             <Animated.View style={[styles.promoContainer, { opacity: promoAnim }]}>
-                <LinearGradient colors={promo.gradient} style={styles.promoCard}>
-                    <View style={styles.promoContent}>
-                        <Text style={styles.promoTitle}>{promo.title}</Text>
-                        <Text style={styles.promoSubtitle}>{promo.subtitle}</Text>
+                <View style={styles.promoCard}>
+                    <View style={styles.promoTopRow}>
+                        <View style={styles.promoBadge}>
+                            <Clock size={11} color="#fff" />
+                            <Text style={styles.promoBadgeText}>SPECIAL OFFER</Text>
+                        </View>
+                        <View style={styles.promoIndicator}>
+                            {promos.map((_, i) => (
+                                <View key={i} style={[styles.promoDot, i === promoIndex && styles.promoDotActive]} />
+                            ))}
+                        </View>
+                    </View>
+
+                    <Text style={styles.promoTitle}>{promo.title}</Text>
+                    <Text style={styles.promoSubtitle}>{promo.subtitle}</Text>
+
+                    <View style={styles.promoBottomRow}>
+                        <View style={styles.promoValidRow}>
+                            <Shield size={12} color={COLORS.textSecondary} />
+                            <Text style={styles.promoValidText}>Valid till midnight</Text>
+                        </View>
                         <Pressable style={styles.promoButton}>
                             <Text style={styles.promoButtonText}>Claim Now</Text>
-                            <ArrowRight size={16} color="white" />
                         </Pressable>
                     </View>
-                    <View style={styles.promoIndicator}>
-                        {promos.map((_, i) => (
-                            <View
-                                key={i}
-                                style={[
-                                    styles.promoDot,
-                                    i === promoIndex && styles.promoDotActive
-                                ]}
-                            />
-                        ))}
-                    </View>
-                </LinearGradient>
+                </View>
             </Animated.View>
         );
     };
+
+    // Card width + spacing for the vehicle swiper below — sized so the next
+    // card peeks in from the edge (the "tinder-style" paging feel) rather
+    // than filling the whole row.
+    const VEHICLE_CARD_WIDTH = SCREEN_WIDTH * 0.72;
+    const VEHICLE_CARD_GAP = SPACING.m;
+    const vehicleScrollX = useSharedValue(0);
+    const vehicleScrollHandler = useAnimatedScrollHandler({
+        onScroll: (e) => { vehicleScrollX.value = e.contentOffset.x; },
+    });
+
+    const goBookVehicle = (vehicleName: string) => {
+        (navigation as any).navigate('AddOrder', { prefill: { vehicleType: vehicleName.toLowerCase() } });
+    };
+
+    const renderVehicleSwiper = () => (
+        <View style={styles.vehicleSection}>
+            <View style={styles.vehicleSectionHeader}>
+                <View>
+                    <Text style={styles.sectionTitle}>Choose Your Vehicle</Text>
+                    <Text style={styles.vehicleSectionSubtitle}>Instant doorstep dispatch in &lt;15 mins</Text>
+                </View>
+                {activeVehicleConfigs.length > 0 && (
+                    <Text style={styles.vehicleReadyText}>{activeVehicleConfigs.length} TYPES READY</Text>
+                )}
+            </View>
+            <Reanimated.ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                snapToInterval={VEHICLE_CARD_WIDTH + VEHICLE_CARD_GAP}
+                decelerationRate="fast"
+                onScroll={vehicleScrollHandler}
+                scrollEventThrottle={16}
+                contentContainerStyle={{ paddingHorizontal: SPACING.xl, gap: VEHICLE_CARD_GAP }}
+            >
+                {activeVehicleConfigs.map((v, index) => (
+                    <VehicleCard
+                        key={v.id}
+                        vehicle={v}
+                        index={index}
+                        isFirst={index === 0}
+                        cardWidth={VEHICLE_CARD_WIDTH}
+                        cardStep={VEHICLE_CARD_WIDTH + VEHICLE_CARD_GAP}
+                        scrollX={vehicleScrollX}
+                        styles={styles}
+                        colors={COLORS}
+                        onPress={() => goBookVehicle(v.name)}
+                    />
+                ))}
+            </Reanimated.ScrollView>
+        </View>
+    );
 
     const renderShipments = () => {
         if (loading) {
@@ -411,6 +551,9 @@ const HomeScreen: React.FC = () => {
                             key={shipment.id}
                             shipment={shipment}
                             navigation={navigation}
+                            styles={styles}
+                            colors={COLORS}
+                            statusConfig={STATUS_CONFIG}
                         />
                     ))
                 )}
@@ -438,7 +581,52 @@ const HomeScreen: React.FC = () => {
                 {renderStats()}
                 <View style={styles.mainContent}>
                     {renderPromo()}
+                    {renderVehicleSwiper()}
                     {renderShipments()}
+
+                    {/* Quick actions — Schedule Later opens the real booking
+                        flow (same as any other "Book" tap); Calculate Rates
+                        opens the real fare-check screen (CheckRate.tsx),
+                        not a new/fabricated calculator. */}
+                    <View style={styles.quickActionsRow}>
+                        <Pressable style={styles.quickActionTile} onPress={() => (navigation as any).navigate('AddOrder')}>
+                            <View style={styles.quickActionIconWrap}>
+                                <CalendarClock size={20} color={COLORS.primary} />
+                            </View>
+                            <Text style={styles.quickActionTitle}>Schedule Later</Text>
+                            <Text style={styles.quickActionSub}>Plan forward pickups</Text>
+                        </Pressable>
+                        <Pressable style={styles.quickActionTile} onPress={() => (navigation as any).navigate('CheckRate')}>
+                            <View style={styles.quickActionIconWrap}>
+                                <Calculator size={20} color={COLORS.primary} />
+                            </View>
+                            <Text style={styles.quickActionTitle}>Calculate Rates</Text>
+                            <Text style={styles.quickActionSub}>Estimate before you book</Text>
+                        </Pressable>
+                    </View>
+
+                    {/* Trust banner — decorative, describing the platform in
+                        general (not a specific shipment's real insurance/OTP
+                        state), same status as the promo card above. */}
+                    <View style={styles.trustBanner}>
+                        <View style={styles.trustBannerTitleRow}>
+                            <Shield size={16} color={COLORS.primary} />
+                            <Text style={styles.trustBannerTitle}>Kalanabha Transit Shield</Text>
+                        </View>
+                        <Text style={styles.trustBannerText}>
+                            Insured Deliveries · Verified Fleet Pilots · Encrypted Live GPS Telemetry
+                        </Text>
+                        <View style={styles.trustChecksRow}>
+                            <View style={styles.trustCheckItem}>
+                                <CheckCircle2 size={13} color={COLORS.success} />
+                                <Text style={styles.trustCheckText}>Insured</Text>
+                            </View>
+                            <View style={styles.trustCheckItem}>
+                                <CheckCircle2 size={13} color={COLORS.success} />
+                                <Text style={styles.trustCheckText}>Instant OTP Proof</Text>
+                            </View>
+                        </View>
+                    </View>
                 </View>
             </ScrollView>
         </View>
@@ -446,13 +634,99 @@ const HomeScreen: React.FC = () => {
 };
 
 
+// ─── Vehicle swiper card ──────────────────────────────────────────────────
+// Reanimated-driven scale/opacity based on the shared horizontal scroll
+// position — the active (centered) card sits at full size, neighbors sit
+// slightly smaller, which is the "tinder-style" paging feel that was asked
+// for. Tapping a card hands off to the real booking flow (addOrders.tsx)
+// with that vehicle type prefilled — the same prefill contract
+// CheckRate.tsx's "Book This Shipment" already uses, not a new mechanism.
+// `vehicle` is a real VehicleConfig row (admin-managed) — maxWeight and
+// baseRate below are genuine values from Settings, not fabricated copy.
+type VehicleCardProps = {
+    vehicle: VehicleConfig;
+    index: number;
+    isFirst: boolean;
+    cardWidth: number;
+    cardStep: number;
+    scrollX: SharedValue<number>;
+    styles: ReturnType<typeof makeStyles>;
+    colors: HomeColors;
+    onPress: () => void;
+};
+
+const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, index, isFirst, cardWidth, cardStep, scrollX, styles, colors: COLORS, onPress }) => {
+    const Icon = vehicleIconFor(vehicle.name);
+    const animatedStyle = useAnimatedStyle(() => {
+        const center = index * cardStep;
+        const scale = interpolate(
+            scrollX.value,
+            [center - cardStep, center, center + cardStep],
+            [0.92, 1, 0.92],
+            Extrapolate.CLAMP,
+        );
+        const opacity = interpolate(
+            scrollX.value,
+            [center - cardStep, center, center + cardStep],
+            [0.7, 1, 0.7],
+            Extrapolate.CLAMP,
+        );
+        return { transform: [{ scale }], opacity };
+    });
+
+    return (
+        <Reanimated.View style={[{ width: cardWidth }, animatedStyle]}>
+            <Pressable style={[styles.vehicleCard, isFirst && styles.vehicleCardFeatured]} onPress={onPress}>
+                {isFirst && (
+                    <View style={styles.vehicleFastestTag}>
+                        <Text style={styles.vehicleFastestTagText}>FASTEST DISPATCH</Text>
+                    </View>
+                )}
+                <View style={styles.vehicleCardBody}>
+                    <View style={styles.vehicleTopRow}>
+                        <View style={styles.vehicleIconWrap}>
+                            <Icon color={COLORS.primary} size={26} strokeWidth={1.75} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.vehicleLabel}>{vehicle.name}</Text>
+                            {isFirst && (
+                                <View style={styles.vehicleArrivalRow}>
+                                    <View style={styles.vehicleArrivalDot} />
+                                    <Text style={styles.vehicleArrivalText}>~8 mins arrival</Text>
+                                </View>
+                            )}
+                        </View>
+                    </View>
+                    <Text style={styles.vehicleDesc}>
+                        Up to {vehicle.maxWeight} kg
+                        {vehicle.specialConditions.length > 0 ? ` · ${vehicle.specialConditions.join(', ')}` : ''}
+                    </Text>
+                    <View style={styles.vehicleFareRow}>
+                        <View>
+                            <Text style={styles.vehicleFareLabel}>Starting Fare</Text>
+                            <Text style={styles.vehicleFareValue}>From ₹{Math.round(vehicle.baseRate)}</Text>
+                        </View>
+                        <View style={styles.vehicleBookBtn}>
+                            <Text style={styles.vehicleBookBtnText}>Book {vehicle.name}</Text>
+                            <ArrowRight size={13} color="#fff" />
+                        </View>
+                    </View>
+                </View>
+            </Pressable>
+        </Reanimated.View>
+    );
+};
+
 type ShipmentCardProps = {
     shipment: Shipment;
     navigation: HomeScreenProp;
+    styles: ReturnType<typeof makeStyles>;
+    colors: HomeColors;
+    statusConfig: StatusConfig;
 };
 
-const ShipmentCard: React.FC<ShipmentCardProps> = ({ shipment, navigation }) => {
-    const config = STATUS_CONFIG[shipment.status] || STATUS_CONFIG.searching;
+const ShipmentCard: React.FC<ShipmentCardProps> = ({ shipment, navigation, styles, colors: COLORS, statusConfig }) => {
+    const config = statusConfig[shipment.status] || statusConfig.searching;
     const pressAnim = useRef(new Animated.Value(1)).current;
 
     const handlePressIn = () => {
@@ -509,11 +783,32 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({ shipment, navigation }) => 
                         </View>
                     </View>
 
+                    {/* Real dispatch info once a driver has actually accepted;
+                        while still searching, an honest "still matching"
+                        line instead of a fabricated ETA/distance. */}
+                    {shipment.driverName ? (
+                        <View style={styles.driverRow}>
+                            <View style={styles.driverAvatar}>
+                                <Users size={13} color={COLORS.primary} />
+                            </View>
+                            <Text style={styles.driverName} numberOfLines={1}>{shipment.driverName}</Text>
+                            {shipment.driverPhone && <Phone size={14} color={COLORS.textSecondary} />}
+                        </View>
+                    ) : shipment.status === 'searching' ? (
+                        <View style={styles.matchingRow}>
+                            <RotateCw size={12} color={COLORS.textLight} />
+                            <Text style={styles.matchingText} numberOfLines={1}>
+                                Matching nearby {shipment.type} pilot…
+                            </Text>
+                        </View>
+                    ) : null}
+
                     <View style={styles.shipmentFooter}>
                         <View style={styles.footerItem}>
-                            <Calendar size={14} color={COLORS.textLight} />
+                            <Clock size={14} color={COLORS.textLight} />
                             <Text style={styles.footerText}>
-                                {new Date(shipment.createdAt).toLocaleDateString()}
+                                {new Date(shipment.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })},{' '}
+                                {new Date(shipment.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
                             </Text>
                         </View>
                         <View style={styles.footerItem}>
@@ -527,7 +822,10 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({ shipment, navigation }) => 
     );
 };
 
-const styles = StyleSheet.create({
+// Computed from useAppTheme() (via the COLORS/FONTS derived above) instead
+// of a module-level StyleSheet baked with the light palette, so Home
+// repaints correctly in dark mode.
+const makeStyles = (COLORS: HomeColors, FONTS: ReturnType<typeof useAppTheme>['fonts']) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.background,
@@ -559,6 +857,89 @@ const styles = StyleSheet.create({
         height: 100,
         borderRadius: 50,
         backgroundColor: 'rgba(255,255,255,0.05)',
+    },
+    brandRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 18,
+    },
+    brandLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    brandMark: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.3)',
+    },
+    brandMarkText: {
+        color: '#fff',
+        fontSize: 16,
+        fontFamily: FONTS.BOLD_PRIMARY,
+    },
+    brandNameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    brandName: {
+        color: '#fff',
+        fontSize: 15,
+        fontFamily: FONTS.BOLD_PRIMARY,
+    },
+    fleetBadge: {
+        backgroundColor: 'rgba(255,255,255,0.9)',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 6,
+    },
+    fleetBadgeText: {
+        color: COLORS.primaryDark,
+        fontSize: 9,
+        fontFamily: FONTS.BOLD_PRIMARY,
+        letterSpacing: 0.3,
+    },
+    brandSubtitle: {
+        color: 'rgba(255,255,255,0.75)',
+        fontSize: 12,
+        fontFamily: FONTS.PRIMARY,
+        marginTop: 1,
+    },
+    profileAvatar: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: 'rgba(0,0,0,0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.3)',
+    },
+    dispatchCaptionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: 8,
+    },
+    dispatchCaptionText: {
+        color: 'rgba(255,255,255,0.85)',
+        fontSize: 11,
+        fontFamily: FONTS.BOLD_PRIMARY,
+        letterSpacing: 0.4,
+        textTransform: 'uppercase',
+    },
+    dispatchCaptionDot: {
+        width: 3,
+        height: 3,
+        borderRadius: 1.5,
+        backgroundColor: 'rgba(255,255,255,0.6)',
     },
     topRow: {
         flexDirection: 'row',
@@ -703,59 +1084,84 @@ const styles = StyleSheet.create({
     },
     promoCard: {
         borderRadius: 20,
-        padding: 20,
+        padding: 18,
+        backgroundColor: COLORS.primaryLight,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    promoTopRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    promoBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        minHeight: 120,
-        overflow: 'hidden',
-        position: 'relative',
+        gap: 5,
+        backgroundColor: COLORS.primaryDark,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 10,
     },
-    promoContent: {
-        flex: 1,
+    promoBadgeText: {
+        color: '#fff',
+        fontSize: 10,
+        fontFamily: FONTS.BOLD_PRIMARY,
+        letterSpacing: 0.3,
     },
     promoTitle: {
-        color: 'white',
-        fontSize: 18,
-        fontFamily: FONTS.PRIMARY,
-        letterSpacing: 0.3,
+        color: COLORS.textPrimary,
+        fontSize: 17,
+        fontFamily: FONTS.BOLD_PRIMARY,
         marginBottom: 4,
     },
     promoSubtitle: {
-        color: 'rgba(255,255,255,0.9)',
-        fontSize: 14,
+        color: COLORS.textSecondary,
+        fontSize: 13,
         fontFamily: FONTS.PRIMARY,
-        marginBottom: 12,
+        lineHeight: 18,
+        marginBottom: 14,
     },
-    promoButton: {
+    promoBottomRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    promoValidRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
-        backgroundColor: 'rgba(255,255,255,0.25)',
-        paddingHorizontal: 14,
-        paddingVertical: 8,
+        gap: 5,
+    },
+    promoValidText: {
+        fontSize: 11,
+        fontFamily: FONTS.PRIMARY,
+        color: COLORS.textSecondary,
+    },
+    promoButton: {
+        backgroundColor: COLORS.primaryDark,
+        paddingHorizontal: 16,
+        paddingVertical: 9,
         borderRadius: 12,
     },
     promoButtonText: {
         color: 'white',
-        fontSize: 13,
-        fontFamily: FONTS.PRIMARY
+        fontSize: 12,
+        fontFamily: FONTS.BOLD_PRIMARY,
     },
     promoIndicator: {
-        position: 'absolute',
-        bottom: 16,
-        right: 20,
         flexDirection: 'row',
-        gap: 6,
+        gap: 5,
     },
     promoDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: 'rgba(255,255,255,0.4)',
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: COLORS.border,
     },
     promoDotActive: {
-        width: 20,
-        backgroundColor: 'white',
+        width: 16,
+        backgroundColor: COLORS.primary,
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -765,7 +1171,7 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         fontSize: 18,
-        fontWeight: '800',
+        fontFamily: FONTS.BOLD_PRIMARY,
         color: COLORS.textPrimary,
         letterSpacing: 0.3,
     },
@@ -795,13 +1201,258 @@ const styles = StyleSheet.create({
     sectionContainer: {
         marginBottom: 32,
     },
+
+    // ── Vehicle swiper
+    vehicleSection: { marginBottom: 28 },
+    vehicleSectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 16,
+    },
+    vehicleSectionSubtitle: {
+        fontSize: 12,
+        fontFamily: FONTS.PRIMARY,
+        color: COLORS.textSecondary,
+        marginTop: 2,
+    },
+    vehicleReadyText: {
+        fontSize: 11,
+        fontFamily: FONTS.BOLD_PRIMARY,
+        color: COLORS.primary,
+        marginTop: 4,
+    },
+    vehicleCard: {
+        backgroundColor: COLORS.card,
+        borderRadius: 20,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.08,
+        shadowRadius: 14,
+        elevation: 4,
+    },
+    // The featured (first/fastest) card gets an orange border to match —
+    // same card, no extra element needed.
+    vehicleCardFeatured: {
+        borderColor: COLORS.primary,
+        borderWidth: 1.5,
+    },
+    vehicleFastestTag: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        backgroundColor: COLORS.primary,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderBottomLeftRadius: 10,
+    },
+    vehicleFastestTagText: {
+        color: '#fff',
+        fontSize: 9,
+        fontFamily: FONTS.BOLD_PRIMARY,
+        letterSpacing: 0.3,
+    },
+    vehicleCardBody: {
+        padding: 16,
+    },
+    vehicleTopRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        marginBottom: 10,
+    },
+    vehicleIconWrap: {
+        width: 48,
+        height: 48,
+        borderRadius: 16,
+        backgroundColor: COLORS.primaryLight,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    vehicleLabel: {
+        fontSize: 16,
+        fontFamily: FONTS.BOLD_PRIMARY,
+        color: COLORS.textPrimary,
+    },
+    vehicleArrivalRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        marginTop: 3,
+    },
+    vehicleArrivalDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: COLORS.success,
+    },
+    vehicleArrivalText: {
+        fontSize: 11,
+        fontFamily: FONTS.MEDIUM_PRIMARY,
+        color: COLORS.success,
+    },
+    vehicleDesc: {
+        fontSize: 12,
+        fontFamily: FONTS.PRIMARY,
+        color: COLORS.textSecondary,
+        marginBottom: 14,
+        lineHeight: 17,
+    },
+    vehicleFareRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    vehicleFareLabel: {
+        fontSize: 10,
+        fontFamily: FONTS.PRIMARY,
+        color: COLORS.textLight,
+    },
+    vehicleFareValue: {
+        fontSize: 15,
+        fontFamily: FONTS.BOLD_PRIMARY,
+        color: COLORS.textPrimary,
+    },
+    vehicleBookBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        backgroundColor: COLORS.primary,
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+    },
+    vehicleBookBtnText: {
+        color: '#fff',
+        fontSize: 12,
+        fontFamily: FONTS.BOLD_PRIMARY,
+    },
+
+    // ── Driver / matching row on shipment cards
+    driverRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.border,
+    },
+    driverAvatar: {
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        backgroundColor: COLORS.primaryLight,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    driverName: {
+        flex: 1,
+        fontSize: 12,
+        fontFamily: FONTS.MEDIUM_PRIMARY,
+        color: COLORS.textPrimary,
+    },
+    matchingRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.border,
+    },
+    matchingText: {
+        flex: 1,
+        fontSize: 11,
+        fontFamily: FONTS.PRIMARY,
+        color: COLORS.textLight,
+        fontStyle: 'italic',
+    },
+
+    // ── Quick action tiles + trust banner
+    quickActionsRow: {
+        flexDirection: 'row',
+        gap: 12,
+        marginBottom: 20,
+    },
+    quickActionTile: {
+        flex: 1,
+        backgroundColor: COLORS.card,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        padding: 16,
+        alignItems: 'center',
+        gap: 8,
+    },
+    quickActionIconWrap: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: COLORS.background,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    quickActionTitle: {
+        fontSize: 13,
+        fontFamily: FONTS.BOLD_PRIMARY,
+        color: COLORS.textPrimary,
+    },
+    quickActionSub: {
+        fontSize: 11,
+        fontFamily: FONTS.PRIMARY,
+        color: COLORS.textSecondary,
+        textAlign: 'center',
+    },
+    trustBanner: {
+        backgroundColor: COLORS.primaryLight,
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 8,
+    },
+    trustBannerTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 6,
+    },
+    trustBannerTitle: {
+        fontSize: 14,
+        fontFamily: FONTS.BOLD_PRIMARY,
+        color: COLORS.textPrimary,
+    },
+    trustBannerText: {
+        fontSize: 11,
+        fontFamily: FONTS.PRIMARY,
+        color: COLORS.textSecondary,
+        lineHeight: 16,
+        marginBottom: 10,
+    },
+    trustChecksRow: {
+        flexDirection: 'row',
+        gap: 16,
+    },
+    trustCheckItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+    },
+    trustCheckText: {
+        fontSize: 11,
+        fontFamily: FONTS.MEDIUM_PRIMARY,
+        color: COLORS.success,
+    },
     viewAllButton: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
         paddingVertical: 6,
         paddingHorizontal: 12,
-        backgroundColor: '#EFF6FF',
+        backgroundColor: COLORS.primaryLight,
         borderRadius: 12,
     },
     viewAllText: {

@@ -1,4 +1,4 @@
-import React, { forwardRef, memo, useCallback, useState } from 'react';
+import React, { forwardRef, memo, useCallback, useMemo, useState } from 'react';
 import {
     View,
     TextInput,
@@ -9,7 +9,7 @@ import {
     ViewStyle,
 } from 'react-native';
 import { Eye, EyeOff, type LucideIcon } from 'lucide-react-native';
-import { colors, fonts, fontSize, radius, spacing, controlHeight } from '@config/theme';
+import { useAppTheme } from '@theme/ThemeContext';
 
 export type AppTextInputVariant = 'outline' | 'card';
 
@@ -38,7 +38,10 @@ const HIT_SLOP = { top: 10, bottom: 10, left: 10, right: 10 };
 /**
  * Single source of truth for text inputs across the app. Two variants,
  * matching the two distinct input styles already in use — this does not
- * introduce a third look, it centralizes the two that exist.
+ * introduce a third look, it centralizes the two that exist. Styles are
+ * built from `useAppTheme()` per render so inputs repaint correctly when
+ * the device switches light/dark, instead of a module-level StyleSheet
+ * baked at import with the light palette only.
  */
 const AppTextInput = memo(
     forwardRef<TextInput, AppTextInputProps>((props, ref) => {
@@ -58,9 +61,51 @@ const AppTextInput = memo(
             ...rest
         } = props;
 
+        const { colors, fonts, fontSize, radius, spacing, controlHeight } = useAppTheme();
         const [visible, setVisible] = useState(false);
         const toggleVisibility = useCallback(() => setVisible((p) => !p), []);
         const isSecure = secure && !visible;
+
+        const { outlineStyles, cardStyles } = useMemo(
+            () => ({
+                outlineStyles: StyleSheet.create({
+                    wrapper: { gap: spacing.sm - spacing.xs / 2 },
+                    label: { color: colors.TEXT_SECONDARY, fontSize: fontSize.md, fontFamily: fonts.MEDIUM_PRIMARY },
+                    inputContainer: {
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        borderWidth: 1,
+                        borderColor: colors.BORDER,
+                        borderRadius: radius.md,
+                        height: controlHeight.input,
+                        paddingHorizontal: spacing.md,
+                        backgroundColor: colors.SURFACE,
+                    },
+                    input: { flex: 1, color: colors.TEXT_SECONDARY, fontFamily: fonts.PRIMARY, fontSize: fontSize.md },
+                    errorBorder: { borderColor: colors.DANGER },
+                    errorText: { color: colors.DANGER, fontSize: fontSize.xs, fontFamily: fonts.PRIMARY },
+                }),
+                cardStyles: StyleSheet.create({
+                    container: {
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: colors.WHITE,
+                        borderRadius: radius.lg,
+                        paddingHorizontal: spacing.md - spacing.xs / 2,
+                        height: controlHeight.inputCompact,
+                        shadowColor: colors.BLACK,
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        elevation: 3,
+                        width: '100%',
+                    },
+                    leftIcon: { marginRight: spacing.sm },
+                    input: { flex: 1, fontSize: fontSize.xl, fontFamily: fonts.PRIMARY, color: colors.BLACK, width: '100%' },
+                    rightIcon: { marginLeft: spacing.sm },
+                }),
+            }),
+            [colors, fonts, fontSize, radius, spacing, controlHeight],
+        );
 
         if (variant === 'card') {
             return (
@@ -120,41 +165,5 @@ const AppTextInput = memo(
         );
     }),
 );
-
-const outlineStyles = StyleSheet.create({
-    wrapper: { gap: spacing.sm - spacing.xs / 2 },
-    label: { color: colors.TEXT_SECONDARY, fontSize: fontSize.md, fontFamily: fonts.MEDIUM_PRIMARY },
-    inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: colors.BORDER,
-        borderRadius: radius.md,
-        height: controlHeight.input,
-        paddingHorizontal: spacing.md,
-    },
-    input: { flex: 1, color: colors.TEXT_SECONDARY, fontFamily: fonts.PRIMARY, fontSize: fontSize.md },
-    errorBorder: { borderColor: colors.DANGER },
-    errorText: { color: colors.DANGER, fontSize: fontSize.xs, fontFamily: fonts.PRIMARY },
-});
-
-const cardStyles = StyleSheet.create({
-    container: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.WHITE,
-        borderRadius: radius.lg,
-        paddingHorizontal: spacing.md - spacing.xs / 2,
-        height: controlHeight.inputCompact,
-        shadowColor: colors.BLACK,
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-        width: '100%',
-    },
-    leftIcon: { marginRight: spacing.sm },
-    input: { flex: 1, fontSize: fontSize.xl, fontFamily: fonts.PRIMARY, color: colors.BLACK, width: '100%' },
-    rightIcon: { marginLeft: spacing.sm },
-});
 
 export default AppTextInput;

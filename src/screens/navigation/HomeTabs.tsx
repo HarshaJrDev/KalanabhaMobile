@@ -1,15 +1,16 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 import {
     createBottomTabNavigator,
 } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Animated, {
     useAnimatedStyle,
     withSpring,
 } from 'react-native-reanimated';
 
-import COLOR from '@utils/color';
+import { useAppTheme } from '@theme/ThemeContext';
 import { Truck, User, Box, Plus } from 'lucide-react-native';
 
 import Home from '../HomeScreens/Home';
@@ -65,13 +66,24 @@ const TabIcon = memo(
 /* ----------------------------- MAIN NAV ----------------------------- */
 
 const HomeTabs: React.FC = () => {
+    const { colors } = useAppTheme();
+    // The device's own on-screen nav bar (Android's back/home/recents, or
+    // the iOS home indicator) sits in this inset — without adding it to the
+    // tab bar's height/padding, that system chrome visually overlaps this
+    // custom tab bar instead of sitting below it (the "3 buttons
+    // overlapping" bug: the OS nav buttons were drawn on top of our own
+    // icons because the bar was a fixed 70px with no room reserved for
+    // them).
+    const insets = useSafeAreaInsets();
+    const styles = useMemo(() => makeStyles(colors, insets.bottom), [colors, insets.bottom]);
+
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
                 headerShown: false,
                 tabBarShowLabel: false,
-                tabBarActiveTintColor: COLOR.PRIMARY,
-                tabBarInactiveTintColor: '#aaa',
+                tabBarActiveTintColor: colors.PRIMARY,
+                tabBarInactiveTintColor: colors.GRAY,
                 tabBarStyle: styles.tabBar,
 
                 tabBarIcon: ({ color, size, focused }) => {
@@ -102,12 +114,12 @@ export default HomeTabs;
 
 /* ----------------------------- STYLES ----------------------------- */
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], bottomInset: number) => StyleSheet.create({
     tabBar: {
-        height: 70,
-        paddingBottom: 10,
+        height: 60 + bottomInset,
+        paddingBottom: Math.max(bottomInset, 10),
         paddingTop: 10,
-        backgroundColor: '#fff',
+        backgroundColor: colors.SURFACE,
         borderTopWidth: 0,
         elevation: 8,
     },

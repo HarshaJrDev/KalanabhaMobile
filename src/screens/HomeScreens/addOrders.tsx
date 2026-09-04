@@ -58,25 +58,34 @@ import { useFareEstimate, FareEstimate } from '@location/useFareEstimate';
 import { createShipment } from '@features/shipments/api/shipments.api';
 import { safeNumber } from '@utils/parsers';
 import { normalizeError } from '@utils/error';
-const COLORS = {
-    primary: '#1d4ed8',
-    primaryDark: '#1e3a8a',
-    primaryLight: '#EFF6FF',
-    success: '#10B981',
+import { useAppTheme } from '@theme/ThemeContext';
+
+// Rebranded from a generic blue palette to Kalanabha's own orange identity
+// (§4/§7) — every key here is unchanged so the rest of this file (which
+// reads COLORS.* throughout) didn't need touching. Built from
+// useAppTheme() inside each sub-component below (see makeOrderColors)
+// rather than a module-level constant, so it flips with dark mode without
+// threading props through every step component.
+const makeOrderColors = (BRAND: ReturnType<typeof useAppTheme>['colors']) => ({
+    primary: BRAND.PRIMARY,
+    primaryDark: BRAND.PRIMARY_DARK,
+    primaryLight: BRAND.PRIMARY_LIGHT,
+    success: BRAND.SUCCESS,
     successLight: '#F0FDF4',
-    warning: '#F59E0B',
+    warning: BRAND.WARNING,
     warningLight: '#FFFBEB',
-    danger: '#EF4444',
+    danger: BRAND.ERROR,
     dangerLight: '#FEF2F2',
-    text: '#111827',
-    textSecondary: '#6B7280',
-    textMuted: '#9CA3AF',
-    border: '#E5E7EB',
-    borderFocus: '#1d4ed8',
-    bg: '#F0F4FF',
-    surface: '#FFFFFF',
+    text: BRAND.TEXT_PRIMARY,
+    textSecondary: BRAND.TEXT_SECONDARY,
+    textMuted: BRAND.GRAY,
+    border: BRAND.BORDER,
+    borderFocus: BRAND.PRIMARY,
+    bg: BRAND.BACKGROUND,
+    surface: BRAND.SURFACE,
     placeholder: '#C4CACD',
-};
+});
+type OrderColors = ReturnType<typeof makeOrderColors>;
 
 const RADIUS = { sm: 8, md: 12, lg: 16, xl: 22, full: 999 };
 
@@ -153,29 +162,29 @@ const logError = (scope: string, error: unknown) => {
 const STEPS = [
     {
         label: 'Sender',
-        icon: <User size={24} color="#007AFF" />,
+        icon: <User size={24} color="#FF7518" />,
         description: "Sender's details"
     },
     {
         label: 'Receiver',
-        icon: <Send size={24} color="#007AFF" />,
+        icon: <Send size={24} color="#FF7518" />,
         description: "Receiver's details"
     },
     {
         label: 'Package',
-        icon: <Package size={24} color="#007AFF" />,
+        icon: <Package size={24} color="#FF7518" />,
         description: 'Package info'
     },
     {
         label: 'Review',
-        icon: <CircleCheck size={24} color="#007AFF" />,
+        icon: <CircleCheck size={24} color="#FF7518" />,
         description: 'Review & confirm'
     },
 ];
 
 const PACKAGE_CATEGORIES = ['Documents', 'Electronics', 'Clothing', 'Food', 'Furniture', 'Medicine', 'Other'];
 
-const SERVICE_TYPES: { key: OrderDetailsForm['serviceType']; label: string; desc: string; price: string; days: string; color: string }[] = [
+const makeServiceTypes = (COLORS: OrderColors): { key: OrderDetailsForm['serviceType']; label: string; desc: string; price: string; days: string; color: string }[] => [
     { key: 'standard', label: 'Standard', desc: 'Reliable delivery', price: '₹99', days: '3-5 days', color: COLORS.textSecondary },
     { key: 'express', label: 'Express', desc: 'Faster delivery', price: '₹199', days: '1-2 days', color: COLORS.primary },
     { key: 'same-day', label: 'Same Day', desc: 'Deliver today', price: '₹349', days: 'Today', color: COLORS.success },
@@ -224,6 +233,9 @@ const InputField = ({
     error?: string;
     secureTextEntry?: boolean;
 }) => {
+    const { colors: BRAND } = useAppTheme();
+    const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
+    const inputStyles = useMemo(() => makeInputStyles(COLORS), [COLORS]);
     const [focused, setFocused] = useState(false);
     return (
         <View style={inputStyles.wrapper}>
@@ -252,7 +264,7 @@ const InputField = ({
     );
 };
 
-const inputStyles = StyleSheet.create({
+const makeInputStyles = (COLORS: OrderColors) => StyleSheet.create({
     wrapper: { marginBottom: 14 },
     label: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 5, letterSpacing: 0.3 },
     row: {
@@ -268,17 +280,22 @@ const inputStyles = StyleSheet.create({
     error: { color: COLORS.danger, fontSize: 11, marginTop: 3 },
 });
 
-const SectionHeader = ({ title, subtitle }: { title: string; subtitle?: string }) => (
-    <View style={shStyles.wrapper}>
-        <View style={shStyles.bar} />
-        <View>
-            <Text style={shStyles.title}>{title}</Text>
-            {subtitle ? <Text style={shStyles.subtitle}>{subtitle}</Text> : null}
+const SectionHeader = ({ title, subtitle }: { title: string; subtitle?: string }) => {
+    const { colors: BRAND } = useAppTheme();
+    const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
+    const shStyles = useMemo(() => makeShStyles(COLORS), [COLORS]);
+    return (
+        <View style={shStyles.wrapper}>
+            <View style={shStyles.bar} />
+            <View>
+                <Text style={shStyles.title}>{title}</Text>
+                {subtitle ? <Text style={shStyles.subtitle}>{subtitle}</Text> : null}
+            </View>
         </View>
-    </View>
-);
+    );
+};
 
-const shStyles = StyleSheet.create({
+const makeShStyles = (COLORS: OrderColors) => StyleSheet.create({
     wrapper: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, marginTop: 4 },
     bar: { width: 4, height: 22, backgroundColor: COLORS.primary, borderRadius: 2, marginRight: 10 },
     title: { fontSize: 15, fontWeight: '700', color: COLORS.text },
@@ -294,32 +311,37 @@ const NavButtons = ({
     nextLabel?: string;
     loading?: boolean;
     isFirst?: boolean;
-}) => (
-    <View style={navStyles.row}>
-        {!isFirst && (
-            <TouchableOpacity style={navStyles.backBtn} onPress={onBack} activeOpacity={0.8}>
-                <ArrowLeft color={COLORS.primary} width={16} height={16} />
-                <Text style={navStyles.backText}>Back</Text>
+}) => {
+    const { colors: BRAND } = useAppTheme();
+    const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
+    const navStyles = useMemo(() => makeNavStyles(COLORS), [COLORS]);
+    return (
+        <View style={navStyles.row}>
+            {!isFirst && (
+                <TouchableOpacity style={navStyles.backBtn} onPress={onBack} activeOpacity={0.8}>
+                    <ArrowLeft color={COLORS.primary} width={16} height={16} />
+                    <Text style={navStyles.backText}>Back</Text>
+                </TouchableOpacity>
+            )}
+            <TouchableOpacity
+                style={[navStyles.nextBtn, isFirst && { flex: 1 }]}
+                onPress={onNext}
+                activeOpacity={0.85}
+                disabled={loading}
+            >
+                {loading
+                    ? <ActivityIndicator color="#fff" size="small" />
+                    : <>
+                        <Text style={navStyles.nextText}>{nextLabel}</Text>
+                        <ArrowRight color="#fff" width={16} height={16} />
+                    </>
+                }
             </TouchableOpacity>
-        )}
-        <TouchableOpacity
-            style={[navStyles.nextBtn, isFirst && { flex: 1 }]}
-            onPress={onNext}
-            activeOpacity={0.85}
-            disabled={loading}
-        >
-            {loading
-                ? <ActivityIndicator color="#fff" size="small" />
-                : <>
-                    <Text style={navStyles.nextText}>{nextLabel}</Text>
-                    <ArrowRight color="#fff" width={16} height={16} />
-                </>
-            }
-        </TouchableOpacity>
-    </View>
-);
+        </View>
+    );
+};
 
-const navStyles = StyleSheet.create({
+const makeNavStyles = (COLORS: OrderColors) => StyleSheet.create({
     row: { flexDirection: 'row', gap: 12, marginTop: 8, marginBottom: 20 },
     backBtn: {
         flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -453,6 +475,9 @@ const StepPackage = ({
     onNext: () => void;
     onBack: () => void;
 }) => {
+    const { colors: BRAND } = useAppTheme();
+    const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
+    const pkgStyles = useMemo(() => makePkgStyles(COLORS), [COLORS]);
     const [errors, setErrors] = useState<Partial<Record<keyof PackageForm, string>>>({});
 
     const validate = () => {
@@ -557,7 +582,7 @@ const StepPackage = ({
     );
 };
 
-const pkgStyles = StyleSheet.create({
+const makePkgStyles = (COLORS: OrderColors) => StyleSheet.create({
     catLabel: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 8, letterSpacing: 0.3 },
     chip: {
         paddingHorizontal: 14, paddingVertical: 7,
@@ -592,6 +617,10 @@ const StepOrderDetails = ({
     onSubmit: () => void;
     fareEstimate: FareEstimate;
 }) => {
+    const { colors: BRAND } = useAppTheme();
+    const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
+    const odStyles = useMemo(() => makeOdStyles(COLORS), [COLORS]);
+    const SERVICE_TYPES = useMemo(() => makeServiceTypes(COLORS), [COLORS]);
     const insuranceFee = allData.package.insurance ? 49 : 0;
     const fragileHandling = allData.package.fragile ? 29 : 0;
     // Real, distance-based fare from the pickup/drop coordinates + the
@@ -854,7 +883,7 @@ const StepOrderDetails = ({
     );
 };
 
-const odStyles = StyleSheet.create({
+const makeOdStyles = (COLORS: OrderColors) => StyleSheet.create({
     serviceRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
     serviceCard: {
         flex: 1, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border,
@@ -978,6 +1007,9 @@ const SuccessModal = ({ visible, trackingId, onDone }: {
     trackingId: string;
     onDone: () => void;
 }) => {
+    const { colors: BRAND } = useAppTheme();
+    const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
+    const successStyles = useMemo(() => makeSuccessStyles(COLORS), [COLORS]);
     const scaleAnim = useRef(new Animated.Value(0.5)).current;
     const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -1016,7 +1048,7 @@ const SuccessModal = ({ visible, trackingId, onDone }: {
     );
 };
 
-const successStyles = StyleSheet.create({
+const makeSuccessStyles = (COLORS: OrderColors) => StyleSheet.create({
     overlay: {
         flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
         alignItems: 'center', justifyContent: 'center', padding: 24,
@@ -1049,6 +1081,9 @@ const successStyles = StyleSheet.create({
 // ─── STEP INDICATOR HEADER ────────────────────────────────────────────────────
 
 const StepHeader = ({ current, total }: { current: number; total: number }) => {
+    const { colors: BRAND } = useAppTheme();
+    const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
+    const headerStyles = useMemo(() => makeHeaderStyles(COLORS), [COLORS]);
     const progress = ((current) / (total - 1)) * 100;
     return (
         <LinearGradient
@@ -1102,7 +1137,7 @@ const StepHeader = ({ current, total }: { current: number; total: number }) => {
     );
 };
 
-const headerStyles = StyleSheet.create({
+const makeHeaderStyles = (COLORS: OrderColors) => StyleSheet.create({
     gradient: {
         paddingTop: Platform.OS === 'ios' ? 55 : 40,
         paddingHorizontal: 20,
@@ -1145,6 +1180,9 @@ const headerStyles = StyleSheet.create({
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 
 const NewOrder = () => {
+    const { colors: BRAND } = useAppTheme();
+    const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
+    const mainStyles = useMemo(() => makeMainStyles(COLORS), [COLORS]);
     const navigation = useNavigation();
     // Optional hand-off from CheckRate.tsx's "Book This Shipment" — only
     // pre-fills the pickup/drop addresses and vehicle type it already
@@ -1363,7 +1401,7 @@ const NewOrder = () => {
 
 export default NewOrder;
 
-const mainStyles = StyleSheet.create({
+const makeMainStyles = (COLORS: OrderColors) => StyleSheet.create({
     root: { flex: 1, backgroundColor: COLORS.bg },
     content: {
         flex: 1,

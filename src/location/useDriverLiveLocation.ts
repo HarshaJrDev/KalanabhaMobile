@@ -2,10 +2,6 @@ import { useEffect, useRef } from 'react';
 import Geolocation from 'react-native-geolocation-service';
 import { pingLocation } from '@features/tracking/api/tracking.api';
 
-// Rapido-style live tracking: while the driver has an active delivery,
-// periodically POST /tracking/ping (kalanabhaBackend TrackingController) so
-// a customer watching ShipmentDetailsScreen sees it update in near-real-time
-// via the tracking socket (see useTrackingSocket on the customer side).
 export const useDriverLiveLocation = (isActive: boolean): void => {
     const watchId = useRef<number | null>(null);
 

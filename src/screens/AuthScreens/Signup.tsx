@@ -13,9 +13,8 @@ import { ScrollView } from 'react-native-gesture-handler';
 import LinearGradient from 'react-native-linear-gradient';
 import { MapPin } from 'lucide-react-native';
 
-import COLOR from '@utils/color';
 import { H, S, RF, W } from '@utils/responsive';
-import FONTS from '@utils/fonts';
+import { useAppTheme } from '@theme/ThemeContext';
 
 import InputField from '@components/InputField';
 import UserTypeSelector, { UserType } from '@components/UserTypeSelector';
@@ -55,6 +54,8 @@ const STEPS = [
 ];
 
 const Signup = () => {
+    const { colors, fonts, isDark } = useAppTheme();
+    const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
     const [form, setForm] = useState<FormState>(INITIAL_FORM);
     const [errors, setErrors] = useState<FormErrors>({});
     const [type, setType] = useState<UserType>('HOME');
@@ -139,7 +140,7 @@ const Signup = () => {
             style={styles.container}
             behavior={Platform.select({ ios: 'padding' })}
         >
-            <StatusBar barStyle="light-content" backgroundColor={COLOR.PRIMARY} />
+            <StatusBar barStyle="light-content" backgroundColor={colors.PRIMARY} />
             <ScrollView
                 contentContainerStyle={styles.content}
                 keyboardShouldPersistTaps="handled"
@@ -147,7 +148,7 @@ const Signup = () => {
             >
                 {/* Header */}
                 <LinearGradient
-                    colors={[COLOR.PRIMARY, '#1a3a6e']}
+                    colors={[colors.PRIMARY, colors.PRIMARY_DARK]}
                     style={styles.header}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
@@ -215,7 +216,7 @@ const Signup = () => {
                         error={errors.address}
                     />
                     <Pressable style={styles.locationLinkRow} onPress={handleLocation}>
-                        <MapPin size={14} color={COLOR.PRIMARY} />
+                        <MapPin size={14} color={colors.PRIMARY} />
                         <Text style={styles.locationLink}>Use current location</Text>
                     </Pressable>
 
@@ -260,10 +261,12 @@ const Signup = () => {
 
 export default Signup;
 
-const styles = StyleSheet.create({
+// Computed from useAppTheme() so this screen repaints correctly in dark
+// mode instead of staying pinned to the light palette baked at import.
+const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: ReturnType<typeof useAppTheme>['fonts']) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F0F4FF',
+        backgroundColor: colors.BACKGROUND,
     },
     content: {
         paddingBottom: H(40),
@@ -289,11 +292,11 @@ const styles = StyleSheet.create({
     badgeText: {
         fontSize: RF(24),
         color: '#fff',
-        fontFamily: FONTS.BOLD_PRIMARY,
+        fontFamily: fonts.BOLD_PRIMARY,
     },
     headerTitle: {
         fontSize: RF(24),
-        fontFamily: FONTS.BOLD_PRIMARY,
+        fontFamily: fonts.BOLD_PRIMARY,
         color: '#fff',
         letterSpacing: 0.5,
     },
@@ -303,7 +306,7 @@ const styles = StyleSheet.create({
         marginTop: H(4),
     },
     card: {
-        backgroundColor: '#fff',
+        backgroundColor: colors.SURFACE,
         marginHorizontal: S(16),
         marginTop: H(-16),
         borderRadius: W(20),
@@ -324,13 +327,13 @@ const styles = StyleSheet.create({
         width: S(4),
         height: H(18),
         borderRadius: 2,
-        backgroundColor: COLOR.PRIMARY,
+        backgroundColor: colors.PRIMARY,
         marginRight: S(10),
     },
     sectionTitle: {
         fontSize: RF(14),
-        fontFamily: FONTS.MEDIUM_PRIMARY,
-        color: '#374151',
+        fontFamily: fonts.MEDIUM_PRIMARY,
+        color: colors.TEXT_PRIMARY,
         letterSpacing: 0.3,
     },
     locationLinkRow: {
@@ -341,8 +344,8 @@ const styles = StyleSheet.create({
         marginBottom: H(12),
     },
     locationLink: {
-        color: COLOR.PRIMARY,
-        fontFamily: FONTS.MEDIUM_PRIMARY,
+        color: colors.PRIMARY,
+        fontFamily: fonts.MEDIUM_PRIMARY,
         fontSize: RF(13),
     },
     submitWrapper: {

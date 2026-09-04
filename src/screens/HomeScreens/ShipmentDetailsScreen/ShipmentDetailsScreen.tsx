@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
     Text,
@@ -42,31 +42,39 @@ import {
     Phone,
     MessageCircle,
     FileText,
+    Star,
     Circle,
     type LucideIcon,
 } from 'lucide-react-native';
+import { useAppTheme } from '@theme/ThemeContext';
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
-const C = {
-    primary: '#2B3FD4',
-    primaryDark: '#1A2BA8',
-    primaryLight: '#EEF2FF',
-    accent: '#FF6B2C',
-    accentLight: '#FFF0E8',
-    bg: '#F2F5FF',
-    card: '#FFFFFF',
-    text: '#0F1035',
-    textMid: '#4B5563',
-    textLight: '#9CA3C8',
-    border: '#E4E8FF',
-    success: '#10B981',
+// Rebranded from a blue/orange-accent palette to Kalanabha's own orange
+// identity (§4/§7) — every key kept so the rest of this file (which reads
+// C.* extensively) didn't need touching. Built from useAppTheme() inside
+// the component instead of a module-level constant, so it flips with dark
+// mode.
+const makeC = (BRAND: ReturnType<typeof useAppTheme>['colors']) => ({
+    primary: BRAND.PRIMARY,
+    primaryDark: BRAND.PRIMARY_DARK,
+    primaryLight: BRAND.PRIMARY_LIGHT,
+    accent: BRAND.PRIMARY,
+    accentLight: BRAND.PRIMARY_LIGHT,
+    bg: BRAND.BACKGROUND,
+    card: BRAND.SURFACE,
+    text: BRAND.TEXT_PRIMARY,
+    textMid: BRAND.TEXT_SECONDARY,
+    textLight: BRAND.GRAY,
+    border: BRAND.BORDER,
+    success: BRAND.SUCCESS,
     successLight: '#ECFDF5',
-    warning: '#F59E0B',
+    warning: BRAND.WARNING,
     warningLight: '#FFFBEB',
-    danger: '#EF4444',
+    danger: BRAND.ERROR,
     dangerLight: '#FEF2F2',
     white: '#FFFFFF',
-};
+});
+type DetailColors = ReturnType<typeof makeC>;
 
 const RF = (s: number) => s;
 const H = (v: number) => v;
@@ -74,13 +82,13 @@ const S = (v: number) => v;
 const W = (v: number) => v;
 
 // ─── Status config ──────────────────────────────────────────────────────────────
-const STATUS: Record<string, { label: string; color: string; bg: string; icon: LucideIcon }> = {
+const makeStatus = (C: DetailColors): Record<string, { label: string; color: string; bg: string; icon: LucideIcon }> => ({
     delivered: { label: 'Delivered', color: C.success, bg: C.successLight, icon: CheckCircle2 },
     'in-transit': { label: 'In Transit', color: C.primary, bg: C.primaryLight, icon: Truck },
     pending: { label: 'Pending', color: C.warning, bg: C.warningLight, icon: Clock },
     active: { label: 'Active', color: C.primary, bg: C.primaryLight, icon: Package },
     cancelled: { label: 'Cancelled', color: C.danger, bg: C.dangerLight, icon: XCircle },
-};
+});
 
 // ─── Timeline steps ─────────────────────────────────────────────────────────────
 const TIMELINE = [
@@ -139,6 +147,10 @@ const formatTimeAgo = (date: Date | null): string => {
 
 // ═══════════════════════════════════════════════════════════════════════════════
 const ShipmentDetailsScreen = () => {
+    const { colors: BRAND } = useAppTheme();
+    const C = useMemo(() => makeC(BRAND), [BRAND]);
+    const STATUS = useMemo(() => makeStatus(C), [C]);
+    const styles = useMemo(() => makeStyles(C), [C]);
     const navigation = useNavigation();
     const route = useRoute<RouteProp<{ params: RouteParams }, 'params'>>();
     const shipmentId = route?.params?.id;
@@ -303,7 +315,7 @@ const ShipmentDetailsScreen = () => {
     );
 
     const renderTimeline = () => (
-        <AnimatedCard anim={cardAnims[0]} fade={cardFades[0]}>
+        <AnimatedCard anim={cardAnims[0]} fade={cardFades[0]} cardStyle={styles.card}>
             <View style={styles.cardHeader}>
                 <Text style={styles.cardTitle}>Tracking Timeline</Text>
                 <Text style={styles.trackingId}>#{data?.trackingId || DEMO.trackingId}</Text>
@@ -353,7 +365,7 @@ const ShipmentDetailsScreen = () => {
     );
 
     const renderRoute = () => (
-        <AnimatedCard anim={cardAnims[1]} fade={cardFades[1]}>
+        <AnimatedCard anim={cardAnims[1]} fade={cardFades[1]} cardStyle={styles.card}>
             <Text style={styles.cardTitle}>Route</Text>
             <View style={styles.routeWrap}>
                 {/* From */}
@@ -399,7 +411,7 @@ const ShipmentDetailsScreen = () => {
         if (!liveDriverLocation) return null;
 
         return (
-            <AnimatedCard anim={cardAnims[1]} fade={cardFades[1]}>
+            <AnimatedCard anim={cardAnims[1]} fade={cardFades[1]} cardStyle={styles.card}>
                 <View style={styles.cardHeader}>
                     <Text style={styles.cardTitle}>Live Tracking</Text>
                     <View style={styles.liveBadge}>
@@ -425,7 +437,7 @@ const ShipmentDetailsScreen = () => {
     };
 
     const renderPackage = () => (
-        <AnimatedCard anim={cardAnims[2]} fade={cardFades[2]}>
+        <AnimatedCard anim={cardAnims[2]} fade={cardFades[2]} cardStyle={styles.card}>
             <Text style={styles.cardTitle}>Package Details</Text>
             <View style={styles.packageGrid}>
                 {[
@@ -452,7 +464,7 @@ const ShipmentDetailsScreen = () => {
             { label: 'Coupon', value: payment.coupon, bold: false, isDiscount: true },
         ];
         return (
-            <AnimatedCard anim={cardAnims[3]} fade={cardFades[3]}>
+            <AnimatedCard anim={cardAnims[3]} fade={cardFades[3]} cardStyle={styles.card}>
                 <View style={styles.cardHeader}>
                     <Text style={styles.cardTitle}>Payment Summary</Text>
                     <View style={styles.payMethodPill}>
@@ -511,10 +523,12 @@ const ShipmentDetailsScreen = () => {
     };
 
     const renderActions = () => (
-        <AnimatedCard anim={cardAnims[4]} fade={cardFades[4]} noPad>
+        <AnimatedCard anim={cardAnims[4]} fade={cardFades[4]} noPad cardStyle={styles.card}>
             <View style={styles.actionsGrid}>
                 {[
-                    { icon: Map, label: 'Live Map', color: [C.primary, '#6366F1'] as const, onPress: handleLiveMap },
+                    data?.status === 'delivered'
+                        ? { icon: Star, label: 'Rate Delivery', color: [C.primary, C.primaryDark] as const, onPress: () => shipmentId && (navigation as any).navigate('Rating', { shipmentId }) }
+                        : { icon: Map, label: 'Live Map', color: [C.primary, '#6366F1'] as const, onPress: handleLiveMap },
                     { icon: Phone, label: 'Call Driver', color: ['#10B981', '#059669'] as const, onPress: handleCallDriver },
                     { icon: MessageCircle, label: 'Chat Support', color: ['#F59E0B', '#D97706'] as const, onPress: handleChatSupport },
                     { icon: FileText, label: 'Download POD', color: ['#EF4444', '#DC2626'] as const, onPress: handleDownloadPod },
@@ -552,14 +566,15 @@ const ShipmentDetailsScreen = () => {
 };
 
 // ─── AnimatedCard wrapper ───────────────────────────────────────────────────────
-const AnimatedCard = ({ children, anim, fade, noPad }: {
+const AnimatedCard = ({ children, anim, fade, noPad, cardStyle }: {
     children: React.ReactNode;
     anim: Animated.Value;
     fade: Animated.Value;
     noPad?: boolean;
+    cardStyle: ReturnType<typeof makeStyles>['card'];
 }) => (
     <Animated.View style={[
-        styles.card,
+        cardStyle,
         noPad && { padding: 0, overflow: 'hidden' },
         { opacity: fade, transform: [{ translateY: anim }] },
     ]}>
@@ -570,7 +585,10 @@ const AnimatedCard = ({ children, anim, fade, noPad }: {
 export default ShipmentDetailsScreen;
 
 // ─── Styles ─────────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+// Computed from useAppTheme() (via the C token set derived above) instead
+// of a module-level StyleSheet baked with the light palette, so this
+// screen repaints correctly in dark mode.
+const makeStyles = (C: DetailColors) => StyleSheet.create({
     root: { flex: 1, backgroundColor: C.bg },
     scrollContent: { paddingBottom: H(40) },
     loadingWrap: { flex: 1 },

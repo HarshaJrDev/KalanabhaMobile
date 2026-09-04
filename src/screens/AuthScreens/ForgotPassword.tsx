@@ -13,7 +13,7 @@
 // real SMTP/email-API credentials configured yet), so the delivered code
 // isn't visible on-device; production needs a real email adapter behind
 // the same backend contract before this reaches real users.
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -25,16 +25,17 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft } from 'lucide-react-native';
-import COLOR from '@utils/color';
 import { H, S, RF } from '@utils/responsive';
-import FONTS from '@utils/fonts';
 import InputField from '@components/InputField';
 import AppButton from '@components/AppButton';
 import { useForgotPassword, useResetPassword } from '@hooks/useForgotPassword';
 import { showToast } from '@ui/alert/toastStore';
+import { useAppTheme } from '@theme/ThemeContext';
 
 const ForgotPasswordScreen = () => {
     const navigation = useNavigation();
+    const { colors, fonts } = useAppTheme();
+    const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
     const [step, setStep] = useState<'request' | 'reset'>('request');
 
     const [email, setEmail] = useState('');
@@ -91,7 +92,7 @@ const ForgotPasswordScreen = () => {
         <KeyboardAvoidingView style={styles.container} behavior={Platform.select({ ios: 'padding' })}>
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} hitSlop={12}>
-                    <ArrowLeft color="#111" size={22} />
+                    <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
                 </TouchableOpacity>
 
                 <Text style={styles.title}>
@@ -164,32 +165,34 @@ const ForgotPasswordScreen = () => {
 
 export default ForgotPasswordScreen;
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fff' },
+// Computed from useAppTheme() so this screen repaints correctly in dark
+// mode instead of staying pinned to the light palette baked at import.
+const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: ReturnType<typeof useAppTheme>['fonts']) => StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.BACKGROUND },
     scrollContent: { padding: S(24), paddingTop: H(60), gap: H(16) },
     backButton: { marginBottom: H(16) },
     title: {
         fontSize: RF(24),
-        fontFamily: FONTS.BOLD_PRIMARY,
-        color: '#111',
+        fontFamily: fonts.BOLD_PRIMARY,
+        color: colors.TEXT_PRIMARY,
     },
     subtitle: {
         fontSize: RF(14),
-        color: '#6B7280',
-        fontFamily: FONTS.PRIMARY,
+        color: colors.TEXT_SECONDARY,
+        fontFamily: fonts.PRIMARY,
         marginBottom: H(8),
         lineHeight: RF(20),
     },
     errorText: {
-        color: '#DC2626',
+        color: colors.DANGER,
         fontSize: RF(13),
-        fontFamily: FONTS.PRIMARY,
+        fontFamily: fonts.PRIMARY,
     },
     buttonWrapper: { marginTop: H(8) },
     resendWrapper: { alignItems: 'center', marginTop: H(8) },
     resendText: {
-        color: COLOR.PRIMARY,
+        color: colors.PRIMARY,
         fontSize: RF(13),
-        fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+        fontFamily: fonts.SEMI_BOLD_PRIMARY,
     },
 });

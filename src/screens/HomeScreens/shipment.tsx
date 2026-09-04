@@ -11,11 +11,13 @@ import {
     ActivityIndicator,
     Pressable,
     Dimensions,
+    TextInput,
+    Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useMyShipments } from '@features/shipments/hooks';
+import { useMyShipments, useCancelShipment } from '@features/shipments/hooks';
 import type { Shipment as MyShipment } from '@shipment/types';
 import Animated, {
     FadeInDown,
@@ -48,41 +50,54 @@ import {
     Shirt,
     Armchair,
     UtensilsCrossed,
-    Settings,
     Calendar,
-    Tag,
     Check,
     Inbox,
     Hourglass,
     Weight,
+    Search,
+    SlidersHorizontal,
+    Copy,
+    Star,
+    ArrowRight,
+    Plus,
+    Download,
+    CalendarDays,
     type LucideIcon,
 } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import FONTS from '@utils/fonts';
+import { useAppTheme } from '@theme/ThemeContext';
+import { showToast } from '@ui/alert/toastStore';
 
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // ─── Design Tokens ──────────────────────────────────────────────────────────
-const C = {
-    primary: '#2B3FD4',
-    primaryDark: '#1A2BA8',
-    primaryLight: '#EEF2FF',
-    accent: '#FF6B2C',
-    bg: '#F2F5FF',
-    card: '#FFFFFF',
-    text: '#0F1035',
-    textMid: '#4B5563',
-    textLight: '#9CA3C8',
-    border: '#E4E8FF',
-    success: '#10B981',
+// Rebranded to Kalanabha's own orange identity (§4/§7) — every key kept so
+// the rest of this file (which reads C.* extensively) didn't need touching.
+// Built from useAppTheme() inside each component below instead of a
+// module-level constant, so it flips with dark mode.
+const makeC = (BRAND: ReturnType<typeof useAppTheme>['colors']) => ({
+    primary: BRAND.PRIMARY,
+    primaryDark: BRAND.PRIMARY_DARK,
+    primaryLight: BRAND.PRIMARY_LIGHT,
+    accent: BRAND.PRIMARY,
+    bg: BRAND.BACKGROUND,
+    card: BRAND.SURFACE,
+    text: BRAND.TEXT_PRIMARY,
+    textMid: BRAND.TEXT_SECONDARY,
+    textLight: BRAND.GRAY,
+    border: BRAND.BORDER,
+    success: BRAND.SUCCESS,
     successLight: '#ECFDF5',
-    warning: '#F59E0B',
+    warning: BRAND.WARNING,
     warningLight: '#FFFBEB',
-    danger: '#EF4444',
+    danger: BRAND.ERROR,
     dangerLight: '#FEF2F2',
     white: '#FFFFFF',
-};
+});
+type ListColors = ReturnType<typeof makeC>;
 
 const S = (v: number) => v;
 const H = (v: number) => v;
@@ -109,7 +124,7 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 };
 
 // Status configuration with enhanced colors
-const STATUS: Record<string, { label: string; color: string; bg: string; icon: LucideIcon }> = {
+const makeStatus = (C: ListColors): Record<string, { label: string; color: string; bg: string; icon: LucideIcon }> => ({
     searching: {
         label: 'Searching',
         color: C.warning,
@@ -146,12 +161,12 @@ const STATUS: Record<string, { label: string; color: string; bg: string; icon: L
         bg: C.primaryLight,
         icon: Package,
     },
-};
+});
 
 const TABS = [
     { key: 'all', label: 'All', icon: List },
-    { key: 'searching', label: 'Searching', icon: Zap },
     { key: 'in-transit', label: 'In Transit', icon: Truck },
+    { key: 'searching', label: 'Searching', icon: Zap },
     { key: 'delivered', label: 'Delivered', icon: CheckCircle2 },
     { key: 'expired', label: 'Expired', icon: Hourglass },
 ];
@@ -176,23 +191,35 @@ const toListItem = (s: MyShipment) => ({
     to: s.to,
     price: s.price,
     createdAt: { seconds: Math.floor(new Date(s.createdAt).getTime() / 1000) },
+    // Previously dropped by this mapper even though ShipmentCard's JSX
+    // already referenced item.sender/receiver/pickupSlot/serviceType —
+    // those rendered as "undefined (undefined)" silently. Carried through
+    // for real now, plus dispatch/paymentMode for the mockup's driver row
+    // and payment-mode caption.
+    sender: s.sender,
+    receiver: s.receiver,
+    pickupSlot: s.pickupSlot,
+    serviceType: s.serviceType,
+    paymentMode: s.paymentMode,
+    dispatch: s.dispatch,
 });
 
 const ShipmentScreen = () => {
+    const { colors: BRAND } = useAppTheme();
+    const C = useMemo(() => makeC(BRAND), [BRAND]);
+    const STATUS = useMemo(() => makeStatus(C), [C]);
+    const styles = useMemo(() => makeStyles(C), [C]);
     const navigation = useNavigation<HomeScreenProp>();
     const [activeTab, setActiveTab] = useState('all');
     const { data: rawShipments, isLoading: loading } = useMyShipments();
     const shipments = useMemo(() => (rawShipments ?? []).map(toListItem), [rawShipments]);
-    const [sortBy, setSortBy] = useState<'date' | 'status'>('date');
-    const [showSort, setShowSort] = useState(false);
+    const [searchText, setSearchText] = useState('');
 
     // Reanimated values
     const headerScale = useSharedValue(0.95);
     const fadeOpacity = useSharedValue(0);
     const listSlide = useSharedValue(20);
     const listFade = useSharedValue(0);
-    const sortPanelY = useSharedValue(100);
-    const sortPanelOpacity = useSharedValue(0);
 
     // Initialize header animations
     useEffect(() => {
@@ -221,30 +248,30 @@ const ShipmentScreen = () => {
         animateList();
     };
 
-    // Toggle sort panel
-    const toggleSort = () => {
-        setShowSort((v) => {
-            const newVal = !v;
-            sortPanelY.value = withSpring(newVal ? 0 : 100, { damping: 12 });
-            sortPanelOpacity.value = withTiming(newVal ? 1 : 0, { duration: 200 });
-            return newVal;
-        });
-    };
-
-    // Filter & sort shipments
-    const filtered = (() => {
+    // Filter by tab, then by the search box — client-side over the
+    // already-fetched active-shipment list (no separate search endpoint
+    // exists), matching against tracking ID, route, or recipient name.
+    const filtered = useMemo(() => {
         let list = activeTab === 'all' ? shipments : shipments.filter((s) => s.status === activeTab);
-        if (sortBy === 'status') {
-            list = [...list].sort((a, b) => (a.status || '').localeCompare(b.status || ''));
+        const q = searchText.trim().toLowerCase();
+        if (q) {
+            list = list.filter((s) =>
+                s.trackingId?.toLowerCase().includes(q) ||
+                s.from?.toLowerCase().includes(q) ||
+                s.to?.toLowerCase().includes(q) ||
+                s.receiver?.name?.toLowerCase().includes(q) ||
+                s.sender?.name?.toLowerCase().includes(q),
+            );
         }
         return list;
-    })();
+    }, [shipments, activeTab, searchText]);
 
     // Count per tab
     const counts = TABS.reduce((acc, t) => {
         acc[t.key] = t.key === 'all' ? shipments.length : shipments.filter((s) => s.status === t.key).length;
         return acc;
     }, {} as Record<string, number>);
+    const activeTripsCount = counts['in-transit'] + (shipments.filter((s) => s.status === 'accepted').length);
 
     // Animated styles
     const headerAnimStyle = useAnimatedStyle(() => ({
@@ -255,12 +282,6 @@ const ShipmentScreen = () => {
     const listAnimStyle = useAnimatedStyle(() => ({
         opacity: listFade.value,
         transform: [{ translateY: listSlide.value }],
-    }));
-
-    const sortPanelAnimStyle = useAnimatedStyle(() => ({
-        opacity: sortPanelOpacity.value,
-        transform: [{ translateY: sortPanelY.value }],
-        pointerEvents: showSort ? 'auto' : 'none',
     }));
 
     return (
@@ -281,100 +302,35 @@ const ShipmentScreen = () => {
 
                     {/* Header Content */}
                     <View style={styles.headerTop}>
-                        <View>
-                            <View style={styles.headerSubRow}>
-                                <Package color="rgba(255,255,255,0.85)" size={13} />
-                                <Text style={[styles.headerSub, { fontFamily: FONTS.MEDIUM_PRIMARY }]}>
-                                    Overview
-                                </Text>
-                            </View>
+                        <View style={{ flex: 1 }}>
                             <Text style={[styles.headerTitle, { fontFamily: FONTS.BOLD_PRIMARY }]}>
-                                My Shipments
+                                My Orders
+                            </Text>
+                            <Text style={[styles.headerSub, { fontFamily: FONTS.MEDIUM_PRIMARY }]}>
+                                Manage &amp; track all consignments
                             </Text>
                         </View>
-                        <Pressable style={styles.settingsBtn} onPress={toggleSort}>
-                            <Settings color="#fff" size={18} />
-                        </Pressable>
-                    </View>
-
-                    {/* Summary Stats */}
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.summaryRow}
-                    >
-                        {[
-                            {
-                                label: 'Total',
-                                value: shipments.length,
-                                color: 'rgba(255,255,255,0.2)',
-                                icon: Package,
-                            },
-                            {
-                                label: 'Searching',
-                                value: shipments.filter((s) => s.status === 'searching').length,
-                                color: 'rgba(245,158,11,0.4)',
-                                icon: Zap,
-                            },
-                            {
-                                label: 'In Transit',
-                                value: shipments.filter((s) => s.status === 'in-transit').length,
-                                color: 'rgba(99,102,241,0.4)',
-                                icon: Truck,
-                            },
-                            {
-                                label: 'Delivered',
-                                value: shipments.filter((s) => s.status === 'delivered').length,
-                                color: 'rgba(16,185,129,0.4)',
-                                icon: CheckCircle2,
-                            },
-                        ].map((item, idx) => (
-                            <View key={idx} style={[styles.summaryPill, { backgroundColor: item.color }]}>
-                                <item.icon color="#fff" size={16} style={styles.summaryEmoji} />
-                                <Text style={[styles.summaryValue, { fontFamily: FONTS.BOLD_PRIMARY }]}>
-                                    {item.value}
-                                </Text>
-                                <Text style={[styles.summaryLabel, { fontFamily: FONTS.SECONDARY }]}>
-                                    {item.label}
+                        {activeTripsCount > 0 && (
+                            <View style={styles.activeTripsBadge}>
+                                <Text style={[styles.activeTripsBadgeText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>
+                                    {activeTripsCount} Active Trip{activeTripsCount === 1 ? '' : 's'}
                                 </Text>
                             </View>
-                        ))}
-                    </ScrollView>
+                        )}
+                    </View>
 
-                    {/* Sort Panel */}
-                    <Animated.View style={[styles.sortPanel, sortPanelAnimStyle]}>
-                        <Text style={[styles.sortTitle, { fontFamily: FONTS.BOLD_PRIMARY }]}>
-                            Sort by
-                        </Text>
-                        {['date', 'status'].map((s) => (
-                            <TouchableOpacity
-                                key={s}
-                                style={styles.sortOption}
-                                onPress={() => {
-                                    setSortBy(s as any);
-                                    toggleSort();
-                                }}
-                            >
-                                <View style={styles.sortOptionRow}>
-                                    {s === 'date' ? (
-                                        <Calendar color={C.textMid} size={14} />
-                                    ) : (
-                                        <Tag color={C.textMid} size={14} />
-                                    )}
-                                    <Text
-                                        style={[
-                                            styles.sortOptionText,
-                                            { fontFamily: FONTS.MEDIUM_PRIMARY },
-                                            sortBy === s && styles.sortOptionActive,
-                                        ]}
-                                    >
-                                        {s === 'date' ? 'Date' : 'Status'}
-                                    </Text>
-                                </View>
-                                {sortBy === s && <Check color={C.primary} size={16} strokeWidth={3} />}
-                            </TouchableOpacity>
-                        ))}
-                    </Animated.View>
+                    {/* Search */}
+                    <View style={styles.searchBar}>
+                        <Search size={16} color={C.textLight} />
+                        <TextInput
+                            style={[styles.searchInput, { fontFamily: FONTS.MEDIUM_PRIMARY }]}
+                            placeholder="Search by tracking ID, route, or recipient..."
+                            placeholderTextColor={C.textLight}
+                            value={searchText}
+                            onChangeText={setSearchText}
+                        />
+                        <SlidersHorizontal size={16} color={C.textLight} />
+                    </View>
                 </LinearGradient>
             </Animated.View>
 
@@ -455,11 +411,32 @@ const ShipmentScreen = () => {
                                 onPress={() =>
                                     navigation.navigate('ShipmentDetailsScreen', { id: item.id })
                                 }
+                                styles={styles}
+                                colors={C}
+                                status={STATUS}
                             />
                         )}
                     />
                 </Animated.View>
             )}
+
+            {/* Footer utility bar */}
+            <View style={styles.footerBar}>
+                <Pressable style={styles.filterDateBtn} onPress={() => showToast('Date filtering is coming soon', 'info')}>
+                    <CalendarDays size={16} color={C.textMid} />
+                    <View>
+                        <Text style={[styles.filterDateLabel, { fontFamily: FONTS.SECONDARY }]}>Filter Date</Text>
+                        <Text style={[styles.filterDateValue, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>All time</Text>
+                    </View>
+                </Pressable>
+                <Pressable style={styles.exportBtn} onPress={() => showToast('Export is not available yet', 'info')}>
+                    <Download size={14} color={C.textMid} />
+                    <Text style={[styles.exportBtnText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>Export</Text>
+                </Pressable>
+                <Pressable style={styles.fab} onPress={() => (navigation as any).navigate('AddOrder')}>
+                    <Plus size={20} color="#fff" />
+                </Pressable>
+            </View>
         </View>
     );
 };
@@ -469,245 +446,212 @@ type ShipmentCardProps = {
     item: any;
     index: number;
     onPress: () => void;
+    styles: ReturnType<typeof makeStyles>;
+    colors: ListColors;
+    status: ReturnType<typeof makeStatus>;
 };
 
-const ShipmentCard: React.FC<ShipmentCardProps> = ({ item, index, onPress }) => {
-    const pressScale = useSharedValue(1);
+const PAYMENT_LABEL: Record<string, string> = {
+    prepaid: 'Paid UPI',
+    cod: 'Cash on Delivery',
+    credit: 'Credit Account',
+};
+
+const ShipmentCard: React.FC<ShipmentCardProps> = ({ item, index, onPress, styles, colors: C, status: STATUS }) => {
     const cfg = STATUS[item.status] || STATUS.pending;
     const VehicleIcon = VEHICLE_ICONS[item.vehicleType] || Truck;
     const CategoryIcon = CATEGORY_ICONS[item.package?.category] || Package;
+    const { mutate: cancelShipment, isPending: cancelling } = useCancelShipment(item.id);
 
-    const createdDate = item.createdAt?.seconds
-        ? new Date(item.createdAt.seconds * 1000)
-        : new Date();
-    const formattedDate = createdDate.toLocaleDateString([], {
-        day: '2-digit',
-        month: 'short',
-        year: '2-digit',
-    });
+    const createdDate = item.createdAt?.seconds ? new Date(item.createdAt.seconds * 1000) : new Date();
+    const isToday = createdDate.toDateString() === new Date().toDateString();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const isYesterday = createdDate.toDateString() === yesterday.toDateString();
+    const dayLabel = isToday ? 'Today' : isYesterday ? 'Yesterday' : createdDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const timeLabel = createdDate.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+
+    const isDelivered = item.status === 'delivered';
+    const hasDriver = !!item.dispatch?.driverName;
+    const initials = (item.dispatch?.driverName ?? '')
+        .split(' ')
+        .map((p: string) => p[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase();
+
+    const handleCancel = () => {
+        Alert.alert('Cancel this order?', `${item.trackingId} will be cancelled.`, [
+            { text: 'No', style: 'cancel' },
+            {
+                text: 'Yes, cancel',
+                style: 'destructive',
+                onPress: () => cancelShipment(undefined, { onError: () => showToast('Could not cancel — try again', 'error') }),
+            },
+        ]);
+    };
 
     return (
-        <Animated.View
-            entering={FadeInDown.delay(index * 80)}
-            style={{ marginBottom: 12 }}
-        >
+        <Animated.View entering={FadeInDown.delay(index * 80)} style={{ marginBottom: 14 }}>
             <Pressable
-                style={({ pressed }) => [
-                    styles.card,
-                    { transform: [{ scale: pressed ? 0.96 : 1 }] },
-                ]}
+                style={({ pressed }) => [styles.card, { transform: [{ scale: pressed ? 0.98 : 1 }] }]}
                 onPress={onPress}
             >
-                {/* Left Status Stripe */}
                 <View style={[styles.cardAccent, { backgroundColor: cfg.color }]} />
 
                 <View style={styles.cardBody}>
-                    {/* Card Header */}
+                    {/* Header: tracking id + date, status badge */}
                     <View style={styles.cardHeader}>
                         <View style={styles.cardTrackingRow}>
-                            <VehicleIcon color={C.textMid} size={14} />
-                            <View style={{ flex: 1 }}>
-                                <Text
-                                    style={[
-                                        styles.cardTrackingId,
-                                        { fontFamily: FONTS.BOLD_PRIMARY },
-                                    ]}
-                                >
-                                    {item.trackingId}
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.cardOrderId,
-                                        { fontFamily: FONTS.SECONDARY },
-                                    ]}
-                                >
-                                    Order #{item.orderId || 'N/A'}
-                                </Text>
-                            </View>
+                            <Text style={[styles.cardTrackingId, { fontFamily: FONTS.BOLD_PRIMARY }]}>
+                                {item.trackingId}
+                            </Text>
+                            <Copy size={12} color={C.textLight} />
                         </View>
                         <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
                             <cfg.icon color={cfg.color} size={12} />
-                            <Text
-                                style={[
-                                    styles.statusBadgeText,
-                                    { color: cfg.color, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
-                                ]}
-                            >
-                                {cfg.label}
+                            <Text style={[styles.statusBadgeText, { color: cfg.color, fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>
+                                {cfg.label.toUpperCase()}
                             </Text>
                         </View>
                     </View>
-
-                    {/* Route Display */}
-                    <View style={styles.routeSection}>
-                        <View style={styles.routePoint}>
-                            <MapPin size={14} color={C.primary} />
-                            <View style={{ flex: 1 }}>
-                                <Text
-                                    style={[
-                                        styles.routeLabel,
-                                        { fontFamily: FONTS.MEDIUM_PRIMARY },
-                                    ]}
-                                >
-                                    From
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.routeCity,
-                                        { fontFamily: FONTS.SEMI_BOLD_PRIMARY },
-                                    ]}
-                                    numberOfLines={1}
-                                >
-                                    {item.from}
-                                </Text>
-                            </View>
-                        </View>
-
-                        <View style={styles.routeArrow}>
-                            <Text style={{ fontSize: 18 }}>→</Text>
-                        </View>
-
-                        <View style={[styles.routePoint, { alignItems: 'flex-end' }]}>
-                            <MapPin size={14} color={C.accent} />
-                            <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                                <Text
-                                    style={[
-                                        styles.routeLabel,
-                                        { fontFamily: FONTS.MEDIUM_PRIMARY, textAlign: 'right' },
-                                    ]}
-                                >
-                                    To
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.routeCity,
-                                        { fontFamily: FONTS.SEMI_BOLD_PRIMARY },
-                                    ]}
-                                    numberOfLines={1}
-                                >
-                                    {item.to}
-                                </Text>
-                            </View>
-                        </View>
+                    <View style={styles.cardDateRow}>
+                        <Calendar color={C.textLight} size={11} />
+                        <Text style={[styles.cardDateText, { fontFamily: FONTS.SECONDARY }]}>
+                            {dayLabel}, {timeLabel}
+                        </Text>
                     </View>
 
-                    {/* Package Details */}
+                    {isDelivered ? (
+                        // Compact single-line route for a finished order — the
+                        // full pick-up/drop-off breakdown matters while it's
+                        // still moving, not after.
+                        <View style={styles.compactRouteRow}>
+                            <Text style={[styles.compactRouteText, { fontFamily: FONTS.MEDIUM_PRIMARY }]} numberOfLines={1}>
+                                {item.from}
+                            </Text>
+                            <ArrowRight size={13} color={C.textLight} />
+                            <Text style={[styles.compactRouteText, { fontFamily: FONTS.MEDIUM_PRIMARY }]} numberOfLines={1}>
+                                {item.to}
+                            </Text>
+                            <Text style={[styles.compactRouteFare, { fontFamily: FONTS.BOLD_PRIMARY }]}>
+                                ₹{item.price ?? '--'}
+                            </Text>
+                        </View>
+                    ) : (
+                        <View style={styles.routeFareRow}>
+                            <View style={styles.routeCol}>
+                                <View style={styles.routeRow}>
+                                    <View style={[styles.routeDot, { backgroundColor: C.success }]} />
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={[styles.routeLabel, { fontFamily: FONTS.MEDIUM_PRIMARY }]}>Pick up</Text>
+                                        <Text style={[styles.routeCity, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]} numberOfLines={1}>
+                                            {item.from}
+                                        </Text>
+                                    </View>
+                                </View>
+                                <View style={styles.routeDashLine} />
+                                <View style={styles.routeRow}>
+                                    <View style={[styles.routeDot, { backgroundColor: C.accent }]} />
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={[styles.routeLabel, { fontFamily: FONTS.MEDIUM_PRIMARY }]}>Drop off</Text>
+                                        <Text style={[styles.routeCity, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]} numberOfLines={1}>
+                                            {item.to}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View>
+                            <View style={styles.fareCol}>
+                                <Text style={[styles.fareLabel, { fontFamily: FONTS.MEDIUM_PRIMARY }]}>
+                                    {item.status === 'searching' ? 'Fare Est.' : 'Fare'}
+                                </Text>
+                                <Text style={[styles.fareValue, { fontFamily: FONTS.BOLD_PRIMARY }]}>₹{item.price ?? '--'}</Text>
+                                {item.paymentMode && (
+                                    <Text style={[styles.fareSub, { fontFamily: FONTS.SECONDARY }]} numberOfLines={1}>
+                                        {PAYMENT_LABEL[item.paymentMode] ?? item.paymentMode}
+                                    </Text>
+                                )}
+                            </View>
+                        </View>
+                    )}
+
+                    {/* Tags: vehicle + package category */}
                     <View style={styles.packageDetails}>
                         <View style={styles.detailChip}>
+                            <VehicleIcon color={C.textMid} size={12} style={styles.chipEmoji} />
+                            <Text style={[styles.chipText, { fontFamily: FONTS.SECONDARY }]}>{item.vehicleType || 'N/A'}</Text>
+                        </View>
+                        <View style={styles.detailChip}>
                             <CategoryIcon color={C.textMid} size={12} style={styles.chipEmoji} />
-                            <Text
-                                style={[
-                                    styles.chipText,
-                                    { fontFamily: FONTS.SECONDARY },
-                                ]}
-                            >
+                            <Text style={[styles.chipText, { fontFamily: FONTS.SECONDARY }]}>
                                 {item.package?.category || 'N/A'}
                             </Text>
                         </View>
-                        {item.package?.weight && (
-                            <View style={styles.detailChip}>
-                                <Weight color={C.textMid} size={12} style={styles.chipEmoji} />
-                                <Text
-                                    style={[
-                                        styles.chipText,
-                                        { fontFamily: FONTS.SECONDARY },
-                                    ]}
-                                >
-                                    {item.package.weight} kg
-                                </Text>
-                            </View>
-                        )}
-                        <View style={styles.detailChip}>
-                            <Clock size={12} color={C.textLight} />
-                            <Text
-                                style={[
-                                    styles.chipText,
-                                    { fontFamily: FONTS.SECONDARY },
-                                ]}
-                            >
-                                {item.pickupSlot || '--'}
-                            </Text>
-                        </View>
                     </View>
 
-                    {/* Sender/Receiver */}
-                    <View style={styles.partySection}>
-                        <View style={styles.partyItem}>
-                            <User size={13} color={C.primary} />
-                            <View style={{ flex: 1 }}>
-                                <Text
-                                    style={[
-                                        styles.partyRole,
-                                        { fontFamily: FONTS.MEDIUM_PRIMARY },
-                                    ]}
-                                >
-                                    Sender
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.partyName,
-                                        { fontFamily: FONTS.SEMI_BOLD_PRIMARY },
-                                    ]}
-                                    numberOfLines={1}
-                                >
-                                    {item.sender?.name} ({item.sender?.city})
+                    {isDelivered ? (
+                        <View style={styles.deliveredFooter}>
+                            <View style={styles.deliveredRcvdRow}>
+                                <Check color={C.success} size={13} strokeWidth={3} />
+                                <Text style={[styles.deliveredRcvdText, { fontFamily: FONTS.MEDIUM_PRIMARY }]} numberOfLines={1}>
+                                    Rcvd by {item.receiver?.name ?? 'recipient'} (OTP)
                                 </Text>
                             </View>
-                        </View>
-
-                        <View style={styles.partyItem}>
-                            <User size={13} color={C.accent} />
-                            <View style={{ flex: 1 }}>
-                                <Text
-                                    style={[
-                                        styles.partyRole,
-                                        { fontFamily: FONTS.MEDIUM_PRIMARY },
-                                    ]}
+                            <View style={styles.deliveredActions}>
+                                <TouchableOpacity onPress={() => showToast('Rebooking is coming soon', 'info')}>
+                                    <Text style={[styles.rebookText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>Rebook</Text>
+                                </TouchableOpacity>
+                                <Pressable
+                                    style={styles.podBtn}
+                                    onPress={() => showToast('Proof of delivery download is not available yet', 'info')}
                                 >
-                                    Receiver
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.partyName,
-                                        { fontFamily: FONTS.SEMI_BOLD_PRIMARY },
-                                    ]}
-                                    numberOfLines={1}
-                                >
-                                    {item.receiver?.name} ({item.receiver?.city})
-                                </Text>
+                                    <Download size={12} color={C.textMid} />
+                                    <Text style={[styles.podBtnText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>POD</Text>
+                                </Pressable>
                             </View>
                         </View>
-                    </View>
-
-                    {/* Footer Meta */}
-                    <View style={styles.cardFooter}>
-                        <View style={styles.footerMetaRow}>
-                            <Calendar color={C.textLight} size={11} />
-                            <Text style={[styles.footerMeta, { fontFamily: FONTS.SECONDARY }]}>
-                                {formattedDate}
-                            </Text>
-                        </View>
-                        <View style={styles.footerMetaRow}>
-                            {item.serviceType === 'same-day' ? (
-                                <Zap color={C.textLight} size={11} />
-                            ) : (
-                                <Package color={C.textLight} size={11} />
+                    ) : hasDriver ? (
+                        <View style={styles.driverRow}>
+                            <View style={styles.driverAvatar}>
+                                <Text style={[styles.driverInitials, { fontFamily: FONTS.BOLD_PRIMARY }]}>{initials}</Text>
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <View style={styles.driverNameRow}>
+                                    <Text style={[styles.driverName, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]} numberOfLines={1}>
+                                        {item.dispatch.driverName}
+                                    </Text>
+                                    {item.dispatch.driverRating != null && (
+                                        <View style={styles.driverRatingRow}>
+                                            <Star size={11} color="#F59E0B" fill="#F59E0B" />
+                                            <Text style={[styles.driverRatingText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>
+                                                {item.dispatch.driverRating.toFixed(1)}
+                                            </Text>
+                                        </View>
+                                    )}
+                                </View>
+                            </View>
+                            {item.dispatch.driverPhone && (
+                                <Pressable style={styles.driverCallBtn}>
+                                    <Phone size={14} color={C.primary} />
+                                </Pressable>
                             )}
-                            <Text style={[styles.footerMeta, { fontFamily: FONTS.SECONDARY }]}>
-                                {item.serviceType === 'same-day' ? 'Same-day' : 'Standard'}
-                            </Text>
+                            <Pressable style={styles.trackLiveBtn} onPress={onPress}>
+                                <Text style={[styles.trackLiveBtnText, { fontFamily: FONTS.BOLD_PRIMARY }]}>Track Live</Text>
+                                <ArrowRight size={13} color="#fff" />
+                            </Pressable>
                         </View>
-                        <View style={styles.detailsBtn}>
-                            <Text
-                                style={[
-                                    styles.detailsBtnText,
-                                    { fontFamily: FONTS.SEMI_BOLD_PRIMARY },
-                                ]}
-                            >
-                                Details →
-                            </Text>
+                    ) : (
+                        <View style={styles.findingFooter}>
+                            <TouchableOpacity onPress={handleCancel} disabled={cancelling}>
+                                <Text style={[styles.cancelText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>
+                                    {cancelling ? 'Cancelling…' : 'Cancel Request'}
+                                </Text>
+                            </TouchableOpacity>
+                            <Pressable style={styles.viewStatusBtn} onPress={onPress}>
+                                <Text style={[styles.viewStatusBtnText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>View Status</Text>
+                            </Pressable>
                         </View>
-                    </View>
+                    )}
                 </View>
             </Pressable>
         </Animated.View>
@@ -717,7 +661,10 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({ item, index, onPress }) => 
 export default ShipmentScreen;
 
 // ─── Styles ─────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+// Computed from useAppTheme() (via the C token set derived above) instead
+// of a module-level StyleSheet baked with the light palette, so this
+// screen repaints correctly in dark mode.
+const makeStyles = (C: ListColors) => StyleSheet.create({
     root: { flex: 1, backgroundColor: C.bg },
 
     // Header
@@ -763,101 +710,44 @@ const styles = StyleSheet.create({
     headerTop: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'flex-end',
-        marginBottom: H(12),
-    },
-    headerSubRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        marginBottom: H(2),
+        alignItems: 'flex-start',
+        marginBottom: H(14),
+        gap: S(10),
     },
     headerSub: {
-        color: 'rgba(255,255,255,0.65)',
-        fontSize: 11,
-        letterSpacing: 0.5,
+        color: 'rgba(255,255,255,0.8)',
+        fontSize: 12,
+        marginTop: H(3),
     },
     headerTitle: {
         color: '#fff',
-        fontSize: 26,
+        fontSize: 24,
         letterSpacing: -0.5,
-        marginTop: H(2),
     },
-    settingsBtn: {
-        width: W(40),
-        height: W(40),
-        backgroundColor: 'rgba(255,255,255,0.18)',
+    activeTripsBadge: {
+        backgroundColor: 'rgba(255,255,255,0.2)',
         borderRadius: W(12),
-        alignItems: 'center',
-        justifyContent: 'center',
+        paddingHorizontal: S(12),
+        paddingVertical: H(6),
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.22)',
+        borderColor: 'rgba(255,255,255,0.25)',
     },
-    settingsEmoji: { fontSize: 20 },
+    activeTripsBadgeText: { color: '#fff', fontSize: 11 },
 
-    summaryRow: {
-        gap: S(10),
-        paddingBottom: H(4),
-        paddingRight: S(16),
-    },
-    summaryPill: {
+    searchBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: S(8),
+        backgroundColor: C.white,
+        borderRadius: W(14),
         paddingHorizontal: S(14),
-        paddingVertical: H(12),
-        borderRadius: W(14),
-        alignItems: 'center',
-        minWidth: W(85),
-        justifyContent: 'center',
-    },
-    summaryEmoji: { marginBottom: H(4) },
-    summaryValue: {
-        color: '#fff',
-        fontSize: 18,
-    },
-    summaryLabel: {
-        color: 'rgba(255,255,255,0.75)',
-        fontSize: 10,
-        marginTop: H(2),
-    },
-
-    sortPanel: {
-        backgroundColor: C.card,
-        borderRadius: W(14),
-        padding: S(12),
-        marginTop: H(10),
-        position: 'absolute',
-        right: S(16),
-        top: H(100),
-        zIndex: 99,
-        width: W(180),
+        height: H(46),
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-        elevation: 8,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
     },
-    sortTitle: {
-        fontSize: 11,
-        color: C.textLight,
-        letterSpacing: 0.5,
-        marginBottom: H(10),
-    },
-    sortOption: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: H(8),
-    },
-    sortOptionRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-    sortOptionText: {
-        fontSize: 13,
-        color: C.textMid,
-    },
-    sortOptionActive: { color: C.primary },
-    sortCheck: { color: C.primary, fontSize: 16 },
+    searchInput: { flex: 1, fontSize: 13, color: C.text },
 
     // Tabs
     tabsWrap: {
@@ -962,20 +852,26 @@ const styles = StyleSheet.create({
     },
     statusBadgeText: { fontSize: 11 },
 
-    routeSection: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: S(8),
-    },
-    routePoint: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: S(6),
-    },
+    cardDateRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    cardDateText: { fontSize: 11, color: C.textLight },
+
+    // Compact route for a delivered order
+    compactRouteRow: { flexDirection: 'row', alignItems: 'center', gap: S(6) },
+    compactRouteText: { flex: 1, fontSize: 12, color: C.textMid },
+    compactRouteFare: { fontSize: 14, color: C.text },
+
+    // Route + fare (searching/accepted/in-transit)
+    routeFareRow: { flexDirection: 'row', gap: S(10) },
+    routeCol: { flex: 1 },
+    routeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: S(8) },
+    routeDot: { width: 8, height: 8, borderRadius: 4, marginTop: H(3) },
+    routeDashLine: { width: 1, height: H(14), backgroundColor: C.border, marginLeft: 3.5, marginVertical: H(2) },
     routeLabel: { fontSize: 9, color: C.textLight, letterSpacing: 0.5 },
     routeCity: { fontSize: 12, color: C.text, marginTop: H(2) },
-    routeArrow: { alignItems: 'center', justifyContent: 'center' },
+    fareCol: { alignItems: 'flex-end', justifyContent: 'center' },
+    fareLabel: { fontSize: 9, color: C.textLight },
+    fareValue: { fontSize: 16, color: C.text, marginTop: H(2) },
+    fareSub: { fontSize: 10, color: C.textLight, marginTop: H(2) },
 
     packageDetails: {
         flexDirection: 'row',
@@ -994,27 +890,124 @@ const styles = StyleSheet.create({
     chipEmoji: {},
     chipText: { fontSize: 11, color: C.textMid },
 
-    partySection: { gap: H(6) },
-    partyItem: { flexDirection: 'row', alignItems: 'flex-start', gap: S(6) },
-    partyRole: { fontSize: 9, color: C.textLight, letterSpacing: 0.5 },
-    partyName: { fontSize: 11, color: C.text, marginTop: H(1) },
-
-    cardFooter: {
+    // Driver row (accepted/in-transit)
+    driverRow: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: S(8),
-        paddingTop: H(6),
+        backgroundColor: C.primaryLight,
+        borderRadius: W(12),
+        padding: S(10),
+    },
+    driverAvatar: {
+        width: W(32),
+        height: W(32),
+        borderRadius: W(16),
+        backgroundColor: C.card,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    driverInitials: { fontSize: 11, color: C.primary },
+    driverNameRow: { flexDirection: 'row', alignItems: 'center', gap: S(6) },
+    driverName: { fontSize: 12, color: C.text },
+    driverRatingRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+    driverRatingText: { fontSize: 11, color: C.textMid },
+    driverCallBtn: {
+        width: W(30),
+        height: W(30),
+        borderRadius: W(15),
+        backgroundColor: C.card,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    trackLiveBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: C.primary,
+        borderRadius: W(10),
+        paddingHorizontal: S(10),
+        paddingVertical: H(8),
+    },
+    trackLiveBtnText: { color: '#fff', fontSize: 11 },
+
+    // Searching / no driver yet
+    findingFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingTop: H(4),
+    },
+    cancelText: { fontSize: 12, color: C.danger },
+    viewStatusBtn: {
+        backgroundColor: C.bg,
+        borderRadius: W(10),
+        paddingHorizontal: S(12),
+        paddingVertical: H(7),
+        borderWidth: 1,
+        borderColor: C.border,
+    },
+    viewStatusBtnText: { fontSize: 11, color: C.textMid },
+
+    // Delivered footer
+    deliveredFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: S(8),
+        paddingTop: H(4),
         borderTopWidth: 1,
         borderTopColor: C.border,
     },
-    footerMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    footerMeta: { fontSize: 11, color: C.textLight },
-    detailsBtn: {
-        marginLeft: 'auto',
-        backgroundColor: C.primaryLight,
+    deliveredRcvdRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 },
+    deliveredRcvdText: { flex: 1, fontSize: 11, color: C.success },
+    deliveredActions: { flexDirection: 'row', alignItems: 'center', gap: S(12) },
+    rebookText: { fontSize: 12, color: C.primary },
+    podBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: C.bg,
         borderRadius: W(10),
         paddingHorizontal: S(10),
-        paddingVertical: H(5),
+        paddingVertical: H(6),
+        borderWidth: 1,
+        borderColor: C.border,
     },
-    detailsBtnText: { color: C.primary, fontSize: 11 },
+    podBtnText: { fontSize: 11, color: C.textMid },
+
+    // ── Footer utility bar
+    footerBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: S(10),
+        paddingHorizontal: S(16),
+        paddingVertical: H(12),
+        backgroundColor: C.card,
+        borderTopWidth: 1,
+        borderTopColor: C.border,
+    },
+    filterDateBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 },
+    filterDateLabel: { fontSize: 10, color: C.textLight },
+    filterDateValue: { fontSize: 12, color: C.text },
+    exportBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: C.bg,
+        borderRadius: W(10),
+        paddingHorizontal: S(12),
+        paddingVertical: H(9),
+        borderWidth: 1,
+        borderColor: C.border,
+    },
+    exportBtnText: { fontSize: 12, color: C.textMid },
+    fab: {
+        width: W(44),
+        height: W(44),
+        borderRadius: W(22),
+        backgroundColor: C.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
 });

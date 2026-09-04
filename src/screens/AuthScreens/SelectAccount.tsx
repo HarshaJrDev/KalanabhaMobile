@@ -1,14 +1,6 @@
-import React, { useCallback, useState, memo } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    Pressable,
-    StatusBar,
-    Platform,
-} from 'react-native';
+import React, { useCallback, useMemo, useState, memo } from 'react';
+import { View, Text, StyleSheet, Pressable, StatusBar, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import LinearGradient from 'react-native-linear-gradient';
 import Animated, {
     FadeInDown,
     FadeInUp,
@@ -17,172 +9,114 @@ import Animated, {
     withSpring,
     withTiming,
 } from 'react-native-reanimated';
-import { User, Truck, Check, ChevronRight } from 'lucide-react-native';
+import { User, Truck, Check, ArrowLeft, ChevronRight } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
+import { useAppTheme } from '@theme/ThemeContext';
 
-// ───────────────── TYPES ─────────────────
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'SelectAccount'>;
 type AccountType = 'Customer' | 'Driver';
 
-type Account = {
+interface Account {
     type: AccountType;
     label: string;
     description: string;
-    gradient: readonly [string, string];
-};
+}
 
-// ───────────────── DESIGN SYSTEM ─────────────────
-const COLORS = {
-    bgTop: '#0B1130',
-    bgBottom: '#050714',
-    card: 'rgba(255,255,255,0.06)',
-    cardBorder: 'rgba(255,255,255,0.10)',
-    white: '#FFFFFF',
-    muted: 'rgba(255,255,255,0.56)',
-    faint: 'rgba(255,255,255,0.38)',
-} as const;
-
-const FONTS = {
-    PRIMARY_BOLD: 'Montserrat-Bold',
-    PRIMARY_MEDIUM: 'Montserrat-Medium',
-    PRIMARY_SEMIBOLD: 'Montserrat-SemiBold',
-} as const;
-
-const TYPOGRAPHY = {
-    h1: { fontFamily: FONTS.PRIMARY_BOLD, fontSize: 24 },
-    tagline: { fontFamily: FONTS.PRIMARY_MEDIUM, fontSize: 13 },
-    h2: { fontFamily: FONTS.PRIMARY_SEMIBOLD, fontSize: 16 },
-    body: { fontFamily: FONTS.PRIMARY_MEDIUM, fontSize: 13 },
-    button: { fontFamily: FONTS.PRIMARY_BOLD, fontSize: 16 },
-} as const;
-
-const SPACING = { sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 } as const;
-
-// ───────────────── DATA ─────────────────
+// Re-themed to Kalanabha's light brand surface (was a dark navy/purple
+// gradient screen) — same two-card selection + Reanimated press/entrance
+// behavior and the exact same navigation.navigate('Login', { isDriver })
+// call underneath, untouched.
 const ACCOUNTS: Account[] = [
-    {
-        type: 'Customer',
-        label: 'Customer',
-        description: 'Book shipments and track deliveries in real time.',
-        gradient: ['#4F5BFF', '#6D28D9'],
-    },
-    {
-        type: 'Driver',
-        label: 'Driver',
-        description: 'Accept trips, deliver, and earn on your schedule.',
-        gradient: ['#FF7A45', '#F59E0B'],
-    },
+    { type: 'Customer', label: "I'm a Customer", description: 'Book delivery or send packages' },
+    { type: 'Driver', label: "I'm a Driver", description: 'Deliver packages & earn money' },
 ];
 
 const ICONS = { Customer: User, Driver: Truck } as const;
 
-// ───────────────── CARD ─────────────────
-type CardProps = {
+type Styles = ReturnType<typeof makeStyles>;
+
+interface CardProps {
     item: Account;
     index: number;
     selected: boolean;
     onPress: () => void;
-};
+    styles: Styles;
+    textSecondary: string;
+}
 
-const AccountCard = memo(({ item, index, selected, onPress }: CardProps) => {
+const AccountCard = memo(({ item, index, selected, onPress, styles, textSecondary }: CardProps) => {
     const Icon = ICONS[item.type];
     const scale = useSharedValue(1);
 
-    const animatedStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: scale.value }],
-    }));
-
-    const handlePressIn = () => {
-        scale.value = withSpring(0.97, { damping: 18, stiffness: 260 });
-    };
-    const handlePressOut = () => {
-        scale.value = withSpring(1, { damping: 18, stiffness: 260 });
-    };
+    const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
     return (
         <Animated.View
-            entering={FadeInDown.delay(150 + index * 90).duration(450).springify().damping(16)}
+            entering={FadeInDown.delay(120 + index * 90).duration(400).springify().damping(16)}
             style={animatedStyle}
         >
             <Pressable
                 onPress={onPress}
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
-                android_ripple={{ color: 'rgba(255,255,255,0.08)' }}
+                onPressIn={() => { scale.value = withSpring(0.97, { damping: 18, stiffness: 260 }); }}
+                onPressOut={() => { scale.value = withSpring(1, { damping: 18, stiffness: 260 }); }}
                 accessibilityRole="radio"
                 accessibilityState={{ selected }}
                 accessibilityLabel={`${item.label} account`}
-                style={[styles.cardInner, selected && styles.cardInnerSelected]}
+                style={[styles.card, selected && styles.cardSelected]}
             >
-                <LinearGradient colors={item.gradient} style={styles.icon}>
-                    <Icon color={COLORS.white} size={22} strokeWidth={2.25} />
-                </LinearGradient>
+                <View style={[styles.iconWrap, selected && styles.iconWrapSelected]}>
+                    <Icon color={selected ? '#fff' : textSecondary} size={26} strokeWidth={2} />
+                </View>
 
                 <View style={styles.cardText}>
                     <Text style={styles.title}>{item.label}</Text>
-                    <Text style={styles.desc} numberOfLines={2}>
-                        {item.description}
-                    </Text>
+                    <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>
                 </View>
 
                 <View style={[styles.radio, selected && styles.radioSelected]}>
-                    {selected && <Check color={COLORS.white} size={13} strokeWidth={3} />}
+                    {selected && <Check color="#fff" size={13} strokeWidth={3} />}
                 </View>
             </Pressable>
         </Animated.View>
     );
 });
 
-// ───────────────── SCREEN ─────────────────
 const SelectAccount = () => {
     const navigation = useNavigation<NavProp>();
+    const { colors, fonts, fontSize, spacing, radius, isDark } = useAppTheme();
+    const styles = useMemo(() => makeStyles(colors, fonts, fontSize, spacing, radius), [colors, fonts, fontSize, spacing, radius]);
     const [selected, setSelected] = useState<AccountType | null>(null);
 
     const buttonScale = useSharedValue(1);
     const buttonAnimatedStyle = useAnimatedStyle(() => ({
         transform: [{ scale: buttonScale.value }],
-        opacity: withTiming(selected ? 1 : 0.45, { duration: 200 }),
+        opacity: withTiming(selected ? 1 : 0.5, { duration: 200 }),
     }));
 
-    const handleSelect = useCallback((type: AccountType) => {
-        setSelected(type);
-    }, []);
+    const handleSelect = useCallback((type: AccountType) => setSelected(type), []);
 
     const handleContinue = useCallback(() => {
         if (!selected) return;
         navigation.navigate('Login', { isDriver: selected === 'Driver' });
     }, [selected, navigation]);
 
-    const activeGradient = selected
-        ? ACCOUNTS.find(a => a.type === selected)!.gradient
-        : (['#2A2E45', '#2A2E45'] as const);
-
     return (
         <View style={styles.root}>
-            <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-
-            <LinearGradient
-                colors={[COLORS.bgTop, COLORS.bgBottom]}
-                style={StyleSheet.absoluteFillObject}
-            />
+            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.BACKGROUND} />
 
             <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-                <Animated.View
-                    entering={FadeInUp.duration(500).springify().damping(18)}
-                    style={styles.header}
-                >
-                    <Text style={styles.brand}>Kalanabha Logistics</Text>
-                    <Text style={styles.tagline}>Move Anything, Anywhere</Text>
-                </Animated.View>
+                <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.backBtn}>
+                    <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
+                </Pressable>
 
                 <View style={styles.content}>
-                    <Animated.Text
-                        entering={FadeInDown.delay(80).duration(400)}
-                        style={styles.prompt}
-                    >
-                        How will you be using the app?
+                    <Animated.Text entering={FadeInUp.duration(400)} style={styles.title1}>
+                        Choose your type
+                    </Animated.Text>
+                    <Animated.Text entering={FadeInUp.delay(60).duration(400)} style={styles.subtitle}>
+                        to continue
                     </Animated.Text>
 
                     <View style={styles.cardList}>
@@ -193,6 +127,8 @@ const SelectAccount = () => {
                                 index={index}
                                 selected={selected === item.type}
                                 onPress={() => handleSelect(item.type)}
+                                styles={styles}
+                                textSecondary={colors.TEXT_SECONDARY}
                             />
                         ))}
                     </View>
@@ -202,26 +138,15 @@ const SelectAccount = () => {
                     <Pressable
                         disabled={!selected}
                         onPress={handleContinue}
-                        onPressIn={() => {
-                            if (selected) buttonScale.value = withSpring(0.98, { damping: 18, stiffness: 260 });
-                        }}
-                        onPressOut={() => {
-                            buttonScale.value = withSpring(1, { damping: 18, stiffness: 260 });
-                        }}
+                        onPressIn={() => { if (selected) buttonScale.value = withSpring(0.98, { damping: 18, stiffness: 260 }); }}
+                        onPressOut={() => { buttonScale.value = withSpring(1, { damping: 18, stiffness: 260 }); }}
                         hitSlop={8}
                     >
-                        <Animated.View style={buttonAnimatedStyle}>
-                            <LinearGradient
-                                colors={activeGradient}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={styles.button}
-                            >
-                                <Text style={styles.buttonText}>
-                                    {selected ? `Continue as ${selected}` : 'Select an account type'}
-                                </Text>
-                                {selected && <ChevronRight color={COLORS.white} size={18} strokeWidth={2.5} />}
-                            </LinearGradient>
+                        <Animated.View style={[styles.button, buttonAnimatedStyle]}>
+                            <Text style={styles.buttonText}>
+                                {selected ? `Continue as ${selected}` : 'Select an account type'}
+                            </Text>
+                            {selected && <ChevronRight color="#fff" size={18} strokeWidth={2.5} />}
                         </Animated.View>
                     </Pressable>
                 </Animated.View>
@@ -232,82 +157,91 @@ const SelectAccount = () => {
 
 export default SelectAccount;
 
-// ───────────────── STYLES ─────────────────
-const styles = StyleSheet.create({
-    root: { flex: 1, backgroundColor: COLORS.bgBottom },
-    safe: {
-        flex: 1,
-        paddingHorizontal: SPACING.xl,
-        justifyContent: 'space-between',
-    },
+// Computed from useAppTheme() so this screen (and the AccountCard it feeds
+// styles to) repaints correctly in dark mode.
+const makeStyles = (
+    colors: ReturnType<typeof useAppTheme>['colors'],
+    fonts: ReturnType<typeof useAppTheme>['fonts'],
+    fontSize: ReturnType<typeof useAppTheme>['fontSize'],
+    spacing: ReturnType<typeof useAppTheme>['spacing'],
+    radius: ReturnType<typeof useAppTheme>['radius'],
+) => StyleSheet.create({
+    root: { flex: 1, backgroundColor: colors.BACKGROUND },
+    safe: { flex: 1, paddingHorizontal: spacing.xl, justifyContent: 'space-between' },
 
-    header: {
+    backBtn: {
+        marginTop: Platform.OS === 'ios' ? spacing.md : spacing.lg,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         alignItems: 'center',
-        marginTop: Platform.OS === 'ios' ? SPACING.xl : SPACING.xxl,
-        marginBottom: SPACING.lg,
+        justifyContent: 'center',
+        backgroundColor: colors.SURFACE,
+        borderWidth: 1,
+        borderColor: colors.BORDER,
     },
-    brand: { ...TYPOGRAPHY.h1, color: COLORS.white, letterSpacing: 0.2 },
-    tagline: { ...TYPOGRAPHY.tagline, color: COLORS.muted, marginTop: 4 },
 
     content: { flex: 1, justifyContent: 'center' },
-    prompt: {
-        ...TYPOGRAPHY.h2,
-        color: COLORS.white,
-        marginBottom: SPACING.lg,
+    title1: { fontFamily: fonts.BOLD_PRIMARY, fontSize: 26, color: colors.TEXT_PRIMARY, textAlign: 'center' },
+    subtitle: {
+        fontFamily: fonts.MEDIUM_PRIMARY,
+        fontSize: fontSize.lg,
+        color: colors.TEXT_SECONDARY,
         textAlign: 'center',
+        marginBottom: spacing.xl,
     },
 
-    cardList: { gap: SPACING.md },
+    cardList: { gap: spacing.md },
 
-    cardInner: {
+    card: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderRadius: 18,
-        padding: SPACING.md,
-        backgroundColor: COLORS.card,
-        borderWidth: 1,
-        borderColor: COLORS.cardBorder,
-        gap: SPACING.md,
+        borderRadius: radius.lg,
+        padding: spacing.lg,
+        backgroundColor: colors.SURFACE,
+        borderWidth: 1.5,
+        borderColor: colors.BORDER,
+        gap: spacing.md,
     },
-    cardInnerSelected: {
-        borderColor: 'rgba(255,255,255,0.55)',
-        backgroundColor: 'rgba(255,255,255,0.10)',
+    cardSelected: {
+        borderColor: colors.PRIMARY,
+        backgroundColor: colors.PRIMARY_LIGHT,
     },
 
-    icon: {
-        width: 50,
-        height: 50,
-        borderRadius: 14,
+    iconWrap: {
+        width: 52,
+        height: 52,
+        borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: colors.BACKGROUND,
     },
+    iconWrapSelected: { backgroundColor: colors.PRIMARY },
 
     cardText: { flex: 1, gap: 3 },
-    title: { ...TYPOGRAPHY.h2, color: COLORS.white },
-    desc: { ...TYPOGRAPHY.body, color: COLORS.faint, lineHeight: 17 },
+    title: { fontFamily: fonts.SEMI_BOLD_PRIMARY, fontSize: fontSize.xl, color: colors.TEXT_PRIMARY },
+    desc: { fontFamily: fonts.MEDIUM_PRIMARY, fontSize: fontSize.sm, color: colors.TEXT_SECONDARY, lineHeight: 17 },
 
     radio: {
         width: 22,
         height: 22,
         borderRadius: 11,
         borderWidth: 1.5,
-        borderColor: 'rgba(255,255,255,0.3)',
+        borderColor: colors.BORDER,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    radioSelected: {
-        borderColor: 'transparent',
-        backgroundColor: '#22C55E',
-    },
+    radioSelected: { borderColor: colors.PRIMARY, backgroundColor: colors.PRIMARY },
 
     button: {
         flexDirection: 'row',
-        borderRadius: 16,
+        borderRadius: radius.md,
         paddingVertical: 17,
         alignItems: 'center',
         justifyContent: 'center',
         gap: 6,
-        marginBottom: SPACING.sm,
+        marginBottom: spacing.sm,
+        backgroundColor: colors.PRIMARY,
     },
-    buttonText: { ...TYPOGRAPHY.button, color: COLORS.white },
+    buttonText: { fontFamily: fonts.BOLD_PRIMARY, fontSize: fontSize.xl, color: '#fff' },
 });

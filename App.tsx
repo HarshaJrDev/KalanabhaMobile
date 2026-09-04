@@ -117,6 +117,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './src/api/queryClient';
 import { initNetworkMonitoring } from './src/api/network';
 import { GlobalToast } from '@ui/alert/GlobalToast';
+import { ThemeProvider, useAppTheme } from '@theme/ThemeContext';
 
 // Auth Screens
 import Splash from '@screens/AuthScreens/Splash';
@@ -131,6 +132,8 @@ import HomeTabs from '@screens/navigation/HomeTabs';
 import DriverTabs from '@screens/Driver/HomeScreen/HomeScreenDrive';
 import DriverSettingsScreen from '@screens/Driver/SettingsScreen';
 import DriverTripsScreen from '@screens/Driver/TripsScreen';
+import FuelStationsScreen from '@screens/Driver/FuelStationsScreen';
+import RatingScreen from '@screens/HomeScreens/RatingScreen';
 import CustomerSettingsScreen from '@screens/HomeScreens/SettingsScreen';
 import TransactionsScreen from '@screens/HomeScreens/TransactionsScreen';
 
@@ -182,14 +185,15 @@ const App = () => {
 
   if (resolvingSession) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Loading...</Text>
-      </View>
+      <ThemeProvider>
+        <LoadingGate />
+      </ThemeProvider>
     );
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <GlobalToast />
         <NavigationContainer>
@@ -226,6 +230,8 @@ const App = () => {
                 <Stack.Screen name="Sender" component={Sender} />
                 <Stack.Screen name="DriverSettings" component={DriverSettingsScreen} />
                 <Stack.Screen name="DriverTrips" component={DriverTripsScreen} />
+                <Stack.Screen name="FuelStations" component={FuelStationsScreen} />
+                <Stack.Screen name="Rating" component={RatingScreen} />
                 <Stack.Screen name="Settings" component={CustomerSettingsScreen} />
                 <Stack.Screen name="Transactions" component={TransactionsScreen} />
               </>
@@ -234,7 +240,20 @@ const App = () => {
           </Stack.Navigator>
         </NavigationContainer>
       </GestureHandlerRootView>
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  );
+};
+
+// Same "resolving session" loading state as before, just rendered inside
+// ThemeProvider so it respects the device's dark/light setting instead of
+// a hardcoded white background.
+const LoadingGate = () => {
+  const { colors } = useAppTheme();
+  return (
+    <View style={[styles.loadingContainer, { backgroundColor: colors.BACKGROUND }]}>
+      <Text style={{ color: colors.TEXT_PRIMARY }}>Loading...</Text>
+    </View>
   );
 };
 

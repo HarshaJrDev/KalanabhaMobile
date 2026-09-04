@@ -19,6 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 import { ChevronLeft, ScanLine, QrCode } from 'lucide-react-native';
 import { useMyShipments } from '@features/shipments/hooks';
 import { showToast } from '@ui/alert/toastStore';
+import { colors as BRAND } from '@config/theme';
 
 const DUMMY_CODE = 'KL-DEMO-000000';
 
@@ -117,7 +118,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        backgroundColor: '#2563EB',
+        backgroundColor: BRAND.PRIMARY,
         paddingHorizontal: 24,
         paddingVertical: 14,
         borderRadius: 14,

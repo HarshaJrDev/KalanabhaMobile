@@ -12,7 +12,7 @@ import {
     Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useSearchingShipments, useMyShipmentsAsDriver } from '@features/shipments/hooks';
+import { useSearchingShipments, useMyShipmentsAsDriver, useAcceptShipment } from '@features/shipments/hooks';
 import Animated, {
     FadeIn,
     FadeOut,
@@ -25,11 +25,34 @@ import Animated, {
 import LinearGradient from 'react-native-linear-gradient';
 import { DriverHeader } from '@components/DriverHeader';
 import { LogisticsCardList, LogisticsItem } from '@components/LogisticsCardList';
-import { AlertCircle, RefreshCw, Package, Inbox, CheckCircle2, Wallet, MessageCircle } from 'lucide-react-native';
+import {
+    AlertCircle,
+    RefreshCw,
+    Package,
+    Inbox,
+    CheckCircle2,
+    Wallet,
+    MessageCircle,
+    Fuel,
+    ShieldAlert,
+    MapPin,
+    Navigation,
+    X,
+} from 'lucide-react-native';
 
 import { registerFCMToken, setupFCMListeners } from '@utils/cm';
 import { safeNumber } from '@utils/parsers';
 import { useDriverLiveLocation } from '@location/useDriverLiveLocation';
+import { openGoogleMapsDirections } from '@utils/navigation';
+import { useAuthStore } from '@features/store/authStore';
+import { showToast } from '@ui/alert/toastStore';
+import { Linking } from 'react-native';
+
+// No emergency/support phone number exists anywhere in this app's
+// backend (BusinessSetting has no such key) — reusing the same real
+// support channel Profile.tsx's Help Center already uses rather than
+// inventing a fake SOS hotline.
+const SUPPORT_EMAIL = 'support@kalanabha.com';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -100,7 +123,39 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
         [todaysDeliveries],
     );
     const deliveredToday = todaysDeliveries.length;
-    const [isOnline, setIsOnline] = useState(true);
+    // Was a disconnected local useState(true) — always showed "Online"
+    // regardless of the real, persisted User.isOnline value (and never
+    // reflected a toggle made from another device/session).
+    const isOnline = useAuthStore((s) => s.user?.isOnline ?? false);
+
+    // First searching-pool request becomes the "Incoming Load Request"
+    // hero card below, matching what the reference mockup highlights —
+    // everything on it (price, distance, package, sender, insured flag)
+    // is real; no surge multiplier, demand radar, countdown/expiry,
+    // acceptance-score %, or OTP claim since none of those have any
+    // backend behind them.
+    const incomingRequest = searchingShipments?.[0];
+    const remainingShipments = useMemo(
+        () => shipments.filter((s) => s.id !== incomingRequest?.id),
+        [shipments, incomingRequest],
+    );
+    const { mutate: acceptIncoming, isPending: acceptingIncoming } = useAcceptShipment(incomingRequest?.id ?? '');
+    const [dismissedIncomingId, setDismissedIncomingId] = useState<string | null>(null);
+    const showIncomingCard = incomingRequest && incomingRequest.id !== dismissedIncomingId;
+
+    const handleAcceptIncoming = () => {
+        if (!incomingRequest) return;
+        acceptIncoming(undefined, {
+            onSuccess: () => showToast('Order accepted! Start delivery.', 'success'),
+            onError: () => showToast('Order already taken', 'error'),
+        });
+    };
+
+    const handleSos = () => {
+        Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=Driver%20SOS`).catch(() =>
+            showToast('No email app is set up on this device', 'error'),
+        );
+    };
 
     // ━━━━━ Animations
     const headerScale = useSharedValue(0.95);
@@ -205,38 +260,169 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
             <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
             <View style={styles.container}>
                 {/* 🚚 Driver Header */}
-                <Animated.View style={[headerAnimStyle, { width: '100%' }]}>
-                    <DriverHeader
-                        earnings={todayEarnings}
-                        deliveredToday={deliveredToday}
-                        isOnline={isOnline}
-                        style={styles.header}
-                    />
-                </Animated.View>
-
-                {/* 💬 Active Delivery — chat entry point */}
-                {activeDelivery && (
-                    <TouchableOpacity
-                        style={styles.activeDeliveryCard}
-                        onPress={() => (navigation as any).navigate('ShipmentChat', { shipmentId: activeDelivery.id })}
-                    >
-                        <View style={styles.activeDeliveryIcon}>
-                            <Package color="#2563EB" size={18} />
-                        </View>
-                        <View style={styles.activeDeliveryContent}>
-                            <Text style={styles.activeDeliveryTitle}>
-                                Active delivery · {activeDelivery.trackingId}
-                            </Text>
-                            <Text style={styles.activeDeliverySub} numberOfLines={1}>
-                                {activeDelivery.from} → {activeDelivery.to}
-                            </Text>
-                        </View>
-                        <View style={styles.chatPill}>
-                            <MessageCircle color="#fff" size={14} />
-                            <Text style={styles.chatPillText}>Chat</Text>
-                        </View>
+                <View style={{ position: 'relative' }}>
+                    <Animated.View style={[headerAnimStyle, { width: '100%' }]}>
+                        <DriverHeader
+                            earnings={todayEarnings}
+                            deliveredToday={deliveredToday}
+                            isOnline={isOnline}
+                            style={styles.header}
+                        />
+                    </Animated.View>
+                    {/* No emergency-dispatch system exists — this opens a
+                        real email to support (same channel Profile.tsx's
+                        Help Center uses), not a fake panic button. */}
+                    <TouchableOpacity style={styles.sosBtn} onPress={handleSos}>
+                        <ShieldAlert color="#fff" size={16} />
+                        <Text style={styles.sosBtnText}>SOS</Text>
                     </TouchableOpacity>
+                </View>
+
+                {/* 💬 Active Delivery — chat + real directions */}
+                {activeDelivery && (
+                    <View style={styles.activeDeliveryCard}>
+                        <TouchableOpacity
+                            style={styles.activeDeliveryRow}
+                            onPress={() => (navigation as any).navigate('ShipmentChat', { shipmentId: activeDelivery.id })}
+                        >
+                            <View style={styles.activeDeliveryIcon}>
+                                <Package color="#FF7518" size={18} />
+                            </View>
+                            <View style={styles.activeDeliveryContent}>
+                                <Text style={styles.activeDeliveryTitle}>
+                                    Active delivery · {activeDelivery.trackingId}
+                                </Text>
+                                <Text style={styles.activeDeliverySub} numberOfLines={1}>
+                                    {activeDelivery.from} → {activeDelivery.to}
+                                </Text>
+                            </View>
+                            <View style={styles.chatPill}>
+                                <MessageCircle color="#fff" size={14} />
+                                <Text style={styles.chatPillText}>Chat</Text>
+                            </View>
+                        </TouchableOpacity>
+                        {/* No embedded map library is installed in this
+                            app — opens the real Google Maps app/website
+                            (free, no API key) for turn-by-turn directions,
+                            same pattern ShipmentDetailsScreen already uses. */}
+                        <TouchableOpacity
+                            style={styles.openMapsRow}
+                            onPress={() => openGoogleMapsDirections(activeDelivery.pickup, activeDelivery.drop)}
+                        >
+                            <Navigation color="#FF7518" size={13} />
+                            <Text style={styles.openMapsText}>Open directions in Maps</Text>
+                        </TouchableOpacity>
+                    </View>
                 )}
+
+                {/* 📥 Incoming Load Request — the top searching-pool
+                    shipment, styled as the reference mockup's hero card.
+                    Every figure on it is real (price/distanceKm/package/
+                    sender/insured flag); no surge, demand-radar,
+                    countdown-with-expiry, acceptance-score, or OTP claim —
+                    none of those exist anywhere in the backend. */}
+                {showIncomingCard && incomingRequest && (
+                    <Animated.View entering={FadeIn} style={styles.incomingCard}>
+                        <View style={styles.incomingHeaderRow}>
+                            <Text style={styles.incomingHeaderText}>INCOMING LOAD REQUEST</Text>
+                            <TouchableOpacity onPress={() => setDismissedIncomingId(incomingRequest.id)} hitSlop={8}>
+                                <X size={16} color="#9CA3AF" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.incomingPriceRow}>
+                            <Text style={styles.incomingPrice}>₹{incomingRequest.price}</Text>
+                            <View style={styles.incomingPaymentPill}>
+                                <Text style={styles.incomingPaymentPillText}>
+                                    {incomingRequest.paymentMode === 'cod' ? 'COD' : incomingRequest.paymentMode === 'prepaid' ? 'UPI' : 'Credit'}
+                                </Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.incomingStatsRow}>
+                            <View style={styles.incomingStat}>
+                                <Text style={styles.incomingStatLabel}>TOTAL RUN</Text>
+                                <Text style={styles.incomingStatValue}>{incomingRequest.distanceKm.toFixed(1)} km</Text>
+                            </View>
+                            <View style={styles.incomingStat}>
+                                <Text style={styles.incomingStatLabel}>TRIP NET</Text>
+                                <Text style={styles.incomingStatValue}>
+                                    ₹{(incomingRequest.price / Math.max(incomingRequest.distanceKm, 0.1)).toFixed(1)}/km
+                                </Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.incomingSenderRow}>
+                            <View style={styles.incomingSenderAvatar}>
+                                <Text style={styles.incomingSenderInitials}>
+                                    {(incomingRequest.sender?.name ?? '?').split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase()}
+                                </Text>
+                            </View>
+                            <Text style={styles.incomingSenderName} numberOfLines={1}>
+                                {incomingRequest.sender?.name ?? 'Customer'}
+                            </Text>
+                        </View>
+
+                        <View style={styles.incomingVehicleRow}>
+                            <Text style={styles.incomingVehicleText}>
+                                {incomingRequest.vehicleType} · Up to {incomingRequest.package?.weight ?? incomingRequest.weightKg} kg
+                            </Text>
+                            <Text style={styles.incomingPackageText} numberOfLines={1}>
+                                {incomingRequest.package?.category ?? incomingRequest.goodsType}
+                            </Text>
+                            {/* No "insured" flag actually reaches the backend — addOrders.tsx
+                                collects a fragile/insurance toggle in the booking form, but
+                                CreateShipmentPayload's package only carries category/weight,
+                                so there's nothing real to show here. */}
+                        </View>
+
+                        <View style={styles.incomingRouteRow}>
+                            <MapPin size={13} color="#16A34A" />
+                            <Text style={styles.incomingRouteText} numberOfLines={1}>{incomingRequest.pickup.address}</Text>
+                        </View>
+                        <View style={styles.incomingRouteRow}>
+                            <MapPin size={13} color="#FF7518" />
+                            <Text style={styles.incomingRouteText} numberOfLines={1}>{incomingRequest.drop.address}</Text>
+                        </View>
+
+                        <View style={styles.incomingActionsRow}>
+                            <TouchableOpacity
+                                style={styles.declineBtn}
+                                onPress={() => setDismissedIncomingId(incomingRequest.id)}
+                            >
+                                <Text style={styles.declineBtnText}>Decline</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.acceptBtn}
+                                onPress={handleAcceptIncoming}
+                                disabled={acceptingIncoming}
+                            >
+                                <Text style={styles.acceptBtnText}>
+                                    {acceptingIncoming ? 'Accepting…' : 'Accept Load'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </Animated.View>
+                )}
+
+                {/* ⛽ Find nearby fuel stations — GET /maps/fuel-stations (free
+                    OpenStreetMap data) + log a fill-up against /fuel-expenses so
+                    admin can see driver fuel spend. */}
+                <TouchableOpacity
+                    style={styles.fuelCard}
+                    onPress={() => (navigation as any).navigate('FuelStations')}
+                >
+                    <View style={styles.fuelIconWrap}>
+                        <Fuel color="#F59E0B" size={18} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.fuelCardTitle}>Find Fuel Stations</Text>
+                        <Text style={styles.fuelCardSub}>Nearby petrol bunks · log a fill-up</Text>
+                    </View>
+                    <View style={styles.fuelOpenPill}>
+                        <Text style={styles.chatPillText}>Open</Text>
+                    </View>
+                </TouchableOpacity>
 
                 {/* 📦 Orders Section */}
                 <Animated.View style={[{ flex: 1 }, contentAnimStyle]}>
@@ -247,15 +433,15 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                                     Nearby Orders
                                 </Text>
                                 <Text style={styles.subtitle}>
-                                    {shipments.length} available • Real-time updates
+                                    {remainingShipments.length} available • Real-time updates
                                 </Text>
                             </View>
                             <View style={styles.badge}>
-                                <Text style={styles.badgeText}>{shipments.length}</Text>
+                                <Text style={styles.badgeText}>{remainingShipments.length}</Text>
                             </View>
                         </View>
 
-                        {shipments.length === 0 ? (
+                        {remainingShipments.length === 0 ? (
                             <Animated.View
                                 entering={FadeIn.delay(300)}
                                 style={styles.emptyState}
@@ -268,7 +454,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                             </Animated.View>
                         ) : (
                             <LogisticsCardList
-                                data={shipments}
+                                data={remainingShipments}
                                 refreshControl={
                                     <RefreshControl
                                         refreshing={refreshing}
@@ -400,7 +586,126 @@ const styles = StyleSheet.create({
     },
 
     // Active Delivery card
+    sosBtn: {
+        position: 'absolute',
+        top: 14,
+        right: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: '#DC2626',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 12,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+    },
+    sosBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+
     activeDeliveryCard: {
+        marginHorizontal: 16,
+        marginTop: 12,
+        backgroundColor: '#FFF',
+        borderRadius: 14,
+        padding: 14,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+    },
+    activeDeliveryRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    activeDeliveryIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#FFE8D6',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    activeDeliveryContent: { flex: 1 },
+    activeDeliveryTitle: { fontSize: 13, fontWeight: '700', color: '#111827' },
+    activeDeliverySub: { fontSize: 12, color: '#6B7280', marginTop: 2 },
+    chatPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: '#FF7518',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 10,
+    },
+    chatPillText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+    openMapsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginTop: 10,
+        paddingTop: 10,
+        borderTopWidth: 1,
+        borderTopColor: '#F3F4F6',
+    },
+    openMapsText: { fontSize: 12, fontWeight: '700', color: '#FF7518' },
+
+    // ── Incoming Load Request hero card
+    incomingCard: {
+        marginHorizontal: 16,
+        marginTop: 12,
+        backgroundColor: '#FFF',
+        borderRadius: 16,
+        padding: 16,
+        borderWidth: 1.5,
+        borderColor: '#FF7518',
+        elevation: 3,
+        shadowColor: '#FF7518',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 10,
+    },
+    incomingHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+    incomingHeaderText: { fontSize: 11, fontWeight: '800', color: '#FF7518', letterSpacing: 0.5 },
+    incomingPriceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+    incomingPrice: { fontSize: 26, fontWeight: '800', color: '#111827' },
+    incomingPaymentPill: { backgroundColor: '#F3F4F6', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+    incomingPaymentPillText: { fontSize: 11, fontWeight: '700', color: '#6B7280' },
+    incomingStatsRow: { flexDirection: 'row', gap: 20, marginBottom: 12 },
+    incomingStat: {},
+    incomingStatLabel: { fontSize: 10, color: '#9CA3AF', letterSpacing: 0.3 },
+    incomingStatValue: { fontSize: 14, fontWeight: '700', color: '#111827', marginTop: 2 },
+    incomingSenderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+    incomingSenderAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#FFE8D6', alignItems: 'center', justifyContent: 'center' },
+    incomingSenderInitials: { fontSize: 11, fontWeight: '700', color: '#FF7518' },
+    incomingSenderName: { fontSize: 13, fontWeight: '700', color: '#111827', flex: 1 },
+    incomingVehicleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' },
+    incomingVehicleText: { fontSize: 12, color: '#374151', fontWeight: '600', textTransform: 'capitalize' },
+    incomingPackageText: { fontSize: 12, color: '#6B7280' },
+    incomingInsuredPill: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#F0FDF4', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 },
+    incomingInsuredText: { fontSize: 10, fontWeight: '700', color: '#16A34A' },
+    incomingRouteRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+    incomingRouteText: { flex: 1, fontSize: 12, color: '#374151' },
+    incomingActionsRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
+    declineBtn: {
+        flex: 1,
+        alignItems: 'center',
+        paddingVertical: 12,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    declineBtnText: { fontSize: 13, fontWeight: '700', color: '#6B7280' },
+    acceptBtn: {
+        flex: 2,
+        alignItems: 'center',
+        paddingVertical: 12,
+        borderRadius: 12,
+        backgroundColor: '#FF7518',
+    },
+    acceptBtnText: { fontSize: 13, fontWeight: '800', color: '#fff' },
+
+    fuelCard: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
@@ -415,27 +720,22 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.06,
         shadowRadius: 6,
     },
-    activeDeliveryIcon: {
+    fuelIconWrap: {
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: '#EFF6FF',
+        backgroundColor: '#FEF3C7',
         alignItems: 'center',
         justifyContent: 'center',
     },
-    activeDeliveryContent: { flex: 1 },
-    activeDeliveryTitle: { fontSize: 13, fontWeight: '700', color: '#111827' },
-    activeDeliverySub: { fontSize: 12, color: '#6B7280', marginTop: 2 },
-    chatPill: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        backgroundColor: '#2563EB',
+    fuelCardTitle: { fontSize: 13, fontWeight: '700', color: '#111827' },
+    fuelCardSub: { fontSize: 12, color: '#6B7280', marginTop: 2 },
+    fuelOpenPill: {
+        backgroundColor: '#F59E0B',
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: 10,
     },
-    chatPillText: { color: '#fff', fontSize: 12, fontWeight: '700' },
 
     // Orders Section
     ordersSection: {

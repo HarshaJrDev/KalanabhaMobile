@@ -23,6 +23,13 @@ export interface DispatchInfo {
     driverName: string;
     driverPhone?: string;
     driverRating?: number;
+    // Real backend fields (BackendDispatchInfo) that the mapper was
+    // silently dropping — ShipmentChatScreen's "ORDER DISPATCHED" banner
+    // and RatingScreen's "Completed in X mins" both need real timestamps,
+    // not fabricated ones.
+    acceptedAt?: string;
+    startedAt?: string;
+    completedAt?: string;
 }
 
 export interface PackageInfo {

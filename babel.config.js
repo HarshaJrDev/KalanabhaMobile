@@ -18,6 +18,7 @@ module.exports = {
           '@app': '.',
           '@api': './src/api',
           '@config': './src/config',
+          '@theme': './src/theme',
           '@types': './src/types',
           '@validation': './src/validation',
           '@services': './src/services',
