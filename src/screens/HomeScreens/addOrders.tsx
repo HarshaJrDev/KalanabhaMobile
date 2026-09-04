@@ -313,12 +313,13 @@ const makeShStyles = (COLORS: OrderColors) => StyleSheet.create({
 
 const NavButtons = ({
     onBack, onNext, nextLabel = 'Continue',
-    loading = false, isFirst = false,
+    loading = false, disabled = false, isFirst = false,
 }: {
     onBack?: () => void;
     onNext: () => void;
     nextLabel?: string;
     loading?: boolean;
+    disabled?: boolean;
     isFirst?: boolean;
 }) => {
     const { colors: BRAND } = useAppTheme();
@@ -333,10 +334,10 @@ const NavButtons = ({
                 </TouchableOpacity>
             )}
             <TouchableOpacity
-                style={[navStyles.nextBtn, isFirst && { flex: 1 }]}
+                style={[navStyles.nextBtn, isFirst && { flex: 1 }, disabled && navStyles.nextBtnDisabled]}
                 onPress={onNext}
                 activeOpacity={0.85}
-                disabled={loading}
+                disabled={loading || disabled}
             >
                 {loading
                     ? <ActivityIndicator color="#fff" size="small" />
@@ -362,6 +363,7 @@ const makeNavStyles = (COLORS: OrderColors) => StyleSheet.create({
         flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
         gap: 8, backgroundColor: COLORS.primary, borderRadius: RADIUS.md, height: 50,
     },
+    nextBtnDisabled: { backgroundColor: COLORS.textMuted, opacity: 0.7 },
     nextText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 });
 
@@ -654,10 +656,13 @@ const StepOrderDetails = ({
     const insuranceFee = allData.package.insurance ? 49 : 0;
     const fragileHandling = allData.package.fragile ? 29 : 0;
     // Real, distance-based fare from the pickup/drop coordinates + the
-    // selected vehicle's rate card — falls back to a flat estimate only
-    // while the geocode/quote is still loading or failed.
-    const basePrice = fareEstimate.price ?? { standard: 99, express: 199, 'same-day': 349 }[data.serviceType];
-    const total = basePrice + insuranceFee + fragileHandling;
+    // selected vehicle's rate card. Was falling back to a flat guess
+    // ({standard: 99, ...}) on a geocode/quote failure and displaying it as
+    // a normal total — indistinguishable from a real price, right above a
+    // Place Order button that would then hard-block on the same failure.
+    // `total` is null whenever there's no real price to show yet.
+    const basePrice = fareEstimate.price;
+    const total = basePrice != null ? basePrice + insuranceFee + fragileHandling : null;
 
     return (
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -787,10 +792,19 @@ const StepOrderDetails = ({
                     })()}
                     <View style={{ flex: 1 }}>
                         <Text style={odStyles.fareHeroLabel}>
-                            {fareEstimate.loading ? 'Calculating your fare…' : 'Estimated Fare'}
+                            {fareEstimate.loading
+                                ? 'Calculating your fare…'
+                                : fareEstimate.error
+                                    ? 'Unable to estimate'
+                                    : 'Estimated Fare'}
                         </Text>
                         {fareEstimate.loading ? (
                             <ActivityIndicator color="#fff" style={{ alignSelf: 'flex-start', marginTop: 6 }} />
+                        ) : fareEstimate.error ? (
+                            // Was showing "₹0" (or ₹49/₹29 from fees alone) here on a
+                            // geocode/quote failure — a real number in a fare-looking
+                            // slot, when there's no real fare at all yet.
+                            <Text style={odStyles.fareHeroPrice}>—</Text>
                         ) : (
                             <Text style={odStyles.fareHeroPrice}>
                                 ₹{(fareEstimate.price ?? 0) + (allData.package.insurance ? 49 : 0) + (allData.package.fragile ? 29 : 0)}
@@ -882,7 +896,12 @@ const StepOrderDetails = ({
                     {fareEstimate.error && (
                         <View style={odStyles.fareErrorRow}>
                             <AlertTriangle size={12} color={COLORS.warning} />
-                            <Text style={odStyles.fareError}>{fareEstimate.error} — showing a flat estimate instead</Text>
+                            {/* Was "— showing a flat estimate instead", implying the order
+                                could still go through — it couldn't. Real coordinates for
+                                pickup/drop are required for dispatch/tracking, so there's
+                                no flat-estimate fallback that actually lets this order be
+                                placed; the button below is disabled until this resolves. */}
+                            <Text style={odStyles.fareError}>{fareEstimate.error} — fix the address to continue</Text>
                         </View>
                     )}
                     {insuranceFee > 0 && (
@@ -900,7 +919,7 @@ const StepOrderDetails = ({
 
                     <View style={odStyles.totalRow}>
                         <Text style={odStyles.totalLabel}>Total Amount</Text>
-                        <Text style={odStyles.totalValue}>₹{total}</Text>
+                        <Text style={odStyles.totalValue}>{total != null ? `₹${total}` : '—'}</Text>
                     </View>
                 </View>
             </View>
@@ -908,8 +927,15 @@ const StepOrderDetails = ({
             <NavButtons
                 onBack={onBack}
                 onNext={onSubmit}
-                nextLabel={fareEstimate.loading ? 'Calculating fare…' : 'Place Order'}
+                nextLabel={
+                    fareEstimate.loading
+                        ? 'Calculating fare…'
+                        : fareEstimate.error
+                            ? 'Fix address to continue'
+                            : 'Place Order'
+                }
                 loading={submitting || fareEstimate.loading}
+                disabled={!!fareEstimate.error}
             />
         </ScrollView>
     );
