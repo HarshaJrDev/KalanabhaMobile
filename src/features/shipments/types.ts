@@ -88,6 +88,10 @@ export interface CreateShipmentPayload {
     paymentMode: string;
     pickupSlot: string;
     notes?: string;
+    // 'PARCEL' (default, omit) | 'HOUSE_SHIFTING' — Porter-style movers
+    // booking (StepCategory in addOrders.tsx).
+    category?: string;
+    helpersCount?: number;
 }
 
 // POST /shipments/quote — QuoteShipmentDto / response
@@ -96,11 +100,14 @@ export interface QuoteShipmentPayload {
     drop: { lat: number; lng: number };
     vehicleType: string;
     serviceType: string;
+    category?: string;
+    helpersCount?: number;
 }
 
 export interface ShipmentQuote {
     price: number;
     distanceKm: number;
+    helperCost: number;
 }
 
 // POST /shipments/:id/assign — AssignShipmentDto

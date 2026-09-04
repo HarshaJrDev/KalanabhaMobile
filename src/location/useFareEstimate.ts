@@ -10,9 +10,10 @@ export interface FareEstimate {
     pickup: { lat: number; lng: number } | null;
     drop: { lat: number; lng: number } | null;
     error: string | null;
+    helperCost: number | null;
 }
 
-const IDLE: FareEstimate = { loading: false, price: null, distanceKm: null, pickup: null, drop: null, error: null };
+const IDLE: FareEstimate = { loading: false, price: null, distanceKm: null, pickup: null, drop: null, error: null, helperCost: null };
 
 export interface KnownCoords {
     lat: number;
@@ -42,6 +43,8 @@ export const useFareEstimate = (
     serviceType: string,
     pickupCoords?: KnownCoords | null,
     dropCoords?: KnownCoords | null,
+    category?: string,
+    helpersCount?: number,
 ): FareEstimate => {
     const [estimate, setEstimate] = useState<FareEstimate>(IDLE);
     const requestId = useRef(0);
@@ -69,7 +72,7 @@ export const useFareEstimate = (
                     return;
                 }
 
-                const quote = await quoteShipment({ pickup, drop, vehicleType, serviceType });
+                const quote = await quoteShipment({ pickup, drop, vehicleType, serviceType, category, helpersCount });
 
                 if (currentRequest !== requestId.current) return;
 
@@ -80,6 +83,7 @@ export const useFareEstimate = (
                     pickup,
                     drop,
                     error: null,
+                    helperCost: quote.helperCost,
                 });
             } catch (err) {
                 if (currentRequest !== requestId.current) return;
@@ -89,7 +93,7 @@ export const useFareEstimate = (
         };
 
         run();
-    }, [pickupAddress, dropAddress, vehicleType, serviceType, pickupCoords?.lat, pickupCoords?.lng, dropCoords?.lat, dropCoords?.lng]);
+    }, [pickupAddress, dropAddress, vehicleType, serviceType, pickupCoords?.lat, pickupCoords?.lng, dropCoords?.lat, dropCoords?.lng, category, helpersCount]);
 
     return estimate;
 };

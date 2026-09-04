@@ -33,3 +33,11 @@ export interface ServiceArea {
     createdAt: string;
     updatedAt: string;
 }
+
+// GET /settings/business — Prisma `BusinessSetting` model.
+export interface BusinessSetting {
+    key: string;
+    value: string;
+    description: string;
+    updatedAt: string;
+}

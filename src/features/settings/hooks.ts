@@ -74,3 +74,22 @@ export const useServiceAreas = () => {
         staleTime: 60 * 1000,
     });
 };
+
+export const businessSettingKeys = {
+    all: ['business-settings'] as const,
+};
+
+// Screen -> hook -> settings.api -> GET /settings/business -> cache -> UI.
+// addOrders.tsx's House Shifting step reads 'helper_rate_per_person' from
+// this to show the real per-helper charge before booking, rather than a
+// number baked into the app that could drift from what PricingService
+// actually charges.
+export const useBusinessSettings = () => {
+    const { isAuthenticated } = useAuthState();
+    return useQuery({
+        queryKey: businessSettingKeys.all,
+        queryFn: settingsApi.getBusinessSettings,
+        enabled: isAuthenticated,
+        staleTime: 60 * 1000,
+    });
+};

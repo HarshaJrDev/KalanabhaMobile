@@ -608,6 +608,24 @@ const HomeScreen: React.FC = () => {
                         </Pressable>
                     </View>
 
+                    {/* Porter-style movers booking — hands off into
+                        addOrders.tsx with the House Shifting category
+                        pre-selected (its own Step 0 still lets the
+                        customer switch back to a plain parcel). */}
+                    <Pressable
+                        style={styles.movingBanner}
+                        onPress={() => (navigation as any).navigate('AddOrder', { prefill: { category: 'HOUSE_SHIFTING' } })}
+                    >
+                        <View style={styles.movingBannerIconWrap}>
+                            <Truck size={22} color="#fff" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.movingBannerTitle}>House Shifting</Text>
+                            <Text style={styles.movingBannerSub}>Movers with loading/unloading help — van or truck</Text>
+                        </View>
+                        <ArrowRight size={18} color="#fff" />
+                    </Pressable>
+
                     {/* Trust banner — decorative, describing the platform in
                         general (not a specific shipment's real insurance/OTP
                         state), same status as the promo card above. */}
@@ -1410,6 +1428,34 @@ const makeStyles = (COLORS: HomeColors, FONTS: ReturnType<typeof useAppTheme>['f
         fontFamily: FONTS.PRIMARY,
         color: COLORS.textSecondary,
         textAlign: 'center',
+    },
+    movingBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        backgroundColor: COLORS.primary,
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 20,
+    },
+    movingBannerIconWrap: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    movingBannerTitle: {
+        fontSize: 14,
+        fontFamily: FONTS.BOLD_PRIMARY,
+        color: '#fff',
+    },
+    movingBannerSub: {
+        fontSize: 11,
+        fontFamily: FONTS.PRIMARY,
+        color: 'rgba(255,255,255,0.85)',
+        marginTop: 2,
     },
     trustBanner: {
         backgroundColor: COLORS.primaryLight,

@@ -1,6 +1,6 @@
 import { apiClient } from '@api/client';
 import type { ApiSuccessResponse } from '@api/types';
-import type { VehicleConfig, VehicleConfigPayload, ServiceArea } from '../types';
+import type { VehicleConfig, VehicleConfigPayload, ServiceArea, BusinessSetting } from '../types';
 
 // GET /settings/vehicle-configs — Prisma VehicleConfig model.
 export const getVehicleConfigs = async (): Promise<VehicleConfig[]> => {
@@ -32,5 +32,12 @@ export const deleteVehicleConfig = async (id: string): Promise<void> => {
 // of free-text address entry.
 export const getServiceAreas = async (): Promise<ServiceArea[]> => {
     const { data } = await apiClient.get<ApiSuccessResponse<ServiceArea[]>>('/settings/service-areas');
+    return data.data;
+};
+
+// GET /settings/business — key/value platform rules, includes
+// 'helper_rate_per_person' (House Shifting's real per-helper charge).
+export const getBusinessSettings = async (): Promise<BusinessSetting[]> => {
+    const { data } = await apiClient.get<ApiSuccessResponse<BusinessSetting[]>>('/settings/business');
     return data.data;
 };
