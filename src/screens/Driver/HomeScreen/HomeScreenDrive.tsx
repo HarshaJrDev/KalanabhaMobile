@@ -8,6 +8,7 @@ import Home from '../../HomeScreens/Home';
 import shipment from '../../HomeScreens/shipment';
 import HomeScreen from './HomeScreen';
 import ProfileScreen from '../ProfileScreen';
+import { useTabBarStyle } from '../../navigation/useTabBarStyle';
 
 
 const Tab = createBottomTabNavigator();
@@ -23,13 +24,22 @@ const AddOrdersButton = ({ children, onPress }: any) => (
 );
 
 const DriverTabs = () => {
+    // Was a hardcoded `height: 70` with no safe-area bottom inset — the
+    // device's own on-screen nav bar (Android back/home/recents, or the
+    // iOS home indicator) then drew on top of this custom tab bar instead
+    // of sitting below it, which is also why screen content butted right
+    // up against the bar with no room to breathe (the "buttons
+    // overlapping the screen" bug). Shared with the customer tab
+    // navigator (HomeTabs.tsx) so both stay correct together.
+    const tabBarStyle = useTabBarStyle('#fff');
+
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
                 headerShown: false,
                 tabBarActiveTintColor: COLOR.PRIMARY,
                 tabBarInactiveTintColor: '#aaa',
-                tabBarStyle: styles.tabBar,
+                tabBarStyle,
                 tabBarIcon: ({ color, size }) => {
                     if (route.name === 'Home') return <Truck color={color} width={size} height={size} />;
                     if (route.name === 'Orders') return <Box color={color} width={size} height={size} />;
@@ -62,13 +72,6 @@ const DriverTabs = () => {
 export default DriverTabs;
 
 const styles = StyleSheet.create({
-    tabBar: {
-        height: 70,
-        paddingBottom: 10,
-        paddingTop: 10,
-        elevation: 5,
-        backgroundColor: '#fff',
-    },
     addButtonContainer: {
         top: -30,
         justifyContent: 'center',

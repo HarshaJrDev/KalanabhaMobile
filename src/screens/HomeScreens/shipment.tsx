@@ -69,6 +69,7 @@ import { RootStackParamList } from '../navigation/types';
 import FONTS from '@utils/fonts';
 import { useAppTheme } from '@theme/ThemeContext';
 import { showToast } from '@ui/alert/toastStore';
+import { useTabBarContentPadding } from '../navigation/useTabBarStyle';
 
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -214,6 +215,10 @@ const ShipmentScreen = () => {
     const { data: rawShipments, isLoading: loading } = useMyShipments();
     const shipments = useMemo(() => (rawShipments ?? []).map(toListItem), [rawShipments]);
     const [searchText, setSearchText] = useState('');
+    // This screen lives under the bottom tab bar (HomeTabs.tsx "Orders")
+    // — the list's fixed H(44) bottom padding didn't account for it, so
+    // the last card sat behind the bar instead of scrolling clear of it.
+    const tabBarPadding = useTabBarContentPadding();
 
     // Reanimated values
     const headerScale = useSharedValue(0.95);
@@ -402,7 +407,7 @@ const ShipmentScreen = () => {
                     <FlatList
                         data={filtered}
                         keyExtractor={(item) => item.id}
-                        contentContainerStyle={styles.listContent}
+                        contentContainerStyle={[styles.listContent, { paddingBottom: tabBarPadding }]}
                         showsVerticalScrollIndicator={false}
                         renderItem={({ item, index }) => (
                             <ShipmentCard
