@@ -70,6 +70,10 @@ export interface BackendShipment {
 
     status: BackendShipmentStatus;
 
+    // 'PARCEL' (default) | 'HOUSE_SHIFTING' — Porter-style movers booking.
+    category: string;
+    helpersCount: number;
+
     createdAt: string;
     updatedAt: string;
 }
