@@ -29,7 +29,6 @@ import {
     AlertCircle,
     RefreshCw,
     Package,
-    Inbox,
     CheckCircle2,
     Wallet,
     MessageCircle,
@@ -48,6 +47,9 @@ import { openGoogleMapsDirections } from '@utils/navigation';
 import { useAuthStore } from '@features/store/authStore';
 import { showToast } from '@ui/alert/toastStore';
 import { Linking } from 'react-native';
+import { useVehicleConfigs } from '@features/settings/hooks';
+import VehicleVisual from '@components/VehicleVisual';
+import FadeImage from '@components/FadeImage';
 
 // No emergency/support phone number exists anywhere in this app's
 // backend (BusinessSetting has no such key) — reusing the same real
@@ -131,6 +133,17 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     // reflected a toggle made from another device/session).
     const isOnline = useAuthStore((s) => s.user?.isOnline ?? false);
     const documentsVerified = useAuthStore((s) => s.user?.documentsVerified ?? false);
+
+    // Real, admin-set vehicle photos (GET /settings/vehicle-configs) — the
+    // same data every vehicle picker in the customer app already reads,
+    // matched here by name against a shipment's real vehicleType so the
+    // incoming-request and active-delivery cards show the actual vehicle
+    // photo instead of a generic package icon.
+    const { data: vehicleConfigsData } = useVehicleConfigs();
+    const vehicleForType = useCallback(
+        (vehicleType: string) => vehicleConfigsData?.find((v) => v.name.toLowerCase() === vehicleType.toLowerCase()) ?? { name: vehicleType, imageUrl: null },
+        [vehicleConfigsData],
+    );
 
     // First searching-pool request becomes the "Incoming Load Request"
     // hero card below, matching what the reference mockup highlights —
@@ -289,9 +302,14 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                             style={styles.activeDeliveryRow}
                             onPress={() => (navigation as any).navigate('ShipmentChat', { shipmentId: activeDelivery.id })}
                         >
-                            <View style={styles.activeDeliveryIcon}>
-                                <Package color="#FF7518" size={18} />
-                            </View>
+                            <VehicleVisual
+                                vehicle={vehicleForType(activeDelivery.vehicleType)}
+                                size={40}
+                                iconSize={18}
+                                borderRadius={10}
+                                backgroundColor="#FFF1E8"
+                                iconColor="#FF7518"
+                            />
                             <View style={styles.activeDeliveryContent}>
                                 <Text style={styles.activeDeliveryTitle}>
                                     Active delivery · {activeDelivery.trackingId}
@@ -370,6 +388,14 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                         </View>
 
                         <View style={styles.incomingVehicleRow}>
+                            <VehicleVisual
+                                vehicle={vehicleForType(incomingRequest.vehicleType)}
+                                size={28}
+                                iconSize={14}
+                                borderRadius={8}
+                                backgroundColor="#FFF1E8"
+                                iconColor="#FF7518"
+                            />
                             {incomingRequest.category === 'HOUSE_SHIFTING' ? (
                                 // No real weight for a house move (never measured) —
                                 // showing "Up to 0 kg" would read as a bug. Helper
@@ -487,7 +513,11 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                                 entering={FadeIn.delay(300)}
                                 style={styles.emptyState}
                             >
-                                <Inbox color="#9CA3AF" size={56} style={styles.emptyEmoji} />
+                                <FadeImage
+                                    uri="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/A_Courier_Delivering_a_Parcel.jpg/960px-A_Courier_Delivering_a_Parcel.jpg"
+                                    style={styles.emptyImage}
+                                    placeholderColor="#F3F4F6"
+                                />
                                 <Text style={styles.emptyTitle}>No orders nearby</Text>
                                 <Text style={styles.emptyMessage}>
                                     Check back soon for new deliveries in your area
@@ -829,6 +859,12 @@ const styles = StyleSheet.create({
     emptyEmoji: {
         fontSize: 56,
         marginBottom: 12,
+    },
+    emptyImage: {
+        width: 160,
+        height: 160,
+        borderRadius: 80,
+        marginBottom: 16,
     },
     emptyTitle: {
         fontSize: 18,
