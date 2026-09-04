@@ -996,8 +996,10 @@ const StepPackage = ({
                     <View style={pkgStyles.toggleLeft}>
                         <CheckCircle color={COLORS.success} width={18} height={18} />
                         <View style={{ marginLeft: 10 }}>
-                            <Text style={pkgStyles.toggleTitle}>Add Insurance</Text>
-                            <Text style={pkgStyles.toggleSub}>Protection up to ₹10,000</Text>
+                            <Text style={pkgStyles.toggleTitle}>Request Insurance</Text>
+                            {/* Was "Protection up to ₹10,000" — no real insurance product
+                                exists yet; this just flags the request for admin/driver. */}
+                            <Text style={pkgStyles.toggleSub}>Flags this for admin review</Text>
                         </View>
                     </View>
                     <Switch
@@ -1093,8 +1095,11 @@ const StepOrderDetails = ({
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeVehicleConfigs]);
-    const insuranceFee = allData.package.insurance ? 49 : 0;
-    const fragileHandling = allData.package.fragile ? 29 : 0;
+    // Was adding a flat ₹49/₹29 here for fragile/insurance — a fee that
+    // was never actually charged (no payment gateway exists), just
+    // silently baked into the displayed total. fragile/insuranceRequested
+    // are now real, persisted flags (kalanabhaBackend 5f7763e) shown as
+    // plain requests below, with no invented price attached to either.
     // Real, distance-based fare from the pickup/drop coordinates + the
     // selected vehicle's rate card. Was falling back to a flat guess
     // ({standard: 99, ...}) on a geocode/quote failure and displaying it as
@@ -1102,7 +1107,7 @@ const StepOrderDetails = ({
     // Place Order button that would then hard-block on the same failure.
     // `total` is null whenever there's no real price to show yet.
     const basePrice = fareEstimate.price;
-    const total = basePrice != null ? basePrice + insuranceFee + fragileHandling : null;
+    const total = basePrice;
 
     return (
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -1246,9 +1251,7 @@ const StepOrderDetails = ({
                             // slot, when there's no real fare at all yet.
                             <Text style={odStyles.fareHeroPrice}>—</Text>
                         ) : (
-                            <Text style={odStyles.fareHeroPrice}>
-                                ₹{(fareEstimate.price ?? 0) + (allData.package.insurance ? 49 : 0) + (allData.package.fragile ? 29 : 0)}
-                            </Text>
+                            <Text style={odStyles.fareHeroPrice}>₹{fareEstimate.price ?? 0}</Text>
                         )}
                     </View>
                     {fareEstimate.distanceKm != null && (
@@ -1311,7 +1314,10 @@ const StepOrderDetails = ({
                             <Text style={odStyles.summKey}>Insurance</Text>
                             <View style={odStyles.summValRow}>
                                 <Check size={13} color={COLORS.success} strokeWidth={3} />
-                                <Text style={[odStyles.summVal, { color: COLORS.success }]}>Covered up to ₹10,000</Text>
+                                {/* Was "Covered up to ₹10,000" — no real insurance product
+                                    exists behind this yet, just a request flag driver/admin
+                                    can see. Don't promise coverage that isn't real. */}
+                                <Text style={[odStyles.summVal, { color: COLORS.success }]}>Requested</Text>
                             </View>
                         </View>
                     )}
@@ -1354,19 +1360,6 @@ const StepOrderDetails = ({
                             <Text style={odStyles.summVal}>₹{fareEstimate.helperCost}</Text>
                         </View>
                     )}
-                    {insuranceFee > 0 && (
-                        <View style={odStyles.summRow}>
-                            <Text style={odStyles.summKey}>Insurance</Text>
-                            <Text style={odStyles.summVal}>₹{insuranceFee}</Text>
-                        </View>
-                    )}
-                    {fragileHandling > 0 && (
-                        <View style={odStyles.summRow}>
-                            <Text style={odStyles.summKey}>Fragile handling</Text>
-                            <Text style={odStyles.summVal}>₹{fragileHandling}</Text>
-                        </View>
-                    )}
-
                     <View style={odStyles.totalRow}>
                         <Text style={odStyles.totalLabel}>Total Amount</Text>
                         <Text style={odStyles.totalValue}>{total != null ? `₹${total}` : '—'}</Text>
@@ -1941,6 +1934,8 @@ const NewOrder = () => {
                     : orderDetails.notes,
                 category,
                 helpersCount: isHouseShifting ? pkg.helpersCount : undefined,
+                fragile: pkg.fragile,
+                insuranceRequested: pkg.insurance,
             }, idempotencyKey);
 
             setTrackingId(shipment.trackingId);

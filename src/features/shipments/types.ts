@@ -74,6 +74,11 @@ export interface BackendShipment {
     category: string;
     helpersCount: number;
 
+    // Real handling-request flags — no fee attached (no payment system
+    // exists to charge one through).
+    fragile: boolean;
+    insuranceRequested: boolean;
+
     createdAt: string;
     updatedAt: string;
 }
@@ -96,6 +101,10 @@ export interface CreateShipmentPayload {
     // booking (StepCategory in addOrders.tsx).
     category?: string;
     helpersCount?: number;
+    // Real handling-request flags — no fee attached (no payment system
+    // exists to charge one through).
+    fragile?: boolean;
+    insuranceRequested?: boolean;
 }
 
 // POST /shipments/quote — QuoteShipmentDto / response
