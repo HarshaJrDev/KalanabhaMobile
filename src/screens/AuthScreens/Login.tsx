@@ -81,7 +81,7 @@ const SOCIAL_LOGINS = [
 // typed by hand on every reload while developing. Never active in a
 // release build.
 const DEV_CREDENTIALS = {
-    customer: { email: 'customer@kalanabha.test', password: 'Customer@123' },
+    customer: { email: 'harsha.customer@kalanabha.com', password: 'Kalanabha@123' },
     driver: { email: 'driver@kalanabha.test', password: 'Driver@123' },
 } as const;
 
