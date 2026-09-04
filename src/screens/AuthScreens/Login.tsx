@@ -354,7 +354,7 @@ const Login = () => {
 
 export default Login;
 
-// ── Styles ────────────────────────────────────────────────────────────────────
+// ── Styles ────────────────────────g ────────────────────────────────────────────
 // Computed from useAppTheme() so this screen repaints correctly in dark
 // mode instead of staying pinned to the light palette baked at import.
 const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: ReturnType<typeof useAppTheme>['fonts']) => StyleSheet.create({
