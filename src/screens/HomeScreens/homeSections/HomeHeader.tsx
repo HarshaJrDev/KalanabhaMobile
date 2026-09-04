@@ -8,8 +8,7 @@
 // real address, with its own loading/retry state independent of the rest
 // of the screen — a GPS failure here shouldn't block booking.
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput, Platform } from 'react-native';
-import Animated from 'react-native-reanimated';
+import { View, Text, StyleSheet, Pressable, TextInput, Platform, Animated } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { MapPin, Bell, Search, QrCode, Users, MessageCircle, Zap, ChevronRight, RotateCw } from 'lucide-react-native';
 import { useAutoAddress } from '@location/useAutoAddress';
@@ -27,9 +26,15 @@ interface Props {
     onOpenQrScan: () => void;
     colors: HomeColors;
     fonts: HomeFonts;
-    fadeAnim: any;
-    headerScale: any;
-    bellShake: any;
+    // Plain React Native Animated.Value refs from Home.tsx (not
+    // Reanimated shared values) — this file's <Animated.View> must stay
+    // the classic 'react-native' import to match, or interpolate() output
+    // fails to resolve (was crashing with "Transform with key of 'rotate'
+    // must be a string" when this imported Animated from
+    // 'react-native-reanimated' instead).
+    fadeAnim: Animated.Value;
+    headerScale: Animated.Value;
+    bellShake: Animated.Value;
 }
 
 const HomeHeader: React.FC<Props> = ({
@@ -120,9 +125,7 @@ const HomeHeader: React.FC<Props> = ({
 
                         <Animated.View style={{
                             transform: [{
-                                rotate: bellShake.interpolate
-                                    ? bellShake.interpolate({ inputRange: [-12, 12], outputRange: ['-12deg', '12deg'] })
-                                    : '0deg',
+                                rotate: bellShake.interpolate({ inputRange: [-12, 12], outputRange: ['-12deg', '12deg'] }),
                             }],
                         }}>
                             <Pressable style={styles.notifBtn} onPress={onOpenNotifications}>
