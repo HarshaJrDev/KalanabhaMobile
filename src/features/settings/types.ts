@@ -3,6 +3,10 @@ export interface VehicleConfig {
     id: string;
     name: string;
     icon: string;
+    // Real, admin-set illustration/photo — falls back to the Lucide icon
+    // mapping (vehicleIconFor) until an admin sets one, never a fabricated
+    // placeholder image.
+    imageUrl?: string | null;
     maxWeight: number;
     maxLength: number;
     maxWidth: number;

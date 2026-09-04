@@ -58,6 +58,7 @@ import { registerFCMToken, setupFCMListeners } from '@utils/cm';
 import { useVehicleConfigs, useServiceAreas, useBusinessSettings } from '@features/settings/hooks';
 import { useAuthStore } from '@features/store/authStore';
 import type { ServiceArea } from '@features/settings/types';
+import VehicleVisual from '@components/VehicleVisual';
 import { useFareEstimate, FareEstimate, type KnownCoords } from '@location/useFareEstimate';
 import { forwardGeocode } from '@services/location';
 import { createShipment } from '@features/shipments/api/shipments.api';
@@ -1142,7 +1143,6 @@ const StepOrderDetails = ({
             <SectionHeader title="Vehicle Type" subtitle="Select based on package weight" />
             <View style={odStyles.vehicleRow}>
                 {activeVehicleConfigs.map((vt) => {
-                    const VtIcon = vehicleIconFor(vt.name);
                     const isSelected = data.vehicleType.toLowerCase() === vt.name.toLowerCase();
                     return (
                         <TouchableOpacity
@@ -1151,10 +1151,16 @@ const StepOrderDetails = ({
                             style={[odStyles.vehicleCard, isSelected && odStyles.vehicleCardActive]}
                             activeOpacity={0.8}
                         >
-                            <VtIcon
-                                color={isSelected ? COLORS.primary : COLORS.textSecondary}
-                                size={22}
-                                style={odStyles.vehicleIcon}
+                            {/* Real, admin-set illustration (KalanabhaAdmin Vehicle
+                                Configs) — falls back to the same icon mapping until
+                                an admin sets one. */}
+                            <VehicleVisual
+                                vehicle={vt}
+                                size={40}
+                                iconSize={22}
+                                borderRadius={10}
+                                backgroundColor="transparent"
+                                iconColor={isSelected ? COLORS.primary : COLORS.textSecondary}
                             />
                             <Text style={[odStyles.vehicleLabel, isSelected && { color: COLORS.primary }]}>
                                 {vt.name}
