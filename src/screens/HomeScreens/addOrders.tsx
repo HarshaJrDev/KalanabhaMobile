@@ -51,12 +51,15 @@ import {
     Banknote,
     Landmark,
     Check,
+    Search,
     type LucideIcon,
 } from 'lucide-react-native';
 import { registerFCMToken, setupFCMListeners } from '@utils/cm';
-import { useVehicleConfigs } from '@features/settings/hooks';
+import { useVehicleConfigs, useServiceAreas } from '@features/settings/hooks';
 import { useAuthStore } from '@features/store/authStore';
-import { useFareEstimate, FareEstimate } from '@location/useFareEstimate';
+import type { ServiceArea } from '@features/settings/types';
+import { useFareEstimate, FareEstimate, type KnownCoords } from '@location/useFareEstimate';
+import { forwardGeocode } from '@services/location';
 import { createShipment } from '@features/shipments/api/shipments.api';
 import { safeNumber } from '@utils/parsers';
 import { normalizeError } from '@utils/error';
@@ -102,6 +105,10 @@ type SenderForm = {
     name: string;
     phone: string;
     email: string;
+    // House no./landmark — free text, appended onto the selected place's
+    // name for the driver's benefit. The place itself (city/pincode/real
+    // coordinates) always comes from the service-area dropdown, never typed.
+    landmark: string;
     address: string;
     city: string;
     pincode: string;
@@ -111,6 +118,7 @@ type ReceiverForm = {
     name: string;
     phone: string;
     email: string;
+    landmark: string;
     address: string;
     city: string;
     pincode: string;
@@ -215,8 +223,8 @@ const PICKUP_SLOTS = ['9:00 AM – 11:00 AM', '11:00 AM – 1:00 PM', '2:00 PM �
 
 // ─── INITIAL STATES ───────────────────────────────────────────────────────────
 
-const INIT_SENDER: SenderForm = { name: '', phone: '', email: '', address: '', city: '', pincode: '' };
-const INIT_RECEIVER: ReceiverForm = { name: '', phone: '', email: '', address: '', city: '', pincode: '' };
+const INIT_SENDER: SenderForm = { name: '', phone: '', email: '', landmark: '', address: '', city: '', pincode: '' };
+const INIT_RECEIVER: ReceiverForm = { name: '', phone: '', email: '', landmark: '', address: '', city: '', pincode: '' };
 const INIT_PACKAGE: PackageForm = {
     description: '', weight: '', length: '', width: '', height: '',
     quantity: '1', fragile: false, insurance: false, category: 'Documents',
@@ -287,6 +295,232 @@ const makeInputStyles = (COLORS: OrderColors) => StyleSheet.create({
     icon: { marginRight: 8 },
     input: { flex: 1, fontSize: 14, color: COLORS.text, height: '100%' },
     error: { color: COLORS.danger, fontSize: 11, marginTop: 3 },
+});
+
+// Dropdown picker over the admin-managed service areas (GET
+// /settings/service-areas — KalanabhaAdmin's Service Areas page) — same
+// visual language as InputField (label/row/error) so it reads as one form,
+// just backed by a searchable modal instead of free text. Selecting an
+// area hands back its real, known center coordinates; StepSender/
+// StepReceiver then offer an optional OpenStreetMap search to refine that
+// down to the customer's exact spot, falling back to the area's center if
+// that search doesn't resolve — so pickup/drop coordinates always exist.
+const PlacePicker = ({
+    label, value, areas, onSelect, placeholder = 'Select a locality', error,
+}: {
+    label: string;
+    value: ServiceArea | null;
+    areas: ServiceArea[];
+    onSelect: (place: ServiceArea) => void;
+    placeholder?: string;
+    error?: string;
+}) => {
+    const { colors: BRAND } = useAppTheme();
+    const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
+    const inputStyles = useMemo(() => makeInputStyles(COLORS), [COLORS]);
+    const pickerStyles = useMemo(() => makePickerStyles(COLORS), [COLORS]);
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState('');
+
+    const filtered = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        const list = q
+            ? areas.filter((p) => p.name.toLowerCase().includes(q) || p.city.toLowerCase().includes(q))
+            : areas;
+        const byCity: Record<string, ServiceArea[]> = {};
+        list.forEach((p) => {
+            byCity[p.city] = byCity[p.city] ?? [];
+            byCity[p.city].push(p);
+        });
+        return byCity;
+    }, [search, areas]);
+
+    return (
+        <View style={inputStyles.wrapper}>
+            <Text style={inputStyles.label}>{label}</Text>
+            <TouchableOpacity
+                style={[inputStyles.row, !!error && inputStyles.rowError]}
+                onPress={() => setOpen(true)}
+                activeOpacity={0.7}
+            >
+                <MapPin color={value ? COLORS.primary : COLORS.textMuted} width={16} height={16} style={inputStyles.icon} />
+                <Text
+                    style={[inputStyles.input, { paddingVertical: 0 }, !value && { color: COLORS.placeholder }]}
+                    numberOfLines={1}
+                >
+                    {value ? `${value.name}, ${value.city}` : placeholder}
+                </Text>
+                <ChevronLeft color={COLORS.textMuted} width={16} height={16} style={{ transform: [{ rotate: '-90deg' }] }} />
+            </TouchableOpacity>
+            {error ? <Text style={inputStyles.error}>{error}</Text> : null}
+
+            <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
+                <View style={pickerStyles.modalContainer}>
+                    <View style={pickerStyles.modalHeader}>
+                        <Text style={pickerStyles.modalTitle}>{label}</Text>
+                        <TouchableOpacity onPress={() => setOpen(false)} style={pickerStyles.closeBtn}>
+                            <Text style={pickerStyles.closeBtnText}>Close</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <View style={pickerStyles.searchRow}>
+                        <Search size={16} color={COLORS.textMuted} />
+                        <TextInput
+                            style={pickerStyles.searchInput}
+                            value={search}
+                            onChangeText={setSearch}
+                            placeholder="Search locality or city"
+                            placeholderTextColor={COLORS.placeholder}
+                            autoFocus
+                        />
+                    </View>
+                    <ScrollView keyboardShouldPersistTaps="handled">
+                        {Object.keys(filtered).length === 0 && (
+                            <Text style={pickerStyles.emptyText}>No matching locality</Text>
+                        )}
+                        {Object.entries(filtered).map(([city, places]) => (
+                            <View key={city}>
+                                <Text style={pickerStyles.cityLabel}>{city}</Text>
+                                {places.map((p) => (
+                                    <TouchableOpacity
+                                        key={p.id}
+                                        style={pickerStyles.placeRow}
+                                        onPress={() => { onSelect(p); setOpen(false); setSearch(''); }}
+                                    >
+                                        <MapPin size={15} color={COLORS.primary} />
+                                        <View style={{ flex: 1, marginLeft: 10 }}>
+                                            <Text style={pickerStyles.placeName}>{p.name}</Text>
+                                            <Text style={pickerStyles.placePincode}>{p.pincode}</Text>
+                                        </View>
+                                        {value?.id === p.id && <Check size={16} color={COLORS.primary} />}
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        ))}
+                    </ScrollView>
+                </View>
+            </Modal>
+        </View>
+    );
+};
+
+const makePickerStyles = (COLORS: OrderColors) => StyleSheet.create({
+    modalContainer: { flex: 1, backgroundColor: COLORS.bg },
+    modalHeader: {
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+        paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16,
+        borderBottomWidth: 1, borderBottomColor: COLORS.border, backgroundColor: COLORS.surface,
+    },
+    modalTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text },
+    closeBtn: { paddingHorizontal: 10, paddingVertical: 6 },
+    closeBtnText: { color: COLORS.primary, fontSize: 14, fontWeight: '600' },
+    searchRow: {
+        flexDirection: 'row', alignItems: 'center', gap: 10,
+        margin: 16, paddingHorizontal: 14, height: 46,
+        backgroundColor: COLORS.surface, borderRadius: RADIUS.md,
+        borderWidth: 1.5, borderColor: COLORS.border,
+    },
+    searchInput: { flex: 1, fontSize: 14, color: COLORS.text },
+    cityLabel: {
+        fontSize: 12, fontWeight: '700', color: COLORS.textMuted,
+        letterSpacing: 0.4, textTransform: 'uppercase',
+        paddingHorizontal: 20, marginTop: 14, marginBottom: 6,
+    },
+    placeRow: {
+        flexDirection: 'row', alignItems: 'center',
+        paddingHorizontal: 20, paddingVertical: 12,
+        borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    },
+    placeName: { fontSize: 14, fontWeight: '600', color: COLORS.text },
+    placePincode: { fontSize: 11, color: COLORS.textMuted, marginTop: 1 },
+    emptyText: { textAlign: 'center', color: COLORS.textMuted, marginTop: 40, fontSize: 13 },
+});
+
+// Once a service area is picked, this optionally narrows it down to the
+// customer's exact spot via a real OpenStreetMap (Nominatim) search,
+// biased toward the chosen area's name/city. If the search comes up empty
+// or fails, the area's own center coordinates keep working as the
+// fallback (set by the caller before this ever renders a result) — this
+// component only ever narrows the location, it never blocks on being
+// left alone or on a failed lookup.
+const LocationRefiner = ({ area, refined, onResolve }: {
+    area: ServiceArea;
+    refined: (KnownCoords & { label: string }) | null;
+    onResolve: (result: (KnownCoords & { label: string }) | null) => void;
+}) => {
+    const { colors: BRAND } = useAppTheme();
+    const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
+    const refineStyles = useMemo(() => makeRefineStyles(COLORS), [COLORS]);
+    const [query, setQuery] = useState('');
+    const [status, setStatus] = useState<'idle' | 'searching' | 'not-found'>('idle');
+
+    const handleSearch = async () => {
+        if (!query.trim()) return;
+        setStatus('searching');
+        const result = await forwardGeocode(`${query.trim()}, ${area.name}, ${area.city}`);
+        if (result) {
+            onResolve({ ...result, label: query.trim() });
+            setStatus('idle');
+        } else {
+            onResolve(null);
+            setStatus('not-found');
+        }
+    };
+
+    return (
+        <View style={refineStyles.wrapper}>
+            <Text style={refineStyles.label}>Pinpoint exact location (optional)</Text>
+            <Text style={refineStyles.hint}>Search a landmark within {area.name} — powered by OpenStreetMap</Text>
+            <View style={refineStyles.row}>
+                <Navigation size={15} color={COLORS.textMuted} style={{ marginRight: 8 }} />
+                <TextInput
+                    style={refineStyles.input}
+                    value={query}
+                    onChangeText={(v) => { setQuery(v); if (status !== 'idle') setStatus('idle'); }}
+                    placeholder={`e.g. City Central Mall, ${area.name}`}
+                    placeholderTextColor={COLORS.placeholder}
+                    onSubmitEditing={handleSearch}
+                    returnKeyType="search"
+                />
+                <TouchableOpacity onPress={handleSearch} disabled={status === 'searching'} style={refineStyles.searchBtn}>
+                    {status === 'searching'
+                        ? <ActivityIndicator size="small" color={COLORS.primary} />
+                        : <Search size={16} color={COLORS.primary} />}
+                </TouchableOpacity>
+            </View>
+            {refined && (
+                <View style={refineStyles.resultRow}>
+                    <Check size={13} color={COLORS.success} />
+                    <Text style={refineStyles.resultText} numberOfLines={1}>Pinpointed: {refined.label}</Text>
+                    <TouchableOpacity onPress={() => { onResolve(null); setQuery(''); }}>
+                        <Text style={refineStyles.resetText}>Reset</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+            {status === 'not-found' && (
+                <Text style={refineStyles.notFoundText}>
+                    Couldn't find that — we'll use {area.name}'s center for now, still accurate enough to book.
+                </Text>
+            )}
+        </View>
+    );
+};
+
+const makeRefineStyles = (COLORS: OrderColors) => StyleSheet.create({
+    wrapper: { marginBottom: 14 },
+    label: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 2 },
+    hint: { fontSize: 11, color: COLORS.textMuted, marginBottom: 6 },
+    row: {
+        flexDirection: 'row', alignItems: 'center',
+        borderWidth: 1.5, borderColor: COLORS.border,
+        borderRadius: RADIUS.md, paddingHorizontal: 12, height: 46,
+        backgroundColor: COLORS.surface,
+    },
+    input: { flex: 1, fontSize: 14, color: COLORS.text, height: '100%' },
+    searchBtn: { padding: 6 },
+    resultRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 },
+    resultText: { flex: 1, fontSize: 12, color: COLORS.success, fontWeight: '600' },
+    resetText: { fontSize: 12, color: COLORS.primary, fontWeight: '600' },
+    notFoundText: { fontSize: 11, color: COLORS.warning, marginTop: 6, lineHeight: 15 },
 });
 
 const SectionHeader = ({ title, subtitle }: { title: string; subtitle?: string }) => {
@@ -369,22 +603,39 @@ const makeNavStyles = (COLORS: OrderColors) => StyleSheet.create({
 
 // ─── STEP 1: SENDER ───────────────────────────────────────────────────────────
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// "123, MG Road" free-text style, but built from a real place instead —
+// "<landmark>, <locality>, <city>" (landmark omitted if blank).
+const composeAddress = (landmark: string, place: ServiceArea | null): string => {
+    if (!place) return landmark.trim();
+    return landmark.trim() ? `${landmark.trim()}, ${place.name}, ${place.city}` : `${place.name}, ${place.city}`;
+};
+
 const StepSender = ({
-    data, onChange, onNext,
+    data, onChange, areas, place, onSelectPlace, otherPlace, refined, onRefine, onNext,
 }: {
     data: SenderForm;
     onChange: (key: keyof SenderForm, val: string) => void;
+    areas: ServiceArea[];
+    place: ServiceArea | null;
+    onSelectPlace: (place: ServiceArea) => void;
+    otherPlace: ServiceArea | null;
+    refined: (KnownCoords & { label: string }) | null;
+    onRefine: (result: (KnownCoords & { label: string }) | null) => void;
     onNext: () => void;
 }) => {
-    const [errors, setErrors] = useState<Partial<SenderForm>>({});
+    const [errors, setErrors] = useState<Partial<Record<keyof SenderForm | 'place', string>>>({});
 
     const validate = () => {
-        const e: Partial<SenderForm> = {};
+        const e: typeof errors = {};
         if (!data.name.trim()) e.name = 'Name is required';
-        if (!data.phone.trim() || data.phone.length < 10) e.phone = 'Valid phone required';
-        if (!data.address.trim()) e.address = 'Address is required';
-        if (!data.city.trim()) e.city = 'City is required';
-        if (!data.pincode.trim() || data.pincode.length < 6) e.pincode = 'Valid pincode required';
+        else if (data.name.trim().length < 2) e.name = 'Name is too short';
+        if (!data.phone.trim()) e.phone = 'Phone number is required';
+        else if (!/^\d{10}$/.test(data.phone.replace(/\D/g, '').slice(-10))) e.phone = 'Enter a valid 10-digit phone number';
+        if (data.email.trim() && !EMAIL_RE.test(data.email.trim())) e.email = 'Enter a valid email address';
+        if (!place) e.place = 'Select a pickup locality';
+        else if (otherPlace && place.id === otherPlace.id) e.place = 'Pickup and drop can\'t be the same locality';
         setErrors(e);
         return Object.keys(e).length === 0;
     };
@@ -398,24 +649,23 @@ const StepSender = ({
             <InputField label="Full Name *" value={data.name} onChangeText={v => onChange('name', v)}
                 placeholder="e.g. Arjun Sharma" icon={User} error={errors.name} />
             <InputField label="Phone Number *" value={data.phone} onChangeText={v => onChange('phone', v)}
-                placeholder="+91 98765 43210" icon={Phone} keyboardType="phone-pad" error={errors.phone} />
+                placeholder="98765 43210" icon={Phone} keyboardType="phone-pad" error={errors.phone} />
             <InputField label="Email Address" value={data.email} onChangeText={v => onChange('email', v)}
-                placeholder="arjun@example.com" icon={Mail} keyboardType="email-address" />
+                placeholder="arjun@example.com" icon={Mail} keyboardType="email-address" error={errors.email} />
 
             <SectionHeader title="Pickup Address" subtitle="Where should we pick it up?" />
 
-            <InputField label="Street Address *" value={data.address} onChangeText={v => onChange('address', v)}
-                placeholder="123, MG Road" icon={MapPin} error={errors.address} />
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-                <View style={{ flex: 1 }}>
-                    <InputField label="City *" value={data.city} onChangeText={v => onChange('city', v)}
-                        placeholder="Bangalore" error={errors.city} />
-                </View>
-                <View style={{ flex: 1 }}>
-                    <InputField label="Pincode *" value={data.pincode} onChangeText={v => onChange('pincode', v)}
-                        placeholder="560001" keyboardType="numeric" error={errors.pincode} />
-                </View>
-            </View>
+            <PlacePicker
+                label="Locality *"
+                value={place}
+                areas={areas}
+                onSelect={onSelectPlace}
+                placeholder="e.g. Banjara Hills, Hyderabad"
+                error={errors.place}
+            />
+            {place && <LocationRefiner area={place} refined={refined} onResolve={onRefine} />}
+            <InputField label="House / Flat No., Landmark" value={data.landmark} onChangeText={v => onChange('landmark', v)}
+                placeholder="e.g. Flat 302, near City Central Mall" icon={MapPin} />
 
             <NavButtons onNext={handleNext} isFirst />
         </ScrollView>
@@ -425,22 +675,30 @@ const StepSender = ({
 // ─── STEP 2: RECEIVER ─────────────────────────────────────────────────────────
 
 const StepReceiver = ({
-    data, onChange, onNext, onBack,
+    data, onChange, areas, place, onSelectPlace, otherPlace, refined, onRefine, onNext, onBack,
 }: {
     data: ReceiverForm;
     onChange: (key: keyof ReceiverForm, val: string) => void;
+    areas: ServiceArea[];
+    place: ServiceArea | null;
+    onSelectPlace: (place: ServiceArea) => void;
+    otherPlace: ServiceArea | null;
+    refined: (KnownCoords & { label: string }) | null;
+    onRefine: (result: (KnownCoords & { label: string }) | null) => void;
     onNext: () => void;
     onBack: () => void;
 }) => {
-    const [errors, setErrors] = useState<Partial<ReceiverForm>>({});
+    const [errors, setErrors] = useState<Partial<Record<keyof ReceiverForm | 'place', string>>>({});
 
     const validate = () => {
-        const e: Partial<ReceiverForm> = {};
+        const e: typeof errors = {};
         if (!data.name.trim()) e.name = 'Name is required';
-        if (!data.phone.trim() || data.phone.length < 10) e.phone = 'Valid phone required';
-        if (!data.address.trim()) e.address = 'Address is required';
-        if (!data.city.trim()) e.city = 'City is required';
-        if (!data.pincode.trim() || data.pincode.length < 6) e.pincode = 'Valid pincode required';
+        else if (data.name.trim().length < 2) e.name = 'Name is too short';
+        if (!data.phone.trim()) e.phone = 'Phone number is required';
+        else if (!/^\d{10}$/.test(data.phone.replace(/\D/g, '').slice(-10))) e.phone = 'Enter a valid 10-digit phone number';
+        if (data.email.trim() && !EMAIL_RE.test(data.email.trim())) e.email = 'Enter a valid email address';
+        if (!place) e.place = 'Select a delivery locality';
+        else if (otherPlace && place.id === otherPlace.id) e.place = 'Pickup and drop can\'t be the same locality';
         setErrors(e);
         return Object.keys(e).length === 0;
     };
@@ -452,24 +710,23 @@ const StepReceiver = ({
             <InputField label="Full Name *" value={data.name} onChangeText={v => onChange('name', v)}
                 placeholder="e.g. Priya Patel" icon={User} error={errors.name} />
             <InputField label="Phone Number *" value={data.phone} onChangeText={v => onChange('phone', v)}
-                placeholder="+91 87654 32100" icon={Phone} keyboardType="phone-pad" error={errors.phone} />
+                placeholder="87654 32100" icon={Phone} keyboardType="phone-pad" error={errors.phone} />
             <InputField label="Email Address" value={data.email} onChangeText={v => onChange('email', v)}
-                placeholder="priya@example.com" icon={Mail} keyboardType="email-address" />
+                placeholder="priya@example.com" icon={Mail} keyboardType="email-address" error={errors.email} />
 
             <SectionHeader title="Delivery Address" subtitle="Where should we deliver?" />
 
-            <InputField label="Street Address *" value={data.address} onChangeText={v => onChange('address', v)}
-                placeholder="456 Brigade Road" icon={MapPin} error={errors.address} />
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-                <View style={{ flex: 1 }}>
-                    <InputField label="City *" value={data.city} onChangeText={v => onChange('city', v)}
-                        placeholder="Hyderabad" error={errors.city} />
-                </View>
-                <View style={{ flex: 1 }}>
-                    <InputField label="Pincode *" value={data.pincode} onChangeText={v => onChange('pincode', v)}
-                        placeholder="500001" keyboardType="numeric" error={errors.pincode} />
-                </View>
-            </View>
+            <PlacePicker
+                label="Locality *"
+                value={place}
+                areas={areas}
+                onSelect={onSelectPlace}
+                placeholder="e.g. Hanamkonda, Warangal"
+                error={errors.place}
+            />
+            {place && <LocationRefiner area={place} refined={refined} onResolve={onRefine} />}
+            <InputField label="House / Flat No., Landmark" value={data.landmark} onChangeText={v => onChange('landmark', v)}
+                placeholder="e.g. Shop 12, opposite bus stand" icon={MapPin} />
 
             <NavButtons onBack={onBack} onNext={() => { if (validate()) onNext(); }} />
         </ScrollView>
@@ -494,8 +751,23 @@ const StepPackage = ({
     const validate = () => {
         const e: typeof errors = {};
         if (!data.description.trim()) e.description = 'Description is required';
-        if (!data.weight || isNaN(Number(data.weight))) e.weight = 'Valid weight required';
-        if (!data.quantity || Number(data.quantity) < 1) e.quantity = 'Quantity must be ≥ 1';
+        else if (data.description.trim().length < 3) e.description = 'Description is too short';
+
+        const weight = Number(data.weight);
+        if (!data.weight.trim() || isNaN(weight) || weight <= 0) e.weight = 'Enter a weight greater than 0';
+        else if (weight > 5000) e.weight = 'Exceeds the largest vehicle\'s 5000 kg limit';
+
+        const quantity = Number(data.quantity);
+        if (!data.quantity.trim() || !Number.isInteger(quantity) || quantity < 1) e.quantity = 'Quantity must be a whole number ≥ 1';
+
+        // Dimensions are optional, but a garbage/negative value if entered
+        // at all is still worth catching before it reaches the backend.
+        (['length', 'width', 'height'] as const).forEach((dim) => {
+            if (!data[dim].trim()) return;
+            const v = Number(data[dim]);
+            if (isNaN(v) || v <= 0) e[dim] = 'Must be greater than 0';
+        });
+
         setErrors(e);
         return Object.keys(e).length === 0;
     };
@@ -539,15 +811,15 @@ const StepPackage = ({
             <View style={{ flexDirection: 'row', gap: 10 }}>
                 <View style={{ flex: 1 }}>
                     <InputField label="L (cm)" value={data.length} onChangeText={v => onChange('length', v)}
-                        placeholder="30" keyboardType="numeric" icon={Ruler} />
+                        placeholder="30" keyboardType="numeric" icon={Ruler} error={errors.length} />
                 </View>
                 <View style={{ flex: 1 }}>
                     <InputField label="W (cm)" value={data.width} onChangeText={v => onChange('width', v)}
-                        placeholder="20" keyboardType="numeric" />
+                        placeholder="20" keyboardType="numeric" error={errors.width} />
                 </View>
                 <View style={{ flex: 1 }}>
                     <InputField label="H (cm)" value={data.height} onChangeText={v => onChange('height', v)}
-                        placeholder="15" keyboardType="numeric" />
+                        placeholder="15" keyboardType="numeric" error={errors.height} />
                 </View>
             </View>
 
@@ -831,7 +1103,8 @@ const StepOrderDetails = ({
                             <View style={{ marginLeft: 10 }}>
                                 <Text style={odStyles.routeRole}>PICKUP</Text>
                                 <Text style={odStyles.routeName}>{allData.sender.name}</Text>
-                                <Text style={odStyles.routeAddr}>{allData.sender.address}, {allData.sender.city}</Text>
+                                {/* address already ends in "<locality>, <city>" (composeAddress) */}
+                                <Text style={odStyles.routeAddr}>{allData.sender.address}</Text>
                             </View>
                         </View>
                         <View style={odStyles.routeDashedLine} />
@@ -840,7 +1113,7 @@ const StepOrderDetails = ({
                             <View style={{ marginLeft: 10 }}>
                                 <Text style={odStyles.routeRole}>DELIVERY</Text>
                                 <Text style={odStyles.routeName}>{allData.receiver.name}</Text>
-                                <Text style={odStyles.routeAddr}>{allData.receiver.address}, {allData.receiver.city}</Text>
+                                <Text style={odStyles.routeAddr}>{allData.receiver.address}</Text>
                             </View>
                         </View>
                     </View>
@@ -1265,11 +1538,26 @@ const NewOrder = () => {
         name: user?.displayName ?? INIT_SENDER.name,
         phone: user?.phone ?? INIT_SENDER.phone,
         email: user?.email ?? INIT_SENDER.email,
-        address: prefill?.pickup ?? user?.address ?? INIT_SENDER.address,
     }));
-    const [receiver, setReceiver] = useState<ReceiverForm>(
-        prefill?.drop ? { ...INIT_RECEIVER, address: prefill.drop } : INIT_RECEIVER,
-    );
+    const [receiver, setReceiver] = useState<ReceiverForm>(INIT_RECEIVER);
+
+    // Admin-managed service areas (GET /settings/service-areas) — the
+    // source of truth for real pickup/drop coordinates, replacing the
+    // previous free-text address + always-geocode approach. sender/
+    // receiver's address/city/pincode are kept in sync from whichever area
+    // is selected (see updateSender/updateReceiver and selectPickupPlace/
+    // selectDropPlace below) purely so the rest of the app/API payload
+    // still sees plain strings, same as before.
+    const { data: serviceAreasData } = useServiceAreas();
+    const activeAreas = useMemo(() => (serviceAreasData ?? []).filter((a) => a.active), [serviceAreasData]);
+
+    const [pickupPlace, setPickupPlace] = useState<ServiceArea | null>(null);
+    const [dropPlace, setDropPlace] = useState<ServiceArea | null>(null);
+    // Optional OpenStreetMap-refined coordinates within the selected area
+    // (LocationRefiner) — overrides the area's center when present, but
+    // never required: the area's own lat/lng is always a valid fallback.
+    const [pickupRefine, setPickupRefine] = useState<(KnownCoords & { label: string }) | null>(null);
+    const [dropRefine, setDropRefine] = useState<(KnownCoords & { label: string }) | null>(null);
     const [pkg, setPkg] = useState<PackageForm>(INIT_PACKAGE);
     const [orderDetails, setOrderDetails] = useState<OrderDetailsForm>(
         prefill?.vehicleType
@@ -1283,15 +1571,54 @@ const NewOrder = () => {
     const slideAnim = useRef(new Animated.Value(0)).current;
     const fadeAnim = useRef(new Animated.Value(1)).current;
 
-    // Real, distance-based fare — geocodes once sender/receiver addresses
-    // are filled in, independent of which step is currently showing so it's
-    // ready by the time the user reaches Review instead of loading there.
+    // Effective coordinates: an OpenStreetMap-refined point within the area
+    // if the customer searched for one, else the area's own center — one
+    // or the other is always available once a place is picked, so this
+    // never comes back null/blocking the way free-text geocoding could.
+    const pickupCoords: KnownCoords | null = pickupRefine ?? (pickupPlace ? { lat: pickupPlace.lat, lng: pickupPlace.lng } : null);
+    const dropCoords: KnownCoords | null = dropRefine ?? (dropPlace ? { lat: dropPlace.lat, lng: dropPlace.lng } : null);
+
+    // Real, distance-based fare — ready as soon as both places are picked,
+    // independent of which step is currently showing so it's ready by the
+    // time the user reaches Review instead of loading there.
     const fareEstimate = useFareEstimate(
         sender.address ? `${sender.address}, ${sender.city}` : '',
         receiver.address ? `${receiver.address}, ${receiver.city}` : '',
         orderDetails.vehicleType,
         orderDetails.serviceType,
+        pickupCoords,
+        dropCoords,
     );
+
+    // CheckRate.tsx's prefill carries free-text addresses (its own pickup/
+    // drop inputs aren't place-backed) — only auto-select once the real
+    // service-area list has loaded, and only when the text unambiguously
+    // names exactly one known locality; otherwise the customer picks from
+    // the dropdown themselves rather than us guessing.
+    useEffect(() => {
+        if (activeAreas.length === 0) return;
+        const matchFromText = (text?: string): ServiceArea | null => {
+            if (!text) return null;
+            const q = text.trim().toLowerCase();
+            const matches = activeAreas.filter((a) => q.includes(a.name.toLowerCase()));
+            return matches.length === 1 ? matches[0] : null;
+        };
+        if (!pickupPlace) {
+            const matched = matchFromText(prefill?.pickup);
+            if (matched) {
+                setPickupPlace(matched);
+                setSender(prev => ({ ...prev, address: composeAddress(prev.landmark, matched), city: matched.city, pincode: matched.pincode }));
+            }
+        }
+        if (!dropPlace) {
+            const matched = matchFromText(prefill?.drop);
+            if (matched) {
+                setDropPlace(matched);
+                setReceiver(prev => ({ ...prev, address: composeAddress(prev.landmark, matched), city: matched.city, pincode: matched.pincode }));
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeAreas.length]);
 
     // Register FCM token when customer opens this screen
     useEffect(() => {
@@ -1328,10 +1655,30 @@ const NewOrder = () => {
     }, [step, animateToStep]);
 
     const updateSender = useCallback((key: keyof SenderForm, val: string) =>
-        setSender(prev => ({ ...prev, [key]: val })), []);
+        setSender(prev => {
+            const next = { ...prev, [key]: val };
+            if (key === 'landmark') next.address = composeAddress(val, pickupPlace);
+            return next;
+        }), [pickupPlace]);
 
     const updateReceiver = useCallback((key: keyof ReceiverForm, val: string) =>
-        setReceiver(prev => ({ ...prev, [key]: val })), []);
+        setReceiver(prev => {
+            const next = { ...prev, [key]: val };
+            if (key === 'landmark') next.address = composeAddress(val, dropPlace);
+            return next;
+        }), [dropPlace]);
+
+    const selectPickupPlace = useCallback((p: ServiceArea) => {
+        setPickupPlace(p);
+        setPickupRefine(null); // a refined point belonged to the previous area
+        setSender(prev => ({ ...prev, address: composeAddress(prev.landmark, p), city: p.city, pincode: p.pincode }));
+    }, []);
+
+    const selectDropPlace = useCallback((p: ServiceArea) => {
+        setDropPlace(p);
+        setDropRefine(null);
+        setReceiver(prev => ({ ...prev, address: composeAddress(prev.landmark, p), city: p.city, pincode: p.pincode }));
+    }, []);
 
     const updatePkg = useCallback(<K extends keyof PackageForm>(key: K, val: PackageForm[K]) =>
         setPkg(prev => ({ ...prev, [key]: val })), []);
@@ -1427,6 +1774,12 @@ const NewOrder = () => {
                         <StepSender
                             data={sender}
                             onChange={updateSender}
+                            areas={activeAreas}
+                            place={pickupPlace}
+                            onSelectPlace={selectPickupPlace}
+                            otherPlace={dropPlace}
+                            refined={pickupRefine}
+                            onRefine={setPickupRefine}
                             onNext={goNext}
                         />
                     )}
@@ -1434,6 +1787,12 @@ const NewOrder = () => {
                         <StepReceiver
                             data={receiver}
                             onChange={updateReceiver}
+                            areas={activeAreas}
+                            place={dropPlace}
+                            onSelectPlace={selectDropPlace}
+                            otherPlace={pickupPlace}
+                            refined={dropRefine}
+                            onRefine={setDropRefine}
                             onNext={goNext}
                             onBack={goBack}
                         />

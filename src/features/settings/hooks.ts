@@ -56,3 +56,21 @@ export const useDeleteVehicleConfig = () => {
         onSuccess: invalidate,
     });
 };
+
+export const serviceAreaKeys = {
+    all: ['service-areas'] as const,
+};
+
+// Screen -> hook -> settings.api -> GET /settings/service-areas -> cache ->
+// UI. addOrders.tsx's PlacePicker reads this instead of a static file, so
+// an admin adding/renaming/deactivating a locality reaches the booking
+// flow the same way Vehicle Configs already does.
+export const useServiceAreas = () => {
+    const { isAuthenticated } = useAuthState();
+    return useQuery({
+        queryKey: serviceAreaKeys.all,
+        queryFn: settingsApi.getServiceAreas,
+        enabled: isAuthenticated,
+        staleTime: 60 * 1000,
+    });
+};
