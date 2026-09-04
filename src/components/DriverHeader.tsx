@@ -1,9 +1,10 @@
 // components/DriverHeader.tsx
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Switch, ViewStyle } from 'react-native';
 import { Circle } from 'lucide-react-native';
 import { useAuthStore } from '@features/store/authStore';
-import { apiClient } from '@api/client';
+import { useSetOnlineStatus } from '@hooks/useSetOnlineStatus';
+import { useAppTheme } from '@theme/ThemeContext';
 
 interface DriverHeaderProps {
     earnings: number;
@@ -19,16 +20,13 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
     style,
 }) => {
     const user = useAuthStore((s) => s.user);
-
-    // PATCH /users/me/online-status — kalanabhaBackend UsersController
-    // (driver-role guarded server-side).
-    const toggleOnline = async (value: boolean) => {
-        try {
-            await apiClient.patch('/users/me/online-status', { isOnline: value });
-        } catch (e) {
-            console.error('[DriverHeader] toggleOnline error:', e);
-        }
-    };
+    const { colors, fonts } = useAppTheme();
+    const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
+    // Was a raw, untracked apiClient.patch call with no loading/error
+    // handling and no store sync — if it failed, the switch still looked
+    // toggled even though the server rejected it. useSetOnlineStatus
+    // mirrors useUpdateProfile's real success/error handling.
+    const { mutate: setOnlineStatus, isPending } = useSetOnlineStatus();
 
     return (
         <View style={[styles.container, style]}>
@@ -38,8 +36,8 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
                     <View style={styles.statusRow}>
                         <Circle
                             size={8}
-                            color={isOnline ? '#10B981' : '#EF4444'}
-                            fill={isOnline ? '#10B981' : '#EF4444'}
+                            color={isOnline ? colors.SUCCESS : colors.ERROR}
+                            fill={isOnline ? colors.SUCCESS : colors.ERROR}
                         />
                         <Text style={styles.sub}>{isOnline ? 'You are online' : 'You are offline'}</Text>
                     </View>
@@ -48,9 +46,10 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
                     <Text style={styles.toggleLabel}>{isOnline ? 'Online' : 'Offline'}</Text>
                     <Switch
                         value={isOnline}
-                        onValueChange={toggleOnline}
-                        trackColor={{ false: '#E5E7EB', true: '#BBF7D0' }}
-                        thumbColor={isOnline ? '#10B981' : '#9CA3AF'}
+                        onValueChange={(value) => setOnlineStatus(value)}
+                        disabled={isPending}
+                        trackColor={{ false: colors.BORDER, true: colors.PRIMARY_LIGHT }}
+                        thumbColor={isOnline ? colors.PRIMARY : colors.GRAY}
                     />
                 </View>
             </View>
@@ -69,13 +68,13 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: ReturnType<typeof useAppTheme>['fonts']) => StyleSheet.create({
     container: {
-        backgroundColor: '#FFF',
+        backgroundColor: colors.SURFACE,
         paddingHorizontal: 16,
         paddingVertical: 14,
         borderBottomWidth: 1,
-        borderBottomColor: '#F3F4F6',
+        borderBottomColor: colors.BORDER,
     },
     topRow: {
         flexDirection: 'row',
@@ -83,19 +82,19 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 12,
     },
-    greeting: { fontSize: 16, fontWeight: '700', color: '#1F2937' },
+    greeting: { fontSize: 16, fontFamily: fonts.BOLD_PRIMARY, color: colors.TEXT_PRIMARY },
     statusRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
-    sub: { fontSize: 12, color: '#6B7280' },
+    sub: { fontSize: 12, color: colors.TEXT_SECONDARY },
     toggleWrap: { alignItems: 'center', gap: 4 },
-    toggleLabel: { fontSize: 11, color: '#6B7280' },
+    toggleLabel: { fontSize: 11, color: colors.TEXT_SECONDARY },
     statsRow: {
         flexDirection: 'row',
-        backgroundColor: '#F0FDF4',
+        backgroundColor: colors.PRIMARY_LIGHT,
         borderRadius: 12,
         padding: 12,
     },
     statBox: { flex: 1, alignItems: 'center' },
-    statNum: { fontSize: 18, fontWeight: '800', color: '#059669' },
-    statLabel: { fontSize: 11, color: '#6B7280', marginTop: 2 },
-    divider: { width: 1, backgroundColor: '#D1FAE5', marginHorizontal: 8 },
+    statNum: { fontSize: 18, fontFamily: fonts.BOLD_PRIMARY, color: colors.PRIMARY_DARK },
+    statLabel: { fontSize: 11, color: colors.TEXT_SECONDARY, marginTop: 2 },
+    divider: { width: 1, backgroundColor: colors.BORDER, marginHorizontal: 8 },
 });

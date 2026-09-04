@@ -1,6 +1,6 @@
 import React, { FC, useState } from 'react';
 import { Image, ImageProps, ActivityIndicator, View, StyleSheet } from 'react-native';
-import { colors } from '@config/theme';
+import { useAppTheme } from '@theme/ThemeContext';
 
 export interface AppImageProps extends ImageProps {
     /** Shows a small centered spinner over the image area while it loads. Off by default — existing screens render Image with no loader today. */
@@ -14,6 +14,7 @@ export interface AppImageProps extends ImageProps {
  * loading spinner" case instead of each screen re-implementing it.
  */
 const AppImage: FC<AppImageProps> = ({ showLoader, style, onLoadStart, onLoadEnd, ...rest }) => {
+    const { colors } = useAppTheme();
     const [loading, setLoading] = useState(false);
 
     if (!showLoader) {

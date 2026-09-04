@@ -6,13 +6,22 @@
 // shipment's own `price`/`paymentMode` IS the transaction record, so this
 // lists real shipment history (GET /shipments/mine/history) rather than
 // fabricating a payments ledger that doesn't exist server-side.
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { ChevronLeft, Receipt } from 'lucide-react-native';
 import { useMyShipmentHistory } from '@features/shipments/hooks';
 import { AsyncState } from '@components/AsyncState';
 import type { Shipment, ShipmentStatus } from '@shipment/types';
+import { useAppTheme } from '@theme/ThemeContext';
+
+const makeStatusColor = (colors: ReturnType<typeof useAppTheme>['colors']): Record<ShipmentStatus, string> => ({
+    searching: colors.GRAY,
+    accepted: colors.PRIMARY,
+    in_transit: colors.WARNING,
+    delivered: colors.SUCCESS,
+    cancelled: colors.ERROR,
+});
 
 const STATUS_LABEL: Record<ShipmentStatus, string> = {
     searching: 'Searching',
@@ -20,14 +29,6 @@ const STATUS_LABEL: Record<ShipmentStatus, string> = {
     in_transit: 'In Transit',
     delivered: 'Delivered',
     cancelled: 'Cancelled',
-};
-
-const STATUS_COLOR: Record<ShipmentStatus, string> = {
-    searching: '#9CA3AF',
-    accepted: '#2563EB',
-    in_transit: '#F59E0B',
-    delivered: '#10B981',
-    cancelled: '#DC2626',
 };
 
 const PAYMENT_LABEL: Record<string, string> = {
@@ -38,13 +39,16 @@ const PAYMENT_LABEL: Record<string, string> = {
 
 const TransactionRow = ({ shipment }: { shipment: Shipment }) => {
     const navigation = useNavigation();
+    const { colors } = useAppTheme();
+    const styles = useMemo(() => makeStyles(colors), [colors]);
+    const statusColor = useMemo(() => makeStatusColor(colors), [colors]);
     return (
         <Pressable
             style={styles.row}
             onPress={() => (navigation as any).navigate('ShipmentDetailsScreen', { id: shipment.id })}
         >
             <View style={styles.rowIcon}>
-                <Receipt color="#2563EB" size={18} />
+                <Receipt color={colors.PRIMARY} size={18} />
             </View>
             <View style={{ flex: 1 }}>
                 <Text style={styles.trackingId}>{shipment.trackingId}</Text>
@@ -55,7 +59,7 @@ const TransactionRow = ({ shipment }: { shipment: Shipment }) => {
             </View>
             <View style={styles.rowRight}>
                 <Text style={styles.price}>₹{shipment.price}</Text>
-                <Text style={[styles.status, { color: STATUS_COLOR[shipment.status] }]}>
+                <Text style={[styles.status, { color: statusColor[shipment.status] }]}>
                     {STATUS_LABEL[shipment.status]}
                 </Text>
             </View>
@@ -65,13 +69,15 @@ const TransactionRow = ({ shipment }: { shipment: Shipment }) => {
 
 const TransactionsScreen = () => {
     const navigation = useNavigation();
+    const { colors } = useAppTheme();
+    const styles = useMemo(() => makeStyles(colors), [colors]);
     const { data: shipments, isLoading, error, refetch } = useMyShipmentHistory();
 
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-                    <ChevronLeft color="#111" size={24} />
+                    <ChevronLeft color={colors.TEXT_PRIMARY} size={24} />
                 </Pressable>
                 <Text style={styles.headerTitle}>Transactions</Text>
                 <View style={{ width: 24 }} />
@@ -98,24 +104,26 @@ const TransactionsScreen = () => {
 
 export default TransactionsScreen;
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F7F7F7' },
+// Computed from useAppTheme() so this screen repaints correctly in dark
+// mode instead of staying pinned to the light palette baked at import.
+const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.BACKGROUND },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: 16,
-        backgroundColor: '#FFF',
+        backgroundColor: colors.SURFACE,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#EEE',
+        borderBottomColor: colors.BORDER,
     },
-    headerTitle: { fontSize: 16, fontWeight: '700' },
+    headerTitle: { fontSize: 16, fontWeight: '700', color: colors.TEXT_PRIMARY },
     list: { padding: 12, gap: 8 },
     row: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
-        backgroundColor: '#FFF',
+        backgroundColor: colors.SURFACE,
         borderRadius: 14,
         padding: 14,
     },
@@ -123,13 +131,13 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: '#EFF6FF',
+        backgroundColor: colors.PRIMARY_LIGHT,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    trackingId: { fontSize: 14, fontWeight: '700', color: '#111827' },
-    meta: { fontSize: 12, color: '#6B7280', marginTop: 2 },
+    trackingId: { fontSize: 14, fontWeight: '700', color: colors.TEXT_PRIMARY },
+    meta: { fontSize: 12, color: colors.TEXT_SECONDARY, marginTop: 2 },
     rowRight: { alignItems: 'flex-end' },
-    price: { fontSize: 15, fontWeight: '700', color: '#111827' },
+    price: { fontSize: 15, fontWeight: '700', color: colors.TEXT_PRIMARY },
     status: { fontSize: 11, fontWeight: '700', marginTop: 2 },
 });

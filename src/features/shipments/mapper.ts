@@ -40,6 +40,9 @@ export const toShipment = (row: BackendShipment): Shipment => ({
             driverName: row.dispatch.driverName,
             driverPhone: row.dispatch.driverPhone,
             driverRating: row.dispatch.driverRating,
+            acceptedAt: row.dispatch.acceptedAt,
+            startedAt: row.dispatch.startedAt,
+            completedAt: row.dispatch.completedAt,
         }
         : null,
     // The backend has no per-shipment "customer profile snapshot" endpoint —

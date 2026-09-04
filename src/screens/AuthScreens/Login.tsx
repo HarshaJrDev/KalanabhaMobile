@@ -11,7 +11,7 @@
  *     (since drivers can't reset password themselves — admin manages it)
  */
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
     View,
     Text,
@@ -29,9 +29,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { Truck, AlertTriangle, Check } from 'lucide-react-native';
 
-import COLOR from '@utils/color';
 import { H, S, W, RF } from '@utils/responsive';
-import FONTS from '@utils/fonts';
+import { useAppTheme } from '@theme/ThemeContext';
 
 import InputField from '@components/InputField';
 import AppButton from '@components/AppButton';
@@ -88,6 +87,8 @@ const DEV_CREDENTIALS = {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 const Login = () => {
+    const { colors, fonts, isDark } = useAppTheme();
+    const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
     const route = useRoute<RouteProp<RootStackParamList, 'Login'>>();
     const isDriver = route.params?.isDriver ?? false;
 
@@ -161,7 +162,7 @@ const Login = () => {
             style={styles.container}
             behavior={Platform.select({ ios: 'padding' })}
         >
-            <StatusBar barStyle="light-content" backgroundColor={COLOR.PRIMARY} />
+            <StatusBar barStyle="light-content" backgroundColor={isDriver ? '#1e293b' : colors.PRIMARY} />
 
             <ScrollView
                 contentContainerStyle={styles.scroll}
@@ -170,7 +171,7 @@ const Login = () => {
             >
                 {/* ── Hero header ── */}
                 <LinearGradient
-                    colors={isDriver ? ['#1e293b', '#0f172a'] : [COLOR.PRIMARY, '#1a3a6e']}
+                    colors={isDriver ? ['#1e293b', '#0f172a'] : [colors.PRIMARY, colors.PRIMARY_DARK]}
                     style={styles.header}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
@@ -354,10 +355,12 @@ const Login = () => {
 export default Login;
 
 // ── Styles ────────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+// Computed from useAppTheme() so this screen repaints correctly in dark
+// mode instead of staying pinned to the light palette baked at import.
+const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: ReturnType<typeof useAppTheme>['fonts']) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F0F4FF',
+        backgroundColor: colors.BACKGROUND,
     },
     scroll: {
         flexGrow: 1,
@@ -408,12 +411,12 @@ const styles = StyleSheet.create({
     },
     logoText: {
         fontSize: RF(30),
-        fontFamily: FONTS.BOLD_PRIMARY,
+        fontFamily: fonts.BOLD_PRIMARY,
         color: '#fff',
     },
     brandName: {
         fontSize: RF(26),
-        fontFamily: FONTS.BOLD_PRIMARY,
+        fontFamily: fonts.BOLD_PRIMARY,
         color: '#fff',
         textAlign: 'center',
         letterSpacing: 1.5,
@@ -428,7 +431,7 @@ const styles = StyleSheet.create({
 
     // Card
     card: {
-        backgroundColor: '#fff',
+        backgroundColor: colors.SURFACE,
         marginHorizontal: S(20),
         marginTop: H(-22),
         borderRadius: W(22),
@@ -441,13 +444,13 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: RF(22),
-        fontFamily: FONTS.BOLD_PRIMARY,
-        color: '#111827',
+        fontFamily: fonts.BOLD_PRIMARY,
+        color: colors.TEXT_PRIMARY,
         marginBottom: H(4),
     },
     subtitle: {
         fontSize: RF(12),
-        color: '#6B7280',
+        color: colors.TEXT_SECONDARY,
         marginBottom: H(18),
         lineHeight: RF(18),
     },
@@ -461,7 +464,7 @@ const styles = StyleSheet.create({
         padding: S(12),
         marginBottom: H(16),
         borderLeftWidth: 3,
-        borderLeftColor: COLOR.PRIMARY,
+        borderLeftColor: colors.PRIMARY,
         gap: S(8),
     },
     driverBannerIcon: { fontSize: RF(14) },
@@ -470,7 +473,7 @@ const styles = StyleSheet.create({
         fontSize: RF(11),
         color: '#1E40AF',
         lineHeight: RF(17),
-        fontFamily: FONTS.PRIMARY,
+        fontFamily: fonts.PRIMARY,
     },
 
     // Remember / Forgot
@@ -495,8 +498,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     checkboxActive: {
-        backgroundColor: COLOR.PRIMARY,
-        borderColor: COLOR.PRIMARY,
+        backgroundColor: colors.PRIMARY,
+        borderColor: colors.PRIMARY,
     },
     checkmark: {
         color: '#fff',
@@ -504,14 +507,14 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     rememberText: {
-        color: '#374151',
+        color: colors.TEXT_PRIMARY,
         fontSize: RF(12),
-        fontFamily: FONTS.PRIMARY,
+        fontFamily: fonts.PRIMARY,
     },
     forgotText: {
-        color: COLOR.PRIMARY,
+        color: colors.PRIMARY,
         fontSize: RF(12),
-        fontFamily: FONTS.MEDIUM_PRIMARY,
+        fontFamily: fonts.MEDIUM_PRIMARY,
     },
 
     // Error
@@ -529,7 +532,7 @@ const styles = StyleSheet.create({
     errorText: {
         color: '#DC2626',
         fontSize: RF(12),
-        fontFamily: FONTS.PRIMARY,
+        fontFamily: fonts.PRIMARY,
     },
 
     // Login button
@@ -541,12 +544,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginVertical: H(18),
     },
-    divider: { flex: 1, height: 1, backgroundColor: '#E5E7EB' },
+    divider: { flex: 1, height: 1, backgroundColor: colors.BORDER },
     dividerText: {
         color: '#9CA3AF',
         fontSize: RF(11),
         marginHorizontal: S(10),
-        fontFamily: FONTS.PRIMARY,
+        fontFamily: fonts.PRIMARY,
     },
 
     // Social buttons
@@ -561,7 +564,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.5,
-        borderColor: '#E5E7EB',
+        borderColor: colors.BORDER,
         borderRadius: S(12),
         paddingVertical: S(10),
         gap: S(8),
@@ -569,9 +572,9 @@ const styles = StyleSheet.create({
     },
     socialLogo: { width: S(20), height: S(20), resizeMode: 'contain' },
     socialText: {
-        color: '#374151',
+        color: colors.TEXT_PRIMARY,
         fontSize: RF(13),
-        fontFamily: FONTS.MEDIUM_PRIMARY,
+        fontFamily: fonts.MEDIUM_PRIMARY,
     },
 
     // Driver help footer
@@ -588,23 +591,23 @@ const styles = StyleSheet.create({
         color: '#92400E',
         lineHeight: RF(17),
         textAlign: 'center',
-        fontFamily: FONTS.PRIMARY,
+        fontFamily: fonts.PRIMARY,
     },
     driverHelpLink: {
-        fontFamily: FONTS.BOLD_PRIMARY,
+        fontFamily: fonts.BOLD_PRIMARY,
         color: '#D97706',
     },
 
     // Footer
     footerText: {
         textAlign: 'center',
-        color: '#6B7280',
+        color: colors.TEXT_SECONDARY,
         marginTop: H(20),
         fontSize: RF(13),
-        fontFamily: FONTS.PRIMARY,
+        fontFamily: fonts.PRIMARY,
     },
     signUpLink: {
-        color: COLOR.PRIMARY,
-        fontFamily: FONTS.BOLD_PRIMARY,
+        color: colors.PRIMARY,
+        fontFamily: fonts.BOLD_PRIMARY,
     },
 });

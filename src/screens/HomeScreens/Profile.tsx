@@ -28,17 +28,18 @@ import { useLogout, } from '@hooks/useLogout'; // Add navigation
 import { useUpdateProfile } from '@hooks/useUpdateProfile';
 import { useMyShipmentHistory } from '@features/shipments/hooks';
 import { useAuthStore } from '@features/store/authStore';
-import COLOR from '@utils/color';
-import FONTS from '@utils/fonts';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import AppTextInput from '../../components/ui/AppTextInput';
 import AppButton from '../../components/ui/AppButton';
 import { showToast } from '@ui/alert/toastStore';
+import { useAppTheme } from '@theme/ThemeContext';
 
 const SUPPORT_EMAIL = 'support@kalanabha.com';
 
 const ProfileScreen = () => {
+    const { colors, fonts } = useAppTheme();
+    const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
     const logoutMutation = useLogout();
     const navigation = useNavigation();
     const user = useAuthStore((s) => s.user); // From Zustand
@@ -111,7 +112,7 @@ const ProfileScreen = () => {
         <View style={styles.root}>
             {/* Gradient Header */}
             <LinearGradient
-                colors={['#1A1F6B', '#2B3FD4', COLOR.PRIMARY]}
+                colors={[colors.PRIMARY_DARK, colors.PRIMARY]}
                 style={styles.header}
             >
                 <Text style={styles.title}>My Profile</Text>
@@ -162,7 +163,7 @@ const ProfileScreen = () => {
                         onPress={item.onPress}
                     >
                         <View style={styles.menuLeft}>
-                            <item.icon color={item.destructive ? '#EF4444' : '#1A1F6B'} size={RF(20)} />
+                            <item.icon color={item.destructive ? colors.ERROR : colors.TEXT_PRIMARY} size={RF(20)} />
                             <Text style={[
                                 styles.menuLabel,
                                 item.destructive && styles.menuLabelDestructive,
@@ -172,7 +173,7 @@ const ProfileScreen = () => {
                         </View>
                         <View style={styles.menuRight}>
                             {item.value && <Text style={styles.valueText}>{item.value}</Text>}
-                            <ChevronRight color="#888" size={RF(18)} />
+                            <ChevronRight color={colors.GRAY} size={RF(18)} />
                         </View>
                     </TouchableOpacity>
                 ))}
@@ -185,6 +186,8 @@ const ProfileScreen = () => {
 
 // Screen -> useUpdateProfile -> users.api -> PATCH /users/me -> authStore + cache -> UI
 const EditProfileModal = ({ visible, onClose }: { visible: boolean; onClose: () => void }) => {
+    const { colors, fonts } = useAppTheme();
+    const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
     const user = useAuthStore((s) => s.user);
     const { mutate, isPending } = useUpdateProfile();
 
@@ -233,7 +236,7 @@ const EditProfileModal = ({ visible, onClose }: { visible: boolean; onClose: () 
                     <View style={styles.modalHeader}>
                         <Text style={styles.modalTitle}>Edit Profile</Text>
                         <TouchableOpacity onPress={onClose} hitSlop={10}>
-                            <X color="#64748B" size={22} />
+                            <X color={colors.TEXT_SECONDARY} size={22} />
                         </TouchableOpacity>
                     </View>
 
@@ -263,10 +266,12 @@ const EditProfileModal = ({ visible, onClose }: { visible: boolean; onClose: () 
 
 export default ProfileScreen;
 
-const styles = StyleSheet.create({
+// Computed from useAppTheme() so this screen repaints correctly in dark
+// mode instead of staying pinned to the light palette baked at import.
+const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: ReturnType<typeof useAppTheme>['fonts']) => StyleSheet.create({
     root: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
+        backgroundColor: colors.BACKGROUND,
     },
     header: {
         borderBottomLeftRadius: W(24),
@@ -278,7 +283,7 @@ const styles = StyleSheet.create({
     title: {
         color: '#fff',
         fontSize: RF(22),
-        fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+        fontFamily: fonts.SEMI_BOLD_PRIMARY,
         marginBottom: H(20),
         textAlign: 'center',
     },
@@ -300,13 +305,13 @@ const styles = StyleSheet.create({
     name: {
         fontSize: RF(18),
         color: '#fff',
-        fontFamily: FONTS.BOLD_PRIMARY,
+        fontFamily: fonts.BOLD_PRIMARY,
         marginBottom: H(2),
     },
     phone: {
         fontSize: RF(14),
         color: 'rgba(255,255,255,0.8)',
-        fontFamily: FONTS.PRIMARY,
+        fontFamily: fonts.PRIMARY,
     },
     editButton: {
         paddingVertical: H(10),
@@ -315,9 +320,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     editText: {
-        color: '#1A1F6B',
+        color: colors.TEXT_PRIMARY,
         fontSize: RF(14),
-        fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+        fontFamily: fonts.SEMI_BOLD_PRIMARY,
     },
     statsContainer: {
         flexDirection: 'row',
@@ -328,7 +333,7 @@ const styles = StyleSheet.create({
     },
     statCard: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: colors.SURFACE,
         marginHorizontal: W(8),
         borderRadius: W(16),
         paddingVertical: H(20),
@@ -341,16 +346,16 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
     statTitle: {
-        color: '#64748B',
+        color: colors.TEXT_SECONDARY,
         fontSize: RF(13),
-        fontFamily: FONTS.PRIMARY,
+        fontFamily: fonts.PRIMARY,
         marginBottom: H(4),
     },
     statValue: {
         fontSize: RF(24),
         fontWeight: '800',
-        color: '#1A1F6B',
-        fontFamily: FONTS.BOLD_PRIMARY,
+        color: colors.TEXT_PRIMARY,
+        fontFamily: fonts.BOLD_PRIMARY,
     },
     menuScroll: {
         flex: 1,
@@ -360,7 +365,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: colors.SURFACE,
         borderRadius: W(16),
         paddingVertical: H(18),
         paddingHorizontal: W(20),
@@ -374,7 +379,7 @@ const styles = StyleSheet.create({
     menuItemDestructive: {
         borderWidth: 1,
         borderColor: 'rgba(239,68,68,0.2)',
-        backgroundColor: '#fef2f2',
+        backgroundColor: colors.ERROR + '10',
     },
     menuLeft: {
         flexDirection: 'row',
@@ -383,11 +388,11 @@ const styles = StyleSheet.create({
     },
     menuLabel: {
         fontSize: RF(16),
-        color: '#1A1F6B',
-        fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+        color: colors.TEXT_PRIMARY,
+        fontFamily: fonts.SEMI_BOLD_PRIMARY,
     },
     menuLabelDestructive: {
-        color: '#EF4444',
+        color: colors.ERROR,
     },
     menuRight: {
         flexDirection: 'row',
@@ -395,9 +400,9 @@ const styles = StyleSheet.create({
         gap: W(8),
     },
     valueText: {
-        color: '#64748B',
+        color: colors.TEXT_SECONDARY,
         fontSize: RF(14),
-        fontFamily: FONTS.PRIMARY,
+        fontFamily: fonts.PRIMARY,
     },
 
     // Edit Profile modal
@@ -407,7 +412,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.4)',
     },
     modalSheet: {
-        backgroundColor: '#fff',
+        backgroundColor: colors.SURFACE,
         borderTopLeftRadius: W(24),
         borderTopRightRadius: W(24),
         padding: W(20),
@@ -421,16 +426,16 @@ const styles = StyleSheet.create({
     },
     modalTitle: {
         fontSize: RF(18),
-        fontFamily: FONTS.BOLD_PRIMARY,
-        color: '#1A1F6B',
+        fontFamily: fonts.BOLD_PRIMARY,
+        color: colors.TEXT_PRIMARY,
     },
     modalForm: {
         gap: H(14),
         marginBottom: H(20),
     },
     modalError: {
-        color: '#EF4444',
+        color: colors.ERROR,
         fontSize: RF(13),
-        fontFamily: FONTS.PRIMARY,
+        fontFamily: fonts.PRIMARY,
     },
 });
