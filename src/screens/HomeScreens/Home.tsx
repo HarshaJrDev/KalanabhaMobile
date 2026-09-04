@@ -171,7 +171,7 @@ const HomeScreen: React.FC = () => {
     // Real, admin-managed rates (Settings -> Vehicle Configs in the admin
     // panel) — "Starting Fare" below reads VehicleConfig.baseRate, not a
     // fabricated number. Only active configs are offer-able to customers.
-    const { data: vehicleConfigs } = useVehicleConfigs();
+    const { data: vehicleConfigs, refetch: refetchVehicleConfigs } = useVehicleConfigs();
     const activeVehicleConfigs = useMemo(
         () => (vehicleConfigs ?? []).filter((v) => v.active),
         [vehicleConfigs],
@@ -268,8 +268,11 @@ const HomeScreen: React.FC = () => {
     }, [authUser?.displayName]);
 
     const onRefresh = useCallback(async () => {
-        await Promise.all([refetchShipments(), refetchUnreadCount()]);
-    }, [refetchShipments, refetchUnreadCount]);
+        // vehicleConfigs was missing here — pulling to refresh never picked
+        // up an admin's add/edit/deactivate in Vehicle Configs, only the
+        // 60s staleTime naturally expiring on a later remount did.
+        await Promise.all([refetchShipments(), refetchUnreadCount(), refetchVehicleConfigs()]);
+    }, [refetchShipments, refetchUnreadCount, refetchVehicleConfigs]);
 
     const getGreeting = () => {
         const hour = new Date().getHours();
