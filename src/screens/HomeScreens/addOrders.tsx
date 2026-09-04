@@ -55,7 +55,7 @@ import {
     type LucideIcon,
 } from 'lucide-react-native';
 import { registerFCMToken, setupFCMListeners } from '@utils/cm';
-import { useVehicleConfigs, useServiceAreas } from '@features/settings/hooks';
+import { useVehicleConfigs, useServiceAreas, useBusinessSettings } from '@features/settings/hooks';
 import { useAuthStore } from '@features/store/authStore';
 import type { ServiceArea } from '@features/settings/types';
 import { useFareEstimate, FareEstimate, type KnownCoords } from '@location/useFareEstimate';
@@ -134,7 +134,10 @@ type PackageForm = {
     fragile: boolean;
     insurance: boolean;
     category: string;
-    price: number
+    price: number;
+    // House Shifting only — real per-helper charge (business setting
+    // 'helper_rate_per_person') is applied server-side per this count.
+    helpersCount: number;
 };
 
 type OrderDetailsForm = {
@@ -173,6 +176,11 @@ const logError = (scope: string, error: unknown) => {
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
 const STEPS = [
+    {
+        label: 'Category',
+        icon: <Truck size={24} color="#FF7518" />,
+        description: 'What are you sending?'
+    },
     {
         label: 'Sender',
         icon: <User size={24} color="#FF7518" />,
@@ -228,7 +236,7 @@ const INIT_RECEIVER: ReceiverForm = { name: '', phone: '', email: '', landmark: 
 const INIT_PACKAGE: PackageForm = {
     description: '', weight: '', length: '', width: '', height: '',
     quantity: '1', fragile: false, insurance: false, category: 'Documents',
-    price: 0
+    price: 0, helpersCount: 1,
 };
 const INIT_ORDER: OrderDetailsForm = {
     serviceType: 'standard', vehicleType: 'bike',
@@ -612,8 +620,94 @@ const composeAddress = (landmark: string, place: ServiceArea | null): string => 
     return landmark.trim() ? `${landmark.trim()}, ${place.name}, ${place.city}` : `${place.name}, ${place.city}`;
 };
 
+// ─── STEP 0: CATEGORY ─────────────────────────────────────────────────────────
+
+type ShipmentCategory = 'PARCEL' | 'HOUSE_SHIFTING';
+
+const CATEGORY_OPTIONS: { key: ShipmentCategory; title: string; subtitle: string; icon: LucideIcon }[] = [
+    { key: 'PARCEL', title: 'Send a Package', subtitle: 'Parcels, documents, goods — point to point', icon: Package },
+    { key: 'HOUSE_SHIFTING', title: 'House Shifting', subtitle: 'Movers with loading/unloading help, van or truck', icon: Truck },
+];
+
+const StepCategory = ({ value, onSelect, onNext }: {
+    value: ShipmentCategory;
+    onSelect: (category: ShipmentCategory) => void;
+    onNext: () => void;
+}) => {
+    const { colors: BRAND } = useAppTheme();
+    const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
+    const catStyles = useMemo(() => makeCategoryStyles(COLORS), [COLORS]);
+
+    return (
+        <ScrollView showsVerticalScrollIndicator={false}>
+            <SectionHeader title="What are you sending?" subtitle="Choose the kind of booking you need" />
+            {CATEGORY_OPTIONS.map((opt) => {
+                const selected = value === opt.key;
+                return (
+                    <TouchableOpacity
+                        key={opt.key}
+                        style={[catStyles.card, selected && catStyles.cardActive]}
+                        onPress={() => onSelect(opt.key)}
+                        activeOpacity={0.85}
+                    >
+                        <View style={[catStyles.iconWrap, selected && catStyles.iconWrapActive]}>
+                            <opt.icon size={26} color={selected ? '#fff' : COLORS.primary} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={[catStyles.title, selected && { color: COLORS.primary }]}>{opt.title}</Text>
+                            <Text style={catStyles.subtitle}>{opt.subtitle}</Text>
+                        </View>
+                        {selected && (
+                            <View style={catStyles.checkBadge}>
+                                <Check size={13} color="#fff" strokeWidth={3} />
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                );
+            })}
+            {value === 'HOUSE_SHIFTING' && (
+                <View style={catStyles.infoBox}>
+                    <AlertTriangle size={14} color={COLORS.warning} />
+                    <Text style={catStyles.infoText}>
+                        House Shifting only offers Van/Truck (no bike) and adds a real, admin-set per-helper charge — you'll see the exact number of helpers and rate before booking.
+                    </Text>
+                </View>
+            )}
+            <NavButtons onNext={onNext} isFirst />
+        </ScrollView>
+    );
+};
+
+const makeCategoryStyles = (COLORS: OrderColors) => StyleSheet.create({
+    card: {
+        flexDirection: 'row', alignItems: 'center', gap: 14,
+        backgroundColor: COLORS.surface, borderRadius: RADIUS.lg,
+        borderWidth: 1.5, borderColor: COLORS.border,
+        padding: 16, marginBottom: 12,
+    },
+    cardActive: { borderColor: COLORS.primary, backgroundColor: '#FFF7F0' },
+    iconWrap: {
+        width: 52, height: 52, borderRadius: RADIUS.md,
+        backgroundColor: COLORS.primaryLight,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    iconWrapActive: { backgroundColor: COLORS.primary },
+    title: { fontSize: 15, fontWeight: '700', color: COLORS.text },
+    subtitle: { fontSize: 12, color: COLORS.textMuted, marginTop: 2, lineHeight: 16 },
+    checkBadge: {
+        width: 24, height: 24, borderRadius: 12,
+        backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center',
+    },
+    infoBox: {
+        flexDirection: 'row', gap: 8, alignItems: 'flex-start',
+        backgroundColor: COLORS.warningLight, borderRadius: RADIUS.md,
+        padding: 12, marginBottom: 8,
+    },
+    infoText: { flex: 1, fontSize: 12, color: COLORS.text, lineHeight: 17 },
+});
+
 const StepSender = ({
-    data, onChange, areas, place, onSelectPlace, otherPlace, refined, onRefine, onNext,
+    data, onChange, areas, place, onSelectPlace, otherPlace, refined, onRefine, onNext, onBack,
 }: {
     data: SenderForm;
     onChange: (key: keyof SenderForm, val: string) => void;
@@ -624,6 +718,7 @@ const StepSender = ({
     refined: (KnownCoords & { label: string }) | null;
     onRefine: (result: (KnownCoords & { label: string }) | null) => void;
     onNext: () => void;
+    onBack: () => void;
 }) => {
     const [errors, setErrors] = useState<Partial<Record<keyof SenderForm | 'place', string>>>({});
 
@@ -667,7 +762,7 @@ const StepSender = ({
             <InputField label="House / Flat No., Landmark" value={data.landmark} onChangeText={v => onChange('landmark', v)}
                 placeholder="e.g. Flat 302, near City Central Mall" icon={MapPin} />
 
-            <NavButtons onNext={handleNext} isFirst />
+            <NavButtons onBack={onBack} onNext={handleNext} />
         </ScrollView>
     );
 };
@@ -736,10 +831,12 @@ const StepReceiver = ({
 // ─── STEP 3: PACKAGE ──────────────────────────────────────────────────────────
 
 const StepPackage = ({
-    data, onChange, onNext, onBack,
+    data, onChange, category, helperRate, onNext, onBack,
 }: {
     data: PackageForm;
     onChange: <K extends keyof PackageForm>(key: K, val: PackageForm[K]) => void;
+    category: ShipmentCategory;
+    helperRate: number | null;
     onNext: () => void;
     onBack: () => void;
 }) => {
@@ -747,26 +844,33 @@ const StepPackage = ({
     const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
     const pkgStyles = useMemo(() => makePkgStyles(COLORS), [COLORS]);
     const [errors, setErrors] = useState<Partial<Record<keyof PackageForm, string>>>({});
+    const isHouseShifting = category === 'HOUSE_SHIFTING';
 
     const validate = () => {
         const e: typeof errors = {};
         if (!data.description.trim()) e.description = 'Description is required';
         else if (data.description.trim().length < 3) e.description = 'Description is too short';
 
-        const weight = Number(data.weight);
-        if (!data.weight.trim() || isNaN(weight) || weight <= 0) e.weight = 'Enter a weight greater than 0';
-        else if (weight > 5000) e.weight = 'Exceeds the largest vehicle\'s 5000 kg limit';
+        if (isHouseShifting) {
+            if (!Number.isInteger(data.helpersCount) || data.helpersCount < 1 || data.helpersCount > 4) {
+                e.helpersCount = 'Choose between 1 and 4 helpers' as any;
+            }
+        } else {
+            const weight = Number(data.weight);
+            if (!data.weight.trim() || isNaN(weight) || weight <= 0) e.weight = 'Enter a weight greater than 0';
+            else if (weight > 5000) e.weight = 'Exceeds the largest vehicle\'s 5000 kg limit';
 
-        const quantity = Number(data.quantity);
-        if (!data.quantity.trim() || !Number.isInteger(quantity) || quantity < 1) e.quantity = 'Quantity must be a whole number ≥ 1';
+            const quantity = Number(data.quantity);
+            if (!data.quantity.trim() || !Number.isInteger(quantity) || quantity < 1) e.quantity = 'Quantity must be a whole number ≥ 1';
 
-        // Dimensions are optional, but a garbage/negative value if entered
-        // at all is still worth catching before it reaches the backend.
-        (['length', 'width', 'height'] as const).forEach((dim) => {
-            if (!data[dim].trim()) return;
-            const v = Number(data[dim]);
-            if (isNaN(v) || v <= 0) e[dim] = 'Must be greater than 0';
-        });
+            // Dimensions are optional, but a garbage/negative value if entered
+            // at all is still worth catching before it reaches the backend.
+            (['length', 'width', 'height'] as const).forEach((dim) => {
+                if (!data[dim].trim()) return;
+                const v = Number(data[dim]);
+                if (isNaN(v) || v <= 0) e[dim] = 'Must be greater than 0';
+            });
+        }
 
         setErrors(e);
         return Object.keys(e).length === 0;
@@ -774,54 +878,99 @@ const StepPackage = ({
 
     return (
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <SectionHeader title="Package Details" subtitle="Tell us about your shipment" />
+            <SectionHeader
+                title={isHouseShifting ? 'Move Details' : 'Package Details'}
+                subtitle={isHouseShifting ? 'Tell us about your move' : 'Tell us about your shipment'}
+            />
 
-            {/* Category chips */}
-            <Text style={pkgStyles.catLabel}>Category</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-                {PACKAGE_CATEGORIES.map(cat => (
-                    <TouchableOpacity
-                        key={cat}
-                        onPress={() => onChange('category', cat)}
-                        style={[pkgStyles.chip, data.category === cat && pkgStyles.chipActive]}
-                        activeOpacity={0.8}
-                    >
-                        <Text style={[pkgStyles.chipText, data.category === cat && pkgStyles.chipTextActive]}>
-                            {cat}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
+            {!isHouseShifting && (
+                <>
+                    {/* Category chips */}
+                    <Text style={pkgStyles.catLabel}>Category</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+                        {PACKAGE_CATEGORIES.map(cat => (
+                            <TouchableOpacity
+                                key={cat}
+                                onPress={() => onChange('category', cat)}
+                                style={[pkgStyles.chip, data.category === cat && pkgStyles.chipActive]}
+                                activeOpacity={0.8}
+                            >
+                                <Text style={[pkgStyles.chipText, data.category === cat && pkgStyles.chipTextActive]}>
+                                    {cat}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </>
+            )}
 
-            <InputField label="Description *" value={data.description} onChangeText={v => onChange('description', v)}
-                placeholder="e.g. Laptop, clothes, documents" icon={FileText} error={errors.description} />
+            <InputField
+                label={isHouseShifting ? 'What are you moving? *' : 'Description *'}
+                value={data.description} onChangeText={v => onChange('description', v)}
+                placeholder={isHouseShifting ? 'e.g. 2BHK furniture, appliances, boxes' : 'e.g. Laptop, clothes, documents'}
+                icon={FileText} error={errors.description}
+            />
 
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-                <View style={{ flex: 1 }}>
-                    <InputField label="Weight (kg) *" value={data.weight} onChangeText={v => onChange('weight', v)}
-                        placeholder="e.g. 2.5" icon={Weight} keyboardType="decimal-pad" error={errors.weight} />
+            {isHouseShifting ? (
+                <View style={pkgStyles.helpersCard}>
+                    <View style={pkgStyles.helpersHeaderRow}>
+                        <Text style={pkgStyles.helpersTitle}>Loading/Unloading Helpers</Text>
+                        {helperRate != null && (
+                            <Text style={pkgStyles.helpersRate}>₹{helperRate}/helper</Text>
+                        )}
+                    </View>
+                    <View style={pkgStyles.stepperRow}>
+                        <TouchableOpacity
+                            style={pkgStyles.stepperBtn}
+                            disabled={data.helpersCount <= 1}
+                            onPress={() => onChange('helpersCount', Math.max(1, data.helpersCount - 1))}
+                        >
+                            <Text style={pkgStyles.stepperBtnText}>−</Text>
+                        </TouchableOpacity>
+                        <Text style={pkgStyles.stepperValue}>{data.helpersCount}</Text>
+                        <TouchableOpacity
+                            style={pkgStyles.stepperBtn}
+                            disabled={data.helpersCount >= 4}
+                            onPress={() => onChange('helpersCount', Math.min(4, data.helpersCount + 1))}
+                        >
+                            <Text style={pkgStyles.stepperBtnText}>+</Text>
+                        </TouchableOpacity>
+                        {helperRate != null && (
+                            <Text style={pkgStyles.helpersTotal}>= ₹{helperRate * data.helpersCount}</Text>
+                        )}
+                    </View>
+                    {errors.helpersCount && <Text style={pkgStyles.helpersError}>{errors.helpersCount as any}</Text>}
                 </View>
-                <View style={{ flex: 1 }}>
-                    <InputField label="Quantity *" value={data.quantity} onChangeText={v => onChange('quantity', v)}
-                        placeholder="1" keyboardType="numeric" error={errors.quantity} />
-                </View>
-            </View>
+            ) : (
+                <>
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                        <View style={{ flex: 1 }}>
+                            <InputField label="Weight (kg) *" value={data.weight} onChangeText={v => onChange('weight', v)}
+                                placeholder="e.g. 2.5" icon={Weight} keyboardType="decimal-pad" error={errors.weight} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <InputField label="Quantity *" value={data.quantity} onChangeText={v => onChange('quantity', v)}
+                                placeholder="1" keyboardType="numeric" error={errors.quantity} />
+                        </View>
+                    </View>
 
-            <SectionHeader title="Dimensions (optional)" subtitle="Length × Width × Height in cm" />
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-                <View style={{ flex: 1 }}>
-                    <InputField label="L (cm)" value={data.length} onChangeText={v => onChange('length', v)}
-                        placeholder="30" keyboardType="numeric" icon={Ruler} error={errors.length} />
-                </View>
-                <View style={{ flex: 1 }}>
-                    <InputField label="W (cm)" value={data.width} onChangeText={v => onChange('width', v)}
-                        placeholder="20" keyboardType="numeric" error={errors.width} />
-                </View>
-                <View style={{ flex: 1 }}>
-                    <InputField label="H (cm)" value={data.height} onChangeText={v => onChange('height', v)}
-                        placeholder="15" keyboardType="numeric" error={errors.height} />
-                </View>
-            </View>
+                    <SectionHeader title="Dimensions (optional)" subtitle="Length × Width × Height in cm" />
+                    <View style={{ flexDirection: 'row', gap: 10 }}>
+                        <View style={{ flex: 1 }}>
+                            <InputField label="L (cm)" value={data.length} onChangeText={v => onChange('length', v)}
+                                placeholder="30" keyboardType="numeric" icon={Ruler} error={errors.length} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <InputField label="W (cm)" value={data.width} onChangeText={v => onChange('width', v)}
+                                placeholder="20" keyboardType="numeric" error={errors.width} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <InputField label="H (cm)" value={data.height} onChangeText={v => onChange('height', v)}
+                                placeholder="15" keyboardType="numeric" error={errors.height} />
+                        </View>
+                    </View>
+                </>
+            )}
 
             {/* Toggles */}
             <View style={pkgStyles.toggleCard}>
@@ -885,17 +1034,35 @@ const makePkgStyles = (COLORS: OrderColors) => StyleSheet.create({
     toggleTitle: { fontSize: 14, fontWeight: '600', color: COLORS.text },
     toggleSub: { fontSize: 11, color: COLORS.textMuted, marginTop: 1 },
     divider: { height: 1, backgroundColor: COLORS.border, marginVertical: 12 },
+    helpersCard: {
+        backgroundColor: COLORS.surface, borderRadius: RADIUS.lg,
+        borderWidth: 1.5, borderColor: COLORS.border,
+        padding: 16, marginBottom: 16,
+    },
+    helpersHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+    helpersTitle: { fontSize: 14, fontWeight: '700', color: COLORS.text },
+    helpersRate: { fontSize: 12, color: COLORS.primary, fontWeight: '600' },
+    stepperRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+    stepperBtn: {
+        width: 40, height: 40, borderRadius: RADIUS.md,
+        backgroundColor: COLORS.primaryLight, alignItems: 'center', justifyContent: 'center',
+    },
+    stepperBtnText: { fontSize: 20, fontWeight: '700', color: COLORS.primary, lineHeight: 22 },
+    stepperValue: { fontSize: 18, fontWeight: '700', color: COLORS.text, minWidth: 24, textAlign: 'center' },
+    helpersTotal: { marginLeft: 'auto', fontSize: 14, fontWeight: '700', color: COLORS.text },
+    helpersError: { color: COLORS.danger, fontSize: 11, marginTop: 8 },
 });
 
 // ─── STEP 4: ORDER DETAILS + REVIEW ──────────────────────────────────────────
 
 const StepOrderDetails = ({
-    data, onChange, onBack, allData, submitting, onSubmit, fareEstimate,
+    data, onChange, onBack, allData, category, submitting, onSubmit, fareEstimate,
 }: {
     data: OrderDetailsForm;
     onChange: <K extends keyof OrderDetailsForm>(key: K, val: OrderDetailsForm[K]) => void;
     onBack: () => void;
     allData: AllOrderData;
+    category: ShipmentCategory;
     submitting: boolean;
     onSubmit: () => void;
     fareEstimate: FareEstimate;
@@ -907,11 +1074,12 @@ const StepOrderDetails = ({
     // Real, admin-managed vehicle types (GET /settings/vehicle-configs) —
     // previously a hardcoded bike/van/truck array here, so renaming, adding,
     // or deactivating a vehicle type in the admin panel never reached this
-    // screen at all.
+    // screen at all. House Shifting excludes bike — a bike can't move
+    // furniture/helpers, so it's never offered for that category.
     const { data: vehicleConfigsData } = useVehicleConfigs();
     const activeVehicleConfigs = useMemo(
-        () => (vehicleConfigsData ?? []).filter((v) => v.active),
-        [vehicleConfigsData],
+        () => (vehicleConfigsData ?? []).filter((v) => v.active && (category !== 'HOUSE_SHIFTING' || v.name.toLowerCase() !== 'bike')),
+        [vehicleConfigsData, category],
     );
     // If the currently-selected type was deactivated/renamed/removed since
     // the form's default was set, fall back to the first active config
@@ -1175,6 +1343,15 @@ const StepOrderDetails = ({
                                 no flat-estimate fallback that actually lets this order be
                                 placed; the button below is disabled until this resolves. */}
                             <Text style={odStyles.fareError}>{fareEstimate.error} — fix the address to continue</Text>
+                        </View>
+                    )}
+                    {/* helperCost is already folded into fareEstimate.price by
+                        PricingService — shown here as a breakdown line, not
+                        added again into `total`. */}
+                    {category === 'HOUSE_SHIFTING' && !!fareEstimate.helperCost && (
+                        <View style={odStyles.summRow}>
+                            <Text style={odStyles.summKey}>Helpers ({allData.package.helpersCount})</Text>
+                            <Text style={odStyles.summVal}>₹{fareEstimate.helperCost}</Text>
                         </View>
                     )}
                     {insuranceFee > 0 && (
@@ -1521,7 +1698,7 @@ const NewOrder = () => {
     // same route/vehicle instead of starting over from blank fields.
     const route = useRoute<any>();
     const prefill = route.params?.prefill as
-        | { pickup?: string; drop?: string; vehicleType?: string }
+        | { pickup?: string; drop?: string; vehicleType?: string; category?: ShipmentCategory }
         | undefined;
 
     // Real logged-in customer's profile (GET /users/me, hydrated into the
@@ -1533,6 +1710,10 @@ const NewOrder = () => {
     const user = useAuthStore((s) => s.user);
 
     const [step, setStep] = useState(0);
+    // Porter-style booking type, chosen on StepCategory (step 0). Drives the
+    // Package step's fields, the Vehicle Type choices (no bike for House
+    // Shifting), and the real per-helper charge added server-side.
+    const [category, setCategory] = useState<ShipmentCategory>(prefill?.category ?? 'PARCEL');
     const [sender, setSender] = useState<SenderForm>(() => ({
         ...INIT_SENDER,
         name: user?.displayName ?? INIT_SENDER.name,
@@ -1588,7 +1769,19 @@ const NewOrder = () => {
         orderDetails.serviceType,
         pickupCoords,
         dropCoords,
+        category,
+        category === 'HOUSE_SHIFTING' ? pkg.helpersCount : undefined,
     );
+
+    // Real, admin-set per-helper rate (BusinessSetting
+    // 'helper_rate_per_person') — shown on the Package step before booking
+    // so the customer sees the same number PricingService will actually
+    // charge, not a guess baked into the app.
+    const { data: businessSettingsData } = useBusinessSettings();
+    const helperRate = useMemo(() => {
+        const raw = businessSettingsData?.find((s) => s.key === 'helper_rate_per_person')?.value;
+        return raw != null ? Number(raw) : null;
+    }, [businessSettingsData]);
 
     // CheckRate.tsx's prefill carries free-text addresses (its own pickup/
     // drop inputs aren't place-backed) — only auto-select once the real
@@ -1711,9 +1904,14 @@ const NewOrder = () => {
                 return;
             }
 
+            const isHouseShifting = category === 'HOUSE_SHIFTING';
+
             const shipment = await createShipment({
-                goodsType: pkg?.category ?? 'General',
-                weightKg: safeNumber(pkg?.weight),
+                // House Shifting never collects a package category chip
+                // (chips are hidden for it) — pkg.category would still hold
+                // INIT_PACKAGE's 'Documents' default, which is wrong here.
+                goodsType: isHouseShifting ? 'House Shifting' : (pkg?.category ?? 'General'),
+                weightKg: isHouseShifting ? 0 : safeNumber(pkg?.weight),
                 pickup: {
                     address: sender.address,
                     lat: fareEstimate.pickup.lat,
@@ -1726,12 +1924,23 @@ const NewOrder = () => {
                 },
                 sender,
                 receiver,
-                package: { category: pkg?.category, weight: safeNumber(pkg?.weight) },
+                package: isHouseShifting
+                    ? { category: 'House Shifting' }
+                    : { category: pkg?.category, weight: safeNumber(pkg?.weight) },
                 serviceType: orderDetails.serviceType,
                 vehicleType: orderDetails.vehicleType,
                 paymentMode: orderDetails.paymentMode,
                 pickupSlot: orderDetails.pickupSlot,
-                notes: orderDetails.notes,
+                // House Shifting has no separate "package category/weight"
+                // fields to carry pkg.description (what's being moved) —
+                // fold it into notes so the driver actually sees it. Parcel
+                // flow is untouched (its description already implies the
+                // package.category chip, unlike this one).
+                notes: isHouseShifting && pkg?.description
+                    ? `Items: ${pkg.description}${orderDetails.notes ? ` — ${orderDetails.notes}` : ''}`
+                    : orderDetails.notes,
+                category,
+                helpersCount: isHouseShifting ? pkg.helpersCount : undefined,
             }, idempotencyKey);
 
             setTrackingId(shipment.trackingId);
@@ -1745,7 +1954,7 @@ const NewOrder = () => {
             setSubmitting(false);
             log(scope, 'END');
         }
-    }, [sender, receiver, pkg, orderDetails, fareEstimate]);
+    }, [sender, receiver, pkg, orderDetails, fareEstimate, category]);
 
     const handleDone = useCallback(() => {
         setShowSuccess(false);
@@ -1771,6 +1980,13 @@ const NewOrder = () => {
                     ]}
                 >
                     {step === 0 && (
+                        <StepCategory
+                            value={category}
+                            onSelect={setCategory}
+                            onNext={goNext}
+                        />
+                    )}
+                    {step === 1 && (
                         <StepSender
                             data={sender}
                             onChange={updateSender}
@@ -1781,9 +1997,10 @@ const NewOrder = () => {
                             refined={pickupRefine}
                             onRefine={setPickupRefine}
                             onNext={goNext}
+                            onBack={goBack}
                         />
                     )}
-                    {step === 1 && (
+                    {step === 2 && (
                         <StepReceiver
                             data={receiver}
                             onChange={updateReceiver}
@@ -1797,20 +2014,23 @@ const NewOrder = () => {
                             onBack={goBack}
                         />
                     )}
-                    {step === 2 && (
+                    {step === 3 && (
                         <StepPackage
                             data={pkg}
                             onChange={updatePkg}
+                            category={category}
+                            helperRate={helperRate}
                             onNext={goNext}
                             onBack={goBack}
                         />
                     )}
-                    {step === 3 && (
+                    {step === 4 && (
                         <StepOrderDetails
                             data={orderDetails}
                             onChange={updateOrderDetails}
                             onBack={goBack}
                             allData={allData}
+                            category={category}
                             submitting={submitting}
                             onSubmit={handleSubmit}
                             fareEstimate={fareEstimate}
