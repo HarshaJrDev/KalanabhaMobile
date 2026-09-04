@@ -9,36 +9,32 @@
 // Rebuilt to reuse the exact same real pieces addOrders.tsx already uses:
 // useAutoAddress (current-location convenience) and useFareEstimate (typed
 // address -> geocode -> POST /shipments/quote, the same PricingService the
-// real booking flow prices through), with the real Bike/Van/Truck vehicle
-// types (VehicleConfig rows) instead of the fake Air/Sea/Road categories.
-// "Check Rate" is quote-only — it does not create a shipment; a real quote
-// hands off into the existing addOrders flow.
+// real booking flow prices through). Vehicle types were still a hardcoded
+// static array here (bike/van/truck with made-up "Up to 20 kg" copy) even
+// after addOrders.tsx and Home.tsx both moved to the real, admin-managed
+// GET /settings/vehicle-configs — fixed to read the same live data, with
+// each type's real illustration (VehicleVisual, falling back to an icon
+// until an admin sets an image) instead of a fixed Lucide glyph. "Check
+// Rate" is quote-only — it does not create a shipment; a real quote hands
+// off into the existing addOrders flow.
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import COLOR from '@utils/color';
 import { H, S } from '@utils/responsive';
 import CustomInput from '@components/CustomInput';
-import { LocateFixedIcon, ArrowLeft, Bike, Car, Truck } from 'lucide-react-native';
-import type { LucideIcon } from 'lucide-react-native';
+import { LocateFixedIcon, ArrowLeft } from 'lucide-react-native';
 import CustomLabel from '@components/CustomLabel';
 import Button from '@components/Button';
+import VehicleVisual from '@components/VehicleVisual';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import FONTS from '@utils/fonts';
 import { useAutoAddress } from '../../location/useAutoAddress';
 import { useFareEstimate } from '../../location/useFareEstimate';
+import { useVehicleConfigs } from '@features/settings/hooks';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'CheckRate'>;
-
-// Same real vehicle types/config rows as addOrders.tsx's VEHICLE_TYPES —
-// these are what PricingService.quote() actually prices against
-// (kalanabhaBackend VehicleConfig: Bike/Van/Truck), not "shipment types".
-const VEHICLE_TYPES: { key: string; label: string; icon: LucideIcon; desc: string }[] = [
-    { key: 'bike', label: 'Bike', icon: Bike, desc: 'Up to 20 kg' },
-    { key: 'van', label: 'Van', icon: Car, desc: 'Up to 500 kg' },
-    { key: 'truck', label: 'Truck', icon: Truck, desc: 'Up to 5000 kg' },
-];
 
 const CheckRate = () => {
     const navigation = useNavigation<NavigationProp>();
@@ -46,7 +42,22 @@ const CheckRate = () => {
 
     const [pickup, setPickup] = useState('');
     const [drop, setDrop] = useState('');
-    const [vehicleType, setVehicleType] = useState('bike');
+    const [vehicleType, setVehicleType] = useState('');
+
+    // Real, admin-managed vehicle types (GET /settings/vehicle-configs) —
+    // was a hardcoded bike/van/truck array with made-up weight-limit copy.
+    const { data: vehicleConfigsData, isLoading: vehiclesLoading } = useVehicleConfigs();
+    const activeVehicleConfigs = React.useMemo(
+        () => (vehicleConfigsData ?? []).filter((v) => v.active),
+        [vehicleConfigsData],
+    );
+    // Default to the first real active type once configs load, rather
+    // than a hardcoded 'bike' that might not even exist/be active.
+    useEffect(() => {
+        if (!vehicleType && activeVehicleConfigs.length > 0) {
+            setVehicleType(activeVehicleConfigs[0].name.toLowerCase());
+        }
+    }, [vehicleType, activeVehicleConfigs]);
 
     // Quote-only — 'standard' is a stand-in serviceType since this screen
     // doesn't ask for one; addOrders.tsx's own step lets the user actually
@@ -91,25 +102,37 @@ const CheckRate = () => {
 
                 <View>
                     <CustomLabel label="Vehicle Type" required />
-                    <View style={styles.vehicleRow}>
-                        {VEHICLE_TYPES.map((vt) => {
-                            const Icon = vt.icon;
-                            const selected = vehicleType === vt.key;
-                            return (
-                                <TouchableOpacity
-                                    key={vt.key}
-                                    style={[styles.vehicleCard, selected && styles.vehicleCardSelected]}
-                                    onPress={() => setVehicleType(vt.key)}
-                                >
-                                    <Icon color={selected ? COLOR.PRIMARY : '#6B7280'} size={22} />
-                                    <Text style={[styles.vehicleLabel, selected && styles.vehicleLabelSelected]}>
-                                        {vt.label}
-                                    </Text>
-                                    <Text style={styles.vehicleDesc}>{vt.desc}</Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
+                    {vehiclesLoading ? (
+                        <View style={styles.vehicleLoadingRow}>
+                            <ActivityIndicator color={COLOR.PRIMARY} size="small" />
+                        </View>
+                    ) : (
+                        <View style={styles.vehicleRow}>
+                            {activeVehicleConfigs.map((vt) => {
+                                const selected = vehicleType === vt.name.toLowerCase();
+                                return (
+                                    <TouchableOpacity
+                                        key={vt.id}
+                                        style={[styles.vehicleCard, selected && styles.vehicleCardSelected]}
+                                        onPress={() => setVehicleType(vt.name.toLowerCase())}
+                                    >
+                                        <VehicleVisual
+                                            vehicle={vt}
+                                            size={44}
+                                            iconSize={22}
+                                            borderRadius={12}
+                                            backgroundColor={selected ? '#EFF6FF' : '#F3F4F6'}
+                                            iconColor={selected ? COLOR.PRIMARY : '#6B7280'}
+                                        />
+                                        <Text style={[styles.vehicleLabel, selected && styles.vehicleLabelSelected]}>
+                                            {vt.name}
+                                        </Text>
+                                        <Text style={styles.vehicleDesc}>Up to {vt.maxWeight} kg</Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    )}
                 </View>
 
                 {fareEstimate.loading && (
@@ -130,7 +153,7 @@ const CheckRate = () => {
                         <Text style={styles.resultLabel}>Estimated Rate</Text>
                         <Text style={styles.resultPrice}>₹{fareEstimate.price}</Text>
                         <Text style={styles.resultDistance}>
-                            {fareEstimate.distanceKm} km · {VEHICLE_TYPES.find((v) => v.key === vehicleType)?.label}
+                            {fareEstimate.distanceKm} km · {activeVehicleConfigs.find((v) => v.name.toLowerCase() === vehicleType)?.name}
                         </Text>
 
                         <View style={styles.buttonWrapper}>
@@ -201,6 +224,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: S(10),
         marginTop: S(8),
+    },
+    vehicleLoadingRow: {
+        marginTop: S(8),
+        paddingVertical: S(20),
+        alignItems: 'center',
     },
     vehicleCard: {
         flex: 1,

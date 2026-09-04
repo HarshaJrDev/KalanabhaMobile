@@ -5,16 +5,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
 import Reanimated, { useAnimatedStyle, interpolate, Extrapolate, type SharedValue } from 'react-native-reanimated';
-import { ArrowRight, Truck, Bike, Car, type LucideIcon } from 'lucide-react-native';
+import { ArrowRight } from 'lucide-react-native';
 import type { VehicleConfig } from '@features/settings/types';
+import VehicleVisual from '@components/VehicleVisual';
 import { HomeColors, HomeFonts, SPACING } from './theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export const VEHICLE_CARD_WIDTH = SCREEN_WIDTH * 0.72;
 export const VEHICLE_CARD_GAP = SPACING.m;
-
-const VEHICLE_ICON_BY_NAME: Record<string, LucideIcon> = { bike: Bike, van: Car, truck: Truck };
-const vehicleIconFor = (name: string): LucideIcon => VEHICLE_ICON_BY_NAME[name.toLowerCase()] ?? Truck;
 
 type VehicleCardProps = {
     vehicle: VehicleConfig;
@@ -29,7 +27,6 @@ type VehicleCardProps = {
 };
 
 const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, index, isFirst, cardWidth, cardStep, scrollX, styles, colors: COLORS, onPress }) => {
-    const Icon = vehicleIconFor(vehicle.name);
     const animatedStyle = useAnimatedStyle(() => {
         const center = index * cardStep;
         const scale = interpolate(scrollX.value, [center - cardStep, center, center + cardStep], [0.92, 1, 0.92], Extrapolate.CLAMP);
@@ -47,9 +44,17 @@ const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, index, isFirst, card
                 )}
                 <View style={styles.vehicleCardBody}>
                     <View style={styles.vehicleTopRow}>
-                        <View style={styles.vehicleIconWrap}>
-                            <Icon color={COLORS.primary} size={26} strokeWidth={1.75} />
-                        </View>
+                        {/* Real illustration once an admin sets one (KalanabhaAdmin
+                            Vehicle Configs), falling back to an icon — a bigger
+                            visual presence than the old small icon-only chip. */}
+                        <VehicleVisual
+                            vehicle={vehicle}
+                            size={56}
+                            iconSize={28}
+                            borderRadius={16}
+                            backgroundColor={COLORS.primaryLight}
+                            iconColor={COLORS.primary}
+                        />
                         <View style={{ flex: 1 }}>
                             <Text style={styles.vehicleLabel}>{vehicle.name}</Text>
                             {isFirst && (
@@ -149,7 +154,6 @@ const makeStyles = (COLORS: HomeColors, FONTS: HomeFonts) => StyleSheet.create({
     vehicleFastestTagText: { color: '#fff', fontSize: 9, fontFamily: FONTS.BOLD_PRIMARY, letterSpacing: 0.3 },
     vehicleCardBody: { padding: 16 },
     vehicleTopRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
-    vehicleIconWrap: { width: 48, height: 48, borderRadius: 16, backgroundColor: COLORS.primaryLight, alignItems: 'center', justifyContent: 'center' },
     vehicleLabel: { fontSize: 16, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.textPrimary },
     vehicleArrivalRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 3 },
     vehicleArrivalDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.success },
