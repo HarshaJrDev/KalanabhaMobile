@@ -36,6 +36,8 @@ export const toShipment = (row: BackendShipment): Shipment => ({
     status: STATUS_MAP[row.status],
     category: row.category,
     helpersCount: row.helpersCount,
+    fragile: row.fragile,
+    insuranceRequested: row.insuranceRequested,
     dispatch: row.dispatch
         ? {
             driverId: row.dispatch.driverId,

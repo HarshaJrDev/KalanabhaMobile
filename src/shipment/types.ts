@@ -84,6 +84,11 @@ export interface Shipment {
     category: string;
     helpersCount: number;
 
+    // Real handling-request flags — no fee attached (no payment system
+    // exists to charge one through).
+    fragile: boolean;
+    insuranceRequested: boolean;
+
     // Not returned by kalanabhaBackend (no per-shipment customer snapshot
     // endpoint) — only ever populated when parsed straight from a Firestore
     // shipment doc via utils/parsers.ts::mapShipment.

@@ -385,10 +385,15 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                             <Text style={styles.incomingPackageText} numberOfLines={1}>
                                 {incomingRequest.package?.category ?? incomingRequest.goodsType}
                             </Text>
-                            {/* No "insured" flag actually reaches the backend — addOrders.tsx
-                                collects a fragile/insurance toggle in the booking form, but
-                                CreateShipmentPayload's package only carries category/weight,
-                                so there's nothing real to show here. */}
+                            {/* Real flags now (kalanabhaBackend 5f7763e) — worth surfacing
+                                to the driver since "fragile" is an actual handling
+                                instruction, not a fee (no payment gateway charges it). */}
+                            {incomingRequest.fragile && (
+                                <View style={styles.incomingFragileBadge}>
+                                    <ShieldAlert size={11} color="#B45309" />
+                                    <Text style={styles.incomingFragileBadgeText}>Fragile — handle with care</Text>
+                                </View>
+                            )}
                         </View>
 
                         <View style={styles.incomingRouteRow}>
@@ -718,6 +723,12 @@ const styles = StyleSheet.create({
     incomingVehicleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' },
     incomingVehicleText: { fontSize: 12, color: '#374151', fontWeight: '600', textTransform: 'capitalize' },
     incomingPackageText: { fontSize: 12, color: '#6B7280' },
+    incomingFragileBadge: {
+        flexDirection: 'row', alignItems: 'center', gap: 4,
+        backgroundColor: '#FEF3C7', borderRadius: 8,
+        paddingHorizontal: 8, paddingVertical: 4, marginTop: 6, alignSelf: 'flex-start',
+    },
+    incomingFragileBadgeText: { fontSize: 11, color: '#B45309', fontWeight: '600' },
     incomingInsuredPill: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#F0FDF4', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 },
     incomingInsuredText: { fontSize: 10, fontWeight: '700', color: '#16A34A' },
     incomingRouteRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
