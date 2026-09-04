@@ -56,6 +56,7 @@ import QuickVehicleSelector from './homeSections/QuickVehicleSelector';
 import RecentTrips from './homeSections/RecentTrips';
 import PopularPickupPoints from './homeSections/PopularPickupPoints';
 import HomeSkeleton from './homeSections/HomeSkeleton';
+import FadeImage from '@components/FadeImage';
 
 type Shipment = {
     id: string;
@@ -272,6 +273,16 @@ const HomeScreen: React.FC = () => {
                         for a returning customer. */}
                     {isNewCustomer && (
                         <Pressable style={styles.firstBookingCard} onPress={() => (navigation as any).navigate('AddOrder')}>
+                            {/* Real photo (Wikimedia Commons, freely licensed),
+                                not a fabricated illustration asset — fades in
+                                once it loads, a solid tint shows underneath
+                                until then. */}
+                            <FadeImage
+                                uri="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/A_Courier_Delivering_a_Parcel.jpg/960px-A_Courier_Delivering_a_Parcel.jpg"
+                                style={StyleSheet.absoluteFill}
+                                placeholderColor={COLORS.primaryDark}
+                            />
+                            <View style={styles.firstBookingScrim} />
                             <View style={styles.firstBookingIconWrap}>
                                 <PackagePlus size={22} color="#fff" />
                             </View>
@@ -344,6 +355,12 @@ const HomeScreen: React.FC = () => {
                         style={styles.movingBanner}
                         onPress={() => (navigation as any).navigate('AddOrder', { prefill: { category: 'HOUSE_SHIFTING' } })}
                     >
+                        <FadeImage
+                            uri="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/EFTA00002250_-_Stacks_of_cardboard_boxes_in_a_dimly_lit_storage_room_with_a_white_door_open.jpg/960px-EFTA00002250_-_Stacks_of_cardboard_boxes_in_a_dimly_lit_storage_room_with_a_white_door_open.jpg"
+                            style={StyleSheet.absoluteFill}
+                            placeholderColor={COLORS.primaryDark}
+                        />
+                        <View style={styles.firstBookingScrim} />
                         <View style={styles.movingBannerIconWrap}>
                             <Truck size={22} color="#fff" />
                         </View>
@@ -474,7 +491,11 @@ const makeStyles = (COLORS: HomeColors, FONTS: ReturnType<typeof useAppTheme>['f
     firstBookingCard: {
         flexDirection: 'row', alignItems: 'center', gap: 12,
         backgroundColor: COLORS.primaryDark, borderRadius: 18, padding: 16, marginTop: SPACING.l, marginBottom: SPACING.l,
+        overflow: 'hidden', position: 'relative',
     },
+    // Darkens the real photo behind the card's text/icon just enough to
+    // keep them readable regardless of the image's own brightness.
+    firstBookingScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
     firstBookingIconWrap: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
     firstBookingTitle: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: '#fff' },
     firstBookingSub: { fontSize: 11, fontFamily: FONTS.PRIMARY, color: 'rgba(255,255,255,0.85)', marginTop: 2 },
@@ -491,7 +512,11 @@ const makeStyles = (COLORS: HomeColors, FONTS: ReturnType<typeof useAppTheme>['f
     quickActionIconWrap: { width: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.background, alignItems: 'center', justifyContent: 'center' },
     quickActionTitle: { fontSize: 13, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.textPrimary },
     quickActionSub: { fontSize: 11, fontFamily: FONTS.PRIMARY, color: COLORS.textSecondary, textAlign: 'center' },
-    movingBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.primary, borderRadius: 16, padding: 16, marginBottom: 20 },
+    movingBanner: {
+        flexDirection: 'row', alignItems: 'center', gap: 12,
+        backgroundColor: COLORS.primary, borderRadius: 16, padding: 16, marginBottom: 20,
+        overflow: 'hidden', position: 'relative',
+    },
     movingBannerIconWrap: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
     movingBannerTitle: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: '#fff' },
     movingBannerSub: { fontSize: 11, fontFamily: FONTS.PRIMARY, color: 'rgba(255,255,255,0.85)', marginTop: 2 },
