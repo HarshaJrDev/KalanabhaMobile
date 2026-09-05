@@ -170,7 +170,7 @@ export const useCompleteDelivery = (id: string) => {
 export const useCancelShipment = (id: string) => {
     const invalidate = useInvalidateShipmentCaches(id);
     return useMutation({
-        mutationFn: () => shipmentsApi.cancelShipment(id),
+        mutationFn: (reason?: string) => shipmentsApi.cancelShipment(id, reason),
         onSuccess: invalidate,
     });
 };

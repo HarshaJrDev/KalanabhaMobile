@@ -114,9 +114,10 @@ export const completeDelivery = async (id: string, otp: string): Promise<Backend
     return data.data;
 };
 
-// customer (owner) or admin/dispatcher
-export const cancelShipment = async (id: string): Promise<BackendShipment> => {
-    const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/cancel`);
+// customer (owner) or admin/dispatcher — reason is optional, stored on the
+// real ShipmentStatusHistory.reason column (kalanabhaBackend e5a03c6).
+export const cancelShipment = async (id: string, reason?: string): Promise<BackendShipment> => {
+    const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/cancel`, { reason });
     return data.data;
 };
 
