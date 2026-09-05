@@ -8,7 +8,7 @@
 // loading, on a failed fetch, or whenever neither of the above exists —
 // never a fabricated placeholder photo.
 import React, { useState } from 'react';
-import { View, Image, StyleSheet, ActivityIndicator, Animated, type ImageSourcePropType } from 'react-native';
+import { View, Image, StyleSheet, ActivityIndicator, Animated, type ImageSourcePropType, type DimensionValue } from 'react-native';
 import { Truck, Bike, Car, type LucideIcon } from 'lucide-react-native';
 import type { VehicleConfig } from '@features/settings/types';
 
@@ -31,13 +31,18 @@ const LOCAL_VEHICLE_IMAGES: Record<string, ImageSourcePropType> = {
 interface Props {
     vehicle: Pick<VehicleConfig, 'name' | 'imageUrl'>;
     size: number;
+    // Optional overrides so this same component can render as a
+    // full-width photo banner (a card header) instead of the default
+    // square icon chip — width/height fall back to `size` when omitted.
+    width?: DimensionValue;
+    height?: DimensionValue;
     iconSize?: number;
     borderRadius?: number;
     backgroundColor: string;
     iconColor: string;
 }
 
-const VehicleVisual: React.FC<Props> = ({ vehicle, size, iconSize, borderRadius = 16, backgroundColor, iconColor }) => {
+const VehicleVisual: React.FC<Props> = ({ vehicle, size, width, height, iconSize, borderRadius = 16, backgroundColor, iconColor }) => {
     const Icon = vehicleIconFor(vehicle.name);
     const [loaded, setLoaded] = useState(false);
     const [failed, setFailed] = useState(false);
@@ -53,7 +58,7 @@ const VehicleVisual: React.FC<Props> = ({ vehicle, size, iconSize, borderRadius 
     };
 
     return (
-        <View style={[styles.wrap, { width: size, height: size, borderRadius, backgroundColor }]}>
+        <View style={[styles.wrap, { width: width ?? size, height: height ?? size, borderRadius, backgroundColor }]}>
             {/* Icon fallback — always mounted underneath so there's never a
                 blank gap while the real image is still loading or if it
                 never resolves. */}
