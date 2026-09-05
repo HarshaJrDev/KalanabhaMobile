@@ -107,9 +107,10 @@ export const startDelivery = async (id: string): Promise<BackendShipment> => {
     return data.data;
 };
 
-// driver only
-export const completeDelivery = async (id: string): Promise<BackendShipment> => {
-    const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/complete`);
+// driver only — otp is the 4-digit delivery code the customer reads out,
+// verified server-side against the real Shipment.deliveryOtp.
+export const completeDelivery = async (id: string, otp: string): Promise<BackendShipment> => {
+    const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/complete`, { otp });
     return data.data;
 };
 

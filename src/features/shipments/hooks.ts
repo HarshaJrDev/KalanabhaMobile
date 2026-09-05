@@ -162,7 +162,7 @@ export const useStartDelivery = (id: string) => {
 export const useCompleteDelivery = (id: string) => {
     const invalidate = useInvalidateShipmentCaches(id);
     return useMutation({
-        mutationFn: () => shipmentsApi.completeDelivery(id),
+        mutationFn: (otp: string) => shipmentsApi.completeDelivery(id, otp),
         onSuccess: invalidate,
     });
 };

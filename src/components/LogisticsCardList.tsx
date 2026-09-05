@@ -47,6 +47,7 @@ import { useChatMessages, useChatSocket, useSendMessage } from '@features/chat/h
 import { normalizeError } from '@utils/error';
 import { useTabBarContentPadding } from '../screens/navigation/useTabBarStyle';
 import { showToast } from '@ui/alert/toastStore';
+import { requestDeliveryOtp } from '@ui/alert/deliveryOtpStore';
 import FONTS from '@utils/fonts';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -161,35 +162,43 @@ const useDriverActions = () => {
         }
     }, []);
 
-    // Real Proof of Delivery now (kalanabhaBackend 03b5839,
-    // POST /shipments/:id/pod) — a photo is required to complete a
-    // delivery instead of a driver being able to mark DELIVERED with no
-    // verification at all. Cancelling the camera just aborts (the
-    // shipment stays IN_TRANSIT, driver can tap Complete again); a failed
-    // upload also aborts rather than completing without real proof.
+    // Real Proof of Delivery (kalanabhaBackend 03b5839, POST
+    // /shipments/:id/pod) plus a real delivery OTP (kalanabhaBackend
+    // d17a770, POST /shipments/:id/complete now verifies it server-side) —
+    // a driver needs both a photo AND the code the customer reads out to
+    // mark a shipment DELIVERED, instead of either nothing at all or just
+    // a photo with no link back to the actual customer. Cancelling the OTP
+    // prompt or the camera just aborts (shipment stays IN_TRANSIT, driver
+    // can tap Complete again); a failed upload or wrong OTP also aborts
+    // rather than completing without real proof/verification.
     const onCompleteDelivery = useCallback((id: string) => {
-        launchCamera({ mediaType: 'photo', quality: 0.8, saveToPhotos: false }, async (response) => {
-            if (response.didCancel) return;
-            const asset = response.assets?.[0];
-            if (response.errorCode || !asset?.uri) {
-                showToast('Could not capture a photo — try again', 'error');
-                return;
-            }
+        (async () => {
+            const otp = await requestDeliveryOtp();
+            if (!otp) return;
 
-            try {
-                await uploadShipmentPod(id, asset.uri, asset.fileName ?? 'proof-of-delivery.jpg', asset.type ?? 'image/jpeg');
-            } catch (err) {
-                showToast(normalizeError(err) || 'Proof-of-delivery upload failed — try again', 'error');
-                return;
-            }
+            launchCamera({ mediaType: 'photo', quality: 0.8, saveToPhotos: false }, async (response) => {
+                if (response.didCancel) return;
+                const asset = response.assets?.[0];
+                if (response.errorCode || !asset?.uri) {
+                    showToast('Could not capture a photo — try again', 'error');
+                    return;
+                }
 
-            try {
-                await completeDeliveryRequest(id);
-                showToast('Delivery completed!', 'success');
-            } catch (err) {
-                showToast(normalizeError(err) || 'Failed to complete delivery', 'error');
-            }
-        });
+                try {
+                    await uploadShipmentPod(id, asset.uri, asset.fileName ?? 'proof-of-delivery.jpg', asset.type ?? 'image/jpeg');
+                } catch (err) {
+                    showToast(normalizeError(err) || 'Proof-of-delivery upload failed — try again', 'error');
+                    return;
+                }
+
+                try {
+                    await completeDeliveryRequest(id, otp);
+                    showToast('Delivery completed!', 'success');
+                } catch (err) {
+                    showToast(normalizeError(err) || 'Incorrect OTP or failed to complete delivery', 'error');
+                }
+            });
+        })();
     }, []);
 
     return { onAccept, onStartDelivery, onCompleteDelivery };
