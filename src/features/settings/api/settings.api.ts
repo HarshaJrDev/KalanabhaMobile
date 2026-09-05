@@ -1,6 +1,6 @@
 import { apiClient } from '@api/client';
 import type { ApiSuccessResponse } from '@api/types';
-import type { VehicleConfig, VehicleConfigPayload, ServiceArea, BusinessSetting } from '../types';
+import type { VehicleConfig, VehicleConfigPayload, ServiceArea, BusinessSetting, PackageCategory } from '../types';
 
 // GET /settings/vehicle-configs — Prisma VehicleConfig model.
 export const getVehicleConfigs = async (): Promise<VehicleConfig[]> => {
@@ -32,6 +32,14 @@ export const deleteVehicleConfig = async (id: string): Promise<void> => {
 // of free-text address entry.
 export const getServiceAreas = async (): Promise<ServiceArea[]> => {
     const { data } = await apiClient.get<ApiSuccessResponse<ServiceArea[]>>('/settings/service-areas');
+    return data.data;
+};
+
+// GET /settings/package-categories — Prisma PackageCategory model.
+// addOrders.tsx's "Category" chips on the Package Details step read this
+// instead of a hardcoded array.
+export const getPackageCategories = async (): Promise<PackageCategory[]> => {
+    const { data } = await apiClient.get<ApiSuccessResponse<PackageCategory[]>>('/settings/package-categories');
     return data.data;
 };
 
