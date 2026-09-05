@@ -3,7 +3,6 @@ import {
     View,
     Text,
     StyleSheet,
-    Image,
     TouchableOpacity,
     ScrollView,
     Alert,
@@ -37,6 +36,14 @@ import { showToast } from '@ui/alert/toastStore';
 import { useAppTheme } from '@theme/ThemeContext';
 
 const SUPPORT_EMAIL = 'support@kalanabha.com';
+
+// Same real-initials-avatar pattern used everywhere else this app needs a
+// "photo" it doesn't actually have (Driver ProfileScreen, the incoming-
+// request sender avatar) — kalanabhaBackend's User model has no
+// profile-photo field, so a random stranger's photo from randomuser.me
+// was never anyone's actual picture.
+const initialsFor = (label: string) =>
+    label.trim().split(/\s+/).filter(Boolean).map((p) => p[0]).slice(0, 2).join('').toUpperCase() || '?';
 
 const ProfileScreen = () => {
     const { colors, fonts } = useAppTheme();
@@ -123,11 +130,9 @@ const ProfileScreen = () => {
                 <Text style={styles.title}>My Profile</Text>
 
                 <View style={styles.profileRow}>
-                    {/* kalanabhaBackend's User model has no profile-photo field yet — always the placeholder */}
-                    <Image
-                        source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }}
-                        style={styles.avatar}
-                    />
+                    <View style={styles.avatar}>
+                        <Text style={styles.avatarText}>{initialsFor(user?.displayName || user?.email || '?')}</Text>
+                    </View>
                     <View style={styles.profileInfo}>
                         <Text style={styles.name}>{user?.displayName || user?.email || 'Guest'}</Text>
                         <Text style={styles.phone}>{user?.phone || 'Add phone number'}</Text>
@@ -172,7 +177,9 @@ const ProfileScreen = () => {
                         onPress={item.onPress}
                     >
                         <View style={styles.menuLeft}>
-                            <item.icon color={item.destructive ? colors.ERROR : colors.TEXT_PRIMARY} size={RF(20)} />
+                            <View style={[styles.menuIconWrap, { backgroundColor: item.destructive ? colors.ERROR + '1A' : colors.PRIMARY_LIGHT }]}>
+                                <item.icon color={item.destructive ? colors.ERROR : colors.PRIMARY} size={RF(18)} />
+                            </View>
                             <Text style={[
                                 styles.menuLabel,
                                 item.destructive && styles.menuLabelDestructive,
@@ -307,6 +314,14 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
         marginRight: W(16),
         borderWidth: 3,
         borderColor: 'rgba(255,255,255,0.3)',
+        backgroundColor: 'rgba(255,255,255,0.22)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    avatarText: {
+        color: '#fff',
+        fontSize: RF(24),
+        fontFamily: fonts.BOLD_PRIMARY,
     },
     profileInfo: {
         flex: 1,
@@ -394,6 +409,13 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
         flexDirection: 'row',
         alignItems: 'center',
         gap: W(14),
+    },
+    menuIconWrap: {
+        width: W(36),
+        height: W(36),
+        borderRadius: W(11),
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     menuLabel: {
         fontSize: RF(16),
