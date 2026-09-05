@@ -10,6 +10,7 @@ import {
     ScrollView,
     TouchableOpacity,
     Alert,
+    Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSearchingShipments, useMyShipmentsAsDriver, useAcceptShipment } from '@features/shipments/hooks';
@@ -50,6 +51,10 @@ import { Linking } from 'react-native';
 import { useVehicleConfigs } from '@features/settings/hooks';
 import VehicleVisual from '@components/VehicleVisual';
 import FadeImage from '@components/FadeImage';
+
+// Same real K-branded truck photo already used on the customer Home
+// header — reused here rather than sourcing a new image.
+const DRIVE_MORE_TRUCK = require('../../../../assets/images/home/delivery-truck-hero.png');
 
 // No emergency/support phone number exists anywhere in this app's
 // backend (BusinessSetting has no such key) — reusing the same real
@@ -277,23 +282,15 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
             <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
             <View style={styles.container}>
                 {/* 🚚 Driver Header */}
-                <View style={{ position: 'relative' }}>
-                    <Animated.View style={[headerAnimStyle, { width: '100%' }]}>
-                        <DriverHeader
-                            earnings={todayEarnings}
-                            deliveredToday={deliveredToday}
-                            isOnline={isOnline}
-                            style={styles.header}
-                        />
-                    </Animated.View>
-                    {/* No emergency-dispatch system exists — this opens a
-                        real email to support (same channel Profile.tsx's
-                        Help Center uses), not a fake panic button. */}
-                    <TouchableOpacity style={styles.sosBtn} onPress={handleSos}>
-                        <ShieldAlert color="#fff" size={16} />
-                        <Text style={styles.sosBtnText}>SOS</Text>
-                    </TouchableOpacity>
-                </View>
+                <Animated.View style={[headerAnimStyle, { width: '100%' }]}>
+                    <DriverHeader
+                        earnings={todayEarnings}
+                        deliveredToday={deliveredToday}
+                        isOnline={isOnline}
+                        style={styles.header}
+                        onSos={handleSos}
+                    />
+                </Animated.View>
 
                 {/* 💬 Active Delivery — chat + real directions */}
                 {activeDelivery && (
@@ -451,45 +448,52 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                     </Animated.View>
                 )}
 
-                {/* ⛽ Find nearby fuel stations — GET /maps/fuel-stations (free
-                    OpenStreetMap data) + log a fill-up against /fuel-expenses so
-                    admin can see driver fuel spend. */}
-                <TouchableOpacity
-                    style={styles.fuelCard}
-                    onPress={() => (navigation as any).navigate('FuelStations')}
-                >
-                    <View style={styles.fuelIconWrap}>
-                        <Fuel color="#F59E0B" size={18} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.fuelCardTitle}>Find Fuel Stations</Text>
-                        <Text style={styles.fuelCardSub}>Nearby petrol bunks · log a fill-up</Text>
-                    </View>
-                    <View style={styles.fuelOpenPill}>
-                        <Text style={styles.chatPillText}>Open</Text>
-                    </View>
-                </TouchableOpacity>
+                {/* ⛽ Find nearby fuel stations (GET /maps/fuel-stations, free
+                    OpenStreetMap data) + 📄 My Documents (real KYC upload/
+                    status, GET /files/driver-documents/mine) — a two-column
+                    quick-access row instead of stacking full-width, matching
+                    the reference mockup's layout. */}
+                <View style={styles.quickRow}>
+                    <TouchableOpacity
+                        style={[styles.quickCard, { backgroundColor: '#FEF3C7' }]}
+                        onPress={() => (navigation as any).navigate('FuelStations')}
+                    >
+                        <View style={[styles.quickIconWrap, { backgroundColor: '#FDE68A' }]}>
+                            <Fuel color="#B45309" size={18} />
+                        </View>
+                        <Text style={styles.quickCardTitle}>Find Fuel Stations</Text>
+                        <Text style={styles.quickCardSub}>Nearby petrol bunks · log a fill-up</Text>
+                    </TouchableOpacity>
 
-                {/* 📄 My Documents — real KYC upload/status (GET /files/
-                    driver-documents/mine), previously had no mobile screen
-                    at all despite the backend fully supporting it. */}
-                <TouchableOpacity
-                    style={styles.fuelCard}
-                    onPress={() => (navigation as any).navigate('DriverDocuments')}
-                >
-                    <View style={[styles.fuelIconWrap, { backgroundColor: documentsVerified ? '#DCFCE7' : '#FEF3C7' }]}>
-                        <FileText color={documentsVerified ? '#16A34A' : '#F59E0B'} size={18} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.fuelCardTitle}>My Documents</Text>
-                        <Text style={styles.fuelCardSub}>
+                    <TouchableOpacity
+                        style={[styles.quickCard, { backgroundColor: documentsVerified ? '#DCFCE7' : '#FEF3C7' }]}
+                        onPress={() => (navigation as any).navigate('DriverDocuments')}
+                    >
+                        <View style={[styles.quickIconWrap, { backgroundColor: documentsVerified ? '#BBF7D0' : '#FDE68A' }]}>
+                            <FileText color={documentsVerified ? '#16A34A' : '#B45309'} size={18} />
+                        </View>
+                        <Text style={styles.quickCardTitle}>My Documents</Text>
+                        <Text style={styles.quickCardSub}>
                             {documentsVerified ? 'Verified' : 'Upload for admin review'}
                         </Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* 🚚 "Drive More, Earn More" — real encouragement to stay
+                    online, no invented bonus/incentive figure attached
+                    (no such system exists on the backend). */}
+                <LinearGradient
+                    colors={['#FF7518', '#E9600A']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.driveMoreBanner}
+                >
+                    <View style={styles.driveMoreText}>
+                        <Text style={styles.driveMoreTitle}>Drive More,{'\n'}Earn More!</Text>
+                        <Text style={styles.driveMoreSub}>Stay online to get the best loads around you.</Text>
                     </View>
-                    <View style={styles.fuelOpenPill}>
-                        <Text style={styles.chatPillText}>Open</Text>
-                    </View>
-                </TouchableOpacity>
+                    <Image source={DRIVE_MORE_TRUCK} resizeMode="contain" style={styles.driveMoreImage} />
+                </LinearGradient>
 
                 {/* 📦 Orders Section */}
                 <Animated.View style={[{ flex: 1 }, contentAnimStyle]}>
@@ -782,37 +786,44 @@ const styles = StyleSheet.create({
     },
     acceptBtnText: { fontSize: 13, fontWeight: '800', color: '#fff' },
 
-    fuelCard: {
+    quickRow: {
         flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
+        gap: 10,
         marginHorizontal: 16,
         marginTop: 12,
-        backgroundColor: '#FFF',
+    },
+    quickCard: {
+        flex: 1,
         borderRadius: 14,
         padding: 14,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 6,
     },
-    fuelIconWrap: {
+    quickIconWrap: {
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: '#FEF3C7',
         alignItems: 'center',
         justifyContent: 'center',
+        marginBottom: 8,
     },
-    fuelCardTitle: { fontSize: 13, fontWeight: '700', color: '#111827' },
-    fuelCardSub: { fontSize: 12, color: '#6B7280', marginTop: 2 },
-    fuelOpenPill: {
-        backgroundColor: '#F59E0B',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 10,
+    quickCardTitle: { fontSize: 13, fontWeight: '800', color: '#111827' },
+    quickCardSub: { fontSize: 11, color: '#57534E', marginTop: 3, lineHeight: 15 },
+
+    // "Drive More, Earn More" banner — real copy encouraging drivers to
+    // stay online (no fabricated bonus amount or figure attached to it,
+    // there's no incentive/bonus system on the backend).
+    driveMoreBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: 16,
+        marginTop: 12,
+        borderRadius: 16,
+        padding: 18,
+        overflow: 'hidden',
     },
+    driveMoreText: { flex: 1, paddingRight: 10 },
+    driveMoreTitle: { fontSize: 17, fontWeight: '800', color: '#fff', lineHeight: 22 },
+    driveMoreSub: { fontSize: 12, color: 'rgba(255,255,255,0.9)', marginTop: 6, lineHeight: 16 },
+    driveMoreImage: { width: 110, height: 90 },
 
     // Orders Section
     ordersSection: {
