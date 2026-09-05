@@ -37,33 +37,38 @@ const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, index, isFirst, card
     return (
         <Reanimated.View style={[{ width: cardWidth }, animatedStyle]}>
             <Pressable style={[styles.vehicleCard, isFirst && styles.vehicleCardFeatured]} onPress={onPress}>
-                {isFirst && (
-                    <View style={styles.vehicleFastestTag}>
-                        <Text style={styles.vehicleFastestTagText}>FASTEST DISPATCH</Text>
-                    </View>
-                )}
+                {/* Full-width photo banner — the real fleet photo is the
+                    hero of the card now, not a small 56px chip squeezed
+                    beside the text. Falls back to the Lucide icon on its
+                    own tinted background exactly like before if a vehicle
+                    has no photo at all. */}
+                <View style={styles.bannerWrap}>
+                    <VehicleVisual
+                        vehicle={vehicle}
+                        size={64}
+                        width="100%"
+                        height="100%"
+                        borderRadius={0}
+                        iconSize={40}
+                        backgroundColor={COLORS.primaryLight}
+                        iconColor={COLORS.primary}
+                    />
+                    {isFirst && (
+                        <View style={styles.vehicleFastestTag}>
+                            <Text style={styles.vehicleFastestTagText}>FASTEST DISPATCH</Text>
+                        </View>
+                    )}
+                </View>
+
                 <View style={styles.vehicleCardBody}>
                     <View style={styles.vehicleTopRow}>
-                        {/* Real illustration once an admin sets one (KalanabhaAdmin
-                            Vehicle Configs), falling back to an icon — a bigger
-                            visual presence than the old small icon-only chip. */}
-                        <VehicleVisual
-                            vehicle={vehicle}
-                            size={56}
-                            iconSize={28}
-                            borderRadius={16}
-                            backgroundColor={COLORS.primaryLight}
-                            iconColor={COLORS.primary}
-                        />
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.vehicleLabel}>{vehicle.name}</Text>
-                            {isFirst && (
-                                <View style={styles.vehicleArrivalRow}>
-                                    <View style={styles.vehicleArrivalDot} />
-                                    <Text style={styles.vehicleArrivalText}>Available now</Text>
-                                </View>
-                            )}
-                        </View>
+                        <Text style={styles.vehicleLabel}>{vehicle.name}</Text>
+                        {isFirst && (
+                            <View style={styles.vehicleArrivalRow}>
+                                <View style={styles.vehicleArrivalDot} />
+                                <Text style={styles.vehicleArrivalText}>Available now</Text>
+                            </View>
+                        )}
                     </View>
                     <Text style={styles.vehicleDesc}>
                         Up to {vehicle.maxWeight} kg
@@ -106,7 +111,7 @@ const QuickVehicleSelector: React.FC<Props> = ({ vehicles, scrollX, onScroll, on
                     <Text style={styles.sectionTitle}>Choose Your Vehicle</Text>
                     <Text style={styles.vehicleSectionSubtitle}>Real, admin-set rates — tap to book</Text>
                 </View>
-                <Text style={styles.vehicleReadyText}>{vehicles.length} TYPES READY</Text>
+                <Text style={styles.vehicleReadyText}>{vehicles.length} T  YPES READY</Text>
             </View>
             <Reanimated.ScrollView
                 horizontal
@@ -150,12 +155,13 @@ const makeStyles = (COLORS: HomeColors, FONTS: HomeFonts) => StyleSheet.create({
         shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
     },
     vehicleCardFeatured: { borderColor: COLORS.primary, borderWidth: 1.5 },
+    bannerWrap: { width: '100%', height: 132, position: 'relative' },
     vehicleFastestTag: { position: 'absolute', top: 0, right: 0, backgroundColor: COLORS.primary, paddingHorizontal: 10, paddingVertical: 5, borderBottomLeftRadius: 10 },
     vehicleFastestTagText: { color: '#fff', fontSize: 9, fontFamily: FONTS.BOLD_PRIMARY, letterSpacing: 0.3 },
     vehicleCardBody: { padding: 16 },
-    vehicleTopRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
-    vehicleLabel: { fontSize: 16, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.textPrimary },
-    vehicleArrivalRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 3 },
+    vehicleTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+    vehicleLabel: { fontSize: 17, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.textPrimary },
+    vehicleArrivalRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     vehicleArrivalDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.success },
     vehicleArrivalText: { fontSize: 11, fontFamily: FONTS.MEDIUM_PRIMARY, color: COLORS.success },
     vehicleDesc: { fontSize: 12, fontFamily: FONTS.PRIMARY, color: COLORS.textSecondary, marginBottom: 14, lineHeight: 17 },
