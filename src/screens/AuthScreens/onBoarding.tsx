@@ -171,6 +171,13 @@ const OnBoarding = () => {
                 onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
                     useNativeDriver: false,
                 })}
+                // Every slide is exactly `width` wide, so the offset is
+                // computable up front — without this, scrollToIndex (used
+                // by both Next and Back, with scrolling disabled so it's
+                // the only way to move) has to guess at the position of
+                // any slide RN hasn't measured yet, which is unreliable
+                // once there are more than a couple of slides.
+                getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
                 style={styles.slidesList}
             />
 
