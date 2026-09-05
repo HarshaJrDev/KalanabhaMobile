@@ -18,6 +18,8 @@ import { useAuthStore } from '@features/store/authStore';
 import { useSetOnlineStatus } from '@hooks/useSetOnlineStatus';
 import { useUnreadNotificationCount } from '@features/notifications/hooks';
 import { useAppTheme } from '@theme/ThemeContext';
+import { showToast } from '@ui/alert/toastStore';
+import { normalizeError } from '@utils/error';
 
 interface DriverHeaderProps {
     earnings: number;
@@ -77,7 +79,16 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
                     <Pressable
                         style={styles.togglePill}
                         disabled={isPending}
-                        onPress={() => setOnlineStatus(!isOnline)}
+                        onPress={() =>
+                            setOnlineStatus(!isOnline, {
+                                // Real gate now (kalanabhaBackend
+                                // UsersService.setOnlineStatus) — a driver
+                                // whose documents aren't admin-approved
+                                // gets a real 403 here instead of the
+                                // toggle just silently doing nothing.
+                                onError: (err) => showToast(normalizeError(err) || 'Could not update status', 'error'),
+                            })
+                        }
                     >
                         <Power size={14} color={colors.PRIMARY} />
                         <Text style={styles.togglePillText}>{isOnline ? 'Go Offline' : 'Go Online'}</Text>
