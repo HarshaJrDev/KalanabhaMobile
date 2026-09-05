@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
     FadeInDown,
     FadeInUp,
+    ZoomIn,
+    ZoomOut,
     useSharedValue,
     useAnimatedStyle,
     withSpring,
@@ -84,9 +86,20 @@ const AccountCard = memo(({ item, index, selected, onPress, styles }: CardProps)
                     <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>
                 </View>
 
-                <View style={[styles.radio, selected && styles.radioSelected]}>
-                    {selected && <Check color="#fff" size={13} strokeWidth={3} />}
-                </View>
+                {/* The whole card is already the tap target — this is a
+                    small "selected" badge, not a form control, so it only
+                    ever appears (with a pop-in/pop-out) once a card is
+                    chosen rather than sitting there unselected the whole
+                    time like a radio button. */}
+                {selected && (
+                    <Animated.View
+                        entering={ZoomIn.springify().damping(12).stiffness(220)}
+                        exiting={ZoomOut.duration(150)}
+                        style={styles.selectedBadge}
+                    >
+                        <Check color="#fff" size={13} strokeWidth={3} />
+                    </Animated.View>
+                )}
             </Pressable>
         </Animated.View>
     );
@@ -210,9 +223,11 @@ const makeStyles = (
         borderWidth: 1.5,
         borderColor: colors.BORDER,
         gap: spacing.md,
+        position: 'relative',
     },
     cardSelected: {
         borderColor: colors.PRIMARY,
+        borderWidth: 2,
         backgroundColor: colors.PRIMARY_LIGHT,
     },
 
@@ -232,16 +247,24 @@ const makeStyles = (
     title: { fontFamily: fonts.SEMI_BOLD_PRIMARY, fontSize: fontSize.xl, color: colors.TEXT_PRIMARY },
     desc: { fontFamily: fonts.MEDIUM_PRIMARY, fontSize: fontSize.sm, color: colors.TEXT_SECONDARY, lineHeight: 17 },
 
-    radio: {
-        width: 22,
-        height: 22,
-        borderRadius: 11,
-        borderWidth: 1.5,
-        borderColor: colors.BORDER,
+    selectedBadge: {
+        position: 'absolute',
+        top: -8,
+        right: -8,
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        backgroundColor: colors.PRIMARY,
         alignItems: 'center',
         justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: colors.BACKGROUND,
+        shadowColor: colors.PRIMARY,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 4,
     },
-    radioSelected: { borderColor: colors.PRIMARY, backgroundColor: colors.PRIMARY },
 
     button: {
         flexDirection: 'row',
