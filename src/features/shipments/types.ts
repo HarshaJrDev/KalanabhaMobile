@@ -121,9 +121,26 @@ export interface ShipmentQuote {
     price: number;
     distanceKm: number;
     helperCost: number;
+    // Real Express/Same Day surcharge PricingService.quote() now actually
+    // adds (kalanabhaBackend 389a5bc) — 0 for Standard.
+    serviceSurcharge: number;
 }
 
 // POST /shipments/:id/assign — AssignShipmentDto
 export interface AssignShipmentPayload {
     driverId: string;
+}
+
+// GET /shipments/:id/history — Prisma ShipmentStatusHistory model, one row
+// per real status transition. `status` is the backend's uppercase
+// enum-as-string ('SEARCHING'/'ACCEPTED'/'IN_TRANSIT'/'DELIVERED'/
+// 'CANCELLED'), not the lowercase ShipmentStatus this app displays
+// elsewhere.
+export interface ShipmentStatusHistoryEntry {
+    id: string;
+    shipmentId: string;
+    status: string;
+    actorId: string | null;
+    reason: string | null;
+    createdAt: string;
 }
