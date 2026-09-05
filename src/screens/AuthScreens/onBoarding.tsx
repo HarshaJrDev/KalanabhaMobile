@@ -13,11 +13,11 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ArrowRight } from 'lucide-react-native';
+import { ArrowRight, Truck, Bike, Package, Shield, ShieldCheck, Radar, type LucideIcon } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '@theme/ThemeContext';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 // Three real, brand-illustrated scenes cropped from the single K-mascot
 // artwork the user supplied (assets/images/home/onboarding-logistics-hero.png)
@@ -38,6 +38,10 @@ type OnBoardingScreenProp = NativeStackNavigationProp<RootStackParamList, 'OnBoa
 // orange, and a bottom row pairing the dot/counter progress with the
 // Next/Get Started pill — replacing the previous icon-badge + boxed-card
 // layout. Slide order/navigation/skip logic is unchanged.
+// Chip copy is grounded in the app's real capabilities, not invented
+// marketing claims: bike/van/truck + house-shifting are the actual
+// VehicleConfig categories every booking flow reads, and the trust line
+// echoes Home.tsx's own "Kalanabha Transit Shield" banner text verbatim.
 const SLIDES = [
     {
         key: '1',
@@ -45,6 +49,11 @@ const SLIDES = [
         titleLine2: 'Without ',
         accent: 'Limits',
         description: 'Book trucks, pickups and more for all your moving needs',
+        chips: [
+            { icon: Bike, label: 'Bike' },
+            { icon: Truck, label: 'Van & Truck' },
+            { icon: Package, label: 'House Shifting' },
+        ],
     },
     {
         key: '2',
@@ -52,6 +61,10 @@ const SLIDES = [
         titleLine2: 'What ',
         accent: 'You Need',
         description: 'From small parcels to heavy loads, we have the right vehicle for you',
+        chips: [
+            { icon: Radar, label: 'Live Tracking' },
+            { icon: Package, label: 'Real-Time Updates' },
+        ],
     },
     {
         key: '3',
@@ -59,13 +72,20 @@ const SLIDES = [
         titleLine2: 'Better ',
         accent: 'Tomorrow',
         description: 'Reliable. Affordable. On your terms.',
+        chips: [
+            { icon: Shield, label: 'Insured' },
+            { icon: ShieldCheck, label: 'Verified Pilots' },
+        ],
     },
-] satisfies { key: string; titleLine1: string; titleLine2: string; accent: string; description: string }[];
+] satisfies {
+    key: string; titleLine1: string; titleLine2: string; accent: string; description: string;
+    chips: { icon: LucideIcon; label: string }[];
+}[];
 
 const OnBoarding = () => {
     const navigation = useNavigation<OnBoardingScreenProp>();
     const { colors, fonts, fontSize, spacing, radius, isDark } = useAppTheme();
-    const styles = useMemo(() => makeStyles(colors, fonts, fontSize, spacing, radius, width), [colors, fonts, fontSize, spacing, radius]);
+    const styles = useMemo(() => makeStyles(colors, fonts, fontSize, spacing, radius, width, height), [colors, fonts, fontSize, spacing, radius]);
     const [currentIdx, setCurrentIdx] = useState(0);
     const flatListRef = useRef<FlatList>(null);
     const scrollX = useRef(new Animated.Value(0)).current;
@@ -86,16 +106,33 @@ const OnBoarding = () => {
 
     const renderItem = ({ item, index }: { item: typeof SLIDES[0]; index: number }) => (
         <View style={styles.slide}>
+            {/* Full-bleed hero panel, edge-to-edge (not boxed/margined like
+                a card) — a soft brand-tinted backdrop behind the real
+                K-mascot artwork so the illustration reads as a full
+                "hero" section of the screen rather than a small graphic
+                floating mid-page. */}
             <View style={styles.illustrationWrap}>
                 <Image source={SLIDE_IMAGES[index]} resizeMode="contain" style={styles.heroImage} />
             </View>
-            <Text style={styles.title}>
-                {item.titleLine1}
-                {'\n'}
-                {item.titleLine2}
-                <Text style={styles.titleAccent}>{item.accent}</Text>
-            </Text>
-            <Text style={styles.description}>{item.description}</Text>
+
+            <View style={styles.textArea}>
+                <Text style={styles.title}>
+                    {item.titleLine1}
+                    {'\n'}
+                    {item.titleLine2}
+                    <Text style={styles.titleAccent}>{item.accent}</Text>
+                </Text>
+                <Text style={styles.description}>{item.description}</Text>
+
+                <View style={styles.chipRow}>
+                    {item.chips.map((chip) => (
+                        <View key={chip.label} style={styles.chip}>
+                            <chip.icon size={13} color={colors.PRIMARY} strokeWidth={2.2} />
+                            <Text style={styles.chipText}>{chip.label}</Text>
+                        </View>
+                    ))}
+                </View>
+            </View>
         </View>
     );
 
@@ -168,6 +205,7 @@ const makeStyles = (
     spacing: ReturnType<typeof useAppTheme>['spacing'],
     radius: ReturnType<typeof useAppTheme>['radius'],
     screenWidth: number,
+    screenHeight: number,
 ) => StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.BACKGROUND },
     slidesList: { flex: 1 },
@@ -193,23 +231,28 @@ const makeStyles = (
         color: colors.TEXT_SECONDARY,
     },
 
-    slide: { width: screenWidth, flex: 1, alignItems: 'center', paddingHorizontal: spacing.xl },
+    slide: { width: screenWidth, flex: 1 },
 
+    // Full-bleed, edge-to-edge — no horizontal padding — and sized off
+    // screen height (not just width) so it reads as a real hero section
+    // rather than a bounded illustration box.
     illustrationWrap: {
         width: '100%',
-        height: Math.min(340, screenWidth * 0.92),
+        height: screenHeight * 0.46,
+        backgroundColor: colors.PRIMARY_LIGHT,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: spacing.lg,
+        overflow: 'hidden',
     },
-    heroImage: { width: '100%', height: '100%' },
+    heroImage: { width: '92%', height: '92%' },
+
+    textArea: { flex: 1, paddingHorizontal: spacing.xl, paddingTop: spacing.xl },
 
     title: {
         fontFamily: fonts.BOLD_PRIMARY,
         fontSize: 28,
         color: colors.TEXT_PRIMARY,
         textAlign: 'left',
-        alignSelf: 'flex-start',
         lineHeight: 34,
         marginBottom: spacing.sm,
     },
@@ -219,9 +262,23 @@ const makeStyles = (
         fontSize: fontSize.md,
         color: colors.TEXT_SECONDARY,
         textAlign: 'left',
-        alignSelf: 'flex-start',
         lineHeight: 20,
+        marginBottom: spacing.md,
     },
+
+    chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    chip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 999,
+        backgroundColor: colors.SURFACE,
+        borderWidth: 1,
+        borderColor: colors.BORDER,
+    },
+    chipText: { fontFamily: fonts.SEMI_BOLD_PRIMARY, fontSize: 12, color: colors.TEXT_PRIMARY },
 
     bottomBar: {
         flexDirection: 'row',
