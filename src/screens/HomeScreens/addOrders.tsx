@@ -1217,9 +1217,9 @@ const StepOrderDetails = ({
                                 an admin sets one. */}
                             <VehicleVisual
                                 vehicle={vt}
-                                size={40}
-                                iconSize={22}
-                                borderRadius={10}
+                                size={56}
+                                iconSize={30}
+                                borderRadius={12}
                                 backgroundColor="transparent"
                                 iconColor={isSelected ? COLORS.primary : COLORS.textSecondary}
                             />
@@ -1452,48 +1452,60 @@ const StepOrderDetails = ({
 };
 
 const makeOdStyles = (COLORS: OrderColors) => StyleSheet.create({
-    serviceRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+    serviceRow: { flexDirection: 'row', gap: 10, marginBottom: 18 },
     serviceCard: {
-        flex: 1, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border,
-        backgroundColor: COLORS.surface, padding: 12, alignItems: 'center',
+        flex: 1, borderRadius: RADIUS.lg, borderWidth: 1.5, borderColor: COLORS.border,
+        backgroundColor: COLORS.surface, padding: 14, alignItems: 'center',
+        shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
     },
-    serviceCardActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight },
+    serviceCardActive: {
+        borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight,
+        shadowOpacity: 0.1, shadowRadius: 8, elevation: 3,
+    },
     selectedBadge: {
-        position: 'absolute', top: 6, right: 6,
-        width: 16, height: 16, borderRadius: 8,
+        position: 'absolute', top: -8, right: -8,
+        width: 22, height: 22, borderRadius: 11,
         backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center',
+        borderWidth: 2, borderColor: COLORS.surface,
     },
     selectedBadgeText: { color: '#fff', fontSize: 9, fontWeight: '700' },
-    svcDays: { fontSize: 11, color: COLORS.textMuted, marginBottom: 2 },
-    svcLabel: { fontSize: 13, fontWeight: '700', marginBottom: 2 },
+    svcDays: { fontSize: 11, color: COLORS.textMuted, marginBottom: 4 },
+    svcLabel: { fontSize: 14, fontWeight: '800', marginBottom: 3 },
     svcDesc: { fontSize: 10, color: COLORS.textMuted, textAlign: 'center' },
-    svcPrice: { fontSize: 14, fontWeight: '700', color: COLORS.text, marginTop: 6 },
+    svcPrice: { fontSize: 14, fontWeight: '700', color: COLORS.text, marginTop: 8 },
 
-    vehicleRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+    vehicleRow: { flexDirection: 'row', gap: 10, marginBottom: 18 },
     vehicleCard: {
-        flex: 1, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border,
+        flex: 1, borderRadius: RADIUS.lg, borderWidth: 1.5, borderColor: COLORS.border,
         backgroundColor: COLORS.surface, padding: 12, alignItems: 'center',
+        shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
     },
-    vehicleCardActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight },
+    vehicleCardActive: {
+        borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight,
+        shadowOpacity: 0.1, shadowRadius: 8, elevation: 3,
+    },
     vehicleIcon: { marginBottom: 4 },
-    vehicleLabel: { fontSize: 12, fontWeight: '700', color: COLORS.text },
+    vehicleLabel: { fontSize: 13, fontWeight: '800', color: COLORS.text, marginTop: 6 },
     vehicleDesc: { fontSize: 10, color: COLORS.textMuted, marginTop: 2, textAlign: 'center' },
 
     payRow: {
         flexDirection: 'row', alignItems: 'center', gap: 12,
-        borderWidth: 1.5, borderColor: COLORS.border, borderRadius: RADIUS.md,
-        padding: 14, marginBottom: 10, backgroundColor: COLORS.surface,
+        borderWidth: 1.5, borderColor: COLORS.border, borderRadius: RADIUS.lg,
+        padding: 16, marginBottom: 10, backgroundColor: COLORS.surface,
     },
-    payRowActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight },
+    payRowActive: {
+        borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight,
+        shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 2,
+    },
     payIcon: {},
-    payLabel: { flex: 1, fontSize: 14, color: COLORS.text, fontWeight: '500' },
+    payLabel: { flex: 1, fontSize: 15, color: COLORS.text, fontWeight: '600' },
     radio: {
-        width: 20, height: 20, borderRadius: 10,
+        width: 22, height: 22, borderRadius: 11,
         borderWidth: 2, borderColor: COLORS.border,
         alignItems: 'center', justifyContent: 'center',
     },
     radioActive: { borderColor: COLORS.primary },
-    radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.primary },
+    radioDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: COLORS.primary },
 
     slotGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
     slotChip: {
