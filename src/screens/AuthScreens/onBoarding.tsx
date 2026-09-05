@@ -19,24 +19,27 @@ import { useAppTheme } from '@theme/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
-// The three real K-mascot illustrations you supplied — each one already
-// tells its own story (the delivery scene, the on-time/schedule scene,
-// the customer/driver/business path teaser), so the copy below describes
-// what each slide MEANS rather than re-captioning what's already drawn
-// in the artwork. No chip rows repeating what the image already shows.
+// Every real K-mascot illustration in the asset set gets its own slide
+// (none repeated, none combined) — each image is a standalone hero, so
+// the copy beside it names what that scene means rather than
+// re-captioning or adding chip rows on top of what's already drawn.
 const SLIDE_IMAGES = [
     require('../../../assets/images/home/onboarding-1.png'),
+    require('../../../assets/images/home/onboarding-1-delivery.png'),
+    require('../../../assets/images/home/ImaCustomer.png'),
+    require('../../../assets/images/home/onboarding-2-tracking.png'),
     require('../../../assets/images/home/onboarding-2.png'),
+    require('../../../assets/images/home/onboarding-3-trust.png'),
+    require('../../../assets/images/home/ImaDriver.png'),
     require('../../../assets/images/home/onboarding-3.png'),
 ];
 
 type OnBoardingScreenProp = NativeStackNavigationProp<RootStackParamList, 'OnBoarding'>;
 
-// A tight three-slide flow, not five — every extra slide is a chance for
-// someone to bail before they ever open the app, and these three real
-// illustrations already cover the whole story (send it → track it →
-// there's a path for you) without padding. Slide 3 deliberately sets up
-// the very next screen (SelectAccount's customer/driver choice).
+// Eight slides, one per real illustration, arranged as a narrative arc:
+// intro → coverage → booking → choosing a vehicle → live tracking →
+// trust/insurance → the driver side → "there's a path for everyone"
+// (which sets up SelectAccount's actual customer/driver choice next).
 const SLIDES = [
     {
         key: '1',
@@ -46,12 +49,42 @@ const SLIDES = [
     },
     {
         key: '2',
+        title: 'Every City. ',
+        accent: 'Every Corner.',
+        description: 'From busy metros to your neighborhood — we deliver there.',
+    },
+    {
+        key: '3',
+        title: 'Book in ',
+        accent: 'Seconds.',
+        description: "Pick a pickup and drop, and you're on your way — no back and forth.",
+    },
+    {
+        key: '4',
+        title: 'Pick Your ',
+        accent: 'Ride.',
+        description: 'Bike, van, or truck — the right vehicle for whatever you’re sending.',
+    },
+    {
+        key: '5',
         title: 'Always ',
         accent: 'On Time.',
         description: 'Live tracking keeps you posted from pickup to your doorstep.',
     },
     {
-        key: '3',
+        key: '6',
+        title: 'Trusted & ',
+        accent: 'Insured.',
+        description: 'Verified fleet pilots and protected deliveries, every time.',
+    },
+    {
+        key: '7',
+        title: 'Earn as a ',
+        accent: 'Driver.',
+        description: 'Deliver on your schedule and keep what you earn.',
+    },
+    {
+        key: '8',
         title: 'Built for ',
         accent: 'Everyone.',
         description: "Sending, driving, or running a business — there's a place for you here.",
