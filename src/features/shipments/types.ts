@@ -84,6 +84,13 @@ export interface BackendShipment {
     // whether "Download POD" has anything real to show.
     podUploadedAt: string | null;
 
+    // Real 4-digit delivery OTP (kalanabhaBackend DispatchService,
+    // generated on accept/admin-assign/auto-match) — null while SEARCHING,
+    // required from the driver at POST /shipments/:id/complete. The
+    // customer app shows this to the customer; the driver app never
+    // renders it (the driver has to ask the customer for it).
+    deliveryOtp: string | null;
+
     // Real, admin-set expiry (BusinessSetting
     // 'shipment_search_expiry_minutes') a SEARCHING shipment auto-cancels
     // at if no driver accepts it — set on creation, backing the driver

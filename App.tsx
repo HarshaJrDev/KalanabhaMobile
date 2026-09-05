@@ -117,6 +117,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './src/api/queryClient';
 import { initNetworkMonitoring } from './src/api/network';
 import { GlobalToast } from '@ui/alert/GlobalToast';
+import { GlobalDeliveryOtpModal } from '@ui/alert/GlobalDeliveryOtpModal';
 import { ThemeProvider, useAppTheme } from '@theme/ThemeContext';
 
 // Auth Screens
@@ -197,6 +198,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <GlobalToast />
+        <GlobalDeliveryOtpModal />
         <NavigationContainer>
           <Stack.Navigator
             screenOptions={{ headerShown: false }}

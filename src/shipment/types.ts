@@ -94,6 +94,11 @@ export interface Shipment {
     // image when this is set, rather than always trying and failing.
     podUploadedAt: string | null;
 
+    // Real 4-digit delivery OTP (kalanabhaBackend DispatchService) — null
+    // while SEARCHING, required from the driver to mark DELIVERED. The
+    // customer app shows it; the driver app never renders it.
+    deliveryOtp: string | null;
+
     // Real, admin-set expiry a SEARCHING shipment auto-cancels at if no
     // driver accepts it (kalanabhaBackend's ShipmentExpiryProcessor) —
     // backs the driver Home screen's real countdown, not a fabricated one.

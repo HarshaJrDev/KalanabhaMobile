@@ -44,6 +44,7 @@ import { openGoogleMapsDirections } from '@utils/navigation';
 import { showToast } from '@ui/alert/toastStore';
 import { API_BASE_URL } from '@config/env';
 import { getToken } from '@services/storage';
+import { useAuthStore } from '@features/store/authStore';
 import {
     CheckCircle2,
     Truck,
@@ -135,6 +136,11 @@ const ShipmentDetailsScreen = () => {
     const [podViewerOpen, setPodViewerOpen] = useState(false);
 
     const isDriverEnRoute = shipment?.status === 'accepted' || shipment?.status === 'in_transit';
+    // Real delivery OTP (kalanabhaBackend d17a770) — only the customer
+    // should ever see it; the driver has to ask for it, not read it off
+    // their own screen.
+    const role = useAuthStore((s) => s.user?.role);
+    const showDeliveryOtp = role === 'CUSTOMER' && isDriverEnRoute && !!shipment?.deliveryOtp;
     const liveDriverLocation = useLiveDriverLocation(isDriverEnRoute ? shipmentId : null);
     const distanceToDriverKm =
         liveDriverLocation && shipment?.pickup?.lat != null
@@ -371,6 +377,41 @@ const ShipmentDetailsScreen = () => {
         );
     };
 
+    // Real delivery OTP, shown only to the customer while a driver is
+    // assigned (accepted/in_transit) — share it with the driver in person
+    // to complete the delivery; the code is generated server-side on
+    // assignment (kalanabhaBackend d17a770) and required back at
+    // POST /shipments/:id/complete.
+    const renderDeliveryOtp = () => {
+        if (!showDeliveryOtp) return null;
+        return (
+            <AnimatedCard anim={cardAnims[1]} fade={cardFades[1]} cardStyle={styles.card}>
+                <Text style={styles.cardTitle}>Delivery OTP</Text>
+                <Text style={{ color: C.textMid, fontSize: 12, marginBottom: 10 }}>
+                    Share this code with your driver only once you've received your delivery
+                </Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 12 }}>
+                    {shipment.deliveryOtp!.split('').map((digit, idx) => (
+                        <View
+                            key={idx}
+                            style={{
+                                width: 44,
+                                height: 52,
+                                borderRadius: 10,
+                                borderWidth: 1,
+                                borderColor: C.border,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Text style={{ fontSize: 22, fontWeight: '700', color: C.text }}>{digit}</Text>
+                        </View>
+                    ))}
+                </View>
+            </AnimatedCard>
+        );
+    };
+
     const renderPackage = () => {
         const items = [
             { icon: Folder, label: 'Category', value: shipment.package.category ?? shipment.goodsType },
@@ -495,6 +536,7 @@ const ShipmentDetailsScreen = () => {
                     {renderTimeline()}
                     {renderRoute()}
                     {renderLiveTracking()}
+                    {renderDeliveryOtp()}
                     {renderPackage()}
                     {renderPayment()}
                     {renderActions()}
