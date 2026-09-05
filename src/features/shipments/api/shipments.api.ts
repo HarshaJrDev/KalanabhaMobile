@@ -118,3 +118,16 @@ export const cancelShipment = async (id: string): Promise<BackendShipment> => {
     const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/cancel`);
     return data.data;
 };
+
+// Proof of Delivery — driver only, must be the shipment's own assigned
+// driver (kalanabhaBackend enforces this, not just this screen). Same
+// multipart shape driverDocuments.api.ts's upload already uses.
+export const uploadShipmentPod = async (id: string, fileUri: string, fileName: string, mimeType: string): Promise<BackendShipment> => {
+    const form = new FormData();
+    form.append('file', { uri: fileUri, name: fileName, type: mimeType } as any);
+
+    const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/pod`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data.data;
+};

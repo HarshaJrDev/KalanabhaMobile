@@ -32,6 +32,8 @@ import {
     Clipboard,
     Linking,
     Share,
+    Modal,
+    Image,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -40,6 +42,8 @@ import { useLiveDriverLocation } from '@location/useLiveDriverLocation';
 import { haversineDistanceKm } from '@utils/geo';
 import { openGoogleMapsDirections } from '@utils/navigation';
 import { showToast } from '@ui/alert/toastStore';
+import { API_BASE_URL } from '@config/env';
+import { getToken } from '@services/storage';
 import {
     CheckCircle2,
     Truck,
@@ -59,6 +63,7 @@ import {
     MessageCircle,
     FileText,
     Star,
+    X,
     type LucideIcon,
 } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
@@ -127,6 +132,7 @@ const ShipmentDetailsScreen = () => {
     const { data: shipment, isLoading: shipmentLoading, error } = useShipment(shipmentId);
     const { data: historyEntries } = useShipmentHistory(shipmentId);
     const [copied, setCopied] = useState(false);
+    const [podViewerOpen, setPodViewerOpen] = useState(false);
 
     const isDriverEnRoute = shipment?.status === 'accepted' || shipment?.status === 'in_transit';
     const liveDriverLocation = useLiveDriverLocation(isDriverEnRoute ? shipmentId : null);
@@ -447,11 +453,15 @@ const ShipmentDetailsScreen = () => {
         (navigation as any).navigate('ShipmentChat', { shipmentId });
     };
 
+    // Real now (kalanabhaBackend 03b5839, GET /shipments/:id/pod) — still
+    // honest when there genuinely isn't one: podUploadedAt is only set
+    // once a driver actually uploads a photo on completing delivery.
     const handleDownloadPod = () => {
-        // No proof-of-delivery document endpoint exists on the backend yet
-        // (no file-generation/storage for this) — surfaced honestly rather
-        // than faking a download.
-        showToast('Proof of delivery download is not available yet', 'info');
+        if (!shipment.podUploadedAt) {
+            showToast('No proof of delivery has been uploaded for this shipment yet', 'info');
+            return;
+        }
+        setPodViewerOpen(true);
     };
 
     const renderActions = () => (
@@ -463,7 +473,7 @@ const ShipmentDetailsScreen = () => {
                         : { icon: MapIcon, label: 'Live Map', color: [C.primary, '#6366F1'] as const, onPress: handleLiveMap },
                     { icon: Phone, label: 'Call Driver', color: ['#10B981', '#059669'] as const, onPress: handleCallDriver },
                     { icon: MessageCircle, label: 'Chat Support', color: ['#F59E0B', '#D97706'] as const, onPress: handleChatSupport },
-                    { icon: FileText, label: 'Download POD', color: ['#EF4444', '#DC2626'] as const, onPress: handleDownloadPod },
+                    { icon: FileText, label: 'View POD', color: ['#EF4444', '#DC2626'] as const, onPress: handleDownloadPod },
                 ].map((btn) => (
                     <TouchableOpacity key={btn.label} style={styles.actionBtn} activeOpacity={0.85} onPress={btn.onPress}>
                         <LinearGradient colors={btn.color} style={styles.actionBtnGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
@@ -490,6 +500,28 @@ const ShipmentDetailsScreen = () => {
                     {renderActions()}
                 </View>
             </ScrollView>
+
+            {/* Real photo, fetched through the same JWT auth every other
+                API call uses (GET /shipments/:id/pod is not a plain
+                static-file URL) — RN's Image source accepts a headers
+                object for exactly this. */}
+            <Modal visible={podViewerOpen} transparent animationType="fade" onRequestClose={() => setPodViewerOpen(false)}>
+                <View style={styles.podOverlay}>
+                    <Pressable style={styles.podCloseBtn} onPress={() => setPodViewerOpen(false)} hitSlop={12}>
+                        <X color="#fff" size={22} />
+                    </Pressable>
+                    {shipmentId && (
+                        <Image
+                            source={{
+                                uri: `${API_BASE_URL}/shipments/${shipmentId}/pod`,
+                                headers: { Authorization: `Bearer ${getToken() ?? ''}` },
+                            }}
+                            style={styles.podImage}
+                            resizeMode="contain"
+                        />
+                    )}
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -625,4 +657,12 @@ const makeStyles = (C: DetailColors) => StyleSheet.create({
         shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4,
     },
     actionBtnLabel: { fontSize: 10, color: C.textMid, fontFamily: FONTS.BOLD_PRIMARY, textAlign: 'center' },
+
+    podOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center' },
+    podImage: { width: '100%', height: '80%' },
+    podCloseBtn: {
+        position: 'absolute', top: Platform.OS === 'ios' ? 56 : 24, right: 20, zIndex: 1,
+        width: 40, height: 40, borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center',
+    },
 });

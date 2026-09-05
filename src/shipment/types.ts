@@ -89,6 +89,11 @@ export interface Shipment {
     fragile: boolean;
     insuranceRequested: boolean;
 
+    // null until the driver uploads one (POST /shipments/:id/pod) —
+    // ShipmentDetailsScreen's "Download POD" only fetches the real
+    // image when this is set, rather than always trying and failing.
+    podUploadedAt: string | null;
+
     // Not returned by kalanabhaBackend (no per-shipment customer snapshot
     // endpoint) — only ever populated when parsed straight from a Firestore
     // shipment doc via utils/parsers.ts::mapShipment.

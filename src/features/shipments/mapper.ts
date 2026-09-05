@@ -38,6 +38,7 @@ export const toShipment = (row: BackendShipment): Shipment => ({
     helpersCount: row.helpersCount,
     fragile: row.fragile,
     insuranceRequested: row.insuranceRequested,
+    podUploadedAt: row.podUploadedAt ?? null,
     dispatch: row.dispatch
         ? {
             driverId: row.dispatch.driverId,
