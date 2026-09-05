@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ArrowRight, Truck, Bike, Package, Shield, ShieldCheck, Radar, type LucideIcon } from 'lucide-react-native';
+import { ArrowRight } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '@theme/ThemeContext';
 
@@ -33,15 +33,13 @@ const SLIDE_IMAGES = [
 
 type OnBoardingScreenProp = NativeStackNavigationProp<RootStackParamList, 'OnBoarding'>;
 
-// Matches the brand's own onboarding mockup: full-bleed illustration (no
-// bordered "card"), a two-line headline with one accent word in brand
-// orange, and a bottom row pairing the dot/counter progress with the
-// Next/Get Started pill — replacing the previous icon-badge + boxed-card
-// layout. Slide order/navigation/skip logic is unchanged.
-// Chip copy is grounded in the app's real capabilities, not invented
-// marketing claims: bike/van/truck + house-shifting are the actual
-// VehicleConfig categories every booking flow reads, and the trust line
-// echoes Home.tsx's own "Kalanabha Transit Shield" banner text verbatim.
+// Traditional, centered onboarding layout: big illustration on top, then
+// a centered title/subtitle block, dots + Next/Get Started pinned to the
+// bottom — no boxed card, no extra chip row (the mascot art on slide 3
+// already carries its own "Safe & Secure / Fast Booking / Trusted
+// Service" badges baked into the image, so a second row of badge chips
+// underneath was pure duplication, not "more content"). Slide order/
+// navigation/skip logic is unchanged.
 const SLIDES = [
     {
         key: '1',
@@ -49,11 +47,6 @@ const SLIDES = [
         titleLine2: 'Without ',
         accent: 'Limits',
         description: 'Book trucks, pickups and more for all your moving needs',
-        chips: [
-            { icon: Bike, label: 'Bike' },
-            { icon: Truck, label: 'Van & Truck' },
-            { icon: Package, label: 'House Shifting' },
-        ],
     },
     {
         key: '2',
@@ -61,10 +54,6 @@ const SLIDES = [
         titleLine2: 'What ',
         accent: 'You Need',
         description: 'From small parcels to heavy loads, we have the right vehicle for you',
-        chips: [
-            { icon: Radar, label: 'Live Tracking' },
-            { icon: Package, label: 'Real-Time Updates' },
-        ],
     },
     {
         key: '3',
@@ -72,15 +61,8 @@ const SLIDES = [
         titleLine2: 'Better ',
         accent: 'Tomorrow',
         description: 'Reliable. Affordable. On your terms.',
-        chips: [
-            { icon: Shield, label: 'Insured' },
-            { icon: ShieldCheck, label: 'Verified Pilots' },
-        ],
     },
-] satisfies {
-    key: string; titleLine1: string; titleLine2: string; accent: string; description: string;
-    chips: { icon: LucideIcon; label: string }[];
-}[];
+] satisfies { key: string; titleLine1: string; titleLine2: string; accent: string; description: string }[];
 
 const OnBoarding = () => {
     const navigation = useNavigation<OnBoardingScreenProp>();
@@ -123,15 +105,6 @@ const OnBoarding = () => {
                     <Text style={styles.titleAccent}>{item.accent}</Text>
                 </Text>
                 <Text style={styles.description}>{item.description}</Text>
-
-                <View style={styles.chipRow}>
-                    {item.chips.map((chip) => (
-                        <View key={chip.label} style={styles.chip}>
-                            <chip.icon size={13} color={colors.PRIMARY} strokeWidth={2.2} />
-                            <Text style={styles.chipText}>{chip.label}</Text>
-                        </View>
-                    ))}
-                </View>
             </View>
         </View>
     );
@@ -233,27 +206,33 @@ const makeStyles = (
 
     slide: { width: screenWidth, flex: 1 },
 
-    // Full-bleed, edge-to-edge — no horizontal padding — and sized off
-    // screen height (not just width) so it reads as a real hero section
-    // rather than a bounded illustration box.
+    // Full-bleed, edge-to-edge — no horizontal padding — so the real
+    // K-mascot artwork reads as a proper hero section, sized to leave
+    // clear room below for a traditionally centered title/subtitle block
+    // rather than crowding it to one side.
     illustrationWrap: {
         width: '100%',
-        height: screenHeight * 0.46,
+        height: screenHeight * 0.4,
         backgroundColor: colors.PRIMARY_LIGHT,
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
     },
-    heroImage: { width: '92%', height: '92%' },
+    heroImage: { width: '84%', height: '84%' },
 
-    textArea: { flex: 1, paddingHorizontal: spacing.xl, paddingTop: spacing.xl },
+    textArea: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: spacing.xl,
+    },
 
     title: {
         fontFamily: fonts.BOLD_PRIMARY,
-        fontSize: 28,
+        fontSize: 26,
         color: colors.TEXT_PRIMARY,
-        textAlign: 'left',
-        lineHeight: 34,
+        textAlign: 'center',
+        lineHeight: 32,
         marginBottom: spacing.sm,
     },
     titleAccent: { color: colors.PRIMARY },
@@ -261,24 +240,10 @@ const makeStyles = (
         fontFamily: fonts.MEDIUM_PRIMARY,
         fontSize: fontSize.md,
         color: colors.TEXT_SECONDARY,
-        textAlign: 'left',
+        textAlign: 'center',
         lineHeight: 20,
-        marginBottom: spacing.md,
+        paddingHorizontal: spacing.md,
     },
-
-    chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    chip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 999,
-        backgroundColor: colors.SURFACE,
-        borderWidth: 1,
-        borderColor: colors.BORDER,
-    },
-    chipText: { fontFamily: fonts.SEMI_BOLD_PRIMARY, fontSize: 12, color: colors.TEXT_PRIMARY },
 
     bottomBar: {
         flexDirection: 'row',
