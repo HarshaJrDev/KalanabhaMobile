@@ -13,94 +13,50 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {
-    ArrowRight,
-    Clock,
-    IndianRupee,
-    User,
-    ShieldCheck,
-    MapPin,
-    Lock,
-    Package,
-    Building2,
-    type LucideIcon,
-} from 'lucide-react-native';
+import { ArrowRight, ArrowLeft } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '@theme/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
-// Real K-mascot art for the three slides that already have a matching
-// illustration (the same brand-art family used on Home/SelectAccount).
-// Slides 4 & 5 have no matching real illustration yet — see the honest
-// note on ICON_HEROES below rather than inventing a photo for them.
-const SLIDE_IMAGES: Record<string, ReturnType<typeof require>> = {
-    everywhere: require('../../../assets/images/home/onboarding-1-delivery.png'),
-    send: require('../../../assets/images/home/ImaCustomer.png'),
-    earn: require('../../../assets/images/home/ImaDriver.png'),
-};
-
-// No real "shield" or "boxes + storefront" illustration exists in the
-// asset set yet — rather than fabricate a photo, these two slides use a
-// large brand-colored icon hero instead of a mascot image, until a real
-// matching illustration is supplied.
-const ICON_HEROES: Record<string, LucideIcon> = {
-    safe: ShieldCheck,
-    businesses: Package,
-};
+// The three real K-mascot illustrations you supplied — each one already
+// tells its own story (the delivery scene, the on-time/schedule scene,
+// the customer/driver/business path teaser), so the copy below describes
+// what each slide MEANS rather than re-captioning what's already drawn
+// in the artwork. No chip rows repeating what the image already shows.
+const SLIDE_IMAGES = [
+    require('../../../assets/images/home/onboarding-1.png'),
+    require('../../../assets/images/home/onboarding-2.png'),
+    require('../../../assets/images/home/onboarding-3.png'),
+];
 
 type OnBoardingScreenProp = NativeStackNavigationProp<RootStackParamList, 'OnBoarding'>;
 
-// Five-slide flow matching the brand's own mockup: title/subtitle above
-// the illustration (slide order: title, then hero, then any supporting
-// row), Back + dots + Next pinned to the bottom, plus a thin progress
-// track under that row. Slides 3-5 carry small supporting rows (perk
-// chips / trust icons / audience chips) instead of one bare illustration
-// — real marketing copy, not backend claims.
+// A tight three-slide flow, not five — every extra slide is a chance for
+// someone to bail before they ever open the app, and these three real
+// illustrations already cover the whole story (send it → track it →
+// there's a path for you) without padding. Slide 3 deliberately sets up
+// the very next screen (SelectAccount's customer/driver choice).
 const SLIDES = [
     {
-        key: 'everywhere',
-        title: 'Fast. Reliable. Everywhere.',
-        subtitle: 'Your trusted delivery partner for people and businesses.',
+        key: '1',
+        title: 'Send it. ',
+        accent: 'Anywhere.',
+        description: 'Book a pickup for any package and get moving in seconds.',
     },
     {
-        key: 'send',
-        title: 'Send Anything, Anywhere',
-        subtitle: 'Book a delivery in seconds and track in real-time.',
+        key: '2',
+        title: 'Always ',
+        accent: 'On Time.',
+        description: 'Live tracking keeps you posted from pickup to your doorstep.',
     },
     {
-        key: 'earn',
-        title: 'Earn on Your Terms',
-        subtitle: 'Join as a driver, deliver packages and earn money with flexible hours.',
-        chips: [
-            { icon: Clock, label: 'Flexible Timing' },
-            { icon: IndianRupee, label: 'Good Earnings' },
-            { icon: User, label: 'Be Your Own Boss' },
-        ],
+        key: '3',
+        title: 'Built for ',
+        accent: 'Everyone.',
+        description: "Sending, driving, or running a business — there's a place for you here.",
     },
-    {
-        key: 'safe',
-        title: 'Safe & Secure',
-        subtitle: 'Your packages are in safe hands with real-time tracking and verified partners.',
-        chips: [
-            { icon: ShieldCheck, label: 'Verified Partners' },
-            { icon: MapPin, label: 'Live Tracking' },
-            { icon: Lock, label: 'Secure Deliveries' },
-        ],
-    },
-    {
-        key: 'businesses',
-        title: 'For Individuals & Businesses',
-        subtitle: "Whether it's a personal parcel or business logistics, Kalanabha has you covered.",
-        chips: [
-            { icon: User, label: 'Personal Deliveries' },
-            { icon: Building2, label: 'Business Solutions' },
-        ],
-    },
-] satisfies {
-    key: string; title: string; subtitle: string;
-    chips?: { icon: LucideIcon; label: string }[];
-}[];
+] satisfies { key: string; title: string; accent: string; description: string }[];
 
 const OnBoarding = () => {
     const navigation = useNavigation<OnBoardingScreenProp>();
@@ -109,6 +65,7 @@ const OnBoarding = () => {
     const [currentIdx, setCurrentIdx] = useState(0);
     const flatListRef = useRef<FlatList>(null);
     const scrollX = useRef(new Animated.Value(0)).current;
+    const isLast = currentIdx === SLIDES.length - 1;
 
     const goToIndex = (index: number) => {
         flatListRef.current?.scrollToIndex({ index, animated: true });
@@ -116,50 +73,37 @@ const OnBoarding = () => {
     };
 
     const goNext = () => {
-        if (currentIdx < SLIDES.length - 1) {
+        if (!isLast) {
             goToIndex(currentIdx + 1);
         } else {
             navigation.reset({ index: 0, routes: [{ name: 'SelectAccount' }] });
         }
     };
 
-    const goBack = () => {
-        if (currentIdx > 0) goToIndex(currentIdx - 1);
-    };
+    const goBack = () => { if (currentIdx > 0) goToIndex(currentIdx - 1); };
+    const goSkip = () => navigation.reset({ index: 0, routes: [{ name: 'SelectAccount' }] });
 
-    const goSkip = () => {
-        navigation.reset({ index: 0, routes: [{ name: 'SelectAccount' }] });
-    };
-
-    const renderItem = ({ item }: { item: typeof SLIDES[0] }) => {
-        const IconHero = ICON_HEROES[item.key];
+    const renderItem = ({ item, index }: { item: typeof SLIDES[0]; index: number }) => {
+        // A soft two-tone glow behind the artwork instead of a flat
+        // tinted box — reads as a considered backdrop rather than a
+        // placeholder card, and lets the transparent PNG's own colors
+        // (mostly brand orange + skin tones) sit on something with a
+        // little depth.
         return (
             <View style={styles.slide}>
-                <View style={styles.textArea}>
-                    <Text style={styles.title}>{item.title}</Text>
-                    <Text style={styles.description}>{item.subtitle}</Text>
-                </View>
-
                 <View style={styles.illustrationWrap}>
-                    {IconHero ? (
-                        <View style={styles.iconHeroCircle}>
-                            <IconHero size={72} color={colors.PRIMARY} strokeWidth={1.6} />
-                        </View>
-                    ) : (
-                        <Image source={SLIDE_IMAGES[item.key]} resizeMode="contain" style={styles.heroImage} />
-                    )}
+                    <View style={styles.glowBack} />
+                    <View style={styles.glowFront} />
+                    <Image source={SLIDE_IMAGES[index]} resizeMode="contain" style={styles.heroImage} />
                 </View>
 
-                {item.chips && (
-                    <View style={styles.chipRow}>
-                        {item.chips.map((chip) => (
-                            <View key={chip.label} style={styles.chip}>
-                                <chip.icon size={13} color={colors.PRIMARY} strokeWidth={2.2} />
-                                <Text style={styles.chipText}>{chip.label}</Text>
-                            </View>
-                        ))}
-                    </View>
-                )}
+                <View style={styles.textArea}>
+                    <Text style={styles.title}>
+                        {item.title}
+                        <Text style={styles.titleAccent}>{item.accent}</Text>
+                    </Text>
+                    <Text style={styles.description}>{item.description}</Text>
+                </View>
             </View>
         );
     };
@@ -175,9 +119,11 @@ const OnBoarding = () => {
                     </View>
                     <Text style={styles.brandName}>Kalanabha</Text>
                 </View>
-                <TouchableOpacity onPress={goSkip} hitSlop={10}>
-                    <Text style={styles.skipText}>Skip</Text>
-                </TouchableOpacity>
+                {!isLast && (
+                    <TouchableOpacity onPress={goSkip} hitSlop={10}>
+                        <Text style={styles.skipText}>Skip</Text>
+                    </TouchableOpacity>
+                )}
             </View>
 
             <Animated.FlatList
@@ -196,33 +142,28 @@ const OnBoarding = () => {
             />
 
             <View style={styles.bottomBar}>
-                <View style={styles.backSlot}>
-                    {currentIdx > 0 && (
-                        <TouchableOpacity onPress={goBack} hitSlop={10}>
-                            <Text style={styles.backText}>Back</Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
+                <TouchableOpacity
+                    onPress={goBack}
+                    hitSlop={10}
+                    disabled={currentIdx === 0}
+                    style={[styles.backBtn, currentIdx === 0 && styles.backBtnHidden]}
+                >
+                    <ArrowLeft color={colors.TEXT_PRIMARY} size={18} />
+                </TouchableOpacity>
 
                 <View style={styles.dots}>
                     {SLIDES.map((_, i) => {
                         const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
-                        const dotW = scrollX.interpolate({ inputRange, outputRange: [6, 18, 6], extrapolate: 'clamp' });
+                        const dotW = scrollX.interpolate({ inputRange, outputRange: [6, 20, 6], extrapolate: 'clamp' });
                         const dotColor = i === currentIdx ? colors.PRIMARY : colors.BORDER;
                         return <Animated.View key={i} style={[styles.dot, { width: dotW, backgroundColor: dotColor }]} />;
                     })}
                 </View>
 
                 <TouchableOpacity style={styles.nextBtn} onPress={goNext} activeOpacity={0.85}>
-                    <Text style={styles.nextBtnText}>
-                        {currentIdx === SLIDES.length - 1 ? 'Get Started' : 'Next'}
-                    </Text>
-                    <ArrowRight color="#fff" size={16} />
+                    <Text style={styles.nextBtnText}>{isLast ? 'Get Started' : 'Next'}</Text>
+                    <ArrowRight color="#fff" size={17} />
                 </TouchableOpacity>
-            </View>
-
-            <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${((currentIdx + 1) / SLIDES.length) * 100}%` }]} />
             </View>
         </View>
     );
@@ -250,6 +191,7 @@ const makeStyles = (
         alignItems: 'center',
         paddingHorizontal: spacing.xl,
         paddingTop: Platform.OS === 'ios' ? 56 : 36,
+        height: Platform.OS === 'ios' ? 88 : 68,
     },
     brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     brandMark: {
@@ -264,55 +206,60 @@ const makeStyles = (
         color: colors.TEXT_SECONDARY,
     },
 
-    slide: { width: screenWidth, flex: 1, paddingHorizontal: spacing.xl, paddingTop: spacing.lg },
+    slide: { width: screenWidth, flex: 1 },
 
-    textArea: { alignItems: 'center', marginBottom: spacing.lg },
-    title: {
-        fontFamily: fonts.BOLD_PRIMARY,
-        fontSize: 24,
-        color: colors.TEXT_PRIMARY,
-        textAlign: 'center',
-        lineHeight: 30,
-        marginBottom: 6,
-    },
-    description: {
-        fontFamily: fonts.MEDIUM_PRIMARY,
-        fontSize: fontSize.md,
-        color: colors.TEXT_SECONDARY,
-        textAlign: 'center',
-        lineHeight: 20,
-    },
-
+    // Full-bleed, edge-to-edge illustration zone sized off screen height —
+    // the artwork is the hero, not a graphic wedged between two text
+    // blocks. Two overlapping soft circles stand in for a flat tinted
+    // box, giving the backdrop a little depth without adding any new
+    // "claims" or content.
     illustrationWrap: {
-        flex: 1,
         width: '100%',
-        borderRadius: radius.lg + 12,
-        backgroundColor: colors.PRIMARY_LIGHT,
+        height: screenHeight * 0.5,
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-        maxHeight: screenHeight * 0.4,
     },
-    heroImage: { width: '84%', height: '84%' },
-    iconHeroCircle: {
-        width: 140, height: 140, borderRadius: 70,
-        backgroundColor: colors.SURFACE,
-        alignItems: 'center', justifyContent: 'center',
+    glowBack: {
+        position: 'absolute',
+        width: screenWidth * 1.3,
+        height: screenWidth * 1.3,
+        borderRadius: screenWidth * 0.65,
+        backgroundColor: colors.PRIMARY_LIGHT,
+        top: -screenWidth * 0.55,
     },
+    glowFront: {
+        position: 'absolute',
+        width: screenWidth * 0.9,
+        height: screenWidth * 0.9,
+        borderRadius: screenWidth * 0.45,
+        backgroundColor: colors.BACKGROUND,
+        opacity: 0.5,
+        bottom: -screenWidth * 0.32,
+    },
+    heroImage: { width: '80%', height: '92%' },
 
-    chipRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: spacing.md },
-    chip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 999,
-        backgroundColor: colors.SURFACE,
-        borderWidth: 1,
-        borderColor: colors.BORDER,
+    textArea: {
+        flex: 1,
+        paddingHorizontal: spacing.xl + 4,
+        paddingTop: spacing.xl,
     },
-    chipText: { fontFamily: fonts.SEMI_BOLD_PRIMARY, fontSize: 12, color: colors.TEXT_PRIMARY },
+    title: {
+        fontFamily: fonts.BOLD_PRIMARY,
+        fontSize: 32,
+        color: colors.TEXT_PRIMARY,
+        lineHeight: 38,
+        letterSpacing: -0.5,
+        marginBottom: spacing.sm,
+    },
+    titleAccent: { color: colors.PRIMARY },
+    description: {
+        fontFamily: fonts.MEDIUM_PRIMARY,
+        fontSize: fontSize.lg,
+        color: colors.TEXT_SECONDARY,
+        lineHeight: 22,
+        maxWidth: '92%',
+    },
 
     bottomBar: {
         flexDirection: 'row',
@@ -320,39 +267,31 @@ const makeStyles = (
         justifyContent: 'space-between',
         paddingHorizontal: spacing.xl,
         paddingTop: spacing.md,
-        paddingBottom: spacing.sm,
+        paddingBottom: Platform.OS === 'ios' ? 40 : 28,
     },
-    backSlot: { width: 50 },
-    backText: { fontFamily: fonts.SEMI_BOLD_PRIMARY, fontSize: fontSize.md, color: colors.TEXT_SECONDARY },
+    backBtn: {
+        width: 44, height: 44, borderRadius: 22,
+        alignItems: 'center', justifyContent: 'center',
+        backgroundColor: colors.SURFACE,
+        borderWidth: 1, borderColor: colors.BORDER,
+    },
+    backBtnHidden: { opacity: 0 },
     dots: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     dot: { height: 6, borderRadius: 3 },
     nextBtn: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 6,
+        gap: 8,
         backgroundColor: colors.PRIMARY,
         borderRadius: 999,
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        minWidth: 100,
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        minWidth: 118,
     },
     nextBtnText: {
         fontFamily: fonts.BOLD_PRIMARY,
         fontSize: fontSize.md,
         color: '#fff',
     },
-
-    // Thin progress track under the Back/dots/Next row, matching the
-    // reference mockup's bottom indicator — separate from the per-slide
-    // dots above it.
-    progressTrack: {
-        height: 4,
-        marginHorizontal: spacing.xl,
-        marginBottom: Platform.OS === 'ios' ? 28 : 18,
-        borderRadius: 2,
-        backgroundColor: colors.BORDER,
-        overflow: 'hidden',
-    },
-    progressFill: { height: '100%', backgroundColor: colors.PRIMARY, borderRadius: 2 },
 });
