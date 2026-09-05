@@ -8,11 +8,11 @@ import {
     StatusBar,
     Dimensions,
     FlatList,
-    Platform,
     Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowRight, ArrowLeft } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '@theme/ThemeContext';
@@ -94,7 +94,11 @@ const SLIDES = [
 const OnBoarding = () => {
     const navigation = useNavigation<OnBoardingScreenProp>();
     const { colors, fonts, fontSize, spacing, radius, isDark } = useAppTheme();
-    const styles = useMemo(() => makeStyles(colors, fonts, fontSize, spacing, radius, width, height), [colors, fonts, fontSize, spacing, radius]);
+    const insets = useSafeAreaInsets();
+    const styles = useMemo(
+        () => makeStyles(colors, fonts, fontSize, spacing, radius, width, height, insets),
+        [colors, fonts, fontSize, spacing, radius, insets],
+    );
     const [currentIdx, setCurrentIdx] = useState(0);
     const flatListRef = useRef<FlatList>(null);
     const scrollX = useRef(new Animated.Value(0)).current;
@@ -221,17 +225,24 @@ const makeStyles = (
     radius: ReturnType<typeof useAppTheme>['radius'],
     screenWidth: number,
     screenHeight: number,
+    insets: { top: number; bottom: number },
 ) => StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.BACKGROUND },
     slidesList: { flex: 1 },
 
+    // Real device safe-area insets, not a guessed Platform.OS constant —
+    // a fixed 36/56px top padding overlaps the status bar on phones with
+    // a taller notch/cutout, and a fixed 28/40px bottom padding overlaps
+    // Android's 3-button nav bar (which is taller than that on plenty of
+    // real devices) the same way the bottom tab bar used to before it
+    // switched to real insets.
     topBar: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: spacing.xl,
-        paddingTop: Platform.OS === 'ios' ? 56 : 36,
-        height: Platform.OS === 'ios' ? 88 : 68,
+        paddingTop: insets.top + 12,
+        paddingBottom: 12,
     },
     brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     brandMark: {
@@ -307,7 +318,7 @@ const makeStyles = (
         justifyContent: 'space-between',
         paddingHorizontal: spacing.xl,
         paddingTop: spacing.md,
-        paddingBottom: Platform.OS === 'ios' ? 40 : 28,
+        paddingBottom: insets.bottom + 16,
     },
     backBtn: {
         width: 44, height: 44, borderRadius: 22,
