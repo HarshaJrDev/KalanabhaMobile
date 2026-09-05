@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     },
     vehicleLabel: {
         fontSize: 13,
-        fontWeight: '700',
+        fontFamily: FONTS.BOLD_PRIMARY,
         color: '#111827',
     },
     vehicleLabelSelected: {
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
     },
     resultPrice: {
         fontSize: 28,
-        fontWeight: '800',
+        fontFamily: FONTS.BOLD_PRIMARY,
         color: '#111827',
     },
     resultDistance: {

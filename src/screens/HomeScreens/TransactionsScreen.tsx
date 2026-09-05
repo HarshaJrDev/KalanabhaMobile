@@ -14,6 +14,7 @@ import { useMyShipmentHistory } from '@features/shipments/hooks';
 import { AsyncState } from '@components/AsyncState';
 import type { Shipment, ShipmentStatus } from '@shipment/types';
 import { useAppTheme } from '@theme/ThemeContext';
+import FONTS from '@utils/fonts';
 
 const makeStatusColor = (colors: ReturnType<typeof useAppTheme>['colors']): Record<ShipmentStatus, string> => ({
     searching: colors.GRAY,
@@ -117,7 +118,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSh
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.BORDER,
     },
-    headerTitle: { fontSize: 16, fontWeight: '700', color: colors.TEXT_PRIMARY },
+    headerTitle: { fontSize: 16, fontFamily: FONTS.BOLD_PRIMARY, color: colors.TEXT_PRIMARY },
     list: { padding: 12, gap: 8 },
     row: {
         flexDirection: 'row',
@@ -135,9 +136,9 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSh
         alignItems: 'center',
         justifyContent: 'center',
     },
-    trackingId: { fontSize: 14, fontWeight: '700', color: colors.TEXT_PRIMARY },
+    trackingId: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: colors.TEXT_PRIMARY },
     meta: { fontSize: 12, color: colors.TEXT_SECONDARY, marginTop: 2 },
     rowRight: { alignItems: 'flex-end' },
-    price: { fontSize: 15, fontWeight: '700', color: colors.TEXT_PRIMARY },
-    status: { fontSize: 11, fontWeight: '700', marginTop: 2 },
+    price: { fontSize: 15, fontFamily: FONTS.BOLD_PRIMARY, color: colors.TEXT_PRIMARY },
+    status: { fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY, marginTop: 2 },
 });

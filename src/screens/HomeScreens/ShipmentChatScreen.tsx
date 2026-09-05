@@ -32,6 +32,7 @@ import { AsyncState } from '@components/AsyncState';
 import { useAppTheme } from '@theme/ThemeContext';
 import { showToast } from '@ui/alert/toastStore';
 import type { RootStackParamList } from '../navigation/types';
+import FONTS from '@utils/fonts';
 
 // Was rendering "8148m ago" for anything older than an hour — never
 // rolled minutes over into hours/days, so a stale/test location ping
@@ -332,7 +333,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], insets: { 
         alignItems: 'center',
         justifyContent: 'center',
     },
-    headerAvatarText: { fontSize: 13, fontWeight: '700', color: colors.PRIMARY },
+    headerAvatarText: { fontSize: 13, fontFamily: FONTS.BOLD_PRIMARY, color: colors.PRIMARY },
     onlineDot: {
         position: 'absolute',
         bottom: -1,
@@ -345,10 +346,10 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], insets: { 
         borderColor: colors.SURFACE,
     },
     headerNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    headerName: { fontSize: 14, fontWeight: '700', color: colors.TEXT_PRIMARY, maxWidth: 90 },
+    headerName: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: colors.TEXT_PRIMARY, maxWidth: 90 },
     pilotBadge: { backgroundColor: colors.PRIMARY_LIGHT, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1 },
-    pilotBadgeText: { fontSize: 9, fontWeight: '700', color: colors.PRIMARY },
-    headerStatus: { fontSize: 11, color: colors.WARNING, marginTop: 1, fontWeight: '600' },
+    pilotBadgeText: { fontSize: 9, fontFamily: FONTS.BOLD_PRIMARY, color: colors.PRIMARY },
+    headerStatus: { fontSize: 11, color: colors.WARNING, marginTop: 1, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
     headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 0 },
     headerIconBtn: {
         width: 32,
@@ -368,7 +369,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], insets: { 
         paddingVertical: 5,
         maxWidth: 96,
     },
-    trackingPillText: { fontSize: 10, fontWeight: '700', color: colors.TEXT_SECONDARY },
+    trackingPillText: { fontSize: 10, fontFamily: FONTS.BOLD_PRIMARY, color: colors.TEXT_SECONDARY },
 
     destCard: {
         flexDirection: 'row',
@@ -379,10 +380,10 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], insets: { 
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.BORDER,
     },
-    destTitle: { fontSize: 13, fontWeight: '700', color: colors.TEXT_PRIMARY },
+    destTitle: { fontSize: 13, fontFamily: FONTS.BOLD_PRIMARY, color: colors.TEXT_PRIMARY },
     destSub: { fontSize: 11, color: colors.TEXT_SECONDARY, marginTop: 1 },
     trackLink: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-    trackLinkText: { fontSize: 12, fontWeight: '700', color: colors.PRIMARY },
+    trackLinkText: { fontSize: 12, fontFamily: FONTS.BOLD_PRIMARY, color: colors.PRIMARY },
 
     liveRow: {
         flexDirection: 'row',
@@ -404,7 +405,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], insets: { 
         marginBottom: 14,
     },
     systemTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
-    systemTitle: { fontSize: 11, fontWeight: '800', color: colors.PRIMARY, letterSpacing: 0.3 },
+    systemTitle: { fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY, color: colors.PRIMARY, letterSpacing: 0.3 },
     systemText: { fontSize: 12, color: colors.TEXT_SECONDARY, lineHeight: 17 },
     systemTime: { fontSize: 10, color: colors.GRAY, marginTop: 6 },
 
@@ -425,7 +426,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], insets: { 
     bubble: { maxWidth: '78%', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 },
     bubbleOther: { backgroundColor: colors.SURFACE, borderWidth: 1, borderColor: colors.BORDER },
     bubbleMine: { backgroundColor: colors.PRIMARY },
-    senderName: { fontSize: 11, fontWeight: '700', color: colors.TEXT_SECONDARY, marginBottom: 2 },
+    senderName: { fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY, color: colors.TEXT_SECONDARY, marginBottom: 2 },
     bubbleText: { fontSize: 14, color: colors.TEXT_PRIMARY },
     bubbleTextMine: { color: '#fff' },
     bubbleTime: { fontSize: 10, color: colors.GRAY, marginTop: 2, marginBottom: 8, marginLeft: 4 },

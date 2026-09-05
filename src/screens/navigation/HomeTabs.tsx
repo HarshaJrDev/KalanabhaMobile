@@ -23,6 +23,7 @@ import { useUnreadNotificationCount } from '@features/notifications/hooks';
 import { useMyShipments } from '@features/shipments/hooks';
 import { RootStackParamList } from './types';
 import { useTabBarStyle } from './useTabBarStyle';
+import FONTS from '@utils/fonts';
 
 const Tab = createBottomTabNavigator<RootStackParamList>();
 
@@ -226,7 +227,7 @@ const styles = StyleSheet.create({
     },
     tabLabel: {
         fontSize: 9.5,
-        fontWeight: '700',
+        fontFamily: FONTS.BOLD_PRIMARY,
     },
     iconBadge: {
         position: 'absolute',

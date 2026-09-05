@@ -42,6 +42,7 @@ import { getMessaging, requestPermission, getToken, AuthorizationStatus } from '
 import { apiClient } from '@api/client';
 
 import { RootStackParamList } from '../navigation/types';
+import FONTS from '@utils/fonts';
 
 // ─── FCM token registration (backend, not Firestore) ──────────────────────────
 // Mirrors utils/cm.ts::registerFCMToken — PATCH /users/me/fcm-token.
@@ -504,7 +505,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
     checkmark: {
         color: '#fff',
         fontSize: RF(12),
-        fontWeight: 'bold',
+        fontFamily: FONTS.BOLD_PRIMARY,
     },
     rememberText: {
         color: colors.TEXT_PRIMARY,

@@ -71,6 +71,7 @@ import { createShipment } from '@features/shipments/api/shipments.api';
 import { safeNumber } from '@utils/parsers';
 import { normalizeError } from '@utils/error';
 import { useAppTheme } from '@theme/ThemeContext';
+import FONTS from '@utils/fonts';
 
 // Rebranded from a generic blue palette to Kalanabha's own orange identity
 // (§4/§7) — every key here is unchanged so the rest of this file (which
@@ -319,7 +320,7 @@ const InputField = ({
 
 const makeInputStyles = (COLORS: OrderColors) => StyleSheet.create({
     wrapper: { marginBottom: 14 },
-    label: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 5, letterSpacing: 0.3 },
+    label: { fontSize: 12, fontFamily: FONTS.SEMI_BOLD_PRIMARY, color: COLORS.textSecondary, marginBottom: 5, letterSpacing: 0.3 },
     row: {
         flexDirection: 'row', alignItems: 'center',
         borderWidth: 1.5, borderColor: COLORS.border,
@@ -446,9 +447,9 @@ const makePickerStyles = (COLORS: OrderColors) => StyleSheet.create({
         paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16,
         borderBottomWidth: 1, borderBottomColor: COLORS.border, backgroundColor: COLORS.surface,
     },
-    modalTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text },
+    modalTitle: { fontSize: 16, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.text },
     closeBtn: { paddingHorizontal: 10, paddingVertical: 6 },
-    closeBtnText: { color: COLORS.primary, fontSize: 14, fontWeight: '600' },
+    closeBtnText: { color: COLORS.primary, fontSize: 14, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
     searchRow: {
         flexDirection: 'row', alignItems: 'center', gap: 10,
         margin: 16, paddingHorizontal: 14, height: 46,
@@ -457,7 +458,7 @@ const makePickerStyles = (COLORS: OrderColors) => StyleSheet.create({
     },
     searchInput: { flex: 1, fontSize: 14, color: COLORS.text },
     cityLabel: {
-        fontSize: 12, fontWeight: '700', color: COLORS.textMuted,
+        fontSize: 12, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.textMuted,
         letterSpacing: 0.4, textTransform: 'uppercase',
         paddingHorizontal: 20, marginTop: 14, marginBottom: 6,
     },
@@ -466,7 +467,7 @@ const makePickerStyles = (COLORS: OrderColors) => StyleSheet.create({
         paddingHorizontal: 20, paddingVertical: 12,
         borderBottomWidth: 1, borderBottomColor: COLORS.border,
     },
-    placeName: { fontSize: 14, fontWeight: '600', color: COLORS.text },
+    placeName: { fontSize: 14, fontFamily: FONTS.SEMI_BOLD_PRIMARY, color: COLORS.text },
     placePincode: { fontSize: 11, color: COLORS.textMuted, marginTop: 1 },
     emptyText: { textAlign: 'center', color: COLORS.textMuted, marginTop: 40, fontSize: 13 },
 });
@@ -543,7 +544,7 @@ const LocationRefiner = ({ area, refined, onResolve }: {
 
 const makeRefineStyles = (COLORS: OrderColors) => StyleSheet.create({
     wrapper: { marginBottom: 14 },
-    label: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 2 },
+    label: { fontSize: 12, fontFamily: FONTS.SEMI_BOLD_PRIMARY, color: COLORS.textSecondary, marginBottom: 2 },
     hint: { fontSize: 11, color: COLORS.textMuted, marginBottom: 6 },
     row: {
         flexDirection: 'row', alignItems: 'center',
@@ -554,8 +555,8 @@ const makeRefineStyles = (COLORS: OrderColors) => StyleSheet.create({
     input: { flex: 1, fontSize: 14, color: COLORS.text, height: '100%' },
     searchBtn: { padding: 6 },
     resultRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 },
-    resultText: { flex: 1, fontSize: 12, color: COLORS.success, fontWeight: '600' },
-    resetText: { fontSize: 12, color: COLORS.primary, fontWeight: '600' },
+    resultText: { flex: 1, fontSize: 12, color: COLORS.success, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
+    resetText: { fontSize: 12, color: COLORS.primary, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
     notFoundText: { fontSize: 11, color: COLORS.warning, marginTop: 6, lineHeight: 15 },
 });
 
@@ -577,7 +578,7 @@ const SectionHeader = ({ title, subtitle }: { title: string; subtitle?: string }
 const makeShStyles = (COLORS: OrderColors) => StyleSheet.create({
     wrapper: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, marginTop: 4 },
     bar: { width: 4, height: 22, backgroundColor: COLORS.primary, borderRadius: 2, marginRight: 10 },
-    title: { fontSize: 15, fontWeight: '700', color: COLORS.text },
+    title: { fontSize: 15, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.text },
     subtitle: { fontSize: 11, color: COLORS.textMuted, marginTop: 1 },
 });
 
@@ -628,13 +629,13 @@ const makeNavStyles = (COLORS: OrderColors) => StyleSheet.create({
         borderWidth: 1.5, borderColor: COLORS.primary, borderRadius: RADIUS.md,
         paddingHorizontal: 20, height: 50,
     },
-    backText: { color: COLORS.primary, fontSize: 14, fontWeight: '600' },
+    backText: { color: COLORS.primary, fontSize: 14, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
     nextBtn: {
         flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
         gap: 8, backgroundColor: COLORS.primary, borderRadius: RADIUS.md, height: 50,
     },
     nextBtnDisabled: { backgroundColor: COLORS.textMuted, opacity: 0.7 },
-    nextText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+    nextText: { color: '#fff', fontSize: 15, fontFamily: FONTS.BOLD_PRIMARY },
 });
 
 // ─── STEP 1: SENDER ───────────────────────────────────────────────────────────
@@ -736,7 +737,7 @@ const makeCategoryStyles = (COLORS: OrderColors) => StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
     },
     textWrap: { position: 'absolute', left: 14, right: 14, bottom: 12 },
-    title: { fontSize: 16, fontWeight: '800', color: '#fff' },
+    title: { fontSize: 16, fontFamily: FONTS.BOLD_PRIMARY, color: '#fff' },
     subtitle: { fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 3, lineHeight: 16 },
     checkBadge: {
         position: 'absolute', top: 12, right: 12,
@@ -1072,7 +1073,7 @@ const StepPackage = ({
 };
 
 const makePkgStyles = (COLORS: OrderColors) => StyleSheet.create({
-    catLabel: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 8, letterSpacing: 0.3 },
+    catLabel: { fontSize: 12, fontFamily: FONTS.SEMI_BOLD_PRIMARY, color: COLORS.textSecondary, marginBottom: 8, letterSpacing: 0.3 },
     chip: {
         flexDirection: 'row', alignItems: 'center',
         paddingHorizontal: 14, paddingVertical: 7,
@@ -1080,8 +1081,8 @@ const makePkgStyles = (COLORS: OrderColors) => StyleSheet.create({
         marginRight: 8, backgroundColor: COLORS.surface,
     },
     chipActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight },
-    chipText: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '500' },
-    chipTextActive: { color: COLORS.primary, fontWeight: '700' },
+    chipText: { fontSize: 12, color: COLORS.textSecondary, fontFamily: FONTS.MEDIUM_PRIMARY },
+    chipTextActive: { color: COLORS.primary, fontFamily: FONTS.BOLD_PRIMARY },
     toggleCard: {
         backgroundColor: COLORS.surface, borderRadius: RADIUS.lg,
         borderWidth: 1.5, borderColor: COLORS.border,
@@ -1089,7 +1090,7 @@ const makePkgStyles = (COLORS: OrderColors) => StyleSheet.create({
     },
     toggleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     toggleLeft: { flexDirection: 'row', alignItems: 'center' },
-    toggleTitle: { fontSize: 14, fontWeight: '600', color: COLORS.text },
+    toggleTitle: { fontSize: 14, fontFamily: FONTS.SEMI_BOLD_PRIMARY, color: COLORS.text },
     toggleSub: { fontSize: 11, color: COLORS.textMuted, marginTop: 1 },
     divider: { height: 1, backgroundColor: COLORS.border, marginVertical: 12 },
     helpersCard: {
@@ -1098,16 +1099,16 @@ const makePkgStyles = (COLORS: OrderColors) => StyleSheet.create({
         padding: 16, marginBottom: 16,
     },
     helpersHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-    helpersTitle: { fontSize: 14, fontWeight: '700', color: COLORS.text },
-    helpersRate: { fontSize: 12, color: COLORS.primary, fontWeight: '600' },
+    helpersTitle: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.text },
+    helpersRate: { fontSize: 12, color: COLORS.primary, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
     stepperRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
     stepperBtn: {
         width: 40, height: 40, borderRadius: RADIUS.md,
         backgroundColor: COLORS.primaryLight, alignItems: 'center', justifyContent: 'center',
     },
-    stepperBtnText: { fontSize: 20, fontWeight: '700', color: COLORS.primary, lineHeight: 22 },
-    stepperValue: { fontSize: 18, fontWeight: '700', color: COLORS.text, minWidth: 24, textAlign: 'center' },
-    helpersTotal: { marginLeft: 'auto', fontSize: 14, fontWeight: '700', color: COLORS.text },
+    stepperBtnText: { fontSize: 20, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.primary, lineHeight: 22 },
+    stepperValue: { fontSize: 18, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.text, minWidth: 24, textAlign: 'center' },
+    helpersTotal: { marginLeft: 'auto', fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.text },
     helpersError: { color: COLORS.danger, fontSize: 11, marginTop: 8 },
 });
 
@@ -1246,7 +1247,7 @@ const StepOrderDetails = ({
                         size={18}
                         style={odStyles.payIcon}
                     />
-                    <Text style={[odStyles.payLabel, data.paymentMode === pm.key && { color: COLORS.primary, fontWeight: '700' }]}>
+                    <Text style={[odStyles.payLabel, data.paymentMode === pm.key && { color: COLORS.primary, fontFamily: FONTS.BOLD_PRIMARY }]}>
                         {pm.label}
                     </Text>
                     <View style={[odStyles.radio, data.paymentMode === pm.key && odStyles.radioActive]}>
@@ -1468,11 +1469,11 @@ const makeOdStyles = (COLORS: OrderColors) => StyleSheet.create({
         backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center',
         borderWidth: 2, borderColor: COLORS.surface,
     },
-    selectedBadgeText: { color: '#fff', fontSize: 9, fontWeight: '700' },
+    selectedBadgeText: { color: '#fff', fontSize: 9, fontFamily: FONTS.BOLD_PRIMARY },
     svcDays: { fontSize: 11, color: COLORS.textMuted, marginBottom: 4 },
-    svcLabel: { fontSize: 14, fontWeight: '800', marginBottom: 3 },
+    svcLabel: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, marginBottom: 3 },
     svcDesc: { fontSize: 10, color: COLORS.textMuted, textAlign: 'center' },
-    svcPrice: { fontSize: 14, fontWeight: '700', color: COLORS.text, marginTop: 8 },
+    svcPrice: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.text, marginTop: 8 },
 
     vehicleRow: { flexDirection: 'row', gap: 10, marginBottom: 18 },
     vehicleCard: {
@@ -1485,7 +1486,7 @@ const makeOdStyles = (COLORS: OrderColors) => StyleSheet.create({
         shadowOpacity: 0.1, shadowRadius: 8, elevation: 3,
     },
     vehicleIcon: { marginBottom: 4 },
-    vehicleLabel: { fontSize: 13, fontWeight: '800', color: COLORS.text, marginTop: 6 },
+    vehicleLabel: { fontSize: 13, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.text, marginTop: 6 },
     vehicleDesc: { fontSize: 10, color: COLORS.textMuted, marginTop: 2, textAlign: 'center' },
 
     payRow: {
@@ -1498,7 +1499,7 @@ const makeOdStyles = (COLORS: OrderColors) => StyleSheet.create({
         shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 2,
     },
     payIcon: {},
-    payLabel: { flex: 1, fontSize: 15, color: COLORS.text, fontWeight: '600' },
+    payLabel: { flex: 1, fontSize: 15, color: COLORS.text, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
     radio: {
         width: 22, height: 22, borderRadius: 11,
         borderWidth: 2, borderColor: COLORS.border,
@@ -1514,8 +1515,8 @@ const makeOdStyles = (COLORS: OrderColors) => StyleSheet.create({
         backgroundColor: COLORS.surface,
     },
     slotChipActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight },
-    slotText: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '500' },
-    slotTextActive: { color: COLORS.primary, fontWeight: '700' },
+    slotText: { fontSize: 12, color: COLORS.textSecondary, fontFamily: FONTS.MEDIUM_PRIMARY },
+    slotTextActive: { color: COLORS.primary, fontFamily: FONTS.BOLD_PRIMARY },
 
     notesBox: {
         borderWidth: 1.5, borderColor: COLORS.border, borderRadius: RADIUS.md,
@@ -1532,8 +1533,8 @@ const makeOdStyles = (COLORS: OrderColors) => StyleSheet.create({
     routeBox: { marginBottom: 12 },
     routePoint: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 },
     routeDot: { width: 12, height: 12, borderRadius: 6, marginTop: 3 },
-    routeRole: { fontSize: 9, fontWeight: '700', color: COLORS.textMuted, letterSpacing: 1 },
-    routeName: { fontSize: 13, fontWeight: '700', color: COLORS.text, marginTop: 1 },
+    routeRole: { fontSize: 9, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.textMuted, letterSpacing: 1 },
+    routeName: { fontSize: 13, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.text, marginTop: 1 },
     routeAddr: { fontSize: 11, color: COLORS.textSecondary, marginTop: 1 },
     routeDashedLine: {
         width: 1, height: 16, borderStyle: 'dashed', borderWidth: 1,
@@ -1542,15 +1543,15 @@ const makeOdStyles = (COLORS: OrderColors) => StyleSheet.create({
     summDivider: { height: 1, backgroundColor: COLORS.border, marginVertical: 12 },
     summRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
     summKey: { fontSize: 13, color: COLORS.textSecondary },
-    summVal: { fontSize: 13, color: COLORS.text, fontWeight: '600', maxWidth: '55%', textAlign: 'right' },
+    summVal: { fontSize: 13, color: COLORS.text, fontFamily: FONTS.SEMI_BOLD_PRIMARY, maxWidth: '55%', textAlign: 'right' },
     summValRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     totalRow: {
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
         backgroundColor: COLORS.primaryLight, borderRadius: RADIUS.md,
         padding: 12, marginTop: 4,
     },
-    totalLabel: { fontSize: 14, fontWeight: '700', color: COLORS.primaryDark },
-    totalValue: { fontSize: 20, fontWeight: '800', color: COLORS.primary },
+    totalLabel: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.primaryDark },
+    totalValue: { fontSize: 20, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.primary },
     fareErrorRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: -4, marginBottom: 8 },
     fareError: { fontSize: 11, color: COLORS.warning, flexShrink: 1 },
 
@@ -1567,8 +1568,8 @@ const makeOdStyles = (COLORS: OrderColors) => StyleSheet.create({
     },
     fareHeroRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     fareHeroIcon: {},
-    fareHeroLabel: { fontSize: 12, color: 'rgba(255,255,255,0.8)', fontWeight: '600', letterSpacing: 0.3 },
-    fareHeroPrice: { fontSize: 30, color: '#fff', fontWeight: '800', marginTop: 2 },
+    fareHeroLabel: { fontSize: 12, color: 'rgba(255,255,255,0.8)', fontFamily: FONTS.SEMI_BOLD_PRIMARY, letterSpacing: 0.3 },
+    fareHeroPrice: { fontSize: 30, color: '#fff', fontFamily: FONTS.BOLD_PRIMARY, marginTop: 2 },
     fareHeroChip: {
         backgroundColor: 'rgba(255,255,255,0.18)',
         borderRadius: RADIUS.full,
@@ -1577,7 +1578,7 @@ const makeOdStyles = (COLORS: OrderColors) => StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.3)',
     },
-    fareHeroChipText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+    fareHeroChipText: { color: '#fff', fontSize: 12, fontFamily: FONTS.BOLD_PRIMARY },
 });
 
 // ─── SUCCESS MODAL ────────────────────────────────────────────────────────────
@@ -1642,20 +1643,20 @@ const makeSuccessStyles = (COLORS: OrderColors) => StyleSheet.create({
         backgroundColor: COLORS.successLight, alignItems: 'center', justifyContent: 'center',
         marginBottom: 16,
     },
-    title: { fontSize: 22, fontWeight: '800', color: COLORS.text, marginBottom: 6 },
+    title: { fontSize: 22, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.text, marginBottom: 6 },
     subtitle: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 20, marginBottom: 20 },
     trackingBox: {
         backgroundColor: COLORS.primaryLight, borderRadius: RADIUS.md,
         padding: 14, width: '100%', alignItems: 'center', marginBottom: 12,
     },
-    trackingLabel: { fontSize: 11, color: COLORS.primary, fontWeight: '600', letterSpacing: 1, marginBottom: 4 },
-    trackingId: { fontSize: 20, fontWeight: '800', color: COLORS.primaryDark, letterSpacing: 2 },
+    trackingLabel: { fontSize: 11, color: COLORS.primary, fontFamily: FONTS.SEMI_BOLD_PRIMARY, letterSpacing: 1, marginBottom: 4 },
+    trackingId: { fontSize: 20, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.primaryDark, letterSpacing: 2 },
     hint: { fontSize: 11, color: COLORS.textMuted, textAlign: 'center', marginBottom: 24 },
     doneBtn: {
         backgroundColor: COLORS.primary, borderRadius: RADIUS.md,
         paddingVertical: 14, paddingHorizontal: 40, width: '100%', alignItems: 'center',
     },
-    doneBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+    doneBtnText: { color: '#fff', fontSize: 15, fontFamily: FONTS.BOLD_PRIMARY },
 });
 
 // ─── STEP INDICATOR HEADER ────────────────────────────────────────────────────
@@ -1725,7 +1726,7 @@ const makeHeaderStyles = (COLORS: OrderColors) => StyleSheet.create({
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,
     },
-    title: { color: '#fff', fontSize: 22, fontWeight: '800', letterSpacing: 0.3 },
+    title: { color: '#fff', fontSize: 22, fontFamily: FONTS.BOLD_PRIMARY, letterSpacing: 0.3 },
     subtitle: { color: 'rgba(255,255,255,0.65)', fontSize: 12, marginTop: 3, marginBottom: 14 },
     track: {
         height: 3, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2,
@@ -1746,10 +1747,10 @@ const makeHeaderStyles = (COLORS: OrderColors) => StyleSheet.create({
         shadowColor: '#fff', shadowOpacity: 0.4, shadowRadius: 8, elevation: 4,
     },
     stepNum: { fontSize: 14, color: 'rgba(255,255,255,0.6)' },
-    stepNumDone: { color: COLORS.primary, fontWeight: '800' },
-    stepNumActive: { color: COLORS.primary, fontWeight: '800' },
-    stepLabel: { fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 4, fontWeight: '500' },
-    stepLabelActive: { color: '#fff', fontWeight: '700' },
+    stepNumDone: { color: COLORS.primary, fontFamily: FONTS.BOLD_PRIMARY },
+    stepNumActive: { color: COLORS.primary, fontFamily: FONTS.BOLD_PRIMARY },
+    stepLabel: { fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 4, fontFamily: FONTS.MEDIUM_PRIMARY },
+    stepLabelActive: { color: '#fff', fontFamily: FONTS.BOLD_PRIMARY },
     connector: {
         flex: 1, height: 2, backgroundColor: 'rgba(255,255,255,0.2)',
         marginTop: 17, borderRadius: 1,
