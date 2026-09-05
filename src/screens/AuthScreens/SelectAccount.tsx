@@ -11,7 +11,7 @@ import Animated, {
     withSpring,
     withTiming,
 } from 'react-native-reanimated';
-import { Check, ArrowLeft, ChevronRight } from 'lucide-react-native';
+import { User, Truck, ArrowLeft, ChevronRight } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
@@ -44,6 +44,10 @@ const ACCOUNT_IMAGES = {
     Driver: require('../../../assets/images/home/ImaDriver.png'),
 } as const;
 
+// Small supplementary role glyph shown next to the title — separate from
+// the big bleed illustration, matching the brand mockup's own layout.
+const ROLE_ICONS = { Customer: User, Driver: Truck } as const;
+
 type Styles = ReturnType<typeof makeStyles>;
 
 interface CardProps {
@@ -52,10 +56,12 @@ interface CardProps {
     selected: boolean;
     onPress: () => void;
     styles: Styles;
+    roleIconColor: string;
 }
 
-const AccountCard = memo(({ item, index, selected, onPress, styles }: CardProps) => {
+const AccountCard = memo(({ item, index, selected, onPress, styles, roleIconColor }: CardProps) => {
     const scale = useSharedValue(1);
+    const RoleIcon = ROLE_ICONS[item.type];
 
     const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
@@ -73,33 +79,36 @@ const AccountCard = memo(({ item, index, selected, onPress, styles }: CardProps)
                 accessibilityLabel={`${item.label} account`}
                 style={[styles.card, selected && styles.cardSelected]}
             >
-                <View style={[styles.iconWrap, selected && styles.iconWrapSelected]}>
-                    <Image
-                        source={ACCOUNT_IMAGES[item.type]}
-                        resizeMode="contain"
-                        style={styles.iconImage}
-                    />
+                {/* Full-bleed illustration, not a small boxed icon — the
+                    brand's own K-mascot art scaled up and clipped by the
+                    card's rounded left edge, matching the reference
+                    mockup's layout. */}
+                <View style={styles.bleedWrap}>
+                    <Image source={ACCOUNT_IMAGES[item.type]} resizeMode="contain" style={styles.bleedImage} />
                 </View>
 
-                <View style={styles.cardText}>
+                <View style={styles.cardBody}>
+                    <View style={[styles.roleBadge, selected && styles.roleBadgeSelected]}>
+                        <RoleIcon color={selected ? '#fff' : roleIconColor} size={16} strokeWidth={2.2} />
+                    </View>
                     <Text style={styles.title}>{item.label}</Text>
                     <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>
                 </View>
 
-                {/* The whole card is already the tap target — this is a
-                    small "selected" badge, not a form control, so it only
-                    ever appears (with a pop-in/pop-out) once a card is
-                    chosen rather than sitting there unselected the whole
-                    time like a radio button. */}
-                {selected && (
-                    <Animated.View
-                        entering={ZoomIn.springify().damping(12).stiffness(220)}
-                        exiting={ZoomOut.duration(150)}
-                        style={styles.selectedBadge}
-                    >
-                        <Check color="#fff" size={13} strokeWidth={3} />
-                    </Animated.View>
-                )}
+                {/* The whole card is already the tap target — this ring
+                    stays visible on both cards (so the pair reads as a
+                    real choice, per the reference), but its fill only
+                    animates in once selected rather than being a static
+                    always-drawn dot. */}
+                <View style={[styles.radioRing, selected && styles.radioRingSelected]}>
+                    {selected && (
+                        <Animated.View
+                            entering={ZoomIn.springify().damping(12).stiffness(220)}
+                            exiting={ZoomOut.duration(150)}
+                            style={styles.radioDot}
+                        />
+                    )}
+                </View>
             </Pressable>
         </Animated.View>
     );
@@ -127,11 +136,23 @@ const SelectAccount = () => {
     return (
         <View style={styles.root}>
             <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.BACKGROUND} />
+            {/* Decorative brand watermark, matching the reference mockup's
+                top-right corner accent — purely visual, no touch target. */}
+            <View style={styles.decorWatermark} pointerEvents="none" />
 
             <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-                <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.backBtn}>
-                    <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
-                </Pressable>
+                <View style={styles.topBar}>
+                    <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.backBtn}>
+                        <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
+                    </Pressable>
+                    <View style={styles.brandRow}>
+                        <View style={styles.brandMark}>
+                            <Text style={styles.brandMarkText}>K</Text>
+                        </View>
+                        <Text style={styles.brandName}>Kalanabha</Text>
+                    </View>
+                    <View style={styles.topBarSpacer} />
+                </View>
 
                 <View style={styles.content}>
                     <Animated.Text entering={FadeInUp.duration(400)} style={styles.title1}>
@@ -150,6 +171,7 @@ const SelectAccount = () => {
                                 selected={selected === item.type}
                                 onPress={() => handleSelect(item.type)}
                                 styles={styles}
+                                roleIconColor={colors.PRIMARY}
                             />
                         ))}
                     </View>
@@ -187,11 +209,28 @@ const makeStyles = (
     spacing: ReturnType<typeof useAppTheme>['spacing'],
     radius: ReturnType<typeof useAppTheme>['radius'],
 ) => StyleSheet.create({
-    root: { flex: 1, backgroundColor: colors.BACKGROUND },
+    root: { flex: 1, backgroundColor: colors.BACKGROUND, overflow: 'hidden' },
     safe: { flex: 1, paddingHorizontal: spacing.xl, justifyContent: 'space-between' },
 
-    backBtn: {
+    decorWatermark: {
+        position: 'absolute',
+        top: -50,
+        right: -60,
+        width: 200,
+        height: 200,
+        borderRadius: 44,
+        backgroundColor: colors.PRIMARY,
+        opacity: 0.06,
+        transform: [{ rotate: '24deg' }],
+    },
+
+    topBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         marginTop: Platform.OS === 'ios' ? spacing.md : spacing.lg,
+    },
+    backBtn: {
         width: 40,
         height: 40,
         borderRadius: 20,
@@ -201,6 +240,14 @@ const makeStyles = (
         borderWidth: 1,
         borderColor: colors.BORDER,
     },
+    topBarSpacer: { width: 40 },
+    brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    brandMark: {
+        width: 30, height: 30, borderRadius: 9, backgroundColor: colors.PRIMARY,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    brandMarkText: { color: '#fff', fontSize: 15, fontFamily: fonts.BOLD_PRIMARY },
+    brandName: { color: colors.PRIMARY, fontSize: fontSize.lg, fontFamily: fonts.BOLD_PRIMARY },
 
     content: { flex: 1, justifyContent: 'center' },
     title1: { fontFamily: fonts.BOLD_PRIMARY, fontSize: 26, color: colors.TEXT_PRIMARY, textAlign: 'center' },
@@ -216,14 +263,14 @@ const makeStyles = (
 
     card: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'stretch',
         borderRadius: radius.lg,
-        padding: spacing.lg,
         backgroundColor: colors.SURFACE,
         borderWidth: 1.5,
         borderColor: colors.BORDER,
-        gap: spacing.md,
         position: 'relative',
+        overflow: 'hidden',
+        minHeight: 132,
     },
     cardSelected: {
         borderColor: colors.PRIMARY,
@@ -231,40 +278,48 @@ const makeStyles = (
         backgroundColor: colors.PRIMARY_LIGHT,
     },
 
-    iconWrap: {
-        width: 68,
-        height: 68,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
+    // Full-bleed illustration column — clipped by the card's own rounded
+    // corner rather than boxed in a small icon chip, matching the
+    // reference mockup. The image is deliberately larger than its wrap
+    // and centered, so it bleeds/crops at the edges instead of shrinking
+    // to fit with visible padding.
+    bleedWrap: {
+        width: 128,
         backgroundColor: colors.BACKGROUND,
+        alignItems: 'center',
+        justifyContent: 'flex-end',
         overflow: 'hidden',
     },
-    iconWrapSelected: { backgroundColor: colors.PRIMARY_LIGHT },
-    iconImage: { width: 60, height: 60 },
+    bleedImage: { width: 168, height: 168, marginBottom: -14 },
 
-    cardText: { flex: 1, gap: 3 },
+    cardBody: { flex: 1, paddingVertical: spacing.md, paddingHorizontal: spacing.md, paddingRight: spacing.xl, justifyContent: 'center', gap: 3 },
+    roleBadge: {
+        width: 30, height: 30, borderRadius: 9,
+        backgroundColor: colors.PRIMARY_LIGHT,
+        alignItems: 'center', justifyContent: 'center',
+        marginBottom: 6,
+    },
+    roleBadgeSelected: { backgroundColor: colors.PRIMARY },
     title: { fontFamily: fonts.SEMI_BOLD_PRIMARY, fontSize: fontSize.xl, color: colors.TEXT_PRIMARY },
     desc: { fontFamily: fonts.MEDIUM_PRIMARY, fontSize: fontSize.sm, color: colors.TEXT_SECONDARY, lineHeight: 17 },
 
-    selectedBadge: {
+    // Ring stays visible on both cards, unselected or not (reads as a real
+    // pair of choices, like the reference) — only its fill pops in/out.
+    radioRing: {
         position: 'absolute',
-        top: -8,
-        right: -8,
-        width: 26,
-        height: 26,
-        borderRadius: 13,
-        backgroundColor: colors.PRIMARY,
+        top: spacing.md,
+        right: spacing.md,
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        borderWidth: 1.5,
+        borderColor: colors.BORDER,
+        backgroundColor: colors.SURFACE,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: colors.BACKGROUND,
-        shadowColor: colors.PRIMARY,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 4,
     },
+    radioRingSelected: { borderColor: colors.PRIMARY },
+    radioDot: { width: 11, height: 11, borderRadius: 5.5, backgroundColor: colors.PRIMARY },
 
     button: {
         flexDirection: 'row',
