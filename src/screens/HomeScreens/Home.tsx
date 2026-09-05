@@ -48,6 +48,7 @@ import {
     PackagePlus,
 } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
+import { useTabBarContentPadding } from '../navigation/useTabBarStyle';
 import { useAppTheme } from '@theme/ThemeContext';
 import { makeHomeColors, SPACING } from './homeSections/theme';
 import HomeHeader from './homeSections/HomeHeader';
@@ -106,6 +107,7 @@ const HomeScreen: React.FC = () => {
     const COLORS = useMemo(() => makeHomeColors(BRAND), [BRAND]);
     const STATUS_CONFIG = useMemo(() => makeStatusConfig(COLORS), [COLORS]);
     const styles = useMemo(() => makeStyles(COLORS, FONTS), [COLORS, FONTS]);
+    const tabBarPadding = useTabBarContentPadding();
 
     const authUser = useAuthStore((s) => s.user);
     const {
@@ -220,7 +222,7 @@ const HomeScreen: React.FC = () => {
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} tintColor={COLORS.primary} progressBackgroundColor={COLORS.background} />
                 }
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarPadding }]}
             >
                 <HomeHeader
                     userName={userName}
@@ -479,7 +481,7 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({ shipment, navigation, style
 
 const makeStyles = (COLORS: HomeColors, FONTS: ReturnType<typeof useAppTheme>['fonts']) => StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.background },
-    scrollContent: { paddingBottom: 40 },
+    scrollContent: {},
     statsContainer: {
         flexDirection: 'row', backgroundColor: COLORS.card, marginHorizontal: SPACING.xl,
         marginTop: SPACING.l, borderRadius: 24, paddingVertical: 20, shadowColor: COLORS.primary,
