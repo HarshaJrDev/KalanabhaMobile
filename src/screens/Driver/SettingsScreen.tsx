@@ -14,6 +14,7 @@ import { ChevronLeft, LogOut } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useLogout } from '@hooks/useLogout';
 import { registerFCMToken } from '@utils/cm';
+import FONTS from '@utils/fonts';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version: appVersion } = require('../../../package.json');
 
@@ -108,7 +109,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: '#EEE',
     },
-    headerTitle: { fontSize: 16, fontWeight: '700' },
+    headerTitle: { fontSize: 16, fontFamily: FONTS.BOLD_PRIMARY },
     row: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -119,8 +120,8 @@ const styles = StyleSheet.create({
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: '#EEE',
     },
-    rowLabel: { fontSize: 15, color: '#1F2937' },
-    rowValue: { fontSize: 15, color: '#666' },
+    rowLabel: { fontSize: 15, fontFamily: FONTS.MEDIUM_PRIMARY, color: '#1F2937' },
+    rowValue: { fontSize: 15, fontFamily: FONTS.PRIMARY, color: '#666' },
     logout: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -131,5 +132,5 @@ const styles = StyleSheet.create({
         padding: 14,
         borderRadius: 12,
     },
-    logoutText: { color: '#FFF', fontWeight: '700' },
+    logoutText: { color: '#FFF', fontFamily: FONTS.BOLD_PRIMARY },
 });

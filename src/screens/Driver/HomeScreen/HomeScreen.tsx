@@ -606,7 +606,7 @@ const styles = StyleSheet.create({
         marginTop: 16,
         fontSize: 16,
         color: '#1F2937',
-        fontWeight: '600',
+        fontFamily: FONTS.SEMI_BOLD_PRIMARY,
     },
     loadingSubtext: {
         fontSize: 13,
@@ -629,7 +629,7 @@ const styles = StyleSheet.create({
     },
     errorTitle: {
         fontSize: 20,
-        fontWeight: '700',
+        fontFamily: FONTS.BOLD_PRIMARY,
         color: '#DC2626',
         marginBottom: 8,
         textAlign: 'center',
@@ -653,7 +653,7 @@ const styles = StyleSheet.create({
     retryText: {
         color: '#FFF',
         fontSize: 15,
-        fontWeight: '600',
+        fontFamily: FONTS.SEMI_BOLD_PRIMARY,
     },
 
     // Header
@@ -679,7 +679,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.15,
         shadowRadius: 4,
     },
-    sosBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+    sosBtnText: { color: '#fff', fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY },
 
     activeDeliveryCard: {
         marginHorizontal: 16,
@@ -703,7 +703,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     activeDeliveryContent: { flex: 1 },
-    activeDeliveryTitle: { fontSize: 13, fontWeight: '700', color: '#111827' },
+    activeDeliveryTitle: { fontSize: 13, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827' },
     activeDeliverySub: { fontSize: 12, color: '#6B7280', marginTop: 2 },
     chatPill: {
         flexDirection: 'row',
@@ -714,7 +714,7 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         borderRadius: 10,
     },
-    chatPillText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+    chatPillText: { color: '#fff', fontSize: 12, fontFamily: FONTS.BOLD_PRIMARY },
     openMapsRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -724,7 +724,7 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#F3F4F6',
     },
-    openMapsText: { fontSize: 12, fontWeight: '700', color: '#FF7518' },
+    openMapsText: { fontSize: 12, fontFamily: FONTS.BOLD_PRIMARY, color: '#FF7518' },
 
     // ── Incoming Load Request hero card
     incomingCard: {
@@ -742,30 +742,30 @@ const styles = StyleSheet.create({
         shadowRadius: 10,
     },
     incomingHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-    incomingHeaderText: { fontSize: 11, fontWeight: '800', color: '#FF7518', letterSpacing: 0.5 },
+    incomingHeaderText: { fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY, color: '#FF7518', letterSpacing: 0.5 },
     incomingPriceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-    incomingPrice: { fontSize: 26, fontWeight: '800', color: '#111827' },
+    incomingPrice: { fontSize: 26, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827' },
     incomingPaymentPill: { backgroundColor: '#F3F4F6', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-    incomingPaymentPillText: { fontSize: 11, fontWeight: '700', color: '#6B7280' },
+    incomingPaymentPillText: { fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY, color: '#6B7280' },
     incomingStatsRow: { flexDirection: 'row', gap: 20, marginBottom: 12 },
     incomingStat: {},
     incomingStatLabel: { fontSize: 10, color: '#9CA3AF', letterSpacing: 0.3 },
-    incomingStatValue: { fontSize: 14, fontWeight: '700', color: '#111827', marginTop: 2 },
+    incomingStatValue: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827', marginTop: 2 },
     incomingSenderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
     incomingSenderAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#FFE8D6', alignItems: 'center', justifyContent: 'center' },
-    incomingSenderInitials: { fontSize: 11, fontWeight: '700', color: '#FF7518' },
-    incomingSenderName: { fontSize: 13, fontWeight: '700', color: '#111827', flex: 1 },
+    incomingSenderInitials: { fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY, color: '#FF7518' },
+    incomingSenderName: { fontSize: 13, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827', flex: 1 },
     incomingVehicleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' },
-    incomingVehicleText: { fontSize: 12, color: '#374151', fontWeight: '600', textTransform: 'capitalize' },
+    incomingVehicleText: { fontSize: 12, color: '#374151', fontFamily: FONTS.SEMI_BOLD_PRIMARY, textTransform: 'capitalize' },
     incomingPackageText: { fontSize: 12, color: '#6B7280' },
     incomingFragileBadge: {
         flexDirection: 'row', alignItems: 'center', gap: 4,
         backgroundColor: '#FEF3C7', borderRadius: 8,
         paddingHorizontal: 8, paddingVertical: 4, marginTop: 6, alignSelf: 'flex-start',
     },
-    incomingFragileBadgeText: { fontSize: 11, color: '#B45309', fontWeight: '600' },
+    incomingFragileBadgeText: { fontSize: 11, color: '#B45309', fontFamily: FONTS.SEMI_BOLD_PRIMARY },
     incomingInsuredPill: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#F0FDF4', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 },
-    incomingInsuredText: { fontSize: 10, fontWeight: '700', color: '#16A34A' },
+    incomingInsuredText: { fontSize: 10, fontFamily: FONTS.BOLD_PRIMARY, color: '#16A34A' },
     incomingRouteRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
     incomingRouteText: { flex: 1, fontSize: 12, color: '#374151' },
     incomingActionsRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
@@ -777,7 +777,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#E5E7EB',
     },
-    declineBtnText: { fontSize: 13, fontWeight: '700', color: '#6B7280' },
+    declineBtnText: { fontSize: 13, fontFamily: FONTS.BOLD_PRIMARY, color: '#6B7280' },
     acceptBtn: {
         flex: 2,
         alignItems: 'center',
@@ -785,7 +785,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         backgroundColor: '#FF7518',
     },
-    acceptBtnText: { fontSize: 13, fontWeight: '800', color: '#fff' },
+    acceptBtnText: { fontSize: 13, fontFamily: FONTS.BOLD_PRIMARY, color: '#fff' },
 
     quickRow: {
         flexDirection: 'row',
@@ -840,14 +840,14 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         fontSize: 22,
-        fontWeight: '800',
+        fontFamily: FONTS.BOLD_PRIMARY,
         color: '#1C1C1E',
         marginBottom: 4,
     },
     subtitle: {
         fontSize: 14,
         color: '#8E8E93',
-        fontWeight: '500',
+        fontFamily: FONTS.MEDIUM_PRIMARY,
     },
     badge: {
         backgroundColor: '#2563EB',
@@ -858,7 +858,7 @@ const styles = StyleSheet.create({
     badgeText: {
         color: '#FFF',
         fontSize: 14,
-        fontWeight: '700',
+        fontFamily: FONTS.BOLD_PRIMARY,
     },
 
     // Empty State
@@ -880,7 +880,7 @@ const styles = StyleSheet.create({
     },
     emptyTitle: {
         fontSize: 18,
-        fontWeight: '700',
+        fontFamily: FONTS.BOLD_PRIMARY,
         color: '#1C1C1E',
         marginBottom: 8,
     },
@@ -918,14 +918,14 @@ const styles = StyleSheet.create({
     },
     statNumber: {
         fontSize: 18,
-        fontWeight: '900',
+        fontFamily: FONTS.BOLD_PRIMARY,
         color: '#FFF',
         marginBottom: 2,
     },
     statLabel: {
         fontSize: 12,
         color: 'rgba(255,255,255,0.8)',
-        fontWeight: '600',
+        fontFamily: FONTS.SEMI_BOLD_PRIMARY,
         letterSpacing: 0.5,
     },
     statDivider: {

@@ -22,6 +22,7 @@ import { ChevronLeft, MessageCircle, Package } from 'lucide-react-native';
 import { useMyShipmentsAsDriver } from '@features/shipments/hooks';
 import { AsyncState } from '@components/AsyncState';
 import type { Shipment, ShipmentStatus } from '@shipment/types';
+import FONTS from '@utils/fonts';
 
 const STATUS_LABEL: Record<ShipmentStatus, string> = {
     searching: 'Searching',
@@ -133,7 +134,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: '#EEE',
     },
-    headerTitle: { fontSize: 16, fontWeight: '700' },
+    headerTitle: { fontSize: 16, fontFamily: FONTS.BOLD_PRIMARY },
     list: { padding: 12, gap: 10 },
     emptyIcon: { alignItems: 'center', paddingTop: 40 },
     row: {
@@ -143,12 +144,12 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     rowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    trackingId: { fontSize: 14, fontWeight: '700', color: '#111827' },
+    trackingId: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827' },
     statusPill: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },
-    statusText: { fontSize: 11, fontWeight: '700' },
-    route: { fontSize: 12, color: '#6B7280' },
+    statusText: { fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY },
+    route: { fontSize: 12, fontFamily: FONTS.PRIMARY, color: '#6B7280' },
     rowBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
-    price: { fontSize: 15, fontWeight: '700', color: '#111827' },
+    price: { fontSize: 15, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827' },
     chatBtn: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -158,5 +159,5 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         borderRadius: 10,
     },
-    chatBtnText: { fontSize: 12, fontWeight: '700', color: '#2563EB' },
+    chatBtnText: { fontSize: 12, fontFamily: FONTS.BOLD_PRIMARY, color: '#2563EB' },
 });
