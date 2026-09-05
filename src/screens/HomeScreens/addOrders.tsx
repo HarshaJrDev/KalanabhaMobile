@@ -22,6 +22,7 @@ import {
     ActivityIndicator,
     Pressable,
     Alert,
+    Image,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -625,6 +626,14 @@ const composeAddress = (landmark: string, place: ServiceArea | null): string => 
 
 type ShipmentCategory = 'PARCEL' | 'HOUSE_SHIFTING';
 
+// Real K-branded photos for the two booking categories, not stock/generic
+// icons — one require() per category, read generically off CATEGORY_OPTIONS
+// below rather than hardcoded per-card JSX.
+const CATEGORY_IMAGES: Record<ShipmentCategory, ReturnType<typeof require>> = {
+    PARCEL: require('../../../assets/images/home/category-package.png'),
+    HOUSE_SHIFTING: require('../../../assets/images/home/category-house-shifting.png'),
+};
+
 const CATEGORY_OPTIONS: { key: ShipmentCategory; title: string; subtitle: string; icon: LucideIcon }[] = [
     { key: 'PARCEL', title: 'Send a Package', subtitle: 'Parcels, documents, goods — point to point', icon: Package },
     { key: 'HOUSE_SHIFTING', title: 'House Shifting', subtitle: 'Movers with loading/unloading help, van or truck', icon: Truck },
@@ -649,13 +658,18 @@ const StepCategory = ({ value, onSelect, onNext }: {
                         key={opt.key}
                         style={[catStyles.card, selected && catStyles.cardActive]}
                         onPress={() => onSelect(opt.key)}
-                        activeOpacity={0.85}
+                        activeOpacity={0.9}
                     >
-                        <View style={[catStyles.iconWrap, selected && catStyles.iconWrapActive]}>
-                            <opt.icon size={26} color={selected ? '#fff' : COLORS.primary} />
+                        <Image source={CATEGORY_IMAGES[opt.key]} resizeMode="cover" style={catStyles.image} />
+                        <LinearGradient
+                            colors={['transparent', 'rgba(0,0,0,0.72)']}
+                            style={catStyles.scrim}
+                        />
+                        <View style={catStyles.iconWrap}>
+                            <opt.icon size={20} color="#fff" />
                         </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={[catStyles.title, selected && { color: COLORS.primary }]}>{opt.title}</Text>
+                        <View style={catStyles.textWrap}>
+                            <Text style={catStyles.title}>{opt.title}</Text>
                             <Text style={catStyles.subtitle}>{opt.subtitle}</Text>
                         </View>
                         {selected && (
@@ -681,21 +695,25 @@ const StepCategory = ({ value, onSelect, onNext }: {
 
 const makeCategoryStyles = (COLORS: OrderColors) => StyleSheet.create({
     card: {
-        flexDirection: 'row', alignItems: 'center', gap: 14,
-        backgroundColor: COLORS.surface, borderRadius: RADIUS.lg,
-        borderWidth: 1.5, borderColor: COLORS.border,
-        padding: 16, marginBottom: 12,
+        height: 152, borderRadius: RADIUS.lg, overflow: 'hidden',
+        marginBottom: 14, position: 'relative',
+        borderWidth: 2, borderColor: 'transparent',
+        backgroundColor: COLORS.surface,
     },
-    cardActive: { borderColor: COLORS.primary, backgroundColor: '#FFF7F0' },
+    cardActive: { borderColor: COLORS.primary },
+    image: { ...StyleSheet.absoluteFillObject, width: undefined, height: undefined },
+    scrim: { ...StyleSheet.absoluteFillObject },
     iconWrap: {
-        width: 52, height: 52, borderRadius: RADIUS.md,
-        backgroundColor: COLORS.primaryLight,
+        position: 'absolute', top: 12, left: 12,
+        width: 36, height: 36, borderRadius: 12,
+        backgroundColor: 'rgba(255,255,255,0.22)',
         alignItems: 'center', justifyContent: 'center',
     },
-    iconWrapActive: { backgroundColor: COLORS.primary },
-    title: { fontSize: 15, fontWeight: '700', color: COLORS.text },
-    subtitle: { fontSize: 12, color: COLORS.textMuted, marginTop: 2, lineHeight: 16 },
+    textWrap: { position: 'absolute', left: 14, right: 14, bottom: 12 },
+    title: { fontSize: 16, fontWeight: '800', color: '#fff' },
+    subtitle: { fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 3, lineHeight: 16 },
     checkBadge: {
+        position: 'absolute', top: 12, right: 12,
         width: 24, height: 24, borderRadius: 12,
         backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center',
     },
