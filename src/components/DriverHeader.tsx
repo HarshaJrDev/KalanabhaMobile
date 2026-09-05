@@ -10,6 +10,7 @@
 // already uses — that endpoint is role-agnostic, just req.user-scoped).
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import { Power, Bell, ShieldAlert } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -43,7 +44,12 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
     const navigation = useNavigation();
     const user = useAuthStore((s) => s.user);
     const { colors, fonts } = useAppTheme();
-    const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
+    // Real device safe-area inset — was a bare paddingTop: 14, so the
+    // avatar/name/toggle sat under the status bar/camera cutout on real
+    // devices (same overlap bug already fixed on ShipmentChatScreen,
+    // onboarding, SelectAccount, both tab bars).
+    const insets = useSafeAreaInsets();
+    const styles = useMemo(() => makeStyles(colors, fonts, insets), [colors, fonts, insets]);
     const { mutate: setOnlineStatus, isPending } = useSetOnlineStatus();
     const { data: unreadCount } = useUnreadNotificationCount();
     const hasUnread = (unreadCount ?? 0) > 0;
@@ -101,10 +107,14 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
     );
 };
 
-const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: ReturnType<typeof useAppTheme>['fonts']) => StyleSheet.create({
+const makeStyles = (
+    colors: ReturnType<typeof useAppTheme>['colors'],
+    fonts: ReturnType<typeof useAppTheme>['fonts'],
+    insets: { top: number },
+) => StyleSheet.create({
     container: {
         paddingHorizontal: 16,
-        paddingTop: 14,
+        paddingTop: insets.top + 10,
         paddingBottom: 16,
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,
@@ -131,7 +141,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
     greeting: { fontSize: 16, fontFamily: fonts.BOLD_PRIMARY, color: '#fff' },
     statusRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
     statusDot: { width: 6, height: 6, borderRadius: 3 },
-    sub: { fontSize: 12, color: 'rgba(255,255,255,0.85)' },
+    sub: { fontSize: 12, fontFamily: fonts.MEDIUM_PRIMARY, color: 'rgba(255,255,255,0.85)' },
 
     actionsRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     togglePill: {
@@ -164,6 +174,6 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
     },
     statBox: { flex: 1, alignItems: 'center' },
     statNum: { fontSize: 18, fontFamily: fonts.BOLD_PRIMARY, color: '#fff' },
-    statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.85)', marginTop: 2 },
+    statLabel: { fontSize: 11, fontFamily: fonts.MEDIUM_PRIMARY, color: 'rgba(255,255,255,0.85)', marginTop: 2 },
     divider: { width: 1, backgroundColor: 'rgba(255,255,255,0.25)', marginHorizontal: 8 },
 });

@@ -51,6 +51,7 @@ import { Linking } from 'react-native';
 import { useVehicleConfigs } from '@features/settings/hooks';
 import VehicleVisual from '@components/VehicleVisual';
 import FadeImage from '@components/FadeImage';
+import FONTS from '@utils/fonts';
 
 // Same real K-branded truck photo already used on the customer Home
 // header — reused here rather than sourcing a new image.
@@ -805,8 +806,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginBottom: 8,
     },
-    quickCardTitle: { fontSize: 13, fontWeight: '800', color: '#111827' },
-    quickCardSub: { fontSize: 11, color: '#57534E', marginTop: 3, lineHeight: 15 },
+    quickCardTitle: { fontSize: 13, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827' },
+    quickCardSub: { fontSize: 11, fontFamily: FONTS.MEDIUM_PRIMARY, color: '#57534E', marginTop: 3, lineHeight: 15 },
 
     // "Drive More, Earn More" banner — real copy encouraging drivers to
     // stay online (no fabricated bonus amount or figure attached to it,
@@ -821,8 +822,8 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     driveMoreText: { flex: 1, paddingRight: 10 },
-    driveMoreTitle: { fontSize: 17, fontWeight: '800', color: '#fff', lineHeight: 22 },
-    driveMoreSub: { fontSize: 12, color: 'rgba(255,255,255,0.9)', marginTop: 6, lineHeight: 16 },
+    driveMoreTitle: { fontSize: 17, fontFamily: FONTS.BOLD_PRIMARY, color: '#fff', lineHeight: 22 },
+    driveMoreSub: { fontSize: 12, fontFamily: FONTS.MEDIUM_PRIMARY, color: 'rgba(255,255,255,0.9)', marginTop: 6, lineHeight: 16 },
     driveMoreImage: { width: 110, height: 90 },
 
     // Orders Section
