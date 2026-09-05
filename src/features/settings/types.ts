@@ -38,6 +38,19 @@ export interface ServiceArea {
     updatedAt: string;
 }
 
+// GET /settings/package-categories — Prisma `PackageCategory` model.
+// `icon` is a lucide-react-native icon name resolved client-side (see
+// packageCategoryIconFor in addOrders.tsx) — not an uploaded image.
+export interface PackageCategory {
+    id: string;
+    name: string;
+    icon: string;
+    sortOrder: number;
+    active: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
 // GET /settings/business — Prisma `BusinessSetting` model.
 export interface BusinessSetting {
     key: string;

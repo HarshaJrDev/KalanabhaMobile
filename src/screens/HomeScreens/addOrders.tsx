@@ -53,10 +53,15 @@ import {
     Landmark,
     Check,
     Search,
+    Smartphone,
+    Shirt,
+    UtensilsCrossed,
+    Sofa,
+    Pill,
     type LucideIcon,
 } from 'lucide-react-native';
 import { registerFCMToken, setupFCMListeners } from '@utils/cm';
-import { useVehicleConfigs, useServiceAreas, useBusinessSettings } from '@features/settings/hooks';
+import { useVehicleConfigs, useServiceAreas, useBusinessSettings, usePackageCategories } from '@features/settings/hooks';
 import { useAuthStore } from '@features/store/authStore';
 import type { ServiceArea } from '@features/settings/types';
 import VehicleVisual from '@components/VehicleVisual';
@@ -205,7 +210,16 @@ const STEPS = [
     },
 ];
 
-const PACKAGE_CATEGORIES = ['Documents', 'Electronics', 'Clothing', 'Food', 'Furniture', 'Medicine', 'Other'];
+// Real, admin-managed categories now (GET /settings/package-categories) —
+// was a frozen client array before. `icon` on each real category is a
+// lucide-react-native component name the admin sets in KalanabhaAdmin;
+// packageCategoryIconFor resolves it defensively (an admin could type a
+// name that doesn't exist) to the generic Package icon rather than
+// crashing or rendering nothing.
+const PACKAGE_CATEGORY_ICONS: Record<string, LucideIcon> = {
+    FileText, Smartphone, Shirt, UtensilsCrossed, Sofa, Pill, Package,
+};
+const packageCategoryIconFor = (icon: string): LucideIcon => PACKAGE_CATEGORY_ICONS[icon] ?? Package;
 
 const makeServiceTypes = (COLORS: OrderColors): { key: OrderDetailsForm['serviceType']; label: string; desc: string; price: string; days: string; color: string }[] => [
     { key: 'standard', label: 'Standard', desc: 'Reliable delivery', price: '₹99', days: '3-5 days', color: COLORS.textSecondary },
@@ -864,6 +878,11 @@ const StepPackage = ({
     const pkgStyles = useMemo(() => makePkgStyles(COLORS), [COLORS]);
     const [errors, setErrors] = useState<Partial<Record<keyof PackageForm, string>>>({});
     const isHouseShifting = category === 'HOUSE_SHIFTING';
+    const { data: packageCategoriesData } = usePackageCategories();
+    const packageCategories = useMemo(
+        () => (packageCategoriesData ?? []).filter((c) => c.active),
+        [packageCategoriesData],
+    );
 
     const validate = () => {
         const e: typeof errors = {};
@@ -907,18 +926,23 @@ const StepPackage = ({
                     {/* Category chips */}
                     <Text style={pkgStyles.catLabel}>Category</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-                        {PACKAGE_CATEGORIES.map(cat => (
-                            <TouchableOpacity
-                                key={cat}
-                                onPress={() => onChange('category', cat)}
-                                style={[pkgStyles.chip, data.category === cat && pkgStyles.chipActive]}
-                                activeOpacity={0.8}
-                            >
-                                <Text style={[pkgStyles.chipText, data.category === cat && pkgStyles.chipTextActive]}>
-                                    {cat}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
+                        {packageCategories.map((cat) => {
+                            const CatIcon = packageCategoryIconFor(cat.icon);
+                            const selected = data.category === cat.name;
+                            return (
+                                <TouchableOpacity
+                                    key={cat.id}
+                                    onPress={() => onChange('category', cat.name)}
+                                    style={[pkgStyles.chip, selected && pkgStyles.chipActive]}
+                                    activeOpacity={0.8}
+                                >
+                                    <CatIcon size={14} color={selected ? COLORS.primary : COLORS.textMuted} style={{ marginRight: 6 }} />
+                                    <Text style={[pkgStyles.chipText, selected && pkgStyles.chipTextActive]}>
+                                        {cat.name}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
                     </ScrollView>
                 </>
             )}
@@ -1038,6 +1062,7 @@ const StepPackage = ({
 const makePkgStyles = (COLORS: OrderColors) => StyleSheet.create({
     catLabel: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 8, letterSpacing: 0.3 },
     chip: {
+        flexDirection: 'row', alignItems: 'center',
         paddingHorizontal: 14, paddingVertical: 7,
         borderRadius: RADIUS.full, borderWidth: 1.5, borderColor: COLORS.border,
         marginRight: 8, backgroundColor: COLORS.surface,

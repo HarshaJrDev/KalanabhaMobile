@@ -75,6 +75,24 @@ export const useServiceAreas = () => {
     });
 };
 
+export const packageCategoryKeys = {
+    all: ['package-categories'] as const,
+};
+
+// Screen -> hook -> settings.api -> GET /settings/package-categories ->
+// cache -> UI. addOrders.tsx's Package Details "Category" chips read this
+// instead of a hardcoded array, so an admin adding/renaming/deactivating
+// a category reaches the booking flow the same way Vehicle Configs does.
+export const usePackageCategories = () => {
+    const { isAuthenticated } = useAuthState();
+    return useQuery({
+        queryKey: packageCategoryKeys.all,
+        queryFn: settingsApi.getPackageCategories,
+        enabled: isAuthenticated,
+        staleTime: 60 * 1000,
+    });
+};
+
 export const businessSettingKeys = {
     all: ['business-settings'] as const,
 };
