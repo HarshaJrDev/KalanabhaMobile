@@ -9,42 +9,58 @@ import {
     Dimensions,
     FlatList,
     Platform,
+    Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Zap, MapPin, ShieldCheck, ArrowRight, type LucideIcon } from 'lucide-react-native';
+import { ArrowRight } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '@theme/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
+// Three real, brand-illustrated scenes cropped from the single K-mascot
+// artwork the user supplied (assets/images/home/onboarding-logistics-hero.png)
+// — the truck+pin+city, the phone/route+vehicle-lineup, and the courier+
+// trust-badges each already existed as one composite; this splits that
+// same real art into a dedicated image per slide instead of reusing one
+// crop three times.
+const SLIDE_IMAGES = [
+    require('../../../assets/images/home/onboarding-1-delivery.png'),
+    require('../../../assets/images/home/onboarding-2-tracking.png'),
+    require('../../../assets/images/home/onboarding-3-trust.png'),
+];
+
 type OnBoardingScreenProp = NativeStackNavigationProp<RootStackParamList, 'OnBoarding'>;
 
-// Kalanabha's own visual language — light surface + a soft orange-tinted
-// illustration card per slide, replacing the previous full-bleed colorful
-// gradients (blue/green/orange per slide) that didn't match the brand's
-// "clean, minimal, orange used strategically" direction (§4/§9 of the
-// brand spec). Slide content/order/navigation logic is unchanged.
+// Matches the brand's own onboarding mockup: full-bleed illustration (no
+// bordered "card"), a two-line headline with one accent word in brand
+// orange, and a bottom row pairing the dot/counter progress with the
+// Next/Get Started pill — replacing the previous icon-badge + boxed-card
+// layout. Slide order/navigation/skip logic is unchanged.
 const SLIDES = [
     {
         key: '1',
-        icon: Zap,
-        title: 'Move Anything,\nAnywhere',
-        description: 'Fast, safe & reliable delivery at your fingertips.',
+        titleLine1: 'Deliver',
+        titleLine2: 'Without ',
+        accent: 'Limits',
+        description: 'Book trucks, pickups and more for all your moving needs',
     },
     {
         key: '2',
-        icon: MapPin,
-        title: 'Real-time\nTracking',
-        description: 'Track your package in real-time from pickup to delivery.',
+        titleLine1: 'Choose',
+        titleLine2: 'What ',
+        accent: 'You Need',
+        description: 'From small parcels to heavy loads, we have the right vehicle for you',
     },
     {
         key: '3',
-        icon: ShieldCheck,
-        title: 'Secure &\nReliable',
-        description: 'Verified delivery partners and secure payments.',
+        titleLine1: 'Move to a',
+        titleLine2: 'Better ',
+        accent: 'Tomorrow',
+        description: 'Reliable. Affordable. On your terms.',
     },
-] satisfies { key: string; icon: LucideIcon; title: string; description: string }[];
+] satisfies { key: string; titleLine1: string; titleLine2: string; accent: string; description: string }[];
 
 const OnBoarding = () => {
     const navigation = useNavigation<OnBoardingScreenProp>();
@@ -68,14 +84,17 @@ const OnBoarding = () => {
         navigation.reset({ index: 0, routes: [{ name: 'SelectAccount' }] });
     };
 
-    const renderItem = ({ item }: { item: typeof SLIDES[0] }) => (
+    const renderItem = ({ item, index }: { item: typeof SLIDES[0]; index: number }) => (
         <View style={styles.slide}>
-            <View style={styles.illustrationCard}>
-                <View style={styles.illustrationCircle}>
-                    <item.icon color={colors.PRIMARY} size={56} strokeWidth={1.75} />
-                </View>
+            <View style={styles.illustrationWrap}>
+                <Image source={SLIDE_IMAGES[index]} resizeMode="contain" style={styles.heroImage} />
             </View>
-            <Text style={styles.title}>{item.title}</Text>
+            <Text style={styles.title}>
+                {item.titleLine1}
+                {'\n'}
+                {item.titleLine2}
+                <Text style={styles.titleAccent}>{item.accent}</Text>
+            </Text>
             <Text style={styles.description}>{item.description}</Text>
         </View>
     );
@@ -85,7 +104,15 @@ const OnBoarding = () => {
             <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.BACKGROUND} />
 
             <View style={styles.topBar}>
-                <View style={{ width: 40 }} />
+                <View style={styles.brandRow}>
+                    <View style={styles.brandMark}>
+                        <Text style={styles.brandMarkText}>K</Text>
+                    </View>
+                    <View>
+                        <Text style={styles.brandName}>Kalanabha</Text>
+                        <Text style={styles.brandTagline}>Move Anything, Anywhere</Text>
+                    </View>
+                </View>
                 <TouchableOpacity onPress={goSkip} hitSlop={10}>
                     <Text style={styles.skipText}>Skip</Text>
                 </TouchableOpacity>
@@ -103,17 +130,20 @@ const OnBoarding = () => {
                 onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
                     useNativeDriver: false,
                 })}
-                style={{ flex: 1 }}
+                style={styles.slidesList}
             />
 
             <View style={styles.bottomBar}>
-                <View style={styles.dots}>
-                    {SLIDES.map((_, i) => {
-                        const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
-                        const dotW = scrollX.interpolate({ inputRange, outputRange: [6, 22, 6], extrapolate: 'clamp' });
-                        const dotColor = i === currentIdx ? colors.PRIMARY : colors.BORDER;
-                        return <Animated.View key={i} style={[styles.dot, { width: dotW, backgroundColor: dotColor }]} />;
-                    })}
+                <View style={styles.progressGroup}>
+                    <Text style={styles.progressCounter}>{currentIdx + 1} / {SLIDES.length}</Text>
+                    <View style={styles.dots}>
+                        {SLIDES.map((_, i) => {
+                            const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
+                            const dotW = scrollX.interpolate({ inputRange, outputRange: [6, 18, 6], extrapolate: 'clamp' });
+                            const dotColor = i === currentIdx ? colors.PRIMARY : colors.BORDER;
+                            return <Animated.View key={i} style={[styles.dot, { width: dotW, backgroundColor: dotColor }]} />;
+                        })}
+                    </View>
                 </View>
 
                 <TouchableOpacity style={styles.nextBtn} onPress={goNext} activeOpacity={0.85}>
@@ -137,9 +167,10 @@ const makeStyles = (
     fontSize: ReturnType<typeof useAppTheme>['fontSize'],
     spacing: ReturnType<typeof useAppTheme>['spacing'],
     radius: ReturnType<typeof useAppTheme>['radius'],
-    width: number,
+    screenWidth: number,
 ) => StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.BACKGROUND },
+    slidesList: { flex: 1 },
 
     topBar: {
         flexDirection: 'row',
@@ -148,58 +179,61 @@ const makeStyles = (
         paddingHorizontal: spacing.xl,
         paddingTop: Platform.OS === 'ios' ? 56 : 36,
     },
+    brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    brandMark: {
+        width: 34, height: 34, borderRadius: 10, backgroundColor: colors.PRIMARY,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    brandMarkText: { color: '#fff', fontSize: 17, fontFamily: fonts.BOLD_PRIMARY },
+    brandName: { fontFamily: fonts.BOLD_PRIMARY, fontSize: fontSize.md, color: colors.PRIMARY, lineHeight: 18 },
+    brandTagline: { fontFamily: fonts.MEDIUM_PRIMARY, fontSize: 10, color: colors.TEXT_SECONDARY },
     skipText: {
         fontFamily: fonts.SEMI_BOLD_PRIMARY,
         fontSize: fontSize.md,
         color: colors.TEXT_SECONDARY,
     },
 
-    slide: { width, flex: 1, alignItems: 'center', paddingHorizontal: spacing.xl, paddingTop: spacing.xl },
+    slide: { width: screenWidth, flex: 1, alignItems: 'center', paddingHorizontal: spacing.xl },
 
-    illustrationCard: {
+    illustrationWrap: {
         width: '100%',
-        aspectRatio: 1,
-        maxHeight: 280,
-        backgroundColor: colors.SURFACE,
-        borderRadius: radius.lg + 8,
+        height: Math.min(340, screenWidth * 0.92),
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: spacing.xl,
-        borderWidth: 1,
-        borderColor: colors.BORDER,
+        marginBottom: spacing.lg,
     },
-    illustrationCircle: {
-        width: 140,
-        height: 140,
-        borderRadius: 70,
-        backgroundColor: colors.PRIMARY_LIGHT,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
+    heroImage: { width: '100%', height: '100%' },
 
     title: {
         fontFamily: fonts.BOLD_PRIMARY,
-        fontSize: 26,
+        fontSize: 28,
         color: colors.TEXT_PRIMARY,
-        textAlign: 'center',
-        lineHeight: 32,
+        textAlign: 'left',
+        alignSelf: 'flex-start',
+        lineHeight: 34,
         marginBottom: spacing.sm,
     },
+    titleAccent: { color: colors.PRIMARY },
     description: {
         fontFamily: fonts.MEDIUM_PRIMARY,
-        fontSize: fontSize.lg,
+        fontSize: fontSize.md,
         color: colors.TEXT_SECONDARY,
-        textAlign: 'center',
-        lineHeight: 22,
-        paddingHorizontal: spacing.md,
+        textAlign: 'left',
+        alignSelf: 'flex-start',
+        lineHeight: 20,
     },
 
     bottomBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         paddingHorizontal: spacing.xl,
         paddingBottom: Platform.OS === 'ios' ? 40 : 28,
-        gap: spacing.xl,
+        paddingTop: spacing.md,
     },
-    dots: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 7 },
+    progressGroup: { gap: 8 },
+    progressCounter: { fontFamily: fonts.MEDIUM_PRIMARY, fontSize: fontSize.sm, color: colors.TEXT_SECONDARY },
+    dots: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     dot: { height: 6, borderRadius: 3 },
     nextBtn: {
         flexDirection: 'row',
@@ -207,12 +241,13 @@ const makeStyles = (
         justifyContent: 'center',
         gap: spacing.sm,
         backgroundColor: colors.PRIMARY,
-        borderRadius: radius.md,
-        paddingVertical: 16,
+        borderRadius: 999,
+        paddingVertical: 14,
+        paddingHorizontal: 26,
     },
     nextBtnText: {
         fontFamily: fonts.BOLD_PRIMARY,
-        fontSize: fontSize.xl,
+        fontSize: fontSize.lg,
         color: '#fff',
     },
 });
