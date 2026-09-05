@@ -94,6 +94,11 @@ export interface Shipment {
     // image when this is set, rather than always trying and failing.
     podUploadedAt: string | null;
 
+    // Real, admin-set expiry a SEARCHING shipment auto-cancels at if no
+    // driver accepts it (kalanabhaBackend's ShipmentExpiryProcessor) —
+    // backs the driver Home screen's real countdown, not a fabricated one.
+    expiresAt: string | null;
+
     // Not returned by kalanabhaBackend (no per-shipment customer snapshot
     // endpoint) — only ever populated when parsed straight from a Firestore
     // shipment doc via utils/parsers.ts::mapShipment.
