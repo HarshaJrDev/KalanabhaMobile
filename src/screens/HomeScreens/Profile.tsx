@@ -377,9 +377,8 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
     },
     statValue: {
         fontSize: RF(24),
-        fontWeight: '800',
-        color: colors.TEXT_PRIMARY,
         fontFamily: fonts.BOLD_PRIMARY,
+        color: colors.TEXT_PRIMARY,
     },
     menuScroll: {
         flex: 1,

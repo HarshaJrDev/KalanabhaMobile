@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import { CheckCircle2, AlertTriangle, Info } from 'lucide-react-native';
 import { useToastStore } from './toastStore';
+import FONTS from '@utils/fonts';
 
 const AUTO_DISMISS_MS = 3500;
 
@@ -90,5 +91,5 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 8,
     },
-    text: { flex: 1, color: '#fff', fontSize: 13, fontWeight: '600' },
+    text: { flex: 1, color: '#fff', fontSize: 13, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
 });

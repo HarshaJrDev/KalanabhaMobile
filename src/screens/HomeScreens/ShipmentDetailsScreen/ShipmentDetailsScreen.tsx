@@ -62,6 +62,7 @@ import {
     type LucideIcon,
 } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
+import FONTS from '@utils/fonts';
 
 const makeC = (BRAND: ReturnType<typeof useAppTheme>['colors']) => ({
     primary: BRAND.PRIMARY,
@@ -513,11 +514,11 @@ const makeStyles = (C: DetailColors) => StyleSheet.create({
     scrollContent: { paddingBottom: 40 },
     loadingWrap: { flex: 1 },
     loadingGrad: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14 },
-    loadingText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+    loadingText: { color: '#fff', fontSize: 15, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: C.bg, padding: 24 },
-    errorText: { fontSize: 15, fontWeight: '600', color: C.text },
+    errorText: { fontSize: 15, fontFamily: FONTS.SEMI_BOLD_PRIMARY, color: C.text },
     backLink: { marginTop: 6, paddingVertical: 8, paddingHorizontal: 16, backgroundColor: C.primary, borderRadius: 10 },
-    backLinkText: { color: '#fff', fontWeight: '700' },
+    backLinkText: { color: '#fff', fontFamily: FONTS.BOLD_PRIMARY },
 
     header: {
         paddingTop: Platform.OS === 'ios' ? 58 : 38,
@@ -532,22 +533,22 @@ const makeStyles = (C: DetailColors) => StyleSheet.create({
 
     headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
     iconBtn: { width: 38, height: 38, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
-    backArrow: { color: '#fff', fontSize: 18, fontWeight: '700' },
+    backArrow: { color: '#fff', fontSize: 18, fontFamily: FONTS.BOLD_PRIMARY },
     shareArrow: { color: '#fff', fontSize: 18 },
-    headerTitle: { color: '#fff', fontSize: 17, fontWeight: '800', letterSpacing: 0.3 },
+    headerTitle: { color: '#fff', fontSize: 17, fontFamily: FONTS.BOLD_PRIMARY, letterSpacing: 0.3 },
 
     idPill: { backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
-    idLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 4 },
+    idLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 10, fontFamily: FONTS.BOLD_PRIMARY, letterSpacing: 1, marginBottom: 4 },
     idRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    idValue: { color: '#fff', fontSize: 15, fontWeight: '800', letterSpacing: 0.3 },
+    idValue: { color: '#fff', fontSize: 15, fontFamily: FONTS.BOLD_PRIMARY, letterSpacing: 0.3 },
     copyBtn: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
     copyBtnDone: { backgroundColor: '#fff' },
 
     statusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     statusPill: { flexDirection: 'row', alignItems: 'center', gap: 7, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 7, backgroundColor: 'rgba(255,255,255,0.18)' },
-    statusLabel: { color: '#fff', fontSize: 13, fontWeight: '700' },
-    bookedLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: '600', textAlign: 'right' },
-    bookedDate: { color: '#fff', fontSize: 12, fontWeight: '700', textAlign: 'right', marginTop: 2 },
+    statusLabel: { color: '#fff', fontSize: 13, fontFamily: FONTS.BOLD_PRIMARY },
+    bookedLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontFamily: FONTS.SEMI_BOLD_PRIMARY, textAlign: 'right' },
+    bookedDate: { color: '#fff', fontSize: 12, fontFamily: FONTS.BOLD_PRIMARY, textAlign: 'right', marginTop: 2 },
 
     body: { padding: 16, gap: 14 },
     card: {
@@ -555,16 +556,16 @@ const makeStyles = (C: DetailColors) => StyleSheet.create({
         shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 14, elevation: 3,
     },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-    cardTitle: { fontSize: 15, fontWeight: '800', color: C.text, marginBottom: 14, letterSpacing: 0.2 },
+    cardTitle: { fontSize: 15, fontFamily: FONTS.BOLD_PRIMARY, color: C.text, marginBottom: 14, letterSpacing: 0.2 },
 
     cancelledBox: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: C.dangerLight, borderRadius: 14, padding: 14 },
-    cancelledText: { flex: 1, fontSize: 13, color: C.danger, fontWeight: '600' },
+    cancelledText: { flex: 1, fontSize: 13, color: C.danger, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
 
     liveBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.successLight, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 10 },
     liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: C.success },
-    liveBadgeText: { fontSize: 10, fontWeight: '800', color: C.success, letterSpacing: 0.5 },
+    liveBadgeText: { fontSize: 10, fontFamily: FONTS.BOLD_PRIMARY, color: C.success, letterSpacing: 0.5 },
     liveTrackingRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    liveTrackingMain: { fontSize: 14, fontWeight: '700', color: C.text },
+    liveTrackingMain: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: C.text },
     liveTrackingSub: { fontSize: 12, color: C.textMid, marginTop: 2 },
 
     timeline: { paddingLeft: 4 },
@@ -580,42 +581,42 @@ const makeStyles = (C: DetailColors) => StyleSheet.create({
     tlLineDone: { backgroundColor: C.primary },
     tlContent: { flex: 1, paddingTop: 6 },
     tlContentSpaced: { marginBottom: 18 },
-    tlLabel: { fontSize: 13, color: C.textLight, fontWeight: '600' },
-    tlLabelDone: { color: C.text, fontWeight: '700' },
+    tlLabel: { fontSize: 13, color: C.textLight, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
+    tlLabelDone: { color: C.text, fontFamily: FONTS.BOLD_PRIMARY },
     tlTime: { fontSize: 11, color: C.textMid, marginTop: 2 },
     tlActivePill: { marginTop: 5, alignSelf: 'flex-start', backgroundColor: C.primaryLight, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-    tlActivePillText: { color: C.primary, fontSize: 10, fontWeight: '700' },
+    tlActivePillText: { color: C.primary, fontSize: 10, fontFamily: FONTS.BOLD_PRIMARY },
 
     routeWrap: { gap: 4 },
     routeNode: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
     routeDot: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
     routeInfo: { flex: 1 },
-    routeRole: { fontSize: 10, fontWeight: '800', color: C.primary, letterSpacing: 1, marginBottom: 2 },
-    routeName: { fontSize: 14, fontWeight: '800', color: C.text },
+    routeRole: { fontSize: 10, fontFamily: FONTS.BOLD_PRIMARY, color: C.primary, letterSpacing: 1, marginBottom: 2 },
+    routeName: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: C.text },
     routeAddr: { fontSize: 12, color: C.textMid, marginTop: 2, lineHeight: 17 },
-    routePhone: { fontSize: 12, color: C.primary, marginTop: 3, fontWeight: '600' },
+    routePhone: { fontSize: 12, color: C.primary, marginTop: 3, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
     routeConnector: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingLeft: 16 },
     routeConnLine: { flex: 1, height: 1.5, backgroundColor: C.border },
     routeArrowBadge: {
         flexDirection: 'row', alignItems: 'center', gap: 5,
         backgroundColor: C.primaryLight, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, marginHorizontal: 10,
     },
-    routeArrowText: { color: C.primary, fontSize: 11, fontWeight: '700' },
+    routeArrowText: { color: C.primary, fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY },
 
     packageGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
     packageItem: { width: '47%', backgroundColor: C.bg, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: C.border, gap: 4 },
-    pkgLabel: { fontSize: 10, color: C.textLight, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' },
-    pkgValue: { fontSize: 14, color: C.text, fontWeight: '800', textTransform: 'capitalize' },
+    pkgLabel: { fontSize: 10, color: C.textLight, fontFamily: FONTS.BOLD_PRIMARY, letterSpacing: 0.5, textTransform: 'uppercase' },
+    pkgValue: { fontSize: 14, color: C.text, fontFamily: FONTS.BOLD_PRIMARY, textTransform: 'capitalize' },
 
     payRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 9 },
-    payLabel: { fontSize: 13, color: C.textMid, fontWeight: '500' },
-    payValue: { fontSize: 13, color: C.text, fontWeight: '600', textTransform: 'capitalize' },
+    payLabel: { fontSize: 13, color: C.textMid, fontFamily: FONTS.MEDIUM_PRIMARY },
+    payValue: { fontSize: 13, color: C.text, fontFamily: FONTS.SEMI_BOLD_PRIMARY, textTransform: 'capitalize' },
     payDivider: { height: 1.5, backgroundColor: C.border, marginVertical: 6 },
     payTotalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 },
-    payTotalLabel: { fontSize: 15, color: C.text, fontWeight: '800' },
-    payTotalValue: { fontSize: 18, color: C.primary, fontWeight: '900' },
+    payTotalLabel: { fontSize: 15, color: C.text, fontFamily: FONTS.BOLD_PRIMARY },
+    payTotalValue: { fontSize: 18, color: C.primary, fontFamily: FONTS.BOLD_PRIMARY },
     payMethodPill: { backgroundColor: C.primaryLight, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
-    payMethodText: { color: C.primary, fontSize: 11, fontWeight: '700' },
+    payMethodText: { color: C.primary, fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY },
 
     actionsGrid: { flexDirection: 'row', padding: 16, gap: 10 },
     actionBtn: { flex: 1, alignItems: 'center', gap: 8 },
@@ -623,5 +624,5 @@ const makeStyles = (C: DetailColors) => StyleSheet.create({
         width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
         shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4,
     },
-    actionBtnLabel: { fontSize: 10, color: C.textMid, fontWeight: '700', textAlign: 'center' },
+    actionBtnLabel: { fontSize: 10, color: C.textMid, fontFamily: FONTS.BOLD_PRIMARY, textAlign: 'center' },
 });

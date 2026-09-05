@@ -8,6 +8,7 @@ import {
 import type { BackendNotification } from '@features/notifications/types';
 import { AsyncState } from '@components/AsyncState';
 import { useAppTheme } from '@theme/ThemeContext';
+import FONTS from '@utils/fonts';
 
 // Screen -> hook -> notifications.api -> GET /notifications/mine -> cache -> UI
 const NotificationScreen = () => {
@@ -70,8 +71,8 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSh
         paddingHorizontal: 16,
         paddingVertical: 14,
     },
-    headerTitle: { fontSize: 18, fontWeight: '700', color: colors.TEXT_PRIMARY },
-    markAllText: { color: colors.PRIMARY, fontSize: 13, fontWeight: '600' },
+    headerTitle: { fontSize: 18, fontFamily: FONTS.BOLD_PRIMARY, color: colors.TEXT_PRIMARY },
+    markAllText: { color: colors.PRIMARY, fontSize: 13, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
     card: {
         backgroundColor: colors.SURFACE,
         marginHorizontal: 16,
@@ -80,7 +81,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSh
         borderRadius: 12,
     },
     cardUnread: { borderLeftWidth: 3, borderLeftColor: colors.PRIMARY },
-    title: { fontSize: 14, fontWeight: '700', color: colors.TEXT_PRIMARY },
+    title: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: colors.TEXT_PRIMARY },
     body: { fontSize: 13, color: colors.TEXT_SECONDARY, marginTop: 4 },
     time: { fontSize: 11, color: colors.GRAY, marginTop: 6 },
 });

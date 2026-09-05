@@ -2,6 +2,7 @@ import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { WifiOff, AlertCircle, Inbox, RefreshCw } from 'lucide-react-native';
 import { useIsOnline } from '@api/network';
+import FONTS from '@utils/fonts';
 
 interface AsyncStateProps {
     isLoading: boolean;
@@ -86,7 +87,7 @@ export const AsyncState: React.FC<AsyncStateProps> = ({
 
 const styles = StyleSheet.create({
     center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 6 },
-    title: { fontSize: 15, fontWeight: '700', color: '#111827', marginTop: 8 },
+    title: { fontSize: 15, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827', marginTop: 8 },
     message: { fontSize: 13, color: '#6B7280', textAlign: 'center' },
     retryButton: {
         flexDirection: 'row',
@@ -98,5 +99,5 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         marginTop: 12,
     },
-    retryText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+    retryText: { color: '#fff', fontFamily: FONTS.SEMI_BOLD_PRIMARY, fontSize: 13 },
 });

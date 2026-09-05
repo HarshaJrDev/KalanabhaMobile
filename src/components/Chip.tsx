@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import FONTS from '@utils/fonts';
 
 interface Props {
     label: string;
@@ -22,6 +23,6 @@ const styles = StyleSheet.create({
     },
     text: {
         fontSize: 11,
-        fontWeight: '600',
+        fontFamily: FONTS.SEMI_BOLD_PRIMARY,
     },
 });

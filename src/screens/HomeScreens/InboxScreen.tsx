@@ -18,6 +18,7 @@ import { useMyShipments } from '@features/shipments/hooks';
 import { useChatMessages } from '@features/chat/hooks';
 import { AsyncState } from '@components/AsyncState';
 import type { Shipment } from '@shipment/types';
+import FONTS from '@utils/fonts';
 
 const ConversationRow = ({ shipment }: { shipment: Shipment }) => {
     const navigation = useNavigation();
@@ -98,7 +99,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: '#EEE',
     },
-    headerTitle: { fontSize: 16, fontWeight: '700' },
+    headerTitle: { fontSize: 16, fontFamily: FONTS.BOLD_PRIMARY },
     list: { padding: 12, gap: 8 },
     row: {
         flexDirection: 'row',
@@ -116,6 +117,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    driverName: { fontSize: 14, fontWeight: '700', color: '#111827' },
+    driverName: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827' },
     preview: { fontSize: 12, color: '#6B7280', marginTop: 2 },
 });

@@ -20,6 +20,7 @@ import { ChevronLeft, ScanLine, QrCode } from 'lucide-react-native';
 import { useMyShipments } from '@features/shipments/hooks';
 import { showToast } from '@ui/alert/toastStore';
 import { colors as BRAND } from '@config/theme';
+import FONTS from '@utils/fonts';
 
 const DUMMY_CODE = 'KL-DEMO-000000';
 
@@ -91,7 +92,7 @@ const styles = StyleSheet.create({
         padding: 16,
         paddingTop: 24,
     },
-    headerTitle: { fontSize: 16, fontWeight: '700', color: '#fff' },
+    headerTitle: { fontSize: 16, fontFamily: FONTS.BOLD_PRIMARY, color: '#fff' },
     body: {
         flex: 1,
         alignItems: 'center',
@@ -123,5 +124,5 @@ const styles = StyleSheet.create({
         paddingVertical: 14,
         borderRadius: 14,
     },
-    scanBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+    scanBtnText: { color: '#fff', fontFamily: FONTS.BOLD_PRIMARY, fontSize: 14 },
 });

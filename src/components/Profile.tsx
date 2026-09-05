@@ -8,6 +8,7 @@ import {
     ScrollView,
 } from 'react-native';
 import { LucideIcon } from 'lucide-react-native';
+import FONTS from '@utils/fonts';
 
 interface ProfileInfoItem {
     label: string;
@@ -111,7 +112,7 @@ const styles = StyleSheet.create({
     },
     name: {
         fontSize: 20,
-        fontWeight: '600',
+        fontFamily: FONTS.SEMI_BOLD_PRIMARY,
         color: '#111',
     },
     bio: {

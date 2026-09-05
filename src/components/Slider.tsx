@@ -10,6 +10,7 @@ import {
     NativeSyntheticEvent,
 } from 'react-native';
 import COLOR from '@utils/color';
+import FONTS from '@utils/fonts';
 
 const { width } = Dimensions.get('window');
 
@@ -117,7 +118,7 @@ const styles = StyleSheet.create({
     label: {
         color: '#fff',
         fontSize: 16,
-        fontWeight: '600',
+        fontFamily: FONTS.SEMI_BOLD_PRIMARY,
     },
     pagination: {
         flexDirection: 'row',

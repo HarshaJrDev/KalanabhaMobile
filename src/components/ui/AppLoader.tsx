@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, Modal, ActivityIndicator, Animated } from 'react-native';
 import { useAppTheme } from '@theme/ThemeContext';
+import FONTS from '@utils/fonts';
 
 export interface AppLoaderProps {
     visible: boolean;
@@ -170,7 +171,7 @@ const makeStyles = (primary: string) =>
         message: {
             color: 'white',
             fontSize: 16,
-            fontWeight: '600',
+            fontFamily: FONTS.SEMI_BOLD_PRIMARY,
             marginTop: 24,
             textAlign: 'center',
         },

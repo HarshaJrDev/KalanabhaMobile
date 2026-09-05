@@ -6,6 +6,7 @@ import { Search, ChevronRight, QrCode } from 'lucide-react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useMyShipments } from '@features/shipments/hooks'
 import { AsyncState } from '@components/AsyncState'
+import FONTS from '@utils/fonts';
 
 // Screen -> useMyShipments -> shipments.api -> GET /shipments/mine -> client
 // filter by trackingId/shipmentId -> UI. There's no backend
@@ -90,6 +91,6 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         padding: 14,
     },
-    trackingId: { fontSize: 14, fontWeight: '700', color: '#111827' },
+    trackingId: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827' },
     route: { fontSize: 12, color: '#6B7280', marginTop: 2 },
 })

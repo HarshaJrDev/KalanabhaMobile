@@ -8,6 +8,7 @@ import {
     FlatList,
 } from 'react-native';
 import { Home, Zap, ShoppingBag, Check, type LucideIcon } from 'lucide-react-native';
+import FONTS from '@utils/fonts';
 
 
 export type UserType = 'HOME' | 'ELECTRIC' | 'SHOP';
@@ -150,7 +151,7 @@ const styles = StyleSheet.create({
 
     triggerText: {
         fontSize: 15,
-        fontWeight: '600',
+        fontFamily: FONTS.SEMI_BOLD_PRIMARY,
         color: '#111827',
     },
 
@@ -179,7 +180,7 @@ const styles = StyleSheet.create({
 
     title: {
         fontSize: 16,
-        fontWeight: '700',
+        fontFamily: FONTS.BOLD_PRIMARY,
         marginBottom: 10,
         color: '#111827',
     },
@@ -217,7 +218,7 @@ const styles = StyleSheet.create({
 
     label: {
         fontSize: 15,
-        fontWeight: '600',
+        fontFamily: FONTS.SEMI_BOLD_PRIMARY,
         color: '#111827',
     },
 
@@ -229,6 +230,6 @@ const styles = StyleSheet.create({
     check: {
         fontSize: 16,
         color: '#2B3FD4',
-        fontWeight: '700',
+        fontFamily: FONTS.BOLD_PRIMARY,
     },
 });

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Send, Phone } from 'lucide-react-native';
 import COLOR from '@utils/color';
+import FONTS from '@utils/fonts';
 
 interface Message {
     id: string;
@@ -163,7 +164,7 @@ const styles = StyleSheet.create({
     },
     headerName: {
         fontSize: 17,
-        fontWeight: '600',
+        fontFamily: FONTS.SEMI_BOLD_PRIMARY,
         marginLeft: 10,
         color: '#222',
     },
