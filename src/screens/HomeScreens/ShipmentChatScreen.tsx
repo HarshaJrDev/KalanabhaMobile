@@ -12,6 +12,7 @@ import {
     Linking,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
     ArrowLeft,
     Send,
@@ -80,7 +81,8 @@ const QUICK_REPLIES = ['Where are you now?', 'Call when outside', 'Leave at the 
 const ShipmentChatScreen = () => {
     const navigation = useNavigation();
     const { colors, isDark } = useAppTheme();
-    const styles = useMemo(() => makeStyles(colors), [colors]);
+    const insets = useSafeAreaInsets();
+    const styles = useMemo(() => makeStyles(colors, insets), [colors, insets]);
     const route = useRoute<RouteProp<RootStackParamList, 'ShipmentChat'>>();
     const shipmentId = route.params?.shipmentId;
     const currentUserId = useAuthStore((s) => s.user?.id);
@@ -301,14 +303,20 @@ export default ShipmentChatScreen;
 
 // Computed from useAppTheme() so this screen repaints correctly in dark
 // mode instead of staying pinned to the light palette baked at import.
-const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
+// Real device safe-area insets, not a bare paddingVertical/padding guess —
+// without them the header sat under the status bar/camera cutout and the
+// input row sat flush against the device's home indicator/gesture bar,
+// same class of overlap bug already fixed elsewhere (onboarding,
+// SelectAccount, the tab bars) but missed on this screen.
+const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], insets: { top: number; bottom: number }) => StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.BACKGROUND },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 14,
-        paddingVertical: 12,
+        paddingTop: insets.top + 10,
+        paddingBottom: 12,
         backgroundColor: colors.SURFACE,
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.BORDER,
@@ -440,7 +448,9 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSh
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        padding: 12,
+        paddingHorizontal: 12,
+        paddingTop: 12,
+        paddingBottom: Math.max(insets.bottom, 12),
         backgroundColor: colors.SURFACE,
         borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: colors.BORDER,
