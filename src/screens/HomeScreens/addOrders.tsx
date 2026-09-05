@@ -221,10 +221,22 @@ const PACKAGE_CATEGORY_ICONS: Record<string, LucideIcon> = {
 };
 const packageCategoryIconFor = (icon: string): LucideIcon => PACKAGE_CATEGORY_ICONS[icon] ?? Package;
 
-const makeServiceTypes = (COLORS: OrderColors): { key: OrderDetailsForm['serviceType']; label: string; desc: string; price: string; days: string; color: string }[] => [
-    { key: 'standard', label: 'Standard', desc: 'Reliable delivery', price: '₹99', days: '3-5 days', color: COLORS.textSecondary },
-    { key: 'express', label: 'Express', desc: 'Faster delivery', price: '₹199', days: '1-2 days', color: COLORS.primary },
-    { key: 'same-day', label: 'Same Day', desc: 'Deliver today', price: '₹349', days: 'Today', color: COLORS.success },
+// Real, admin-set surcharges (GET /settings/business — same
+// 'service_type_express_surcharge'/'service_type_same_day_surcharge'
+// keys PricingService.quote() now actually adds to the price) — this
+// used to show a fixed ₹99/₹199/₹349 regardless of what selecting a
+// service type actually changed about the price (nothing; the backend
+// silently ignored serviceType entirely). Standard carries no
+// surcharge, so it reads "Included" rather than inventing a base fee
+// that was never really its own line item.
+const makeServiceTypes = (
+    COLORS: OrderColors,
+    expressSurcharge: number,
+    sameDaySurcharge: number,
+): { key: OrderDetailsForm['serviceType']; label: string; desc: string; priceLabel: string; days: string; color: string }[] => [
+    { key: 'standard', label: 'Standard', desc: 'Reliable delivery', priceLabel: 'Included', days: '3-5 days', color: COLORS.textSecondary },
+    { key: 'express', label: 'Express', desc: 'Faster delivery', priceLabel: `+₹${expressSurcharge}`, days: '1-2 days', color: COLORS.primary },
+    { key: 'same-day', label: 'Same Day', desc: 'Deliver today', priceLabel: `+₹${sameDaySurcharge}`, days: 'Today', color: COLORS.success },
 ];
 
 // VehicleConfig.icon is a free-text string set by whichever admin created
@@ -1116,7 +1128,13 @@ const StepOrderDetails = ({
     const { colors: BRAND } = useAppTheme();
     const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
     const odStyles = useMemo(() => makeOdStyles(COLORS), [COLORS]);
-    const SERVICE_TYPES = useMemo(() => makeServiceTypes(COLORS), [COLORS]);
+    const { data: businessSettingsData } = useBusinessSettings();
+    const expressSurcharge = Number(businessSettingsData?.find((s) => s.key === 'service_type_express_surcharge')?.value ?? 0);
+    const sameDaySurcharge = Number(businessSettingsData?.find((s) => s.key === 'service_type_same_day_surcharge')?.value ?? 0);
+    const SERVICE_TYPES = useMemo(
+        () => makeServiceTypes(COLORS, expressSurcharge, sameDaySurcharge),
+        [COLORS, expressSurcharge, sameDaySurcharge],
+    );
     // Real, admin-managed vehicle types (GET /settings/vehicle-configs) —
     // previously a hardcoded bike/van/truck array here, so renaming, adding,
     // or deactivating a vehicle type in the admin panel never reached this
@@ -1176,7 +1194,7 @@ const StepOrderDetails = ({
                         <Text style={[odStyles.svcLabel, { color: svc.color }]}>{svc.label}</Text>
                         <Text style={odStyles.svcDesc}>{svc.desc}</Text>
                         <Text style={[odStyles.svcPrice, data.serviceType === svc.key && { color: COLORS.primary }]}>
-                            {svc.price}
+                            {svc.priceLabel}
                         </Text>
                     </TouchableOpacity>
                 ))}
