@@ -90,6 +90,19 @@ export const useShipment = (id: string | undefined) => {
     });
 };
 
+// Screen -> hook -> shipments.api -> GET /shipments/:id/history -> cache
+// -> UI. ShipmentDetailsScreen's Tracking Timeline; real status
+// transitions, not a guessed 'placed'/'picked-up'/'in-transit' sequence.
+export const useShipmentHistory = (id: string | undefined) => {
+    const { isAuthenticated } = useAuthState();
+    return useQuery({
+        queryKey: [...shipmentKeys.detail(id ?? ''), 'history'] as const,
+        queryFn: () => shipmentsApi.getShipmentHistory(id!),
+        enabled: isAuthenticated && !!id,
+        refetchInterval: ACTIVE_SHIPMENT_POLL_MS,
+    });
+};
+
 export const useQuoteShipment = () => {
     return useMutation({
         mutationFn: (payload: QuoteShipmentPayload) => shipmentsApi.quoteShipment(payload),

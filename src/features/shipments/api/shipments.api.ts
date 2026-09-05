@@ -6,6 +6,7 @@ import type {
     CreateShipmentPayload,
     QuoteShipmentPayload,
     ShipmentQuote,
+    ShipmentStatusHistoryEntry,
 } from '../types';
 
 // One-to-one with kalanabhaBackend/src/modules/shipments/controllers/shipments.controller.ts
@@ -75,6 +76,16 @@ export const getAllShipmentsForAdmin = async (
 
 export const getShipmentById = async (id: string): Promise<BackendShipment> => {
     const { data } = await apiClient.get<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}`);
+    return data.data;
+};
+
+// One real row per real status transition (kalanabhaBackend's
+// ShipmentStatusHistory model) — ShipmentDetailsScreen's Tracking Timeline
+// reads this instead of a fabricated 'placed'/'picked'/'in-transit' guess,
+// so it shows real timestamps and never claims a step happened that
+// didn't (same ownership check as getShipmentById).
+export const getShipmentHistory = async (id: string): Promise<ShipmentStatusHistoryEntry[]> => {
+    const { data } = await apiClient.get<ApiSuccessResponse<ShipmentStatusHistoryEntry[]>>(`/shipments/${id}/history`);
     return data.data;
 };
 
