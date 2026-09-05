@@ -45,6 +45,7 @@ import { useChatMessages, useChatSocket, useSendMessage } from '@features/chat/h
 import { normalizeError } from '@utils/error';
 import { useTabBarContentPadding } from '../screens/navigation/useTabBarStyle';
 import { showToast } from '@ui/alert/toastStore';
+import FONTS from '@utils/fonts';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -386,7 +387,7 @@ const LogisticsCard: React.FC<{
                     style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}
                 >
                     <MessageCircle size={14} color="#2563EB" />
-                    <Text style={{ color: '#2563EB', fontSize: 12, fontWeight: '600' }}>
+                    <Text style={{ color: '#2563EB', fontSize: 12, fontFamily: FONTS.SEMI_BOLD_PRIMARY }}>
                         {chatOpen ? 'Close chat' : 'Chat with customer / admin'}
                     </Text>
                 </TouchableOpacity>
@@ -421,7 +422,7 @@ const LogisticsCard: React.FC<{
                                 backgroundColor: '#2563EB', borderRadius: 8, opacity: sending ? 0.6 : 1,
                                 paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center',
                             }}>
-                                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>Send</Text>
+                                <Text style={{ color: '#fff', fontFamily: FONTS.BOLD_PRIMARY, fontSize: 12 }}>Send</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -507,7 +508,7 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontSize: 15,
-        fontWeight: '700',
+        fontFamily: FONTS.BOLD_PRIMARY,
         color: '#1F2937',
     },
     headerSubtitle: {
@@ -517,7 +518,7 @@ const styles = StyleSheet.create({
     },
     price: {
         fontSize: 18,
-        fontWeight: '800',
+        fontFamily: FONTS.BOLD_PRIMARY,
         color: '#000',
     },
     route: {
@@ -542,7 +543,7 @@ const styles = StyleSheet.create({
     location: {
         fontSize: 13,
         color: '#374151',
-        fontWeight: '500',
+        fontFamily: FONTS.MEDIUM_PRIMARY,
     },
     metaRow: {
         flexDirection: 'row',
@@ -561,7 +562,7 @@ const styles = StyleSheet.create({
     metaText: {
         fontSize: 12,
         color: '#6B7280',
-        fontWeight: '500',
+        fontFamily: FONTS.MEDIUM_PRIMARY,
     },
     statusPill: {
         paddingHorizontal: 10,
@@ -571,7 +572,7 @@ const styles = StyleSheet.create({
     statusText: {
         color: '#FFF',
         fontSize: 11,
-        fontWeight: '700',
+        fontFamily: FONTS.BOLD_PRIMARY,
     },
     actionBar: {
         flexDirection: 'row',
@@ -596,7 +597,7 @@ const styles = StyleSheet.create({
     actionText: {
         fontSize: 11,
         marginTop: 4,
-        fontWeight: '600',
+        fontFamily: FONTS.SEMI_BOLD_PRIMARY,
         color: '#000',
     },
     actionTextPrimary: {
