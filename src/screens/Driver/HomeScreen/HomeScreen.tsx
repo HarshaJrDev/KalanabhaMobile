@@ -166,6 +166,29 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     const [dismissedIncomingId, setDismissedIncomingId] = useState<string | null>(null);
     const showIncomingCard = incomingRequest && incomingRequest.id !== dismissedIncomingId;
 
+    // Real countdown to the shipment's real, admin-set expiry
+    // (Shipment.expiresAt, set by kalanabhaBackend's ShipmentsService.create
+    // and enforced by ShipmentExpiryProcessor) — ticks down to 0 and stays
+    // there; not a fabricated timer.
+    const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
+    useEffect(() => {
+        if (!incomingRequest?.expiresAt) {
+            setRemainingSeconds(null);
+            return;
+        }
+        const expiresAtMs = new Date(incomingRequest.expiresAt).getTime();
+        const tick = () => {
+            setRemainingSeconds(Math.max(0, Math.round((expiresAtMs - Date.now()) / 1000)));
+        };
+        tick();
+        const interval = setInterval(tick, 1000);
+        return () => clearInterval(interval);
+    }, [incomingRequest?.expiresAt]);
+
+    const countdownLabel = remainingSeconds === null
+        ? null
+        : `${String(Math.floor(remainingSeconds / 60)).padStart(2, '0')}:${String(remainingSeconds % 60).padStart(2, '0')}`;
+
     const handleAcceptIncoming = () => {
         if (!incomingRequest) return;
         acceptIncoming(undefined, {
@@ -338,15 +361,22 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                 {/* 📥 Incoming Load Request — the top searching-pool
                     shipment, styled as the reference mockup's hero card.
                     Every figure on it is real (price/distanceKm/package/
-                    sender/insured flag); no surge, demand-radar,
-                    countdown-with-expiry, acceptance-score, or OTP claim —
-                    none of those exist anywhere in the backend. */}
+                    sender/insured flag); the countdown is real too — backed
+                    by Shipment.expiresAt (kalanabhaBackend's
+                    ShipmentExpiryProcessor auto-cancels it at 0). No surge,
+                    demand-radar, acceptance-score, or OTP claim — none of
+                    those exist anywhere in the backend. */}
                 {showIncomingCard && incomingRequest && (
                     <Animated.View entering={FadeIn} style={styles.incomingCard}>
                         <View style={styles.incomingHeaderRow}>
                             <Text style={styles.incomingHeaderText}>
                                 {incomingRequest.category === 'HOUSE_SHIFTING' ? 'INCOMING MOVE REQUEST' : 'INCOMING LOAD REQUEST'}
                             </Text>
+                            {countdownLabel !== null && (
+                                <View style={styles.incomingCountdownPill}>
+                                    <Text style={styles.incomingCountdownText}>{countdownLabel}</Text>
+                                </View>
+                            )}
                             <TouchableOpacity onPress={() => setDismissedIncomingId(incomingRequest.id)} hitSlop={8}>
                                 <X size={16} color="#9CA3AF" />
                             </TouchableOpacity>
@@ -742,7 +772,9 @@ const styles = StyleSheet.create({
         shadowRadius: 10,
     },
     incomingHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-    incomingHeaderText: { fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY, color: '#FF7518', letterSpacing: 0.5 },
+    incomingHeaderText: { fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY, color: '#FF7518', letterSpacing: 0.5, flex: 1 },
+    incomingCountdownPill: { backgroundColor: '#FFF1E6', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, marginRight: 8 },
+    incomingCountdownText: { fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY, color: '#FF7518', letterSpacing: 0.5 },
     incomingPriceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
     incomingPrice: { fontSize: 26, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827' },
     incomingPaymentPill: { backgroundColor: '#F3F4F6', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },

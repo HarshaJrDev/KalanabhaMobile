@@ -84,6 +84,12 @@ export interface BackendShipment {
     // whether "Download POD" has anything real to show.
     podUploadedAt: string | null;
 
+    // Real, admin-set expiry (BusinessSetting
+    // 'shipment_search_expiry_minutes') a SEARCHING shipment auto-cancels
+    // at if no driver accepts it — set on creation, backing the driver
+    // Home screen's real countdown on the incoming-request card.
+    expiresAt: string | null;
+
     createdAt: string;
     updatedAt: string;
 }
