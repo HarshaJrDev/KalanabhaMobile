@@ -12,7 +12,7 @@ import {
     Pressable,
     Dimensions,
     TextInput,
-    Alert,
+    Modal,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
@@ -467,6 +467,8 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({ item, index, onPress, style
     const VehicleIcon = VEHICLE_ICONS[item.vehicleType] || Truck;
     const CategoryIcon = CATEGORY_ICONS[item.package?.category] || Package;
     const { mutate: cancelShipment, isPending: cancelling } = useCancelShipment(item.id);
+    const [cancelModalOpen, setCancelModalOpen] = useState(false);
+    const [cancelReason, setCancelReason] = useState('');
 
     const createdDate = item.createdAt?.seconds ? new Date(item.createdAt.seconds * 1000) : new Date();
     const isToday = createdDate.toDateString() === new Date().toDateString();
@@ -485,15 +487,20 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({ item, index, onPress, style
         .slice(0, 2)
         .toUpperCase();
 
+    // Was a plain confirm — now collects a real, optional reason
+    // (kalanabhaBackend e5a03c6, ShipmentStatusHistory.reason) so admin can
+    // actually see why orders are being dropped instead of every
+    // cancellation history row reading reason: null.
     const handleCancel = () => {
-        Alert.alert('Cancel this order?', `${item.trackingId} will be cancelled.`, [
-            { text: 'No', style: 'cancel' },
-            {
-                text: 'Yes, cancel',
-                style: 'destructive',
-                onPress: () => cancelShipment(undefined, { onError: () => showToast('Could not cancel — try again', 'error') }),
-            },
-        ]);
+        setCancelReason('');
+        setCancelModalOpen(true);
+    };
+
+    const confirmCancel = () => {
+        setCancelModalOpen(false);
+        cancelShipment(cancelReason.trim() || undefined, {
+            onError: () => showToast('Could not cancel — try again', 'error'),
+        });
     };
 
     return (
@@ -659,6 +666,34 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({ item, index, onPress, style
                     )}
                 </View>
             </Pressable>
+
+            <Modal visible={cancelModalOpen} transparent animationType="fade" onRequestClose={() => setCancelModalOpen(false)}>
+                <View style={styles.cancelOverlay}>
+                    <View style={styles.cancelCard}>
+                        <Text style={[styles.cancelTitle, { fontFamily: FONTS.BOLD_PRIMARY }]}>Cancel this order?</Text>
+                        <Text style={[styles.cancelSubtitle, { fontFamily: FONTS.PRIMARY }]}>
+                            {item.trackingId} will be cancelled. Let us know why (optional) — it helps us improve.
+                        </Text>
+                        <TextInput
+                            style={[styles.cancelInput, { fontFamily: FONTS.MEDIUM_PRIMARY }]}
+                            value={cancelReason}
+                            onChangeText={setCancelReason}
+                            placeholder="e.g. Found a better price, booked by mistake…"
+                            placeholderTextColor={C.textLight}
+                            multiline
+                            maxLength={280}
+                        />
+                        <View style={styles.cancelActions}>
+                            <TouchableOpacity style={styles.cancelBackBtn} onPress={() => setCancelModalOpen(false)}>
+                                <Text style={[styles.cancelBackText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>Keep Order</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.cancelConfirmBtn} onPress={confirmCancel}>
+                                <Text style={[styles.cancelConfirmText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>Yes, Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </Animated.View>
     );
 };
@@ -1015,4 +1050,25 @@ const makeStyles = (C: ListColors) => StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    cancelOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+    cancelCard: { width: '100%', maxWidth: 380, backgroundColor: C.card, borderRadius: 16, padding: 20 },
+    cancelTitle: { fontSize: 16, color: C.text, marginBottom: 6 },
+    cancelSubtitle: { fontSize: 12, color: C.textLight, marginBottom: 14, lineHeight: 17 },
+    cancelInput: {
+        borderWidth: 1,
+        borderColor: C.border,
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        fontSize: 13,
+        color: C.text,
+        minHeight: 70,
+        textAlignVertical: 'top',
+        marginBottom: 16,
+    },
+    cancelActions: { flexDirection: 'row', gap: 10 },
+    cancelBackBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', backgroundColor: C.bg },
+    cancelBackText: { fontSize: 13, color: C.text },
+    cancelConfirmBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', backgroundColor: C.danger },
+    cancelConfirmText: { fontSize: 13, color: '#FFFFFF' },
 });
