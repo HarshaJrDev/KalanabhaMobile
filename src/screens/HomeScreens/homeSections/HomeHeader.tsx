@@ -8,11 +8,17 @@
 // real address, with its own loading/retry state independent of the rest
 // of the screen — a GPS failure here shouldn't block booking.
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput, Platform, Animated } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput, Platform, Animated, Image } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { MapPin, Bell, Search, QrCode, Users, MessageCircle, Zap, ChevronRight, RotateCw } from 'lucide-react-native';
 import { useAutoAddress } from '@location/useAutoAddress';
 import { HomeColors, HomeFonts, SPACING } from './theme';
+
+// Free, license-free (Pixabay Content License — no attribution required),
+// verified-working (200 OK, image/png, real alpha transparency) delivery
+// truck silhouette — used as a tinted decorative accent, not a fabricated
+// "photo" of any real vehicle or brand: https://pixabay.com/vectors/vans-delivery-trucks-automobile-5572117/
+const TRUCK_ILLUSTRATION_URL = 'https://cdn.pixabay.com/photo/2020/09/14/20/39/vans-5572117_1280.png';
 
 interface Props {
     userName: string;
@@ -84,6 +90,11 @@ const HomeHeader: React.FC<Props> = ({
             <LinearGradient colors={[COLORS.gradientStart, COLORS.gradientEnd]} style={styles.header}>
                 <View style={styles.deco1} />
                 <View style={styles.deco2} />
+                <Image
+                    source={{ uri: TRUCK_ILLUSTRATION_URL }}
+                    resizeMode="contain"
+                    style={styles.truckDeco}
+                />
 
                 <View style={styles.brandRow}>
                     <View style={styles.brandLeft}>
@@ -184,6 +195,14 @@ const makeStyles = (COLORS: HomeColors, FONTS: HomeFonts) => StyleSheet.create({
     },
     deco1: { position: 'absolute', top: -60, right: -40, width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(255,255,255,0.08)' },
     deco2: { position: 'absolute', bottom: -30, left: -30, width: 100, height: 100, borderRadius: 50, backgroundColor: 'rgba(255,255,255,0.05)' },
+    // Tinted decorative illustration, not a photo of any real vehicle/brand
+    // — a free (Pixabay, no-attribution) truck silhouette recolored to the
+    // header's own palette via tintColor, sitting low-opacity behind the
+    // real content so it reads as texture rather than a competing image.
+    truckDeco: {
+        position: 'absolute', bottom: -8, right: -18, width: 190, height: 100,
+        opacity: 0.16, tintColor: '#fff',
+    },
     brandRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 },
     brandLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     brandMark: { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
