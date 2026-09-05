@@ -53,7 +53,6 @@ const TabButton = memo(
         onPress,
         activeColor,
         inactiveColor,
-        pillColor,
         dot,
         dotColor,
     }: {
@@ -63,7 +62,6 @@ const TabButton = memo(
         onPress: () => void;
         activeColor: string;
         inactiveColor: string;
-        pillColor: string;
         dot?: boolean;
         dotColor?: string;
     }) => {
@@ -73,10 +71,6 @@ const TabButton = memo(
             progress.value = withSpring(focused ? 1 : 0, { damping: 16, stiffness: 180 });
         }, [focused, progress]);
 
-        const pillStyle = useAnimatedStyle(() => ({
-            opacity: progress.value,
-            transform: [{ scale: 0.7 + progress.value * 0.3 }],
-        }));
         const iconStyle = useAnimatedStyle(() => ({
             transform: [{ translateY: -progress.value * 3 }],
         }));
@@ -87,7 +81,6 @@ const TabButton = memo(
 
         return (
             <Pressable onPress={onPress} style={styles.tabButton} hitSlop={8}>
-                <Animated.View style={[styles.pill, pillStyle, { backgroundColor: pillColor }]} />
                 <View>
                     <Animated.View style={iconStyle}>
                         <Icon size={21} color={focused ? activeColor : inactiveColor} strokeWidth={focused ? 2.4 : 2} />
@@ -120,7 +113,6 @@ const CenterButton = memo(({ onPress, color }: { onPress: () => void; color: str
             style={styles.centerSlot}
             hitSlop={10}
         >
-            <View style={[styles.centerGlow, { backgroundColor: color }]} />
             <Animated.View style={[styles.centerBtn, style, { backgroundColor: color, shadowColor: color }]}>
                 <Plus size={26} color="#fff" strokeWidth={2.5} />
             </Animated.View>
@@ -175,7 +167,6 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
                             onPress={onPress}
                             activeColor={colors.PRIMARY}
                             inactiveColor={colors.GRAY}
-                            pillColor={colors.PRIMARY_LIGHT}
                             dot={dot}
                             dotColor={route.name === 'Notification' ? colors.DANGER : undefined}
                         />
@@ -233,13 +224,6 @@ const styles = StyleSheet.create({
         gap: 2,
         height: 48,
     },
-    pill: {
-        position: 'absolute',
-        top: 0,
-        width: 52,
-        height: 40,
-        borderRadius: 16,
-    },
     tabLabel: {
         fontSize: 9.5,
         fontWeight: '700',
@@ -263,16 +247,6 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'flex-start',
-    },
-    // A soft, low-opacity halo behind the FAB — the "glow" seen in the
-    // reference mockup — sitting under the button itself in z-order.
-    centerGlow: {
-        position: 'absolute',
-        top: -34,
-        width: 90,
-        height: 90,
-        borderRadius: 45,
-        opacity: 0.18,
     },
     centerBtn: {
         width: 54,
