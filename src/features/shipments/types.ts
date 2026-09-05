@@ -79,6 +79,11 @@ export interface BackendShipment {
     fragile: boolean;
     insuranceRequested: boolean;
 
+    // null until the driver actually uploads one via POST
+    // /shipments/:id/pod — ShipmentDetailsScreen.tsx uses this to know
+    // whether "Download POD" has anything real to show.
+    podUploadedAt: string | null;
+
     createdAt: string;
     updatedAt: string;
 }

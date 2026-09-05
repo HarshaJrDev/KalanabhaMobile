@@ -40,7 +40,9 @@ import {
     cancelShipment as cancelShipmentRequest,
     completeDelivery as completeDeliveryRequest,
     startDelivery as startDeliveryRequest,
+    uploadShipmentPod,
 } from '@features/shipments/api/shipments.api';
+import { launchCamera } from 'react-native-image-picker';
 import { useChatMessages, useChatSocket, useSendMessage } from '@features/chat/hooks';
 import { normalizeError } from '@utils/error';
 import { useTabBarContentPadding } from '../screens/navigation/useTabBarStyle';
@@ -159,13 +161,35 @@ const useDriverActions = () => {
         }
     }, []);
 
-    const onCompleteDelivery = useCallback(async (id: string) => {
-        try {
-            await completeDeliveryRequest(id);
-            showToast('Delivery completed!', 'success');
-        } catch (err) {
-            showToast(normalizeError(err) || 'Failed to complete delivery', 'error');
-        }
+    // Real Proof of Delivery now (kalanabhaBackend 03b5839,
+    // POST /shipments/:id/pod) — a photo is required to complete a
+    // delivery instead of a driver being able to mark DELIVERED with no
+    // verification at all. Cancelling the camera just aborts (the
+    // shipment stays IN_TRANSIT, driver can tap Complete again); a failed
+    // upload also aborts rather than completing without real proof.
+    const onCompleteDelivery = useCallback((id: string) => {
+        launchCamera({ mediaType: 'photo', quality: 0.8, saveToPhotos: false }, async (response) => {
+            if (response.didCancel) return;
+            const asset = response.assets?.[0];
+            if (response.errorCode || !asset?.uri) {
+                showToast('Could not capture a photo — try again', 'error');
+                return;
+            }
+
+            try {
+                await uploadShipmentPod(id, asset.uri, asset.fileName ?? 'proof-of-delivery.jpg', asset.type ?? 'image/jpeg');
+            } catch (err) {
+                showToast(normalizeError(err) || 'Proof-of-delivery upload failed — try again', 'error');
+                return;
+            }
+
+            try {
+                await completeDeliveryRequest(id);
+                showToast('Delivery completed!', 'success');
+            } catch (err) {
+                showToast(normalizeError(err) || 'Failed to complete delivery', 'error');
+            }
+        });
     }, []);
 
     return { onAccept, onStartDelivery, onCompleteDelivery };
