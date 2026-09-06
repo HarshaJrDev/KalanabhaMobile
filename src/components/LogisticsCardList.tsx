@@ -38,9 +38,7 @@ import { useAuthStore } from '@features/store/authStore';
 import {
     acceptShipment as acceptShipmentRequest,
     cancelShipment as cancelShipmentRequest,
-    completeDelivery as completeDeliveryRequest,
     startDelivery as startDeliveryRequest,
-    uploadShipmentPod,
     uploadPickupProof,
     arriveAtShipment,
 } from '@features/shipments/api/shipments.api';
@@ -50,6 +48,7 @@ import { useChatMessages, useChatSocket, useSendMessage } from '@features/chat/h
 import { normalizeError } from '@utils/error';
 import { useTabBarContentPadding } from '../screens/navigation/useTabBarStyle';
 import { showToast } from '@ui/alert/toastStore';
+import { requestCompleteDelivery } from '@ui/alert/deliveryCompletionStore';
 import { requestOtp } from '@ui/alert/deliveryOtpStore';
 import FONTS from '@utils/fonts';
 
@@ -228,43 +227,15 @@ export const useDriverActions = () => {
         })();
     }, []);
 
-    // Real Proof of Delivery (kalanabhaBackend 03b5839, POST
-    // /shipments/:id/pod) plus a real delivery OTP (kalanabhaBackend
-    // d17a770, POST /shipments/:id/complete now verifies it server-side) —
-    // a driver needs both a photo AND the code the customer reads out to
-    // mark a shipment DELIVERED, instead of either nothing at all or just
-    // a photo with no link back to the actual customer. Cancelling the OTP
-    // prompt or the camera just aborts (shipment stays IN_TRANSIT, driver
-    // can tap Complete again); a failed upload or wrong OTP also aborts
-    // rather than completing without real proof/verification.
+    // Complete Delivery is visible immediately after Accept — no GPS/
+    // arrival prerequisite (product decision, kalanabhaBackend 81263b1).
+    // Opens the real Delivery Completion Sheet (OTP + photos + optional
+    // signature, each step independently verified server-side) instead
+    // of the previous single OTP-prompt-then-camera sequence.
     const onCompleteDelivery = useCallback((id: string) => {
-        (async () => {
-            const otp = await requestOtp('delivery');
-            if (!otp) return;
-
-            launchCamera({ mediaType: 'photo', quality: 0.8, saveToPhotos: false }, async (response) => {
-                if (response.didCancel) return;
-                const asset = response.assets?.[0];
-                if (response.errorCode || !asset?.uri) {
-                    showToast('Could not capture a photo — try again', 'error');
-                    return;
-                }
-
-                try {
-                    await uploadShipmentPod(id, asset.uri, asset.fileName ?? 'proof-of-delivery.jpg', asset.type ?? 'image/jpeg');
-                } catch (err) {
-                    showToast(normalizeError(err) || 'Proof-of-delivery upload failed — try again', 'error');
-                    return;
-                }
-
-                try {
-                    await completeDeliveryRequest(id, otp);
-                    showToast('Delivery completed!', 'success');
-                } catch (err) {
-                    showToast(normalizeError(err) || 'Incorrect OTP or failed to complete delivery', 'error');
-                }
-            });
-        })();
+        requestCompleteDelivery(id).then((completed) => {
+            if (completed) showToast('Delivery completed!', 'success');
+        });
     }, []);
 
     return { onAccept, onArrive, onStartDelivery, onCompleteDelivery };
@@ -440,21 +411,13 @@ const LogisticsCard: React.FC<{
                         />
                     )}
 
-                    {/* Arrival-state-aware CTA (kalanabhaBackend 7708464)
-                        — only ever one action at a time, driven by the
-                        shipment's own real arrivalState, not the previous
-                        single "Start"/"Complete" button that skipped
-                        arrival entirely. */}
-                    {isDriver && isAssignedToMe && item.status === 'accepted' && item.arrivalState === 'EN_ROUTE_TO_PICKUP' && (
-                        <ActionButton
-                            icon={<MapPin size={16} color="#FFF" />}
-                            label="I've Arrived"
-                            primary
-                            onPress={() => driverActions.onArrive(item.id)}
-                        />
-                    )}
-
-                    {isDriver && isAssignedToMe && item.status === 'accepted' && item.arrivalState === 'ARRIVED_AT_PICKUP' && (
+                    {/* Status-driven CTA — visible immediately after the
+                        relevant transition, no GPS/arrival prerequisite
+                        (product decision, kalanabhaBackend 81263b1).
+                        "Complete" opens the real Delivery Completion
+                        Sheet (OTP + photos + optional signature) instead
+                        of completing on a single tap. */}
+                    {isDriver && isAssignedToMe && item.status === 'accepted' && (
                         <ActionButton
                             icon={<Truck size={16} color="#FFF" />}
                             label="Verify Pickup"
@@ -463,40 +426,12 @@ const LogisticsCard: React.FC<{
                         />
                     )}
 
-                    {isDriver && isAssignedToMe && item.status === 'in_transit' && item.arrivalState === 'EN_ROUTE_TO_DROP' && (
-                        <ActionButton
-                            icon={<MapPin size={16} color="#FFF" />}
-                            label="I've Arrived"
-                            primary
-                            onPress={() => driverActions.onArrive(item.id)}
-                        />
-                    )}
-
-                    {isDriver && isAssignedToMe && item.status === 'in_transit' && item.arrivalState === 'ARRIVED_AT_DROP' && (
+                    {isDriver && isAssignedToMe && item.status === 'in_transit' && (
                         <ActionButton
                             icon={<Check size={16} color="#FFF" />}
-                            label="Complete"
+                            label="Complete Delivery"
                             primary
                             onPress={() => driverActions.onCompleteDelivery(item.id)}
-                        />
-                    )}
-
-                    {/* DEV-only GPS simulation — see onArrive's comment.
-                        Only ever renders in a dev build, and only ever
-                        calls the real /arrive endpoint with the
-                        shipment's own real pickup/drop coordinates. */}
-                    {__DEV__ && isDriver && isAssignedToMe && (item.arrivalState === 'EN_ROUTE_TO_PICKUP' || item.arrivalState === 'EN_ROUTE_TO_DROP') && (
-                        <ActionButton
-                            icon={<MapPin size={16} color="#000" />}
-                            label="Simulate Arrival"
-                            onPress={() =>
-                                driverActions.onArrive(
-                                    item.id,
-                                    item.arrivalState === 'EN_ROUTE_TO_PICKUP'
-                                        ? { latitude: item.pickup.lat, longitude: item.pickup.lng }
-                                        : { latitude: item.drop.lat, longitude: item.drop.lng },
-                                )
-                            }
                         />
                     )}
                 </View>

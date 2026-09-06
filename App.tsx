@@ -9,6 +9,7 @@ import { queryClient } from './src/api/queryClient';
 import { initNetworkMonitoring } from './src/api/network';
 import { GlobalToast } from '@ui/alert/GlobalToast';
 import { GlobalDeliveryOtpModal } from '@ui/alert/GlobalDeliveryOtpModal';
+import { GlobalDeliveryCompletionSheet } from '@ui/alert/GlobalDeliveryCompletionSheet';
 import { registerFCMToken, setupFCMListeners } from '@utils/cm';
 import { navigationRef, flushPendingNotificationTarget, handleNotificationTap } from '@features/notifications/deepLink';
 import { ThemeProvider, useAppTheme } from '@theme/ThemeContext';
@@ -87,6 +88,7 @@ const App = () => {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <GlobalToast />
         <GlobalDeliveryOtpModal />
+        <GlobalDeliveryCompletionSheet />
         <NavigationContainer ref={navigationRef} onReady={flushPendingNotificationTarget}>
           <Stack.Navigator
             screenOptions={{ headerShown: false }}

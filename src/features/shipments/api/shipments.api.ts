@@ -135,6 +135,23 @@ export const completeDelivery = async (id: string, otp: string): Promise<Backend
     return data.data;
 };
 
+// driver only — checks the delivery OTP without transitioning the
+// shipment (kalanabhaBackend 81263b1), so the Delivery Completion Sheet
+// can show a real ✓ before photos/signature are captured. Throws (via
+// apiClient's interceptor -> ApiError) with the real remaining-attempts
+// message on a wrong code.
+export const verifyDeliveryOtp = async (id: string, otp: string): Promise<{ verified: boolean }> => {
+    const { data } = await apiClient.post<ApiSuccessResponse<{ verified: boolean }>>(`/shipments/${id}/delivery/verify-otp`, { otp });
+    return data.data;
+};
+
+// driver only — optional third completion step. `strokes` is real
+// captured pen geometry (an array of point arrays), not a photo.
+export const saveDeliverySignature = async (id: string, strokes: { x: number; y: number }[][]): Promise<BackendShipment> => {
+    const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/signature`, { strokes });
+    return data.data;
+};
+
 // customer (owner) or admin/dispatcher — reason is optional, stored on the
 // real ShipmentStatusHistory.reason column (kalanabhaBackend e5a03c6).
 export const cancelShipment = async (id: string, reason?: string): Promise<BackendShipment> => {

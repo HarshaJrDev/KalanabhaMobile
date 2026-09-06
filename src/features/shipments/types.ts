@@ -113,6 +113,11 @@ export interface BackendShipment {
     pickupArrivedAt: string | null;
     dropArrivedAt: string | null;
 
+    // null until the driver saves one via POST /shipments/:id/signature
+    // (kalanabhaBackend 81263b1) — optional completion step, real
+    // captured stroke geometry, not exposed as an image.
+    deliverySignatureCapturedAt: string | null;
+
     // Real, admin-set expiry (BusinessSetting
     // 'shipment_search_expiry_minutes') a SEARCHING shipment auto-cancels
     // at if no driver accepts it — set on creation, backing the driver

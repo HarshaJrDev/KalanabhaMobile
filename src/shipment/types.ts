@@ -114,6 +114,10 @@ export interface Shipment {
     pickupArrivedAt: string | null;
     dropArrivedAt: string | null;
 
+    // null until the driver saves one (POST /shipments/:id/signature) —
+    // optional delivery completion step.
+    deliverySignatureCapturedAt: string | null;
+
     // Real, admin-set expiry a SEARCHING shipment auto-cancels at if no
     // driver accepts it (kalanabhaBackend's ShipmentExpiryProcessor) —
     // backs the driver Home screen's real countdown, not a fabricated one.

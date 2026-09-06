@@ -45,6 +45,7 @@ export const toShipment = (row: BackendShipment): Shipment => ({
     arrivalState: row.arrivalState ?? 'NONE',
     pickupArrivedAt: row.pickupArrivedAt ?? null,
     dropArrivedAt: row.dropArrivedAt ?? null,
+    deliverySignatureCapturedAt: row.deliverySignatureCapturedAt ?? null,
     expiresAt: row.expiresAt ?? null,
     dispatch: row.dispatch
         ? {
