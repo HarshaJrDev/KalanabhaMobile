@@ -30,7 +30,6 @@ import {
     Pressable,
     Alert,
     ActivityIndicator,
-    Linking,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
@@ -51,8 +50,6 @@ import { useAuthStore } from '@features/store/authStore';
 import { showToast } from '@ui/alert/toastStore';
 import { useAppTheme } from '@theme/ThemeContext';
 
-const SUPPORT_EMAIL = 'support@kalanabha.com';
-
 type ProfileOption = {
     id: string;
     title: string;
@@ -71,11 +68,12 @@ const useProfileActions = () => {
         showToast(`${feature} is coming soon`, 'info');
     }, []);
 
+    // Real ticket system now (kalanabhaBackend SupportController, already
+    // used by the admin panel) instead of only a mailto: link — a raised
+    // ticket gets a real reply thread here.
     const goSupport = useCallback(() => {
-        Linking.openURL(`mailto:${SUPPORT_EMAIL}`).catch(() =>
-            showToast('No email app is set up on this device', 'error'),
-        );
-    }, []);
+        navigation.navigate('SupportTickets' as never);
+    }, [navigation]);
 
     const logout = useCallback(() => {
         Alert.alert('Logout', 'Are you sure you want to log out?', [

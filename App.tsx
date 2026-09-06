@@ -138,6 +138,9 @@ import DriverDocumentsScreen from '@screens/Driver/DriverDocumentsScreen';
 import RatingScreen from '@screens/HomeScreens/RatingScreen';
 import CustomerSettingsScreen from '@screens/HomeScreens/SettingsScreen';
 import TransactionsScreen from '@screens/HomeScreens/TransactionsScreen';
+import SupportTicketsScreen from '@screens/HomeScreens/SupportTicketsScreen';
+import NewTicketScreen from '@screens/HomeScreens/NewTicketScreen';
+import TicketDetailScreen from '@screens/HomeScreens/TicketDetailScreen';
 
 // Screens
 import notification from '@screens/HomeScreens/notification';
@@ -238,6 +241,9 @@ const App = () => {
                 <Stack.Screen name="Rating" component={RatingScreen} />
                 <Stack.Screen name="Settings" component={CustomerSettingsScreen} />
                 <Stack.Screen name="Transactions" component={TransactionsScreen} />
+                <Stack.Screen name="SupportTickets" component={SupportTicketsScreen} />
+                <Stack.Screen name="NewTicket" component={NewTicketScreen} />
+                <Stack.Screen name="TicketDetail" component={TicketDetailScreen} />
               </>
             )}
 

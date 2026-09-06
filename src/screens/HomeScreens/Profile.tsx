@@ -9,7 +9,6 @@ import {
     Modal,
     KeyboardAvoidingView,
     Platform,
-    Linking,
 } from 'react-native';
 import {
     ChevronRight,
@@ -34,8 +33,6 @@ import AppTextInput from '../../components/ui/AppTextInput';
 import AppButton from '../../components/ui/AppButton';
 import { showToast } from '@ui/alert/toastStore';
 import { useAppTheme } from '@theme/ThemeContext';
-
-const SUPPORT_EMAIL = 'support@kalanabha.com';
 
 // Same real-initials-avatar pattern used everywhere else this app needs a
 // "photo" it doesn't actually have (Driver ProfileScreen, the incoming-
@@ -107,10 +104,10 @@ const ProfileScreen = () => {
         {
             icon: HelpCircle,
             label: 'Help Center',
-            onPress: () =>
-                Linking.openURL(`mailto:${SUPPORT_EMAIL}`).catch(() =>
-                    showToast('No email app is set up on this device', 'error'),
-                ),
+            // Real ticket system now (kalanabhaBackend SupportController,
+            // already used by the admin panel) instead of only a mailto:
+            // link — a raised ticket gets a real reply thread here.
+            onPress: () => navigation.navigate('SupportTickets' as never),
         },
         {
             icon: LogOut,
