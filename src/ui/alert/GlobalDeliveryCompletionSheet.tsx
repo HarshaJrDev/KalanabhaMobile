@@ -28,6 +28,7 @@ import { SignaturePad, SignatureClearButton, type Point } from '@components/Sign
 import { showToast } from './toastStore';
 import { useDeliveryCompletionStore } from './deliveryCompletionStore';
 import { normalizeError } from '@utils/error';
+import { ensureCameraPermission } from '@utils/cameraPermission';
 
 export const GlobalDeliveryCompletionSheet: React.FC = () => {
     const { colors, fonts } = useAppTheme();
@@ -82,8 +83,19 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
         }
     };
 
-    const handleTakePhoto = () => {
+    const handleTakePhoto = async () => {
         if (!shipmentId) return;
+
+        // Real, confirmed failure otherwise (found live on the pickup
+        // flow, same launchCamera call shape): AndroidManifest.xml
+        // declares CAMERA, so react-native-image-picker won't request it
+        // for us — see cameraPermission.ts.
+        const hasCameraPermission = await ensureCameraPermission();
+        if (!hasCameraPermission) {
+            showToast('Camera permission is required to capture delivery proof', 'error');
+            return;
+        }
+
         launchCamera({ mediaType: 'photo', quality: 0.8, saveToPhotos: false }, async (response) => {
             if (response.didCancel) return;
             const asset = response.assets?.[0];

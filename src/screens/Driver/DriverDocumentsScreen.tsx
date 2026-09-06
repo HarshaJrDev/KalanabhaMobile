@@ -14,6 +14,7 @@ import { useAppTheme } from '@theme/ThemeContext';
 import { useMyDriverDocuments, useUploadDriverDocument } from '@features/driverDocuments/hooks';
 import { DRIVER_DOCUMENT_TYPES, DRIVER_DOCUMENT_TYPE_LABEL, type DriverDocumentType, type DriverDocument } from '@features/driverDocuments/types';
 import { showToast } from '@ui/alert/toastStore';
+import { ensureCameraPermission } from '@utils/cameraPermission';
 
 const STATUS_META: Record<DriverDocument['status'], { label: string; icon: typeof CheckCircle2 }> = {
     PENDING: { label: 'Pending review', icon: Clock },
@@ -58,7 +59,17 @@ const DriverDocumentsScreen = () => {
         );
     };
 
-    const handlePick = (type: DriverDocumentType, source: 'camera' | 'gallery') => {
+    const handlePick = async (type: DriverDocumentType, source: 'camera' | 'gallery') => {
+        // Real, confirmed failure otherwise: AndroidManifest.xml declares
+        // CAMERA, so react-native-image-picker won't request it for
+        // us — see cameraPermission.ts.
+        if (source === 'camera') {
+            const hasCameraPermission = await ensureCameraPermission();
+            if (!hasCameraPermission) {
+                showToast('Camera permission is required to capture this document', 'error');
+                return;
+            }
+        }
         const launch = source === 'camera' ? launchCamera : launchImageLibrary;
         launch({ mediaType: 'photo', quality: 0.8 }, (response) => {
             if (response.didCancel || !response.assets?.[0]) return;

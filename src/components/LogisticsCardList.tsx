@@ -44,6 +44,7 @@ import {
 } from '@features/shipments/api/shipments.api';
 import { launchCamera } from 'react-native-image-picker';
 import Geolocation from 'react-native-geolocation-service';
+import { ensureCameraPermission } from '@utils/cameraPermission';
 import { useChatMessages, useChatSocket, useSendMessage } from '@features/chat/hooks';
 import { normalizeError } from '@utils/error';
 import { useTabBarContentPadding } from '../screens/navigation/useTabBarStyle';
@@ -201,6 +202,16 @@ export const useDriverActions = () => {
         (async () => {
             const otp = await requestOtp('pickup');
             if (!otp) return;
+
+            // Real, confirmed failure otherwise: AndroidManifest.xml
+            // declares CAMERA (needed elsewhere), which means
+            // react-native-image-picker will NOT request it for us —
+            // see cameraPermission.ts.
+            const hasCameraPermission = await ensureCameraPermission();
+            if (!hasCameraPermission) {
+                showToast('Camera permission is required to capture pickup proof', 'error');
+                return;
+            }
 
             launchCamera({ mediaType: 'photo', quality: 0.8, saveToPhotos: false }, async (response) => {
                 if (response.didCancel) return;
