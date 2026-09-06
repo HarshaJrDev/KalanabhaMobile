@@ -151,6 +151,15 @@ export const useAssignShipment = (id: string) => {
     });
 };
 
+export const useArriveAtShipment = (id: string) => {
+    const invalidate = useInvalidateShipmentCaches(id);
+    return useMutation({
+        mutationFn: ({ latitude, longitude }: { latitude: number; longitude: number }) =>
+            shipmentsApi.arriveAtShipment(id, latitude, longitude),
+        onSuccess: invalidate,
+    });
+};
+
 export const useStartDelivery = (id: string) => {
     const invalidate = useInvalidateShipmentCaches(id);
     return useMutation({

@@ -42,8 +42,10 @@ import {
     startDelivery as startDeliveryRequest,
     uploadShipmentPod,
     uploadPickupProof,
+    arriveAtShipment,
 } from '@features/shipments/api/shipments.api';
 import { launchCamera } from 'react-native-image-picker';
+import Geolocation from 'react-native-geolocation-service';
 import { useChatMessages, useChatSocket, useSendMessage } from '@features/chat/hooks';
 import { normalizeError } from '@utils/error';
 import { useTabBarContentPadding } from '../screens/navigation/useTabBarStyle';
@@ -83,6 +85,9 @@ export interface LogisticsItem {
     // 'PARCEL' (default) | 'HOUSE_SHIFTING' — Porter-style movers booking.
     category?: string;
     helpersCount?: number;
+    // Real driver arrival sub-state (kalanabhaBackend 7708464) — drives
+    // the arrival-aware CTA below.
+    arrivalState?: 'NONE' | 'EN_ROUTE_TO_PICKUP' | 'ARRIVED_AT_PICKUP' | 'EN_ROUTE_TO_DROP' | 'ARRIVED_AT_DROP';
 }
 
 // Role now comes from the backend-authenticated user (features/store/authStore),
@@ -144,7 +149,11 @@ const useCustomerActions = () => {
 // DispatchService does the same atomic "status must still be X" guard
 // server-side that the old Firestore transaction did client-side, so a
 // driver can no longer race or spoof an accept.
-const useDriverActions = () => {
+// Exported so the driver Home screen's Active Delivery card (the one
+// place a driver actually manages their current shipment, as opposed to
+// this file's searching-pool list) can drive the same real
+// arrive/start/complete actions instead of duplicating them.
+export const useDriverActions = () => {
     const onAccept = useCallback(async (id: string) => {
         try {
             await acceptShipmentRequest(id);
@@ -152,6 +161,35 @@ const useDriverActions = () => {
         } catch (err) {
             showToast(normalizeError(err) || 'Order already taken', 'error');
         }
+    }, []);
+
+    // Real, geofence-validated arrival (kalanabhaBackend 7708464) — the
+    // backend decides whether this is pickup or drop arrival from the
+    // shipment's own current arrivalState, and rejects with the real
+    // distance if the driver isn't actually there yet. `coords` is only
+    // ever passed by the DEV-only "Simulate Arrival" button (real
+    // pickup/drop coordinates from the shipment itself, run through this
+    // exact same endpoint — not a bypass of the geofence check, just a
+    // convenient way to be "at" the location without physically
+    // travelling there on an emulator); every other caller uses the
+    // device's real GPS fix.
+    const onArrive = useCallback((id: string, coords?: { latitude: number; longitude: number }) => {
+        const submit = (latitude: number, longitude: number) => {
+            arriveAtShipment(id, latitude, longitude)
+                .then(() => showToast('Arrival recorded', 'success'))
+                .catch((err) => showToast(normalizeError(err) || 'Could not record arrival', 'error'));
+        };
+
+        if (coords) {
+            submit(coords.latitude, coords.longitude);
+            return;
+        }
+
+        Geolocation.getCurrentPosition(
+            (position) => submit(position.coords.latitude, position.coords.longitude),
+            () => showToast('Could not get your location — check location permissions', 'error'),
+            { enableHighAccuracy: true, timeout: 15000 },
+        );
     }, []);
 
     // Real pickup OTP + pickup photo (kalanabhaBackend 63a33d4,
@@ -229,7 +267,7 @@ const useDriverActions = () => {
         })();
     }, []);
 
-    return { onAccept, onStartDelivery, onCompleteDelivery };
+    return { onAccept, onArrive, onStartDelivery, onCompleteDelivery };
 };
 
 const getStatusColor = (status: LogisticsStatus): string => {
@@ -392,25 +430,6 @@ const LogisticsCard: React.FC<{
                         onPress={onShare}
                     />
 
-                    {/* {isDriver && item.status === 'pending' && (
-                        <ActionButton
-                            icon={<Check size={16} color="#FFF" />}
-                            label="Accept"
-                            primary
-                            onPress={() => driverActions.onAccept(item.id)}
-                        />
-                    )} */}
-
-                    {isDriver && item.status === 'accepted' && (
-                        <ActionButton
-                            icon={<Truck size={16} color="#FFF" />}
-                            label="Start"
-                            primary
-                            onPress={() => driverActions.onStartDelivery(item.id)}
-                        />
-                    )}
-
-
                     {/* ACCEPT (only unassigned jobs) */}
                     {isDriver && item.status === 'searching' && !item.driverId && (
                         <ActionButton
@@ -421,23 +440,63 @@ const LogisticsCard: React.FC<{
                         />
                     )}
 
-                    {/* START (only if assigned to me) */}
-                    {isDriver && item.status === 'accepted' && isAssignedToMe && (
+                    {/* Arrival-state-aware CTA (kalanabhaBackend 7708464)
+                        — only ever one action at a time, driven by the
+                        shipment's own real arrivalState, not the previous
+                        single "Start"/"Complete" button that skipped
+                        arrival entirely. */}
+                    {isDriver && isAssignedToMe && item.status === 'accepted' && item.arrivalState === 'EN_ROUTE_TO_PICKUP' && (
+                        <ActionButton
+                            icon={<MapPin size={16} color="#FFF" />}
+                            label="I've Arrived"
+                            primary
+                            onPress={() => driverActions.onArrive(item.id)}
+                        />
+                    )}
+
+                    {isDriver && isAssignedToMe && item.status === 'accepted' && item.arrivalState === 'ARRIVED_AT_PICKUP' && (
                         <ActionButton
                             icon={<Truck size={16} color="#FFF" />}
-                            label="Start"
+                            label="Verify Pickup"
                             primary
                             onPress={() => driverActions.onStartDelivery(item.id)}
                         />
                     )}
 
-                    {/* COMPLETE (only if assigned to me) */}
-                    {isDriver && item.status === 'in_transit' && isAssignedToMe && (
+                    {isDriver && isAssignedToMe && item.status === 'in_transit' && item.arrivalState === 'EN_ROUTE_TO_DROP' && (
+                        <ActionButton
+                            icon={<MapPin size={16} color="#FFF" />}
+                            label="I've Arrived"
+                            primary
+                            onPress={() => driverActions.onArrive(item.id)}
+                        />
+                    )}
+
+                    {isDriver && isAssignedToMe && item.status === 'in_transit' && item.arrivalState === 'ARRIVED_AT_DROP' && (
                         <ActionButton
                             icon={<Check size={16} color="#FFF" />}
                             label="Complete"
                             primary
                             onPress={() => driverActions.onCompleteDelivery(item.id)}
+                        />
+                    )}
+
+                    {/* DEV-only GPS simulation — see onArrive's comment.
+                        Only ever renders in a dev build, and only ever
+                        calls the real /arrive endpoint with the
+                        shipment's own real pickup/drop coordinates. */}
+                    {__DEV__ && isDriver && isAssignedToMe && (item.arrivalState === 'EN_ROUTE_TO_PICKUP' || item.arrivalState === 'EN_ROUTE_TO_DROP') && (
+                        <ActionButton
+                            icon={<MapPin size={16} color="#000" />}
+                            label="Simulate Arrival"
+                            onPress={() =>
+                                driverActions.onArrive(
+                                    item.id,
+                                    item.arrivalState === 'EN_ROUTE_TO_PICKUP'
+                                        ? { latitude: item.pickup.lat, longitude: item.pickup.lng }
+                                        : { latitude: item.drop.lat, longitude: item.drop.lng },
+                                )
+                            }
                         />
                     )}
                 </View>

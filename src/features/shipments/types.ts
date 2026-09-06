@@ -103,6 +103,16 @@ export interface BackendShipment {
     // side.
     pickupProofUploadedAt: string | null;
 
+    // Real driver arrival sub-state (kalanabhaBackend 7708464, additive
+    // within ACCEPTED/IN_TRANSIT — the core status enum is untouched).
+    // Drives which CTA the driver app shows and the "Driver Arrived"
+    // banner on the customer side; ARRIVED_AT_PICKUP/ARRIVED_AT_DROP only
+    // ever get set via a real, geofence-validated
+    // POST /shipments/:id/arrive.
+    arrivalState: 'NONE' | 'EN_ROUTE_TO_PICKUP' | 'ARRIVED_AT_PICKUP' | 'EN_ROUTE_TO_DROP' | 'ARRIVED_AT_DROP';
+    pickupArrivedAt: string | null;
+    dropArrivedAt: string | null;
+
     // Real, admin-set expiry (BusinessSetting
     // 'shipment_search_expiry_minutes') a SEARCHING shipment auto-cancels
     // at if no driver accepts it — set on creation, backing the driver

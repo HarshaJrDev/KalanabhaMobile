@@ -24,7 +24,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
 import { DriverHeader } from '@components/DriverHeader';
-import { LogisticsCardList, LogisticsItem } from '@components/LogisticsCardList';
+import { LogisticsCardList, LogisticsItem, useDriverActions } from '@components/LogisticsCardList';
 import {
     AlertCircle,
     RefreshCw,
@@ -63,6 +63,19 @@ const DRIVE_MORE_TRUCK = require('../../../../assets/images/home/delivery-truck-
 const SUPPORT_EMAIL = 'support@kalanabha.com';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Real driver arrival sub-state (kalanabhaBackend 7708464) — every label
+// here maps to a real ArrivalState value, nothing invented.
+const ARRIVAL_STATUS_LABEL: Record<
+    'NONE' | 'EN_ROUTE_TO_PICKUP' | 'ARRIVED_AT_PICKUP' | 'EN_ROUTE_TO_DROP' | 'ARRIVED_AT_DROP',
+    string
+> = {
+    NONE: '',
+    EN_ROUTE_TO_PICKUP: '● Going to Pickup',
+    ARRIVED_AT_PICKUP: '● Arrived at Pickup — verification required',
+    EN_ROUTE_TO_DROP: '● In Transit',
+    ARRIVED_AT_DROP: '● Arrived at Drop — verification required',
+};
 
 interface HomeScreenProps { }
 
@@ -108,6 +121,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
         () => myShipments?.find((s) => s.status === 'accepted' || s.status === 'in_transit'),
         [myShipments],
     );
+    const driverActions = useDriverActions();
 
     const shipments = useMemo<LogisticsItem[]>(
         () => (searchingShipments ?? []).map(toLogisticsItem),
@@ -328,6 +342,10 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                                 <Text style={styles.activeDeliverySub} numberOfLines={1}>
                                     {activeDelivery.from} → {activeDelivery.to}
                                 </Text>
+                                {/* Real arrival sub-state (kalanabhaBackend
+                                    7708464) — was no status label at all here
+                                    before, just the route. */}
+                                <Text style={styles.arrivalStatusText}>{ARRIVAL_STATUS_LABEL[activeDelivery.arrivalState]}</Text>
                             </View>
                             <View style={styles.chatPill}>
                                 <MessageCircle color="#fff" size={14} />
@@ -345,6 +363,49 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                             <Navigation color="#FF7518" size={13} />
                             <Text style={styles.openMapsText}>Open directions in Maps</Text>
                         </TouchableOpacity>
+
+                        {/* Arrival-state-aware CTA — exactly one action at
+                            a time, driven by the shipment's own real
+                            arrivalState, never all of them at once. */}
+                        {activeDelivery.arrivalState === 'EN_ROUTE_TO_PICKUP' && (
+                            <TouchableOpacity style={styles.arrivalCtaBtn} onPress={() => driverActions.onArrive(activeDelivery.id)}>
+                                <Text style={styles.arrivalCtaText}>I've Arrived</Text>
+                            </TouchableOpacity>
+                        )}
+                        {activeDelivery.arrivalState === 'ARRIVED_AT_PICKUP' && (
+                            <TouchableOpacity style={styles.arrivalCtaBtn} onPress={() => driverActions.onStartDelivery(activeDelivery.id)}>
+                                <Text style={styles.arrivalCtaText}>Verify Pickup</Text>
+                            </TouchableOpacity>
+                        )}
+                        {activeDelivery.arrivalState === 'EN_ROUTE_TO_DROP' && (
+                            <TouchableOpacity style={styles.arrivalCtaBtn} onPress={() => driverActions.onArrive(activeDelivery.id)}>
+                                <Text style={styles.arrivalCtaText}>I've Arrived</Text>
+                            </TouchableOpacity>
+                        )}
+                        {activeDelivery.arrivalState === 'ARRIVED_AT_DROP' && (
+                            <TouchableOpacity style={styles.arrivalCtaBtn} onPress={() => driverActions.onCompleteDelivery(activeDelivery.id)}>
+                                <Text style={styles.arrivalCtaText}>Complete Delivery</Text>
+                            </TouchableOpacity>
+                        )}
+                        {/* DEV-only GPS simulation (see LogisticsCardList's
+                            onArrive comment) — real endpoint, real
+                            pickup/drop coordinates, never a shortcut past
+                            the geofence check. */}
+                        {__DEV__ && (activeDelivery.arrivalState === 'EN_ROUTE_TO_PICKUP' || activeDelivery.arrivalState === 'EN_ROUTE_TO_DROP') && (
+                            <TouchableOpacity
+                                style={styles.devSimulateBtn}
+                                onPress={() =>
+                                    driverActions.onArrive(
+                                        activeDelivery.id,
+                                        activeDelivery.arrivalState === 'EN_ROUTE_TO_PICKUP'
+                                            ? { latitude: activeDelivery.pickup.lat, longitude: activeDelivery.pickup.lng }
+                                            : { latitude: activeDelivery.drop.lat, longitude: activeDelivery.drop.lng },
+                                    )
+                                }
+                            >
+                                <Text style={styles.devSimulateText}>DEV: Simulate Arrival</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 )}
 
@@ -745,6 +806,25 @@ const styles = StyleSheet.create({
         borderTopColor: '#F3F4F6',
     },
     openMapsText: { fontSize: 12, fontFamily: FONTS.BOLD_PRIMARY, color: '#FF7518' },
+    arrivalStatusText: { fontSize: 11, fontFamily: FONTS.SEMI_BOLD_PRIMARY, color: '#FF7518', marginTop: 4 },
+    arrivalCtaBtn: {
+        marginTop: 10,
+        backgroundColor: '#FF7518',
+        borderRadius: 10,
+        paddingVertical: 11,
+        alignItems: 'center',
+    },
+    arrivalCtaText: { color: '#fff', fontSize: 13, fontFamily: FONTS.BOLD_PRIMARY },
+    devSimulateBtn: {
+        marginTop: 8,
+        borderRadius: 10,
+        paddingVertical: 9,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderStyle: 'dashed',
+        borderColor: '#9CA3AF',
+    },
+    devSimulateText: { color: '#6B7280', fontSize: 11, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
 
     // ── Incoming Load Request hero card
     incomingCard: {

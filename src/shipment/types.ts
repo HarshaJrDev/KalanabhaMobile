@@ -108,6 +108,12 @@ export interface Shipment {
     // /shipments/:id/pickup-proof) — mirrors podUploadedAt.
     pickupProofUploadedAt: string | null;
 
+    // Real driver arrival sub-state (kalanabhaBackend 7708464) — drives
+    // the driver app's CTA and the customer's "Driver Arrived" banner.
+    arrivalState: 'NONE' | 'EN_ROUTE_TO_PICKUP' | 'ARRIVED_AT_PICKUP' | 'EN_ROUTE_TO_DROP' | 'ARRIVED_AT_DROP';
+    pickupArrivedAt: string | null;
+    dropArrivedAt: string | null;
+
     // Real, admin-set expiry a SEARCHING shipment auto-cancels at if no
     // driver accepts it (kalanabhaBackend's ShipmentExpiryProcessor) —
     // backs the driver Home screen's real countdown, not a fabricated one.

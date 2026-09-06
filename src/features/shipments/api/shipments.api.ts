@@ -101,6 +101,15 @@ export const assignShipment = async (id: string, payload: AssignShipmentPayload)
     return data.data;
 };
 
+// driver only — real, geofence-validated arrival (kalanabhaBackend
+// 7708464). Which target (pickup vs drop) applies is decided server-side
+// from the shipment's own current arrivalState; a wrong-stage or
+// too-far-away call is rejected with the real distance.
+export const arriveAtShipment = async (id: string, latitude: number, longitude: number): Promise<BackendShipment> => {
+    const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/arrive`, { latitude, longitude });
+    return data.data;
+};
+
 // driver only — otp is the 4-digit pickup code the customer reads out,
 // verified server-side against the real Shipment.pickupOtp
 // (kalanabhaBackend 63a33d4).

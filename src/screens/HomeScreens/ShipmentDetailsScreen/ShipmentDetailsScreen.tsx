@@ -372,7 +372,18 @@ const ShipmentDetailsScreen = () => {
                     <Bike color={C.primary} size={26} />
                     <View style={{ flex: 1 }}>
                         <Text style={styles.liveTrackingMain}>
-                            {distanceToDriverKm != null ? `Driver is ${distanceToDriverKm.toFixed(1)} km away` : 'Driver location received'}
+                            {/* Real driver arrival sub-state
+                                (kalanabhaBackend 7708464) — was only ever a
+                                distance estimate before, no "arrived" signal
+                                at all even once the driver had actually
+                                reached the location. */}
+                            {shipment.arrivalState === 'ARRIVED_AT_PICKUP'
+                                ? 'Driver has arrived at pickup'
+                                : shipment.arrivalState === 'ARRIVED_AT_DROP'
+                                ? 'Driver has arrived at your location'
+                                : distanceToDriverKm != null
+                                ? `Driver is ${distanceToDriverKm.toFixed(1)} km away`
+                                : 'Driver location received'}
                         </Text>
                         <Text style={styles.liveTrackingSub}>Updated {formatTimeAgo(liveDriverLocation.updatedAt)}</Text>
                     </View>
