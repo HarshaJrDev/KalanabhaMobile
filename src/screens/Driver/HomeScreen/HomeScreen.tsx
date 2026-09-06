@@ -9,7 +9,6 @@ import {
     Dimensions,
     ScrollView,
     TouchableOpacity,
-    Alert,
     Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -41,7 +40,7 @@ import {
     X,
 } from 'lucide-react-native';
 
-import { registerFCMToken, setupFCMListeners } from '@utils/cm';
+import { registerFCMToken } from '@utils/cm';
 import { safeNumber } from '@utils/parsers';
 import { useDriverLiveLocation } from '@location/useDriverLiveLocation';
 import { openGoogleMapsDirections } from '@utils/navigation';
@@ -224,24 +223,15 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     // GET /shipments/driver/mine (`activeDelivery` above) exists.
     useDriverLiveLocation(!!activeDelivery);
 
-    // Register driver FCM token on mount
+    // FCM listener registration (foreground/background/killed-tap
+    // navigation) is now centralized once in App.tsx — was duplicated
+    // here before, re-registering a whole second set of listeners every
+    // time this screen mounted. Token registration alone still happens
+    // here too (harmless/idempotent) since App.tsx's effect already
+    // covers it on every authenticated session, but this direct call
+    // keeps it fresh right when the driver actually opens Home.
     useEffect(() => {
         registerFCMToken('driver');
-        const unsub = setupFCMListeners((title, body, data) => {
-            // Show in-app alert for new orders
-            Alert.alert(title, body, [
-                {
-                    text: 'View',
-                    onPress: () => {
-                        if (data?.shipmentId) {
-                            (navigation as any).navigate('ShipmentDetailsScreen', { id: data.shipmentId });
-                        }
-                    },
-                },
-                { text: 'Dismiss' },
-            ]);
-        });
-        return () => unsub();
     }, []);
 
     // ━━━━━ Pull to Refresh

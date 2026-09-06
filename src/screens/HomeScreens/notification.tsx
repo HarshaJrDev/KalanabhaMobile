@@ -9,6 +9,7 @@ import type { BackendNotification } from '@features/notifications/types';
 import { AsyncState } from '@components/AsyncState';
 import { useAppTheme } from '@theme/ThemeContext';
 import FONTS from '@utils/fonts';
+import { handleNotificationTap } from '@features/notifications/deepLink';
 
 // Screen -> hook -> notifications.api -> GET /notifications/mine -> cache -> UI
 const NotificationScreen = () => {
@@ -18,10 +19,15 @@ const NotificationScreen = () => {
     const { mutate: markRead } = useMarkNotificationRead();
     const { mutate: markAllRead, isPending: markingAll } = useMarkAllNotificationsRead();
 
+    // Was mark-as-read only — tapping a notification here went nowhere,
+    // same real gap the FCM background/killed-tap handlers had.
     const renderItem = ({ item }: { item: BackendNotification }) => (
         <Pressable
             style={[styles.card, !item.read && styles.cardUnread]}
-            onPress={() => !item.read && markRead(item.id)}
+            onPress={() => {
+                if (!item.read) markRead(item.id);
+                handleNotificationTap(item.type, item.shipmentId);
+            }}
         >
             <Text style={styles.title}>{item.title}</Text>
             <Text style={styles.body}>{item.body}</Text>
