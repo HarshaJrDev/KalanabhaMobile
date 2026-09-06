@@ -10,8 +10,12 @@
 // one shared resolver + the navigationRef needed to navigate from outside
 // a component (FCM listeners live outside React's tree).
 import { createNavigationContainerRef } from '@react-navigation/native';
+import { storage } from '@services/storage';
 
 export const navigationRef = createNavigationContainerRef();
+
+const ACCESS_TOKEN_KEY = 'access_token';
+const isAuthenticated = () => !!storage.getString(ACCESS_TOKEN_KEY);
 
 export interface NotificationTarget {
     screen: string;
@@ -51,16 +55,27 @@ export const handleNotificationTap = (type: string | null | undefined, shipmentI
     const target = resolveNotificationTarget(type, shipmentId);
     if (!target) return;
 
-    if (navigationRef.isReady()) {
+    // Every real target here (ShipmentDetailsScreen, Notification) only
+    // exists in the authenticated app-flow screen set (App.tsx) — the auth
+    // flow (Login/OnBoarding/...) doesn't register them at all. Tapping a
+    // notification while logged out — a real, previously-unhandled case —
+    // now queues the same way a cold-start tap does, and is resumed once
+    // login actually completes (flushPendingNotificationTarget, called
+    // from App.tsx when `showAppFlow` turns true) instead of silently
+    // failing to navigate or throwing on an unregistered screen name.
+    if (navigationRef.isReady() && isAuthenticated()) {
         (navigationRef as any).navigate(target.screen, target.params);
     } else {
         pendingTarget = target;
     }
 };
 
-// Called once from NavigationContainer's onReady in App.tsx.
+// Called from NavigationContainer's onReady (cold start) AND from App.tsx
+// whenever an unauthenticated session becomes authenticated (login
+// completes) — both are real "safe to navigate now" moments, so this is
+// intentionally callable more than once; it no-ops once the queue is empty.
 export const flushPendingNotificationTarget = () => {
-    if (pendingTarget && navigationRef.isReady()) {
+    if (pendingTarget && navigationRef.isReady() && isAuthenticated()) {
         (navigationRef as any).navigate(pendingTarget.screen, pendingTarget.params);
         pendingTarget = null;
     }
