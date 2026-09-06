@@ -101,9 +101,21 @@ export const assignShipment = async (id: string, payload: AssignShipmentPayload)
     return data.data;
 };
 
-// driver only
-export const startDelivery = async (id: string): Promise<BackendShipment> => {
-    const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/start`);
+// driver only — otp is the 4-digit pickup code the customer reads out,
+// verified server-side against the real Shipment.pickupOtp
+// (kalanabhaBackend 63a33d4).
+export const startDelivery = async (id: string, otp: string): Promise<BackendShipment> => {
+    const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/start`, { otp });
+    return data.data;
+};
+
+// driver only — real pickup photo, mirrors uploadShipmentPod's shape.
+export const uploadPickupProof = async (id: string, fileUri: string, fileName: string, mimeType: string): Promise<BackendShipment> => {
+    const form = new FormData();
+    form.append('file', { uri: fileUri, name: fileName, type: mimeType } as any);
+    const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/pickup-proof`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return data.data;
 };
 

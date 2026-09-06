@@ -303,7 +303,7 @@ const Login = () => {
                     </View>
 
                     {/* Social logins (customer only) */}
-                    {!isDriver && (
+                    {/* {!isDriver && (
                         <>
                             <View style={styles.dividerRow}>
                                 <View style={styles.divider} />
@@ -319,7 +319,7 @@ const Login = () => {
                                 ))}
                             </View>
                         </>
-                    )}
+                    )} */}
 
                     {/* Driver help footer inside card */}
                     {isDriver && (

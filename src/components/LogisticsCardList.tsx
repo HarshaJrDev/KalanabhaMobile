@@ -41,13 +41,14 @@ import {
     completeDelivery as completeDeliveryRequest,
     startDelivery as startDeliveryRequest,
     uploadShipmentPod,
+    uploadPickupProof,
 } from '@features/shipments/api/shipments.api';
 import { launchCamera } from 'react-native-image-picker';
 import { useChatMessages, useChatSocket, useSendMessage } from '@features/chat/hooks';
 import { normalizeError } from '@utils/error';
 import { useTabBarContentPadding } from '../screens/navigation/useTabBarStyle';
 import { showToast } from '@ui/alert/toastStore';
-import { requestDeliveryOtp } from '@ui/alert/deliveryOtpStore';
+import { requestOtp } from '@ui/alert/deliveryOtpStore';
 import FONTS from '@utils/fonts';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -153,13 +154,40 @@ const useDriverActions = () => {
         }
     }, []);
 
-    const onStartDelivery = useCallback(async (id: string) => {
-        try {
-            await startDeliveryRequest(id);
-            showToast('Delivery in progress', 'success');
-        } catch (err) {
-            showToast(normalizeError(err) || 'Failed to start delivery', 'error');
-        }
+    // Real pickup OTP + pickup photo (kalanabhaBackend 63a33d4,
+    // Shipment.pickupOtp / POST /shipments/:id/pickup-proof) — symmetric
+    // to the delivery-side verification below. A driver needs the code
+    // the customer reads out at hand-off AND a photo to actually start
+    // the trip, instead of the previous single tap trusting the driver's
+    // own say-so entirely.
+    const onStartDelivery = useCallback((id: string) => {
+        (async () => {
+            const otp = await requestOtp('pickup');
+            if (!otp) return;
+
+            launchCamera({ mediaType: 'photo', quality: 0.8, saveToPhotos: false }, async (response) => {
+                if (response.didCancel) return;
+                const asset = response.assets?.[0];
+                if (response.errorCode || !asset?.uri) {
+                    showToast('Could not capture a photo — try again', 'error');
+                    return;
+                }
+
+                try {
+                    await uploadPickupProof(id, asset.uri, asset.fileName ?? 'pickup-proof.jpg', asset.type ?? 'image/jpeg');
+                } catch (err) {
+                    showToast(normalizeError(err) || 'Pickup-proof upload failed — try again', 'error');
+                    return;
+                }
+
+                try {
+                    await startDeliveryRequest(id, otp);
+                    showToast('Delivery in progress', 'success');
+                } catch (err) {
+                    showToast(normalizeError(err) || 'Incorrect OTP or failed to start delivery', 'error');
+                }
+            });
+        })();
     }, []);
 
     // Real Proof of Delivery (kalanabhaBackend 03b5839, POST
@@ -173,7 +201,7 @@ const useDriverActions = () => {
     // rather than completing without real proof/verification.
     const onCompleteDelivery = useCallback((id: string) => {
         (async () => {
-            const otp = await requestDeliveryOtp();
+            const otp = await requestOtp('delivery');
             if (!otp) return;
 
             launchCamera({ mediaType: 'photo', quality: 0.8, saveToPhotos: false }, async (response) => {

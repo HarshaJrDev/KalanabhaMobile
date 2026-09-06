@@ -91,6 +91,18 @@ export interface BackendShipment {
     // renders it (the driver has to ask the customer for it).
     deliveryOtp: string | null;
 
+    // Real 4-digit pickup OTP (kalanabhaBackend DispatchService, generated
+    // alongside deliveryOtp — an independent code, not the same one) —
+    // null while SEARCHING, required from the driver at
+    // POST /shipments/:id/start. Same customer-only visibility as
+    // deliveryOtp.
+    pickupOtp: string | null;
+
+    // null until the driver uploads one via POST
+    // /shipments/:id/pickup-proof — mirrors podUploadedAt for the pickup
+    // side.
+    pickupProofUploadedAt: string | null;
+
     // Real, admin-set expiry (BusinessSetting
     // 'shipment_search_expiry_minutes') a SEARCHING shipment auto-cancels
     // at if no driver accepts it — set on creation, backing the driver

@@ -136,11 +136,15 @@ const ShipmentDetailsScreen = () => {
     const [podViewerOpen, setPodViewerOpen] = useState(false);
 
     const isDriverEnRoute = shipment?.status === 'accepted' || shipment?.status === 'in_transit';
-    // Real delivery OTP (kalanabhaBackend d17a770) — only the customer
-    // should ever see it; the driver has to ask for it, not read it off
-    // their own screen.
+    // Real pickup/delivery OTPs (kalanabhaBackend d17a770, 63a33d4) — only
+    // the customer should ever see either; the driver has to ask for it,
+    // not read it off their own screen. Pickup OTP matters while the
+    // driver is still coming to collect the package (accepted, before
+    // pickup); delivery OTP matters once it's actually in transit — shown
+    // one at a time so the customer isn't asked to juggle two codes.
     const role = useAuthStore((s) => s.user?.role);
-    const showDeliveryOtp = role === 'CUSTOMER' && isDriverEnRoute && !!shipment?.deliveryOtp;
+    const showPickupOtp = role === 'CUSTOMER' && shipment?.status === 'accepted' && !!shipment?.pickupOtp;
+    const showDeliveryOtp = role === 'CUSTOMER' && shipment?.status === 'in_transit' && !!shipment?.deliveryOtp;
     const liveDriverLocation = useLiveDriverLocation(isDriverEnRoute ? shipmentId : null);
     const distanceToDriverKm =
         liveDriverLocation && shipment?.pickup?.lat != null
@@ -377,38 +381,53 @@ const ShipmentDetailsScreen = () => {
         );
     };
 
-    // Real delivery OTP, shown only to the customer while a driver is
-    // assigned (accepted/in_transit) — share it with the driver in person
-    // to complete the delivery; the code is generated server-side on
-    // assignment (kalanabhaBackend d17a770) and required back at
-    // POST /shipments/:id/complete.
+    // Real pickup/delivery OTP card, shown only to the customer at the
+    // relevant stage — share it with the driver in person to start/
+    // complete the trip; both codes are generated server-side on
+    // assignment (kalanabhaBackend d17a770, 63a33d4) and required back at
+    // POST /shipments/:id/start and /complete respectively.
+    const renderOtpCard = (title: string, subtitle: string, code: string, animIdx: number) => (
+        <AnimatedCard anim={cardAnims[animIdx]} fade={cardFades[animIdx]} cardStyle={styles.card}>
+            <Text style={styles.cardTitle}>{title}</Text>
+            <Text style={{ color: C.textMid, fontSize: 12, marginBottom: 10 }}>{subtitle}</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 12 }}>
+                {code.split('').map((digit, idx) => (
+                    <View
+                        key={idx}
+                        style={{
+                            width: 44,
+                            height: 52,
+                            borderRadius: 10,
+                            borderWidth: 1,
+                            borderColor: C.border,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <Text style={{ fontSize: 22, fontWeight: '700', color: C.text }}>{digit}</Text>
+                    </View>
+                ))}
+            </View>
+        </AnimatedCard>
+    );
+
+    const renderPickupOtp = () => {
+        if (!showPickupOtp) return null;
+        return renderOtpCard(
+            'Pickup OTP',
+            "Share this code with your driver only once they've collected your package",
+            shipment.pickupOtp!,
+            1,
+        );
+    };
+
     const renderDeliveryOtp = () => {
         if (!showDeliveryOtp) return null;
-        return (
-            <AnimatedCard anim={cardAnims[1]} fade={cardFades[1]} cardStyle={styles.card}>
-                <Text style={styles.cardTitle}>Delivery OTP</Text>
-                <Text style={{ color: C.textMid, fontSize: 12, marginBottom: 10 }}>
-                    Share this code with your driver only once you've received your delivery
-                </Text>
-                <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 12 }}>
-                    {shipment.deliveryOtp!.split('').map((digit, idx) => (
-                        <View
-                            key={idx}
-                            style={{
-                                width: 44,
-                                height: 52,
-                                borderRadius: 10,
-                                borderWidth: 1,
-                                borderColor: C.border,
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            <Text style={{ fontSize: 22, fontWeight: '700', color: C.text }}>{digit}</Text>
-                        </View>
-                    ))}
-                </View>
-            </AnimatedCard>
+        return renderOtpCard(
+            'Delivery OTP',
+            "Share this code with your driver only once you've received your delivery",
+            shipment.deliveryOtp!,
+            1,
         );
     };
 
@@ -536,6 +555,7 @@ const ShipmentDetailsScreen = () => {
                     {renderTimeline()}
                     {renderRoute()}
                     {renderLiveTracking()}
+                    {renderPickupOtp()}
                     {renderDeliveryOtp()}
                     {renderPackage()}
                     {renderPayment()}

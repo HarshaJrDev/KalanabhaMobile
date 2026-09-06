@@ -99,6 +99,15 @@ export interface Shipment {
     // customer app shows it; the driver app never renders it.
     deliveryOtp: string | null;
 
+    // Real 4-digit pickup OTP (kalanabhaBackend DispatchService, an
+    // independent code from deliveryOtp) — null while SEARCHING, required
+    // from the driver to start the trip. Same customer-only visibility.
+    pickupOtp: string | null;
+
+    // null until the driver uploads one (POST
+    // /shipments/:id/pickup-proof) — mirrors podUploadedAt.
+    pickupProofUploadedAt: string | null;
+
     // Real, admin-set expiry a SEARCHING shipment auto-cancels at if no
     // driver accepts it (kalanabhaBackend's ShipmentExpiryProcessor) —
     // backs the driver Home screen's real countdown, not a fabricated one.

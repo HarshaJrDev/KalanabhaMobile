@@ -4,12 +4,14 @@ import { useDeliveryOtpStore } from './deliveryOtpStore';
 import FONTS from '@utils/fonts';
 
 // Mounted once at the app root (App.tsx), same pattern as GlobalToast — the
-// driver's "Complete delivery" flow (LogisticsCardList.tsx) calls
-// requestDeliveryOtp() from a plain callback and awaits whatever the driver
-// types here. Real verification happens server-side
-// (DispatchService.completeDelivery); this is just the input surface.
+// driver's "Start delivery" and "Complete delivery" flows
+// (LogisticsCardList.tsx) both call requestOtp('pickup' | 'delivery') from
+// a plain callback and await whatever the driver types here. Real
+// verification happens server-side (DispatchService.startDelivery /
+// completeDelivery); this is just the input surface.
 export const GlobalDeliveryOtpModal: React.FC = () => {
     const open = useDeliveryOtpStore((s) => s.open);
+    const kind = useDeliveryOtpStore((s) => s.kind);
     const resolve = useDeliveryOtpStore((s) => s.resolve);
     const [otp, setOtp] = useState('');
 
@@ -23,8 +25,12 @@ export const GlobalDeliveryOtpModal: React.FC = () => {
         <Modal visible={open} transparent animationType="fade" onRequestClose={() => close(null)}>
             <View style={styles.overlay}>
                 <View style={styles.card}>
-                    <Text style={styles.title}>Enter delivery OTP</Text>
-                    <Text style={styles.subtitle}>Ask the customer for the 4-digit code shown in their app</Text>
+                    <Text style={styles.title}>{kind === 'pickup' ? 'Enter pickup OTP' : 'Enter delivery OTP'}</Text>
+                    <Text style={styles.subtitle}>
+                        {kind === 'pickup'
+                            ? 'Ask the customer for the 4-digit pickup code shown in their app'
+                            : 'Ask the customer for the 4-digit delivery code shown in their app'}
+                    </Text>
                     <TextInput
                         style={styles.input}
                         value={otp}

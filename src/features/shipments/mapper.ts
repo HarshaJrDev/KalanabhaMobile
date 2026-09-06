@@ -40,6 +40,8 @@ export const toShipment = (row: BackendShipment): Shipment => ({
     insuranceRequested: row.insuranceRequested,
     podUploadedAt: row.podUploadedAt ?? null,
     deliveryOtp: row.deliveryOtp ?? null,
+    pickupOtp: row.pickupOtp ?? null,
+    pickupProofUploadedAt: row.pickupProofUploadedAt ?? null,
     expiresAt: row.expiresAt ?? null,
     dispatch: row.dispatch
         ? {
