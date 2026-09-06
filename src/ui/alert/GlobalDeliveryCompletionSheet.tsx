@@ -88,7 +88,16 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
             if (response.didCancel) return;
             const asset = response.assets?.[0];
             if (response.errorCode || !asset?.uri) {
-                showToast('Could not capture a photo — try again', 'error');
+                // Surface the real reason (camera_unavailable/permission/
+                // others) instead of a generic message — this is exactly
+                // the class of error an emulator with no configured
+                // camera or a denied permission throws, and the generic
+                // toast was hiding which one it actually was.
+                if (__DEV__) console.warn('[DeliveryCompletionSheet] camera error', response.errorCode, response.errorMessage);
+                showToast(
+                    response.errorCode ? `Could not capture a photo — ${response.errorMessage ?? response.errorCode}` : 'Could not capture a photo — try again',
+                    'error',
+                );
                 return;
             }
             setUploadingPhoto(true);
