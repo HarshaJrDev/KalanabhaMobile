@@ -372,16 +372,15 @@ const ShipmentDetailsScreen = () => {
                     <Bike color={C.primary} size={26} />
                     <View style={{ flex: 1 }}>
                         <Text style={styles.liveTrackingMain}>
-                            {/* Real driver arrival sub-state
-                                (kalanabhaBackend 7708464) — was only ever a
-                                distance estimate before, no "arrived" signal
-                                at all even once the driver had actually
-                                reached the location. */}
-                            {shipment.arrivalState === 'ARRIVED_AT_PICKUP'
-                                ? 'Driver has arrived at pickup'
-                                : shipment.arrivalState === 'ARRIVED_AT_DROP'
-                                ? 'Driver has arrived at your location'
-                                : distanceToDriverKm != null
+                            {/* Complete Delivery no longer requires a GPS
+                                arrival step (product decision, kalanabhaBackend
+                                81263b1) — nothing in the driver app calls
+                                POST /shipments/:id/arrive anymore, so
+                                arrivalState never actually reaches
+                                ARRIVED_AT_PICKUP/ARRIVED_AT_DROP in practice.
+                                Showing distance only, rather than an
+                                "arrived" signal that could never fire. */}
+                            {distanceToDriverKm != null
                                 ? `Driver is ${distanceToDriverKm.toFixed(1)} km away`
                                 : 'Driver location received'}
                         </Text>
