@@ -200,6 +200,11 @@ const App = () => {
   useEffect(() => {
     if (!showAppFlow) return;
     registerFCMToken(role === 'DRIVER' ? 'driver' : 'customer');
+    // A notification tapped while logged out gets queued (deepLink.ts)
+    // instead of navigated immediately — this is the "login just
+    // completed" moment that resumes it, per the real logged-out edge
+    // case that had no handling at all before.
+    flushPendingNotificationTarget();
     const unsub = setupFCMListeners((title, body, data) => {
       const shipmentId = (data?.shipmentId as string) ?? null;
       const type = (data?.type as string) ?? null;
