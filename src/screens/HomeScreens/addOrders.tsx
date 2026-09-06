@@ -60,7 +60,7 @@ import {
     Pill,
     type LucideIcon,
 } from 'lucide-react-native';
-import { registerFCMToken, setupFCMListeners } from '@utils/cm';
+import { registerFCMToken } from '@utils/cm';
 import { useVehicleConfigs, useServiceAreas, useBusinessSettings, usePackageCategories } from '@features/settings/hooks';
 import { useAuthStore } from '@features/store/authStore';
 import type { ServiceArea } from '@features/settings/types';
@@ -1886,13 +1886,14 @@ const NewOrder = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeAreas.length]);
 
-    // Register FCM token when customer opens this screen
+    // FCM listener registration (foreground/background/killed-tap
+    // navigation) is now centralized once in App.tsx — was duplicated
+    // here before, and only ever worked while this specific screen
+    // happened to be mounted (a customer notified while browsing Home
+    // got nothing). Token registration alone still happens here too
+    // (harmless/idempotent).
     useEffect(() => {
         registerFCMToken('customer');
-        const unsub = setupFCMListeners((title, body, data) => {
-            Alert.alert(title, body);
-        });
-        return () => unsub();
     }, []);
 
     const animateToStep = useCallback((nextStep: number, direction: 'forward' | 'back') => {

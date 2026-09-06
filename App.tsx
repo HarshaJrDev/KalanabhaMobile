@@ -109,7 +109,7 @@
 // });
 
 import React, { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -118,6 +118,8 @@ import { queryClient } from './src/api/queryClient';
 import { initNetworkMonitoring } from './src/api/network';
 import { GlobalToast } from '@ui/alert/GlobalToast';
 import { GlobalDeliveryOtpModal } from '@ui/alert/GlobalDeliveryOtpModal';
+import { registerFCMToken, setupFCMListeners } from '@utils/cm';
+import { navigationRef, flushPendingNotificationTarget, handleNotificationTap } from '@features/notifications/deepLink';
 import { ThemeProvider, useAppTheme } from '@theme/ThemeContext';
 
 // Auth Screens
@@ -188,6 +190,30 @@ const App = () => {
     return unsubscribe;
   }, []);
 
+  // Single, centralized FCM registration — was previously duplicated
+  // (driver HomeScreen.tsx and customer addOrders.tsx each called
+  // setupFCMListeners independently, re-registering listeners on every
+  // mount of those specific screens, and the customer one only ever
+  // worked while addOrders happened to be on screen). One registration
+  // here, for the lifetime of an authenticated session, covers both
+  // roles and every screen.
+  useEffect(() => {
+    if (!showAppFlow) return;
+    registerFCMToken(role === 'DRIVER' ? 'driver' : 'customer');
+    const unsub = setupFCMListeners((title, body, data) => {
+      const shipmentId = (data?.shipmentId as string) ?? null;
+      const type = (data?.type as string) ?? null;
+      Alert.alert(title, body, [
+        {
+          text: 'View',
+          onPress: () => handleNotificationTap(type, shipmentId),
+        },
+        { text: 'Dismiss' },
+      ]);
+    });
+    return unsub;
+  }, [showAppFlow, role]);
+
   if (resolvingSession) {
     return (
       <ThemeProvider>
@@ -202,7 +228,7 @@ const App = () => {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <GlobalToast />
         <GlobalDeliveryOtpModal />
-        <NavigationContainer>
+        <NavigationContainer ref={navigationRef} onReady={flushPendingNotificationTarget}>
           <Stack.Navigator
             screenOptions={{ headerShown: false }}
             initialRouteName={showAppFlow && role === 'DRIVER' ? 'DriverTabs' : undefined}

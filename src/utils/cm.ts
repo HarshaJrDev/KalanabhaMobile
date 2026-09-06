@@ -11,6 +11,7 @@ import {
 } from '@react-native-firebase/messaging';
 import { apiClient } from '../api/client';
 import { getToken as getAccessToken } from '../services/storage';
+import { handleNotificationTap } from '../features/notifications/deepLink';
 
 // Modular API — the namespaced `messaging()` call style is deprecated as of
 // RNFirebase v22 and logs a console warning on every use (was showing up
@@ -54,14 +55,20 @@ export const setupFCMListeners = (
         onForegroundMessage(title, body, remote.data ?? {});
     });
 
-    // Background tap
+    // Background tap — was console.log-only before, so tapping a
+    // notification while the app sat backgrounded did nothing at all.
     onNotificationOpenedApp(messaging, remote => {
-        console.log('[FCM] Tapped from background:', remote.data);
+        const data = remote.data ?? {};
+        handleNotificationTap((data.type as string) ?? null, (data.shipmentId as string) ?? null);
     });
 
-    // Quit state tap
+    // Killed-app tap — same real navigation, via the pending-target queue
+    // in deepLink.ts since the NavigationContainer isn't necessarily
+    // mounted yet at this point in a cold start.
     getInitialNotification(messaging).then(remote => {
-        if (remote) console.log('[FCM] Tapped from quit:', remote.data);
+        if (!remote) return;
+        const data = remote.data ?? {};
+        handleNotificationTap((data.type as string) ?? null, (data.shipmentId as string) ?? null);
     });
 
     return unsub;
