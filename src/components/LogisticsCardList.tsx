@@ -206,7 +206,14 @@ export const useDriverActions = () => {
                 if (response.didCancel) return;
                 const asset = response.assets?.[0];
                 if (response.errorCode || !asset?.uri) {
-                    showToast('Could not capture a photo — try again', 'error');
+                    // Surface the real reason — see GlobalDeliveryCompletionSheet's
+                    // identical fix for why (camera_unavailable/permission/others
+                    // was previously hidden behind a generic message).
+                    if (__DEV__) console.warn('[onStartDelivery] camera error', response.errorCode, response.errorMessage);
+                    showToast(
+                        response.errorCode ? `Could not capture a photo — ${response.errorMessage ?? response.errorCode}` : 'Could not capture a photo — try again',
+                        'error',
+                    );
                     return;
                 }
 
