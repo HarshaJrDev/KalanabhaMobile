@@ -72,13 +72,6 @@ import { safeNumber } from '@utils/parsers';
 import { normalizeError } from '@utils/error';
 import { useAppTheme } from '@theme/ThemeContext';
 import FONTS from '@utils/fonts';
-
-// Rebranded from a generic blue palette to Kalanabha's own orange identity
-// (§4/§7) — every key here is unchanged so the rest of this file (which
-// reads COLORS.* throughout) didn't need touching. Built from
-// useAppTheme() inside each sub-component below (see makeOrderColors)
-// rather than a module-level constant, so it flips with dark mode without
-// threading props through every step component.
 const makeOrderColors = (BRAND: ReturnType<typeof useAppTheme>['colors']) => ({
     primary: BRAND.PRIMARY,
     primaryDark: BRAND.PRIMARY_DARK,
