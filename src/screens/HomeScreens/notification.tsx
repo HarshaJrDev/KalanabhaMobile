@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
     useMarkAllNotificationsRead,
     useMarkNotificationRead,
@@ -14,7 +15,12 @@ import { handleNotificationTap } from '@features/notifications/deepLink';
 // Screen -> hook -> notifications.api -> GET /notifications/mine -> cache -> UI
 const NotificationScreen = () => {
     const { colors } = useAppTheme();
-    const styles = useMemo(() => makeStyles(colors), [colors]);
+    // Real device safe-area inset — this screen had none at all, so the
+    // header sat under the status bar/camera cutout on real devices (same
+    // overlap bug class already fixed on several other screens this
+    // session).
+    const insets = useSafeAreaInsets();
+    const styles = useMemo(() => makeStyles(colors, insets), [colors, insets]);
     const { data: notifications, isLoading, isRefetching, refetch, error } = useMyNotifications();
     const { mutate: markRead } = useMarkNotificationRead();
     const { mutate: markAllRead, isPending: markingAll } = useMarkAllNotificationsRead();
@@ -68,14 +74,15 @@ export default NotificationScreen;
 
 // Computed from useAppTheme() so this screen repaints correctly in dark
 // mode instead of staying pinned to the light palette baked at import.
-const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
+const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], insets: { top: number }) => StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.BACKGROUND },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 14,
+        paddingTop: insets.top + 14,
+        paddingBottom: 14,
     },
     headerTitle: { fontSize: 18, fontFamily: FONTS.BOLD_PRIMARY, color: colors.TEXT_PRIMARY },
     markAllText: { color: colors.PRIMARY, fontSize: 13, fontFamily: FONTS.SEMI_BOLD_PRIMARY },

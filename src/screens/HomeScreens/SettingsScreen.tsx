@@ -6,8 +6,9 @@
 // @react-native-firebase/messaging used by utils/fcm.ts's
 // registerFCMToken), app version, and logout — no new backend endpoints,
 // everything here is either on-device or the existing POST /auth/logout flow.
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert, Switch } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getApp } from '@react-native-firebase/app';
 import { getMessaging, hasPermission, AuthorizationStatus } from '@react-native-firebase/messaging';
 import { ChevronLeft, LogOut } from 'lucide-react-native';
@@ -22,6 +23,11 @@ const SettingsScreen = () => {
     const navigation = useNavigation();
     const logoutMutation = useLogout();
     const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
+    // Real device safe-area inset — this header had a bare `padding: 16`,
+    // so it sat under the status bar/camera cutout on real devices (same
+    // overlap bug class already fixed on several other screens).
+    const insets = useSafeAreaInsets();
+    const styles = useMemo(() => makeStyles(insets), [insets]);
 
     const refreshPermission = useCallback(async () => {
         const authStatus = await hasPermission(getMessaging(getApp()));
@@ -91,13 +97,15 @@ const SettingsScreen = () => {
 
 export default SettingsScreen;
 
-const styles = StyleSheet.create({
+const makeStyles = (insets: { top: number }) => StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F7F7F7' },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 16,
+        paddingHorizontal: 16,
+        paddingTop: insets.top + 16,
+        paddingBottom: 16,
         backgroundColor: '#FFF',
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: '#EEE',

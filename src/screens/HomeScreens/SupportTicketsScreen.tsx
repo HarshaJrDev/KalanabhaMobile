@@ -7,6 +7,7 @@
 // entry point.
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, Plus, MessageSquareText, Clock, CheckCircle2, XCircle } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
@@ -23,7 +24,11 @@ const STATUS_META: Record<TicketStatus, { label: string; icon: typeof Clock; col
 const SupportTicketsScreen = () => {
     const navigation = useNavigation();
     const { colors, fonts, spacing, radius } = useAppTheme();
-    const styles = useMemo(() => makeStyles(colors, fonts, spacing, radius), [colors, fonts, spacing, radius]);
+    // Real device safe-area inset — this header used a bare
+    // `paddingTop: 50`, so it sat under the status bar/camera cutout on
+    // real devices (same overlap bug class already fixed elsewhere).
+    const insets = useSafeAreaInsets();
+    const styles = useMemo(() => makeStyles(colors, fonts, spacing, radius, insets), [colors, fonts, spacing, radius, insets]);
 
     const { data: tickets, isLoading } = useMyTickets();
 
@@ -94,6 +99,7 @@ const makeStyles = (
     fonts: ReturnType<typeof useAppTheme>['fonts'],
     spacing: ReturnType<typeof useAppTheme>['spacing'],
     radius: ReturnType<typeof useAppTheme>['radius'],
+    insets: { top: number },
 ) => StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.BACKGROUND },
     header: {
@@ -101,7 +107,7 @@ const makeStyles = (
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: spacing.lg,
-        paddingTop: 50,
+        paddingTop: insets.top + 10,
         paddingBottom: spacing.md,
     },
     backBtn: {

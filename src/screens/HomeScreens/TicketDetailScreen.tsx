@@ -6,6 +6,7 @@
 // admin panel's SupportTicketsPage.
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { ArrowLeft, Send } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
@@ -29,7 +30,8 @@ const TicketDetailScreen = () => {
     const route = useRoute<RouteProp<{ params: RouteParams }, 'params'>>();
     const ticketId = route?.params?.id;
     const { colors, fonts, spacing, radius } = useAppTheme();
-    const styles = useMemo(() => makeStyles(colors, fonts, spacing, radius), [colors, fonts, spacing, radius]);
+    const insets = useSafeAreaInsets();
+    const styles = useMemo(() => makeStyles(colors, fonts, spacing, radius, insets), [colors, fonts, spacing, radius, insets]);
     const currentUserId = useAuthStore((s) => s.user?.id);
 
     const { data: ticket, isLoading } = useTicket(ticketId);
@@ -118,13 +120,14 @@ const makeStyles = (
     fonts: ReturnType<typeof useAppTheme>['fonts'],
     spacing: ReturnType<typeof useAppTheme>['spacing'],
     radius: ReturnType<typeof useAppTheme>['radius'],
+    insets: { top: number },
 ) => StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.BACKGROUND },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: spacing.lg,
-        paddingTop: 50,
+        paddingTop: insets.top + 10,
         paddingBottom: spacing.md,
     },
     backBtn: {
