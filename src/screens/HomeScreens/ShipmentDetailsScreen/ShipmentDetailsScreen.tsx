@@ -45,6 +45,7 @@ import { showToast } from '@ui/alert/toastStore';
 import { API_BASE_URL } from '@config/env';
 import { getToken } from '@services/storage';
 import { useAuthStore } from '@features/store/authStore';
+import { LiveTrackingMap } from '@components/LiveTrackingMap';
 import {
     CheckCircle2,
     Truck,
@@ -367,6 +368,17 @@ const ShipmentDetailsScreen = () => {
                         <Animated.View style={[styles.liveDot, { transform: [{ scale: pulseAnim }] }]} />
                         <Text style={styles.liveBadgeText}>LIVE</Text>
                     </View>
+                </View>
+                {/* Real map (kalanabhaMobile MapLibre integration) — every
+                    marker is a real coordinate already flowing through
+                    this screen (shipment.pickup/drop, the live-tracked
+                    driver position). No Google Maps API key needed. */}
+                <View style={{ marginBottom: 12 }}>
+                    <LiveTrackingMap
+                        pickup={{ lat: shipment.pickup.lat, lng: shipment.pickup.lng }}
+                        drop={{ lat: shipment.drop.lat, lng: shipment.drop.lng }}
+                        driver={{ lat: liveDriverLocation.lat, lng: liveDriverLocation.lng }}
+                    />
                 </View>
                 <View style={styles.liveTrackingRow}>
                     <Bike color={C.primary} size={26} />
