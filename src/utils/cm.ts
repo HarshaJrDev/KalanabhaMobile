@@ -59,7 +59,7 @@ export const setupFCMListeners = (
     // notification while the app sat backgrounded did nothing at all.
     onNotificationOpenedApp(messaging, remote => {
         const data = remote.data ?? {};
-        handleNotificationTap((data.type as string) ?? null, (data.shipmentId as string) ?? null);
+        handleNotificationTap((data.type as string) ?? null, (data.shipmentId as string) ?? null, (data.ticketId as string) ?? null);
     });
 
     // Killed-app tap — same real navigation, via the pending-target queue
@@ -68,7 +68,7 @@ export const setupFCMListeners = (
     getInitialNotification(messaging).then(remote => {
         if (!remote) return;
         const data = remote.data ?? {};
-        handleNotificationTap((data.type as string) ?? null, (data.shipmentId as string) ?? null);
+        handleNotificationTap((data.type as string) ?? null, (data.shipmentId as string) ?? null, (data.ticketId as string) ?? null);
     });
 
     return unsub;

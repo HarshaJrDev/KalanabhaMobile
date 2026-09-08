@@ -62,11 +62,12 @@ const App = () => {
     flushPendingNotificationTarget();
     const unsub = setupFCMListeners((title, body, data) => {
       const shipmentId = (data?.shipmentId as string) ?? null;
+      const ticketId = (data?.ticketId as string) ?? null;
       const type = (data?.type as string) ?? null;
       Alert.alert(title, body, [
         {
           text: 'View',
-          onPress: () => handleNotificationTap(type, shipmentId),
+          onPress: () => handleNotificationTap(type, shipmentId, ticketId),
         },
         { text: 'Dismiss' },
       ]);

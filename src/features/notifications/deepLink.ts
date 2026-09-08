@@ -24,17 +24,32 @@ export interface NotificationTarget {
 
 // Every notification `type` this app's backend actually emits today
 // (kalanabhaBackend NotificationsListener) maps to a real screen — no
-// invented LOAD/TRIP/KYC/EARNING types from a generic template that this
+// invented LOAD/TRIP/EARNING types from a generic template that this
 // backend has no concept of. All shipment-related types land on the same
 // ShipmentDetailsScreen both apps already use (it renders correctly for
-// every real status). ADMIN_BROADCAST has no shipmentId and nothing more
-// specific to open, so it goes to the Notifications list itself.
+// every real status); shipmentId takes priority since it's the most
+// specific real target available. Ticket types (SUPPORT_REPLY/
+// SUPPORT_TICKET_RESOLVED/SUPPORT_TICKET_CLOSED) route to the real
+// TicketDetailScreen using the real ticketId (kalanabhaBackend 2b1403b).
+// KYC/verification types have no single entity to open, only a real
+// screen to check — DriverDocumentsScreen. ADMIN_BROADCAST has neither,
+// so it goes to the Notifications list itself.
+const TICKET_NOTIFICATION_TYPES = new Set(['SUPPORT_REPLY', 'SUPPORT_TICKET_RESOLVED', 'SUPPORT_TICKET_CLOSED']);
+const DRIVER_DOCUMENT_NOTIFICATION_TYPES = new Set(['KYC_APPROVED', 'KYC_REJECTED', 'DRIVER_VERIFIED', 'DRIVER_UNVERIFIED']);
+
 export const resolveNotificationTarget = (
     type: string | null | undefined,
     shipmentId: string | null | undefined,
+    ticketId?: string | null,
 ): NotificationTarget | null => {
     if (shipmentId) {
         return { screen: 'ShipmentDetailsScreen', params: { id: shipmentId } };
+    }
+    if (type && TICKET_NOTIFICATION_TYPES.has(type) && ticketId) {
+        return { screen: 'TicketDetail', params: { id: ticketId } };
+    }
+    if (type && DRIVER_DOCUMENT_NOTIFICATION_TYPES.has(type)) {
+        return { screen: 'DriverDocuments' };
     }
     if (type === 'ADMIN_BROADCAST') {
         return { screen: 'Notification' };
@@ -51,8 +66,12 @@ export const resolveNotificationTarget = (
 // navigationRef.onReady() fires.
 let pendingTarget: NotificationTarget | null = null;
 
-export const handleNotificationTap = (type: string | null | undefined, shipmentId: string | null | undefined) => {
-    const target = resolveNotificationTarget(type, shipmentId);
+export const handleNotificationTap = (
+    type: string | null | undefined,
+    shipmentId: string | null | undefined,
+    ticketId?: string | null,
+) => {
+    const target = resolveNotificationTarget(type, shipmentId, ticketId);
     if (!target) return;
 
     // Every real target here (ShipmentDetailsScreen, Notification) only

@@ -26,7 +26,7 @@ const NotificationScreen = () => {
             style={[styles.card, !item.read && styles.cardUnread]}
             onPress={() => {
                 if (!item.read) markRead(item.id);
-                handleNotificationTap(item.type, item.shipmentId);
+                handleNotificationTap(item.type, item.shipmentId, item.ticketId);
             }}
         >
             <Text style={styles.title}>{item.title}</Text>
