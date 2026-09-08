@@ -43,7 +43,13 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
     const [verifyingOtp, setVerifyingOtp] = useState(false);
     const [otpError, setOtpError] = useState<string | null>(null);
 
-    const [photoCount, setPhotoCount] = useState(0);
+    // Real backend behavior: podFileKey is a single field — each upload
+    // OVERWRITES the previous one (kalanabhaBackend ShipmentsRepository.
+    // setPod), there's no multi-photo model. A counter here would be
+    // fabricated ("2 photos added" when only the last one is ever kept) —
+    // this stays a boolean and "Take Another Photo" is honestly a retake,
+    // not an addition.
+    const [photoUploaded, setPhotoUploaded] = useState(false);
     const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
     const [signatureCaptured, setSignatureCaptured] = useState(false);
@@ -57,7 +63,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
         setOtp('');
         setOtpVerified(false);
         setOtpError(null);
-        setPhotoCount(0);
+        setPhotoUploaded(false);
         setSignatureCaptured(false);
         setStrokes([]);
         padRef.current?.clear();
@@ -115,7 +121,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
             setUploadingPhoto(true);
             try {
                 await uploadShipmentPod(shipmentId, asset.uri, asset.fileName ?? 'proof-of-delivery.jpg', asset.type ?? 'image/jpeg');
-                setPhotoCount((c) => c + 1);
+                setPhotoUploaded(true);
             } catch (err) {
                 showToast(normalizeError(err) || 'Photo upload failed — try again', 'error');
             } finally {
@@ -142,7 +148,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
         }
     };
 
-    const canComplete = otpVerified && photoCount > 0 && !completing;
+    const canComplete = otpVerified && photoUploaded && !completing;
 
     const handleCompleteTrip = async () => {
         if (!shipmentId || !canComplete) return;
@@ -210,18 +216,18 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
                     {/* Step 2 — Delivery Photos */}
                     <View style={styles.stepCard}>
                         <View style={styles.stepHeaderRow}>
-                            <Text style={styles.stepTitle}>② Delivery Photos</Text>
-                            {photoCount > 0 && <CheckCircle2 size={18} color={colors.SUCCESS} />}
+                            <Text style={styles.stepTitle}>② Delivery Photo</Text>
+                            {photoUploaded && <CheckCircle2 size={18} color={colors.SUCCESS} />}
                         </View>
                         <Text style={styles.stepHint}>Capture proof of delivery</Text>
                         <Pressable style={styles.smallBtnOutline} onPress={handleTakePhoto} disabled={uploadingPhoto}>
                             {uploadingPhoto ? (
                                 <ActivityIndicator size="small" color={colors.PRIMARY} />
                             ) : (
-                                <Text style={styles.smallBtnOutlineText}>{photoCount > 0 ? 'Take Another Photo' : 'Take Photo'}</Text>
+                                <Text style={styles.smallBtnOutlineText}>{photoUploaded ? 'Retake Photo' : 'Take Photo'}</Text>
                             )}
                         </Pressable>
-                        {photoCount > 0 && <Text style={styles.doneText}>{photoCount} photo{photoCount > 1 ? 's' : ''} added</Text>}
+                        {photoUploaded && <Text style={styles.doneText}>Photo added — retaking will replace it</Text>}
                     </View>
 
                     {/* Step 3 — Customer Signature (optional) */}
@@ -249,7 +255,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
                     <View style={styles.validationCard}>
                         <Text style={styles.validationTitle}>Final Validation</Text>
                         <ValidationRow label="OTP Verified" done={otpVerified} colors={colors} />
-                        <ValidationRow label="Delivery Photos Added" done={photoCount > 0} colors={colors} />
+                        <ValidationRow label="Delivery Photo Added" done={photoUploaded} colors={colors} />
                         <ValidationRow label="Customer Signature (optional)" done={signatureCaptured} colors={colors} muted />
                     </View>
 
