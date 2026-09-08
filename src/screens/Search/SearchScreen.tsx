@@ -1,33 +1,18 @@
 import { StyleSheet, Text, View, FlatList, TouchableOpacity } from 'react-native'
-import React, { useMemo, useState } from 'react'
+import React from 'react'
 import { useNavigation } from '@react-navigation/native'
 import CustomInput from '@components/CustomInput'
 import { Search, ChevronRight, QrCode } from 'lucide-react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useMyShipments } from '@features/shipments/hooks'
+import { useOrderSearch } from '@features/shipments/useOrderSearch'
 import { AsyncState } from '@components/AsyncState'
 import FONTS from '@utils/fonts';
 
-// Screen -> useMyShipments -> shipments.api -> GET /shipments/mine -> client
-// filter by trackingId/shipmentId -> UI. There's no backend
-// search-by-tracking-ID endpoint (GET /shipments/:id looks up by internal
-// UUID, not the human-readable tracking ID) — searching within the
-// customer's own already-fetched shipments is the honest scope this can
-// support without inventing an endpoint.
+// Screen -> useOrderSearch -> shipments.api -> GET /shipments/mine ->
+// client filter by trackingId/shipmentId -> UI.
 const SearchScreen = () => {
     const navigation = useNavigation();
-    const [query, setQuery] = useState('');
-    const { data: shipments, isLoading, error, refetch } = useMyShipments();
-
-    const results = useMemo(() => {
-        const q = query.trim().toLowerCase();
-        if (!q) return [];
-        return (shipments ?? []).filter(
-            (s) =>
-                s.trackingId.toLowerCase().includes(q) ||
-                s.shipmentId.toLowerCase().includes(q),
-        );
-    }, [query, shipments]);
+    const { query, setQuery, results, isLoading, error, refetch } = useOrderSearch();
 
     return (
         <SafeAreaView style={styles.container}>

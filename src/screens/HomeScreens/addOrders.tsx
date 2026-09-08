@@ -58,10 +58,15 @@ import {
     UtensilsCrossed,
     Sofa,
     Pill,
+    Navigation2,
+    Clock,
     type LucideIcon,
 } from 'lucide-react-native';
 import { registerFCMToken } from '@utils/cm';
 import { useVehicleConfigs, useServiceAreas, useBusinessSettings, usePackageCategories } from '@features/settings/hooks';
+import { useLocationSearch, recordRecentServiceArea } from '@features/location/useLocationSearch';
+import { useVehicleSearch } from '@features/vehicles/useVehicleSearch';
+import { showToast } from '@ui/alert/toastStore';
 import { useAuthStore } from '@features/store/authStore';
 import type { ServiceArea } from '@features/settings/types';
 import VehicleVisual from '@components/VehicleVisual';
@@ -358,20 +363,28 @@ const PlacePicker = ({
     const inputStyles = useMemo(() => makeInputStyles(COLORS), [COLORS]);
     const pickerStyles = useMemo(() => makePickerStyles(COLORS), [COLORS]);
     const [open, setOpen] = useState(false);
-    const [search, setSearch] = useState('');
+    // Real search + current-location + recents (useLocationSearch) —
+    // extends this existing picker instead of a second, duplicate search
+    // implementation. Deliberately still scoped to the real ServiceArea
+    // list (an admin-managed "where the platform actually operates"
+    // constraint), not free-text/geocoded addresses.
+    const { query, setQuery, results: filtered, recents, locateNearestServiceArea, locatingCurrentPosition } = useLocationSearch(areas);
 
-    const filtered = useMemo(() => {
-        const q = search.trim().toLowerCase();
-        const list = q
-            ? areas.filter((p) => p.name.toLowerCase().includes(q) || p.city.toLowerCase().includes(q))
-            : areas;
-        const byCity: Record<string, ServiceArea[]> = {};
-        list.forEach((p) => {
-            byCity[p.city] = byCity[p.city] ?? [];
-            byCity[p.city].push(p);
-        });
-        return byCity;
-    }, [search, areas]);
+    const handleSelect = (place: ServiceArea) => {
+        recordRecentServiceArea(place.id);
+        onSelect(place);
+        setOpen(false);
+        setQuery('');
+    };
+
+    const handleUseCurrentLocation = async () => {
+        const nearest = await locateNearestServiceArea();
+        if (nearest) {
+            handleSelect(nearest);
+        } else {
+            showToast('Could not find a serviceable locality near your current location', 'error');
+        }
+    };
 
     return (
         <View style={inputStyles.wrapper}>
@@ -404,14 +417,36 @@ const PlacePicker = ({
                         <Search size={16} color={COLORS.textMuted} />
                         <TextInput
                             style={pickerStyles.searchInput}
-                            value={search}
-                            onChangeText={setSearch}
+                            value={query}
+                            onChangeText={setQuery}
                             placeholder="Search locality or city"
                             placeholderTextColor={COLORS.placeholder}
                             autoFocus
                         />
                     </View>
+
+                    <TouchableOpacity style={pickerStyles.currentLocationRow} onPress={handleUseCurrentLocation} disabled={locatingCurrentPosition}>
+                        <Navigation2 size={16} color={COLORS.primary} />
+                        <Text style={pickerStyles.currentLocationText}>
+                            {locatingCurrentPosition ? 'Finding your location…' : 'Use current location'}
+                        </Text>
+                    </TouchableOpacity>
+
                     <ScrollView keyboardShouldPersistTaps="handled">
+                        {!query.trim() && recents.length > 0 && (
+                            <View>
+                                <Text style={pickerStyles.cityLabel}>Recent</Text>
+                                {recents.map((p) => (
+                                    <TouchableOpacity key={`recent-${p.id}`} style={pickerStyles.placeRow} onPress={() => handleSelect(p)}>
+                                        <Clock size={15} color={COLORS.textMuted} />
+                                        <View style={{ flex: 1, marginLeft: 10 }}>
+                                            <Text style={pickerStyles.placeName}>{p.name}</Text>
+                                            <Text style={pickerStyles.placePincode}>{p.city}</Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
                         {Object.keys(filtered).length === 0 && (
                             <Text style={pickerStyles.emptyText}>No matching locality</Text>
                         )}
@@ -422,7 +457,7 @@ const PlacePicker = ({
                                     <TouchableOpacity
                                         key={p.id}
                                         style={pickerStyles.placeRow}
-                                        onPress={() => { onSelect(p); setOpen(false); setSearch(''); }}
+                                        onPress={() => handleSelect(p)}
                                     >
                                         <MapPin size={15} color={COLORS.primary} />
                                         <View style={{ flex: 1, marginLeft: 10 }}>
@@ -457,6 +492,11 @@ const makePickerStyles = (COLORS: OrderColors) => StyleSheet.create({
         backgroundColor: COLORS.surface, borderRadius: RADIUS.md,
         borderWidth: 1.5, borderColor: COLORS.border,
     },
+    currentLocationRow: {
+        flexDirection: 'row', alignItems: 'center', gap: 10,
+        marginHorizontal: 16, marginBottom: 12, paddingVertical: 10,
+    },
+    currentLocationText: { color: COLORS.primary, fontSize: 14, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
     searchInput: { flex: 1, fontSize: 14, color: COLORS.text },
     cityLabel: {
         fontSize: 12, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.textMuted,
@@ -1143,10 +1183,14 @@ const StepOrderDetails = ({
     // screen at all. House Shifting excludes bike — a bike can't move
     // furniture/helpers, so it's never offered for that category.
     const { data: vehicleConfigsData } = useVehicleConfigs();
-    const activeVehicleConfigs = useMemo(
-        () => (vehicleConfigsData ?? []).filter((v) => v.active && (category !== 'HOUSE_SHIFTING' || v.name.toLowerCase() !== 'bike')),
-        [vehicleConfigsData, category],
-    );
+    // Real capacity filter (VehicleConfig.maxWeight) on top of the
+    // existing active/category filtering — a real field that existed
+    // but was never actually used to exclude a vehicle too small for
+    // the goods weight entered on the previous step.
+    const { results: activeVehicleConfigs, excludedForCapacity } = useVehicleSearch(vehicleConfigsData, {
+        minCapacityKg: category === 'HOUSE_SHIFTING' ? undefined : safeNumber(allData.package.weight),
+        excludeNames: category === 'HOUSE_SHIFTING' ? ['bike'] : undefined,
+    });
     // If the currently-selected type was deactivated/renamed/removed since
     // the form's default was set, fall back to the first active config
     // rather than silently submitting a vehicle type the backend will
@@ -1204,6 +1248,12 @@ const StepOrderDetails = ({
 
             {/* Vehicle Type */}
             <SectionHeader title="Vehicle Type" subtitle="Select based on package weight" />
+            {activeVehicleConfigs.length === 0 && excludedForCapacity.length > 0 && (
+                <Text style={odStyles.summKey}>
+                    No available vehicle can carry {allData.package.weight} kg — the largest option handles up to{' '}
+                    {Math.max(...excludedForCapacity.map((v) => v.maxWeight))} kg. Try reducing the package weight.
+                </Text>
+            )}
             <View style={odStyles.vehicleRow}>
                 {activeVehicleConfigs.map((vt) => {
                     const isSelected = data.vehicleType.toLowerCase() === vt.name.toLowerCase();
