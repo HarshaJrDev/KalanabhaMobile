@@ -304,6 +304,14 @@ const InputField = ({
                     onFocus={() => setFocused(true)}
                     onBlur={() => setFocused(false)}
                     autoCapitalize="none"
+                    // Android draws its own white "autofill" highlight box
+                    // over fields it detects as autofillable (phone number
+                    // especially) regardless of the TextInput's own style —
+                    // this is that, not a real style bug in inputStyles.row.
+                    // Turning autofill off keeps every field on the app's
+                    // actual dark theme.
+                    importantForAutofill="no"
+                    autoComplete="off"
                 />
             </View>
             {error ? <Text style={inputStyles.error}>{error}</Text> : null}
