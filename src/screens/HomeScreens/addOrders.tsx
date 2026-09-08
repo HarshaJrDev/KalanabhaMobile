@@ -60,12 +60,15 @@ import {
     Pill,
     Navigation2,
     Clock,
+    Bookmark,
+    BookmarkPlus,
     type LucideIcon,
 } from 'lucide-react-native';
 import { registerFCMToken } from '@utils/cm';
 import { useVehicleConfigs, useServiceAreas, useBusinessSettings, usePackageCategories } from '@features/settings/hooks';
 import { useLocationSearch, recordRecentServiceArea } from '@features/location/useLocationSearch';
 import { useVehicleSearch } from '@features/vehicles/useVehicleSearch';
+import { useSavedAddresses, useCreateSavedAddress } from '@features/savedAddresses/hooks';
 import { showToast } from '@ui/alert/toastStore';
 import { useAuthStore } from '@features/store/authStore';
 import type { ServiceArea } from '@features/settings/types';
@@ -369,6 +372,12 @@ const PlacePicker = ({
     // list (an admin-managed "where the platform actually operates"
     // constraint), not free-text/geocoded addresses.
     const { query, setQuery, results: filtered, recents, locateNearestServiceArea, locatingCurrentPosition } = useLocationSearch(areas);
+    // Real "Saved Addresses" (kalanabhaBackend baadae3) — anchored to the
+    // same real ServiceArea list, not a free-typed address.
+    const { data: savedAddresses } = useSavedAddresses();
+    const { mutate: createSavedAddress, isPending: savingAddress } = useCreateSavedAddress();
+    const [saveLabelFor, setSaveLabelFor] = useState<ServiceArea | null>(null);
+    const [saveLabel, setSaveLabel] = useState('');
 
     const handleSelect = (place: ServiceArea) => {
         recordRecentServiceArea(place.id);
@@ -384,6 +393,21 @@ const PlacePicker = ({
         } else {
             showToast('Could not find a serviceable locality near your current location', 'error');
         }
+    };
+
+    const handleConfirmSave = () => {
+        if (!saveLabelFor || !saveLabel.trim()) return;
+        createSavedAddress(
+            { label: saveLabel.trim(), serviceAreaId: saveLabelFor.id },
+            {
+                onSuccess: () => {
+                    showToast('Address saved', 'success');
+                    setSaveLabelFor(null);
+                    setSaveLabel('');
+                },
+                onError: (err) => showToast(normalizeError(err) || 'Could not save address', 'error'),
+            },
+        );
     };
 
     return (
@@ -433,6 +457,32 @@ const PlacePicker = ({
                     </TouchableOpacity>
 
                     <ScrollView keyboardShouldPersistTaps="handled">
+                        {!query.trim() && savedAddresses && savedAddresses.length > 0 && (
+                            <View>
+                                <Text style={pickerStyles.cityLabel}>Saved</Text>
+                                {savedAddresses.map((s) => (
+                                    <TouchableOpacity
+                                        key={`saved-${s.id}`}
+                                        style={pickerStyles.placeRow}
+                                        onPress={() => handleSelect({
+                                            id: s.serviceArea.id,
+                                            name: s.serviceArea.name,
+                                            city: s.serviceArea.city,
+                                            pincode: s.serviceArea.pincode,
+                                            lat: s.serviceArea.lat,
+                                            lng: s.serviceArea.lng,
+                                            active: true,
+                                        } as ServiceArea)}
+                                    >
+                                        <Bookmark size={15} color={COLORS.primary} />
+                                        <View style={{ flex: 1, marginLeft: 10 }}>
+                                            <Text style={pickerStyles.placeName}>{s.label}</Text>
+                                            <Text style={pickerStyles.placePincode}>{s.serviceArea.name}, {s.serviceArea.city}</Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
                         {!query.trim() && recents.length > 0 && (
                             <View>
                                 <Text style={pickerStyles.cityLabel}>Recent</Text>
@@ -465,12 +515,54 @@ const PlacePicker = ({
                                             <Text style={pickerStyles.placePincode}>{p.pincode}</Text>
                                         </View>
                                         {value?.id === p.id && <Check size={16} color={COLORS.primary} />}
+                                        <TouchableOpacity
+                                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                            style={{ marginLeft: 8 }}
+                                            onPress={(e) => {
+                                                e.stopPropagation();
+                                                setSaveLabel('');
+                                                setSaveLabelFor(p);
+                                            }}
+                                        >
+                                            <BookmarkPlus size={17} color={COLORS.textMuted} />
+                                        </TouchableOpacity>
                                     </TouchableOpacity>
                                 ))}
                             </View>
                         ))}
                     </ScrollView>
                 </View>
+
+                <Modal visible={!!saveLabelFor} transparent animationType="fade" onRequestClose={() => setSaveLabelFor(null)}>
+                    <View style={pickerStyles.saveOverlay}>
+                        <View style={pickerStyles.saveCard}>
+                            <Text style={pickerStyles.modalTitle}>Save address</Text>
+                            <Text style={[pickerStyles.placePincode, { marginTop: 4, marginBottom: 12 }]}>
+                                {saveLabelFor ? `${saveLabelFor.name}, ${saveLabelFor.city}` : ''}
+                            </Text>
+                            <TextInput
+                                style={pickerStyles.searchInput}
+                                value={saveLabel}
+                                onChangeText={setSaveLabel}
+                                placeholder="Label, e.g. Home, Office"
+                                placeholderTextColor={COLORS.placeholder}
+                                autoFocus
+                            />
+                            <View style={pickerStyles.saveActions}>
+                                <TouchableOpacity style={pickerStyles.closeBtn} onPress={() => setSaveLabelFor(null)}>
+                                    <Text style={pickerStyles.closeBtnText}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={pickerStyles.closeBtn}
+                                    disabled={!saveLabel.trim() || savingAddress}
+                                    onPress={handleConfirmSave}
+                                >
+                                    <Text style={pickerStyles.closeBtnText}>{savingAddress ? 'Saving…' : 'Save'}</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
             </Modal>
         </View>
     );
@@ -497,6 +589,9 @@ const makePickerStyles = (COLORS: OrderColors) => StyleSheet.create({
         marginHorizontal: 16, marginBottom: 12, paddingVertical: 10,
     },
     currentLocationText: { color: COLORS.primary, fontSize: 14, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
+    saveOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 },
+    saveCard: { backgroundColor: COLORS.surface, borderRadius: RADIUS.md, padding: 20 },
+    saveActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 12 },
     searchInput: { flex: 1, fontSize: 14, color: COLORS.text },
     cityLabel: {
         fontSize: 12, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.textMuted,
