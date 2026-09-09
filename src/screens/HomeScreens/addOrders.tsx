@@ -1843,7 +1843,7 @@ const StepHeader = ({ current, total }: { current: number; total: number }) => {
                                         done && headerStyles.stepNumDone,
                                         active && headerStyles.stepNumActive,
                                     ]}>
-                                        {done ? <Check size={16} color="#fff" strokeWidth={3} /> : step.icon}
+                                        {done ? <Check size={16} color={COLORS.primary} strokeWidth={3} /> : step.icon}
                                     </Text>
                                 </View>
                                 <Text style={[
