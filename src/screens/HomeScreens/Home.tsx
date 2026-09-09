@@ -28,6 +28,8 @@ import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimate
 import { useMyShipments, useMyShipmentHistory } from '@features/shipments/hooks';
 import { useUnreadNotificationCount } from '@features/notifications/hooks';
 import { useVehicleConfigs, useServiceAreas } from '@features/settings/hooks';
+import { useSavedAddresses } from '@features/savedAddresses/hooks';
+import type { SavedAddress } from '@features/savedAddresses/types';
 import type { ServiceArea } from '@features/settings/types';
 import { useAuthStore } from '@features/store/authStore';
 import type { Shipment as BackendShipment } from '@shipment/types';
@@ -56,6 +58,7 @@ import ActiveBookingCard from './homeSections/ActiveBookingCard';
 import QuickVehicleSelector from './homeSections/QuickVehicleSelector';
 import RecentTrips from './homeSections/RecentTrips';
 import PopularPickupPoints from './homeSections/PopularPickupPoints';
+import FavoriteAddresses from './homeSections/FavoriteAddresses';
 import HomeSkeleton from './homeSections/HomeSkeleton';
 import FadeImage from '@components/FadeImage';
 
@@ -121,6 +124,7 @@ const HomeScreen: React.FC = () => {
     const activeVehicleConfigs = useMemo(() => (vehicleConfigs ?? []).filter((v) => v.active), [vehicleConfigs]);
     const { data: serviceAreas, refetch: refetchServiceAreas } = useServiceAreas();
     const activeServiceAreas = useMemo(() => (serviceAreas ?? []).filter((a) => a.active), [serviceAreas]);
+    const { data: savedAddresses } = useSavedAddresses();
 
     const activeShipmentsRaw = useMemo(() => myShipments ?? [], [myShipments]);
     const heroShipment = activeShipmentsRaw[0] ?? null;
@@ -201,6 +205,10 @@ const HomeScreen: React.FC = () => {
 
     const goBookFromArea = (area: ServiceArea) => {
         (navigation as any).navigate('AddOrder', { prefill: { pickup: area.name } });
+    };
+
+    const goBookFromFavorite = (address: SavedAddress) => {
+        (navigation as any).navigate('AddOrder', { prefill: { pickup: address.serviceArea.name } });
     };
 
     const isNewCustomer = activeShipmentsRaw.length === 0 && (shipmentHistory?.length ?? 0) === 0 && !historyLoading;
@@ -317,6 +325,15 @@ const HomeScreen: React.FC = () => {
                     />
                 )}
 
+                {savedAddresses && savedAddresses.length > 0 && (
+                    <FavoriteAddresses
+                        addresses={savedAddresses}
+                        onSelect={goBookFromFavorite}
+                        onManage={() => (navigation as any).navigate('SavedAddresses')}
+                        colors={COLORS}
+                        fonts={FONTS}
+                    />
+                )}
                 {activeServiceAreas.length > 0 && (
                     <PopularPickupPoints areas={activeServiceAreas} onSelect={goBookFromArea} colors={COLORS} fonts={FONTS} />
                 )}

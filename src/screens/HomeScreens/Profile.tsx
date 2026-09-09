@@ -13,6 +13,7 @@ import {
 import {
     ChevronRight,
     MapPin,
+    Bookmark,
     CreditCard,
     Clock,
     Settings,
@@ -92,7 +93,8 @@ const ProfileScreen = () => {
             value: user?.address || 'Add address',
             onPress: () => setEditVisible(true),
         },
-        { icon: CreditCard, label: 'Payment Method', onPress: () => comingSoon('Payment methods') },
+        { icon: Bookmark, label: 'Saved Addresses', onPress: () => navigation.navigate('SavedAddresses' as never) },
+    { icon: CreditCard, label: 'Payment Method', onPress: () => comingSoon('Payment methods') },
         { icon: Clock, label: 'Transactions History', onPress: () => navigation.navigate('Transactions' as never) },
         { icon: Settings, label: 'Settings', onPress: () => navigation.navigate('Settings' as never) },
         {
