@@ -45,8 +45,16 @@ import NewOrder from '@screens/HomeScreens/addOrders';
 import ShipmentScreen from '@screens/HomeScreens/shipment';
 import { useAuthState } from '@hooks/useAuthState';
 import { useAuthStore } from '@features/store/authStore';
+import { useNotificationsSocket } from '@features/notifications/hooks';
 
 const Stack = createNativeStackNavigator();
+
+// Needs to run under QueryClientProvider (useQueryClient) — App itself
+// renders that provider, so this can't be called at App's own top level.
+const NotificationsSocketBridge = () => {
+  useNotificationsSocket();
+  return null;
+};
 
 const App = () => {
   const { isAuthenticated } = useAuthState();
@@ -88,6 +96,7 @@ const App = () => {
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={{ flex: 1 }}>
+        <NotificationsSocketBridge />
         <GlobalToast />
         <GlobalDeliveryOtpModal />
         <GlobalDeliveryCompletionSheet />
