@@ -1,14 +1,13 @@
 {
   "project_info": {
-    "project_number": "39553403112",
-    "firebase_url": "https://kalanabhamobile-262c3-default-rtdb.firebaseio.com",
-    "project_id": "kalanabhamobile-262c3",
-    "storage_bucket": "kalanabhamobile-262c3.firebasestorage.app"
+    "project_number": "1083046819644",
+    "project_id": "kalanabhamobile-20e10",
+    "storage_bucket": "kalanabhamobile-20e10.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:39553403112:android:b2bbeea0ade021759ea15d",
+        "mobilesdk_app_id": "1:1083046819644:android:9b4a0c9cefe46725bf9039",
         "android_client_info": {
           "package_name": "com.kalanabha"
         }
@@ -16,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBJMmSLdUSypzhaXTJdGRqquTxAb80_coo"
+          "current_key": "AIzaSyAVqjNQXKqQRwGytG7_n9f2FsGEYuGWh7w"
         }
       ],
       "services": {
