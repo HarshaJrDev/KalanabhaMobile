@@ -261,9 +261,9 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
             <View style={styles.loadingContainer}>
                 <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
                 <Animated.View entering={FadeIn} style={styles.loadingContent}>
-                    <ActivityIndicator size="large" color="#2563EB" />
+                    <ActivityIndicator size="large" color="#FF7518" />
                     <Text style={styles.loadingText}>Loading your orders...</Text>
-                    <Text style={styles.loadingSubtext}>Syncing with Firestore</Text>
+                    <Text style={styles.loadingSubtext}>Fetching the latest from Kalanabha</Text>
                 </Animated.View>
             </View>
         );
@@ -576,8 +576,8 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                                     <RefreshControl
                                         refreshing={refreshing}
                                         onRefresh={onRefresh}
-                                        colors={['#2563EB']}
-                                        tintColor="#2563EB"
+                                        colors={['#FF7518']}
+                                        tintColor="#FF7518"
                                         progressBackgroundColor="#F0F0F0"
                                     />
                                 }
@@ -593,7 +593,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                         style={styles.statsFooterWrap}
                     >
                         <LinearGradient
-                            colors={['#2563EB', '#1E40AF']}
+                            colors={['#FF7518', '#E9600A']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                             style={styles.statsFooter}
@@ -912,7 +912,7 @@ const styles = StyleSheet.create({
         fontFamily: FONTS.MEDIUM_PRIMARY,
     },
     badge: {
-        backgroundColor: '#2563EB',
+        backgroundColor: '#FF7518',
         borderRadius: 20,
         paddingVertical: 6,
         paddingHorizontal: 12,
@@ -960,12 +960,12 @@ const styles = StyleSheet.create({
     },
     statsFooter: {
         flexDirection: 'row',
-        backgroundColor: '#2563EB',
+        backgroundColor: '#FF7518',
         paddingVertical: 18,
         paddingHorizontal: 16,
         borderRadius: 20,
         elevation: 5,
-        shadowColor: '#2563EB',
+        shadowColor: '#FF7518',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 12,
