@@ -6,6 +6,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
 import Reanimated, { useAnimatedStyle, interpolate, Extrapolate, type SharedValue } from 'react-native-reanimated';
 import { ArrowRight } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import type { VehicleConfig } from '@features/settings/types';
 import VehicleVisual from '@components/VehicleVisual';
 import { HomeColors, HomeFonts, SPACING } from './theme';
@@ -27,6 +28,7 @@ type VehicleCardProps = {
 };
 
 const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, index, isFirst, cardWidth, cardStep, scrollX, styles, colors: COLORS, onPress }) => {
+    const { t } = useTranslation();
     const animatedStyle = useAnimatedStyle(() => {
         const center = index * cardStep;
         const scale = interpolate(scrollX.value, [center - cardStep, center, center + cardStep], [0.92, 1, 0.92], Extrapolate.CLAMP);
@@ -55,7 +57,7 @@ const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, index, isFirst, card
                     />
                     {isFirst && (
                         <View style={styles.vehicleFastestTag}>
-                            <Text style={styles.vehicleFastestTagText}>FASTEST DISPATCH</Text>
+                            <Text style={styles.vehicleFastestTagText}>{t('home.fastestDispatch')}</Text>
                         </View>
                     )}
                 </View>
@@ -66,21 +68,21 @@ const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, index, isFirst, card
                         {isFirst && (
                             <View style={styles.vehicleArrivalRow}>
                                 <View style={styles.vehicleArrivalDot} />
-                                <Text style={styles.vehicleArrivalText}>Available now</Text>
+                                <Text style={styles.vehicleArrivalText}>{t('home.availableNow')}</Text>
                             </View>
                         )}
                     </View>
                     <Text style={styles.vehicleDesc}>
-                        Up to {vehicle.maxWeight} kg
+                        {t('home.upToKg', { weight: vehicle.maxWeight })}
                         {vehicle.specialConditions.length > 0 ? ` · ${vehicle.specialConditions.join(', ')}` : ''}
                     </Text>
                     <View style={styles.vehicleFareRow}>
                         <View>
-                            <Text style={styles.vehicleFareLabel}>Starting Fare</Text>
-                            <Text style={styles.vehicleFareValue}>From ₹{Math.round(vehicle.baseRate)}</Text>
+                            <Text style={styles.vehicleFareLabel}>{t('home.startingFare')}</Text>
+                            <Text style={styles.vehicleFareValue}>{t('home.fromPrice', { price: Math.round(vehicle.baseRate) })}</Text>
                         </View>
                         <View style={styles.vehicleBookBtn}>
-                            <Text style={styles.vehicleBookBtnText}>Book {vehicle.name}</Text>
+                            <Text style={styles.vehicleBookBtnText}>{t('home.bookVehicle', { vehicle: vehicle.name })}</Text>
                             <ArrowRight size={13} color="#fff" />
                         </View>
                     </View>
@@ -101,6 +103,7 @@ interface Props {
 
 const QuickVehicleSelector: React.FC<Props> = ({ vehicles, scrollX, onScroll, onSelect, colors: COLORS, fonts: FONTS }) => {
     const styles = React.useMemo(() => makeStyles(COLORS, FONTS), [COLORS, FONTS]);
+    const { t } = useTranslation();
 
     if (vehicles.length === 0) return null;
 
@@ -108,10 +111,10 @@ const QuickVehicleSelector: React.FC<Props> = ({ vehicles, scrollX, onScroll, on
         <View style={styles.vehicleSection}>
             <View style={styles.vehicleSectionHeader}>
                 <View>
-                    <Text style={styles.sectionTitle}>Choose Your Vehicle</Text>
-                    <Text style={styles.vehicleSectionSubtitle}>Real, admin-set rates — tap to book</Text>
+                    <Text style={styles.sectionTitle}>{t('home.chooseYourVehicle')}</Text>
+                    <Text style={styles.vehicleSectionSubtitle}>{t('home.realAdminRatesHint')}</Text>
                 </View>
-                <Text style={styles.vehicleReadyText}>{vehicles.length} T  YPES READY</Text>
+                <Text style={styles.vehicleReadyText}>{t('home.typesReady', { count: vehicles.length })}</Text>
             </View>
             <Reanimated.ScrollView
                 horizontal

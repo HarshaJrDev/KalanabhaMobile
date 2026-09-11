@@ -17,23 +17,24 @@ import { Truck, Bike, RotateCw, Phone, Navigation, ChevronRight, Package } from 
 import type { Shipment } from '@shipment/types';
 import { useLiveDriverLocation } from '@location/useLiveDriverLocation';
 import { haversineDistanceKm } from '@utils/geo';
+import { useTranslation } from 'react-i18next';
 import { HomeColors, HomeFonts, SPACING } from './theme';
 
-const STATUS_LABEL: Record<string, string> = {
-    searching: 'Finding a pilot for you',
-    accepted: 'Pilot on the way to pickup',
-    in_transit: 'Your shipment is in transit',
-};
+const makeStatusLabel = (t: (key: string, opts?: Record<string, unknown>) => string): Record<string, string> => ({
+    searching: t('home.statusSearchingLong'),
+    accepted: t('home.statusAcceptedLong'),
+    in_transit: t('home.statusInTransitLong'),
+});
 
 // Real elapsed time since a real timestamp — "3 min ago", never a
 // fabricated countdown/ETA.
-const timeAgo = (iso?: string): string | null => {
+const makeTimeAgo = (t: (key: string, opts?: Record<string, unknown>) => string) => (iso?: string): string | null => {
     if (!iso) return null;
     const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
-    if (mins < 1) return 'just now';
-    if (mins < 60) return `${mins} min ago`;
+    if (mins < 1) return t('home.justNow');
+    if (mins < 60) return t('home.minAgo', { mins });
     const hrs = Math.floor(mins / 60);
-    return `${hrs}h ${mins % 60}m ago`;
+    return t('home.hoursMinAgo', { hrs, mins: mins % 60 });
 };
 
 interface Props {
@@ -44,7 +45,10 @@ interface Props {
 }
 
 const ActiveBookingCard: React.FC<Props> = ({ shipment, onTrack, colors: COLORS, fonts: FONTS }) => {
+    const { t } = useTranslation();
     const styles = React.useMemo(() => makeStyles(COLORS, FONTS), [COLORS, FONTS]);
+    const STATUS_LABEL = React.useMemo(() => makeStatusLabel(t), [t]);
+    const timeAgo = React.useMemo(() => makeTimeAgo(t), [t]);
     const isSearching = shipment.status === 'searching';
     const liveLocation = useLiveDriverLocation(!isSearching ? shipment.id : null);
 
@@ -64,11 +68,11 @@ const ActiveBookingCard: React.FC<Props> = ({ shipment, onTrack, colors: COLORS,
                         {isSearching ? <RotateCw size={18} color="#fff" /> : shipment.status === 'in_transit' ? <Bike size={18} color="#fff" /> : <Truck size={18} color="#fff" />}
                     </View>
                     <View style={{ flex: 1 }}>
-                        <Text style={styles.statusTitle}>{STATUS_LABEL[shipment.status] ?? 'Shipment update'}</Text>
+                        <Text style={styles.statusTitle}>{STATUS_LABEL[shipment.status] ?? t('home.shipmentUpdate')}</Text>
                         <Text style={styles.trackingId}>{shipment.trackingId}</Text>
                     </View>
                     <View style={styles.trackBtn}>
-                        <Text style={styles.trackBtnText}>Track</Text>
+                        <Text style={styles.trackBtnText}>{t('home.track')}</Text>
                         <ChevronRight size={14} color="#fff" />
                     </View>
                 </View>
@@ -91,13 +95,13 @@ const ActiveBookingCard: React.FC<Props> = ({ shipment, onTrack, colors: COLORS,
                             {shipment.dispatch.driverPhone && <Phone size={13} color="rgba(255,255,255,0.85)" />}
                         </View>
                     ) : (
-                        <Text style={styles.driverName}>Matching nearby pilots…</Text>
+                        <Text style={styles.driverName}>{t('home.matchingNearbyPilots')}</Text>
                     )}
                     <View style={{ flex: 1 }} />
                     {distanceToPickupKm != null && (
                         <View style={styles.metaChip}>
                             <Navigation size={11} color="#fff" />
-                            <Text style={styles.metaChipText}>~{distanceToPickupKm.toFixed(1)} km away</Text>
+                            <Text style={styles.metaChipText}>{t('home.kmAway', { km: distanceToPickupKm.toFixed(1) })}</Text>
                         </View>
                     )}
                     {!distanceToPickupKm && shipment.dispatch?.acceptedAt && (
@@ -108,7 +112,7 @@ const ActiveBookingCard: React.FC<Props> = ({ shipment, onTrack, colors: COLORS,
                 {shipment.category === 'HOUSE_SHIFTING' && (
                     <View style={styles.categoryBadge}>
                         <Package size={11} color="#fff" />
-                        <Text style={styles.categoryBadgeText}>House Shifting · {shipment.helpersCount} helper{shipment.helpersCount === 1 ? '' : 's'}</Text>
+                        <Text style={styles.categoryBadgeText}>{t('home.houseShiftingHelpers', { count: shipment.helpersCount, plural: shipment.helpersCount === 1 ? '' : 's' })}</Text>
                     </View>
                 )}
             </Pressable>

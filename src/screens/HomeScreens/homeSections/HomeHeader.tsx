@@ -101,7 +101,7 @@ const HomeHeader: React.FC<Props> = ({
                                     <Text style={styles.fleetBadgeText}>{t('home.fleet')}</Text>
                                 </View>
                             </View>
-                            <Text style={styles.brandSubtitle}>Home</Text>
+                            <Text style={styles.brandSubtitle}>{t('tabs.home')}</Text>
                         </View>
                     </View>
                     <Pressable style={styles.profileAvatar} onPress={onOpenProfile}>
