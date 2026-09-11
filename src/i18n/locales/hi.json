@@ -31,7 +31,8 @@
     "loggingIn": "लॉग इन हो रहा है…",
     "forgotPassword": "पासवर्ड भूल गए?",
     "noAccount": "खाता नहीं है?",
-    "signup": "साइन अप करें"
+    "signup": "साइन अप करें",
+    "emailPasswordRequired": "ईमेल और पासवर्ड आवश्यक हैं"
   },
   "profile": {
     "title": "प्रोफ़ाइल",
@@ -134,7 +135,13 @@
     "confirmPasswordPlaceholder": "अपना पासवर्ड फिर से दर्ज करें",
     "fixHighlighted": "कृपया हाइलाइट किए गए फ़ील्ड ठीक करें",
     "accountCreated": "खाता सफलतापूर्वक बनाया गया!",
-    "unableToFetchLocation": "स्थान प्राप्त करने में असमर्थ"
+    "unableToFetchLocation": "स्थान प्राप्त करने में असमर्थ",
+    "validationName": "नाम कम से कम 2 अक्षरों का होना चाहिए",
+    "validationEmail": "एक मान्य ईमेल पता दर्ज करें",
+    "validationPhone": "एक मान्य फ़ोन नंबर दर्ज करें",
+    "validationAddress": "पता कम से कम 5 अक्षरों का होना चाहिए",
+    "validationPassword": "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए",
+    "validationConfirmPassword": "पासवर्ड मेल खाने चाहिए"
   },
   "forgotPassword": {
     "forgotPasswordTitle": "पासवर्ड भूल गए",

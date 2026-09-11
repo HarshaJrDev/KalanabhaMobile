@@ -31,7 +31,8 @@
     "loggingIn": "Logging in…",
     "forgotPassword": "Forgot password?",
     "noAccount": "Don't have an account?",
-    "signup": "Sign Up"
+    "signup": "Sign Up",
+    "emailPasswordRequired": "Email and password are required"
   },
   "profile": {
     "title": "Profile",
@@ -134,7 +135,13 @@
     "confirmPasswordPlaceholder": "Re-enter your password",
     "fixHighlighted": "Please fix the highlighted fields",
     "accountCreated": "Account created successfully!",
-    "unableToFetchLocation": "Unable to fetch location"
+    "unableToFetchLocation": "Unable to fetch location",
+    "validationName": "Name must be at least 2 characters",
+    "validationEmail": "Enter a valid email address",
+    "validationPhone": "Enter a valid phone number",
+    "validationAddress": "Address must be at least 5 characters",
+    "validationPassword": "Password must be at least 6 characters",
+    "validationConfirmPassword": "Passwords must match"
   },
   "forgotPassword": {
     "forgotPasswordTitle": "Forgot Password",

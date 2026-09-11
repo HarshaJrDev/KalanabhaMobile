@@ -31,7 +31,8 @@
     "loggingIn": "உள்நுழைகிறது…",
     "forgotPassword": "கடவுச்சொல் மறந்துவிட்டதா?",
     "noAccount": "கணக்கு இல்லையா?",
-    "signup": "பதிவு செய்யவும்"
+    "signup": "பதிவு செய்யவும்",
+    "emailPasswordRequired": "மின்னஞ்சல் மற்றும் கடவுச்சொல் தேவை"
   },
   "profile": {
     "title": "சுயவிவரம்",
@@ -134,7 +135,13 @@
     "confirmPasswordPlaceholder": "உங்கள் கடவுச்சொல்லை மீண்டும் உள்ளிடவும்",
     "fixHighlighted": "தயவுசெய்து சிறப்பிக்கப்பட்ட புலங்களை சரிசெய்யவும்",
     "accountCreated": "கணக்கு வெற்றிகரமாக உருவாக்கப்பட்டது!",
-    "unableToFetchLocation": "இருப்பிடத்தைப் பெற முடியவில்லை"
+    "unableToFetchLocation": "இருப்பிடத்தைப் பெற முடியவில்லை",
+    "validationName": "பெயர் குறைந்தது 2 எழுத்துகள் இருக்க வேண்டும்",
+    "validationEmail": "சரியான மின்னஞ்சல் முகவரியை உள்ளிடவும்",
+    "validationPhone": "சரியான தொலைபேசி எண்ணை உள்ளிடவும்",
+    "validationAddress": "முகவரி குறைந்தது 5 எழுத்துகள் இருக்க வேண்டும்",
+    "validationPassword": "கடவுச்சொல் குறைந்தது 6 எழுத்துகள் இருக்க வேண்டும்",
+    "validationConfirmPassword": "கடவுச்சொற்கள் பொருந்த வேண்டும்"
   },
   "forgotPassword": {
     "forgotPasswordTitle": "கடவுச்சொல் மறந்துவிட்டதா",

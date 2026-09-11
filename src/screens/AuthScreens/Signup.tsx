@@ -84,14 +84,27 @@ const Signup = () => {
     const validate = useCallback((): boolean => {
         const result = signupSchema.safeParse(form);
         if (result.success) { setErrors({}); return true; }
+        // zod's own issue.message is always English (built-in defaults like
+        // "Invalid email" plus our one custom "Passwords must match") — not
+        // something a schema defined at module scope can call t() for, so
+        // each field maps to its own translated message here instead of
+        // ever showing the raw zod string to the user.
+        const FIELD_MESSAGE_KEY: Record<keyof FormState, string> = {
+            name: 'signup.validationName',
+            email: 'signup.validationEmail',
+            phone: 'signup.validationPhone',
+            address: 'signup.validationAddress',
+            password: 'signup.validationPassword',
+            confirmPassword: 'signup.validationConfirmPassword',
+        };
         const fieldErrors: FormErrors = {};
         result.error.issues.forEach(issue => {
             const field = issue.path[0] as keyof FormState;
-            fieldErrors[field] = issue.message;
+            fieldErrors[field] = t(FIELD_MESSAGE_KEY[field]);
         });
         setErrors(fieldErrors);
         return false;
-    }, [form]);
+    }, [form, t]);
 
     const isDisabled = useMemo(() =>
         isPending || Object.values(form).some(v => !v),

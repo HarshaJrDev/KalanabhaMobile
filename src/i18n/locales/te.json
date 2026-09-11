@@ -31,7 +31,8 @@
     "loggingIn": "లాగిన్ అవుతోంది…",
     "forgotPassword": "పాస్‌వర్డ్ మర్చిపోయారా?",
     "noAccount": "ఖాతా లేదా?",
-    "signup": "సైన్ అప్ చేయండి"
+    "signup": "సైన్ అప్ చేయండి",
+    "emailPasswordRequired": "ఇమెయిల్ మరియు పాస్‌వర్డ్ అవసరం"
   },
   "profile": {
     "title": "ప్రొఫైల్",
@@ -134,7 +135,13 @@
     "confirmPasswordPlaceholder": "మీ పాస్‌వర్డ్‌ని మళ్లీ నమోదు చేయండి",
     "fixHighlighted": "దయచేసి హైలైట్ చేసిన ఫీల్డ్‌లను సరిచేయండి",
     "accountCreated": "ఖాతా విజయవంతంగా సృష్టించబడింది!",
-    "unableToFetchLocation": "స్థానాన్ని పొందడం సాధ్యం కాలేదు"
+    "unableToFetchLocation": "స్థానాన్ని పొందడం సాధ్యం కాలేదు",
+    "validationName": "పేరు కనీసం 2 అక్షరాలు ఉండాలి",
+    "validationEmail": "సరైన ఇమెయిల్ చిరునామాను నమోదు చేయండి",
+    "validationPhone": "సరైన ఫోన్ నంబర్‌ను నమోదు చేయండి",
+    "validationAddress": "చిరునామా కనీసం 5 అక్షరాలు ఉండాలి",
+    "validationPassword": "పాస్‌వర్డ్ కనీసం 6 అక్షరాలు ఉండాలి",
+    "validationConfirmPassword": "పాస్‌వర్డ్‌లు సరిపోలాలి"
   },
   "forgotPassword": {
     "forgotPasswordTitle": "పాస్‌వర్డ్ మర్చిపోయారా",

@@ -127,7 +127,7 @@ const Login = () => {
         setError(null);
 
         if (!email?.trim() || !password?.trim()) {
-            setError('Email and password are required');
+            setError(t('login.emailPasswordRequired'));
             return;
         }
 
@@ -157,7 +157,7 @@ const Login = () => {
                 onSettled: () => setLoading(false),
             }
         );
-    }, [email, password, mutate]);
+    }, [email, password, mutate, t]);
 
     // ─── Render ──────────────────────────────────────────────────────────────
     return (
