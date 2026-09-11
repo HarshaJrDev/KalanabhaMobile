@@ -126,7 +126,7 @@ export interface Shipment {
 
     // Real Razorpay payment status — independent of paymentMode; only
     // 'prepaid' shipments ever move off 'PENDING'.
-    paymentStatus: 'PENDING' | 'PAID' | 'FAILED';
+    paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
 
     // Promo code applied at booking, if any.
     promoCode: string | null;

@@ -168,6 +168,13 @@ export const cancelShipment = async (id: string, reason?: string): Promise<Backe
     return data.data;
 };
 
+// Owner-only, and only while the shipment is still 'scheduled' (not yet
+// dispatched) — ShipmentDetailsScreen's "Change pickup time".
+export const rescheduleShipment = async (id: string, scheduledAt: string): Promise<BackendShipment> => {
+    const { data } = await apiClient.patch<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/schedule`, { scheduledAt });
+    return data.data;
+};
+
 // Proof of Delivery — driver only, must be the shipment's own assigned
 // driver (kalanabhaBackend enforces this, not just this screen). Same
 // multipart shape driverDocuments.api.ts's upload already uses.

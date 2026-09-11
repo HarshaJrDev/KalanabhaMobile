@@ -34,11 +34,13 @@ import {
     Share,
     Modal,
     Image,
+    Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { useShipment, useShipmentHistory } from '@features/shipments/hooks';
+import { useShipment, useShipmentHistory, useRescheduleShipment, useCancelShipment } from '@features/shipments/hooks';
 import { usePayForShipment } from '@features/payments/hooks';
+import { DateTimeChipPicker } from '@components/DateTimeChipPicker';
 import { useLiveDriverLocation } from '@location/useLiveDriverLocation';
 import { haversineDistanceKm } from '@utils/geo';
 import { openGoogleMapsDirections } from '@utils/navigation';
@@ -66,6 +68,7 @@ import {
     MessageCircle,
     FileText,
     Star,
+    Calendar,
     X,
     type LucideIcon,
 } from 'lucide-react-native';
@@ -93,6 +96,7 @@ const makeC = (BRAND: ReturnType<typeof useAppTheme>['colors']) => ({
 type DetailColors = ReturnType<typeof makeC>;
 
 const makeStatusConfig = (t: (key: string) => string): Record<string, { label: string; color: keyof DetailColors; icon: LucideIcon }> => ({
+    scheduled: { label: t('status.scheduled'), color: 'warning', icon: Calendar },
     delivered: { label: t('shipmentDetails.statusDelivered'), color: 'success', icon: CheckCircle2 },
     in_transit: { label: t('shipmentDetails.statusInTransit'), color: 'primary', icon: Truck },
     accepted: { label: t('shipmentDetails.statusDriverAssigned'), color: 'primary', icon: Truck },
@@ -142,6 +146,10 @@ const ShipmentDetailsScreen = () => {
     const [copied, setCopied] = useState(false);
     const { mutate: payForShipment, isPending: payingNow } = usePayForShipment();
     const [podViewerOpen, setPodViewerOpen] = useState(false);
+    const { mutate: rescheduleShipment, isPending: rescheduling } = useRescheduleShipment(shipmentId ?? '');
+    const { mutate: cancelShipment, isPending: cancelling } = useCancelShipment(shipmentId ?? '');
+    const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+    const [pendingScheduledAt, setPendingScheduledAt] = useState('');
 
     const isDriverEnRoute = shipment?.status === 'accepted' || shipment?.status === 'in_transit';
     // Real pickup/delivery OTPs (kalanabhaBackend d17a770, 63a33d4) — only
@@ -278,6 +286,65 @@ const ShipmentDetailsScreen = () => {
             </LinearGradient>
         </Animated.View>
     );
+
+    // Real actions for a not-yet-dispatched future pickup — was no way to
+    // change a scheduled time short of cancelling and rebooking from
+    // scratch, and no cancel action existed on this screen at all before
+    // this (only from the shipment list). PATCH /shipments/:id/schedule +
+    // POST /shipments/:id/cancel (which now also triggers a real Razorpay
+    // refund server-side if the shipment was paid).
+    const renderScheduleActions = () => {
+        if (shipment.status !== 'scheduled') return null;
+        return (
+            <View style={styles.card}>
+                <Text style={styles.cardTitle}>{t('shipmentDetails.scheduledPickupTitle')}</Text>
+                <View style={styles.scheduleActionsRow}>
+                    <TouchableOpacity
+                        style={styles.scheduleActionBtn}
+                        activeOpacity={0.85}
+                        onPress={() => {
+                            setPendingScheduledAt(shipment.scheduledAt ?? '');
+                            setRescheduleModalOpen(true);
+                        }}
+                    >
+                        <Calendar color={C.primary} size={16} />
+                        <Text style={styles.scheduleActionBtnText}>{t('shipmentDetails.changePickupTime')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.scheduleActionBtn, styles.scheduleActionBtnDanger]}
+                        activeOpacity={0.85}
+                        disabled={cancelling}
+                        onPress={() => {
+                            Alert.alert(
+                                t('shipmentDetails.cancelPickupTitle'),
+                                t('shipmentDetails.cancelPickupConfirm'),
+                                [
+                                    { text: t('common.cancel'), style: 'cancel' },
+                                    {
+                                        text: t('shipmentDetails.cancelPickupConfirmBtn'),
+                                        style: 'destructive',
+                                        onPress: () => cancelShipment(undefined, {
+                                            onSuccess: () => showToast(t('shipmentDetails.pickupCancelled'), 'success'),
+                                            onError: () => showToast(t('shipmentDetails.pickupCancelFailed'), 'error'),
+                                        }),
+                                    },
+                                ],
+                            );
+                        }}
+                    >
+                        {cancelling ? (
+                            <ActivityIndicator color={C.danger} size="small" />
+                        ) : (
+                            <>
+                                <XCircle color={C.danger} size={16} />
+                                <Text style={[styles.scheduleActionBtnText, { color: C.danger }]}>{t('shipmentDetails.cancelPickup')}</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    };
 
     const renderTimeline = () => (
         <AnimatedCard anim={cardAnims[0]} fade={cardFades[0]} cardStyle={styles.card}>
@@ -543,6 +610,14 @@ const ShipmentDetailsScreen = () => {
                     )}
                 </TouchableOpacity>
             )}
+            <TouchableOpacity
+                style={styles.viewReceiptRow}
+                activeOpacity={0.7}
+                onPress={() => (navigation as any).navigate('Receipt', { id: shipmentId })}
+            >
+                <FileText color={C.primary} size={14} />
+                <Text style={styles.viewReceiptText}>{t('receipt.title')}</Text>
+            </TouchableOpacity>
         </AnimatedCard>
     );
 
@@ -602,6 +677,7 @@ const ShipmentDetailsScreen = () => {
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 {renderHeader()}
                 <View style={styles.body}>
+                    {renderScheduleActions()}
                     {renderTimeline()}
                     {renderRoute()}
                     {renderLiveTracking()}
@@ -632,6 +708,46 @@ const ShipmentDetailsScreen = () => {
                             resizeMode="contain"
                         />
                     )}
+                </View>
+            </Modal>
+
+            <Modal visible={rescheduleModalOpen} animationType="slide" onRequestClose={() => setRescheduleModalOpen(false)}>
+                <View style={styles.rescheduleModalContainer}>
+                    <View style={styles.rescheduleModalHeader}>
+                        <Text style={styles.cardTitle}>{t('shipmentDetails.changePickupTime')}</Text>
+                        <TouchableOpacity onPress={() => setRescheduleModalOpen(false)}>
+                            <Text style={{ color: C.primary, fontFamily: FONTS.BOLD_PRIMARY }}>{t('common.close')}</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <ScrollView contentContainerStyle={{ padding: 16 }}>
+                        <DateTimeChipPicker
+                            colors={{
+                                primary: C.primary, primaryLight: C.primaryLight, text: C.text,
+                                textSecondary: C.textMid, border: C.border, surface: C.card,
+                            }}
+                            value={pendingScheduledAt}
+                            onChange={setPendingScheduledAt}
+                            t={t}
+                        />
+                        <TouchableOpacity
+                            style={[styles.scheduleActionBtn, styles.scheduleActionBtnPrimary]}
+                            activeOpacity={0.85}
+                            disabled={!pendingScheduledAt || rescheduling}
+                            onPress={() => rescheduleShipment(pendingScheduledAt, {
+                                onSuccess: () => {
+                                    setRescheduleModalOpen(false);
+                                    showToast(t('shipmentDetails.pickupTimeUpdated'), 'success');
+                                },
+                                onError: () => showToast(t('shipmentDetails.pickupTimeUpdateFailed'), 'error'),
+                            })}
+                        >
+                            {rescheduling ? (
+                                <ActivityIndicator color="#fff" size="small" />
+                            ) : (
+                                <Text style={[styles.scheduleActionBtnText, { color: '#fff' }]}>{t('shipmentDetails.confirmNewTime')}</Text>
+                            )}
+                        </TouchableOpacity>
+                    </ScrollView>
                 </View>
             </Modal>
         </View>
@@ -764,6 +880,23 @@ const makeStyles = (C: DetailColors) => StyleSheet.create({
         paddingVertical: 12, alignItems: 'center', justifyContent: 'center',
     },
     payNowBtnText: { color: '#fff', fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY },
+    viewReceiptRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14, alignSelf: 'center' },
+    viewReceiptText: { fontSize: 13, color: C.primary, fontFamily: FONTS.BOLD_PRIMARY },
+
+    scheduleActionsRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
+    scheduleActionBtn: {
+        flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+        borderWidth: 1.5, borderColor: C.primary, borderRadius: 12,
+        paddingVertical: 12,
+    },
+    scheduleActionBtnDanger: { borderColor: C.danger },
+    scheduleActionBtnPrimary: { backgroundColor: C.primary, borderColor: C.primary, marginTop: 16 },
+    scheduleActionBtnText: { fontSize: 13, color: C.primary, fontFamily: FONTS.BOLD_PRIMARY },
+    rescheduleModalContainer: { flex: 1, backgroundColor: C.bg },
+    rescheduleModalHeader: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        padding: 16, borderBottomWidth: 1, borderBottomColor: C.border,
+    },
     payMethodPill: { backgroundColor: C.primaryLight, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
     payMethodText: { color: C.primary, fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY },
 

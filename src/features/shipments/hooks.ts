@@ -193,3 +193,11 @@ export const useCancelShipment = (id: string) => {
         onSuccess: invalidate,
     });
 };
+
+export const useRescheduleShipment = (id: string) => {
+    const invalidate = useInvalidateShipmentCaches(id);
+    return useMutation({
+        mutationFn: (scheduledAt: string) => shipmentsApi.rescheduleShipment(id, scheduledAt),
+        onSuccess: invalidate,
+    });
+};
