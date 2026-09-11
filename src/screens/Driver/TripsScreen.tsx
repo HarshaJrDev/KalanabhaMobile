@@ -22,15 +22,16 @@ import { ChevronLeft, MessageCircle, Package } from 'lucide-react-native';
 import { useMyShipmentsAsDriver } from '@features/shipments/hooks';
 import { AsyncState } from '@components/AsyncState';
 import type { Shipment, ShipmentStatus } from '@shipment/types';
+import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 
-const STATUS_LABEL: Record<ShipmentStatus, string> = {
-    searching: 'Searching',
-    accepted: 'Accepted',
-    in_transit: 'In Transit',
-    delivered: 'Delivered',
-    cancelled: 'Cancelled',
-};
+const makeStatusLabel = (t: (key: string) => string): Record<ShipmentStatus, string> => ({
+    searching: t('status.searching'),
+    accepted: t('status.accepted'),
+    in_transit: t('status.inTransit'),
+    delivered: t('status.delivered'),
+    cancelled: t('status.cancelled'),
+});
 
 const STATUS_COLOR: Record<ShipmentStatus, string> = {
     searching: '#9CA3AF',
@@ -42,6 +43,8 @@ const STATUS_COLOR: Record<ShipmentStatus, string> = {
 
 const TripRow = ({ shipment, onChat }: { shipment: Shipment; onChat: (id: string) => void }) => {
     const navigation = useNavigation();
+    const { t } = useTranslation();
+    const STATUS_LABEL = React.useMemo(() => makeStatusLabel(t), [t]);
     const isActive = shipment.status === 'accepted' || shipment.status === 'in_transit';
 
     return (
@@ -65,7 +68,7 @@ const TripRow = ({ shipment, onChat }: { shipment: Shipment; onChat: (id: string
                 {isActive && (
                     <Pressable style={styles.chatBtn} onPress={() => onChat(shipment.id)}>
                         <MessageCircle color="#2563EB" size={16} />
-                        <Text style={styles.chatBtnText}>Chat with Customer</Text>
+                        <Text style={styles.chatBtnText}>{t('trips.chatWithCustomer')}</Text>
                     </Pressable>
                 )}
             </View>
@@ -75,6 +78,7 @@ const TripRow = ({ shipment, onChat }: { shipment: Shipment; onChat: (id: string
 
 const TripsScreen = () => {
     const navigation = useNavigation();
+    const { t } = useTranslation();
     const { data: shipments, isLoading, error, refetch } = useMyShipmentsAsDriver();
 
     const onChat = useCallback(
@@ -93,7 +97,7 @@ const TripsScreen = () => {
                 <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
                     <ChevronLeft color="#111" size={24} />
                 </Pressable>
-                <Text style={styles.headerTitle}>Your Trips</Text>
+                <Text style={styles.headerTitle}>{t('trips.yourTrips')}</Text>
                 <View style={{ width: 24 }} />
             </View>
 
@@ -102,8 +106,8 @@ const TripsScreen = () => {
                 error={error}
                 onRetry={refetch}
                 isEmpty={!shipments?.length}
-                emptyTitle="No trips yet"
-                emptyMessage="Accepted deliveries will show up here."
+                emptyTitle={t('trips.noTripsYet')}
+                emptyMessage={t('trips.acceptedShowHere')}
             >
                 <FlatList
                     data={shipments ?? []}

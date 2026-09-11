@@ -455,5 +455,43 @@
     "callDriver": "ड्राइवर को कॉल करें",
     "chatSupport": "सहायता से चैट करें",
     "viewPod": "पीओडी देखें"
+  },
+  "trips": {
+    "yourTrips": "आपकी यात्राएं",
+    "chatWithCustomer": "ग्राहक से चैट करें",
+    "noTripsYet": "अभी तक कोई यात्रा नहीं",
+    "acceptedShowHere": "स्वीकृत डिलीवरी यहां दिखाई देंगी।"
+  },
+  "driverDocuments": {
+    "pendingReview": "समीक्षा लंबित",
+    "underReview": "समीक्षाधीन",
+    "approved": "स्वीकृत",
+    "rejectedReupload": "अस्वीकृत — फिर से अपलोड करें",
+    "expiredReupload": "समाप्त — फिर से अपलोड करें",
+    "documentUploaded": "दस्तावेज़ अपलोड किया गया — समीक्षा लंबित",
+    "uploadFailed": "अपलोड विफल — फिर से प्रयास करें",
+    "cameraPermissionRequired": "इस दस्तावेज़ को कैप्चर करने के लिए कैमरा अनुमति आवश्यक है",
+    "myDocuments": "मेरे दस्तावेज़",
+    "helperText": "प्रत्येक दस्तावेज़ को एक बार अपलोड करें — एडमिन इसकी समीक्षा करता है और स्वीकृत/अस्वीकृत करता है। केवल आप और एडमिन/ऑप्स स्टाफ ही देख सकते हैं कि आपने क्या अपलोड किया है।",
+    "notUploadedYet": "अभी तक अपलोड नहीं किया गया",
+    "reasonPrefix": "कारण: {{reason}}",
+    "camera": "कैमरा",
+    "gallery": "गैलरी"
+  },
+  "fuelStations": {
+    "unableToGetLocation": "आपका वर्तमान स्थान प्राप्त करने में असमर्थ",
+    "nearbyFuelStations": "आस-पास के फ्यूल स्टेशन",
+    "findingFuelStations": "आपके पास फ्यूल स्टेशन खोजे जा रहे हैं…",
+    "mapDataUnavailable": "मैप डेटा स्रोत अभी अनुपलब्ध है",
+    "noFuelStationsFound": "आस-पास कोई फ्यूल स्टेशन नहीं मिला",
+    "kmAway": "{{km}} किमी दूर",
+    "logFillUp": "फिल-अप लॉग करें",
+    "enterValidAmount": "एक मान्य राशि दर्ज करें",
+    "fuelExpenseLogged": "फ्यूल खर्च लॉग किया गया",
+    "logExpenseFailed": "यह खर्च लॉग नहीं किया जा सका — फिर से प्रयास करें",
+    "amountPaid": "भुगतान की गई राशि (₹)",
+    "amountPaidPlaceholder": "जैसे 850",
+    "litresOptional": "लीटर (वैकल्पिक)",
+    "litresPlaceholder": "जैसे 8.5"
   }
 }

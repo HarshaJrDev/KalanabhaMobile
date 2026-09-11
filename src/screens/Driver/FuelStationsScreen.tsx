@@ -26,10 +26,12 @@ import type { FuelStation } from '@features/maps/types';
 import AppTextInput from '../../components/ui/AppTextInput';
 import AppButton from '../../components/ui/AppButton';
 import { showToast } from '@ui/alert/toastStore';
+import { useTranslation } from 'react-i18next';
 
 const FuelStationsScreen = () => {
     const navigation = useNavigation();
     const { colors, fonts, spacing, radius } = useAppTheme();
+    const { t } = useTranslation();
     const styles = useMemo(() => makeStyles(colors, fonts, spacing, radius), [colors, fonts, spacing, radius]);
 
     const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -38,10 +40,10 @@ const FuelStationsScreen = () => {
     useEffect(() => {
         Geolocation.getCurrentPosition(
             (position) => setCoords({ lat: position.coords.latitude, lng: position.coords.longitude }),
-            () => setLocationError('Unable to get your current location'),
+            () => setLocationError(t('fuelStations.unableToGetLocation')),
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000, forceRequestLocation: true },
         );
-    }, []);
+    }, [t]);
 
     const { data: stations, isLoading, error, refetch } = useNearbyFuelStations(coords?.lat ?? null, coords?.lng ?? null);
     const [loggingFor, setLoggingFor] = useState<FuelStation | null>(null);
@@ -53,7 +55,7 @@ const FuelStationsScreen = () => {
                 <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.backBtn}>
                     <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
                 </Pressable>
-                <Text style={styles.headerTitle}>Nearby Fuel Stations</Text>
+                <Text style={styles.headerTitle}>{t('fuelStations.nearbyFuelStations')}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -72,13 +74,13 @@ const FuelStationsScreen = () => {
             ) : isLoading || !coords ? (
                 <View style={styles.centerState}>
                     <ActivityIndicator size="large" color={colors.PRIMARY} />
-                    <Text style={styles.emptyText}>Finding fuel stations near you…</Text>
+                    <Text style={styles.emptyText}>{t('fuelStations.findingFuelStations')}</Text>
                 </View>
             ) : error ? (
                 <View style={styles.centerState}>
-                    <Text style={styles.emptyText}>Map data source is unavailable right now</Text>
+                    <Text style={styles.emptyText}>{t('fuelStations.mapDataUnavailable')}</Text>
                     <Pressable onPress={() => refetch()} style={styles.retryBtn}>
-                        <Text style={styles.retryText}>Retry</Text>
+                        <Text style={styles.retryText}>{t('common.retry')}</Text>
                     </Pressable>
                 </View>
             ) : (
@@ -95,17 +97,17 @@ const FuelStationsScreen = () => {
                                 <Text style={styles.stationName}>{item.name}</Text>
                                 <View style={styles.stationMetaRow}>
                                     <Navigation color={colors.TEXT_SECONDARY} size={12} />
-                                    <Text style={styles.stationMeta}>{item.distanceKm} km away</Text>
+                                    <Text style={styles.stationMeta}>{t('fuelStations.kmAway', { km: item.distanceKm })}</Text>
                                 </View>
                             </View>
                             <Pressable style={styles.logBtn} onPress={() => setLoggingFor(item)}>
-                                <Text style={styles.logBtnText}>Log fill-up</Text>
+                                <Text style={styles.logBtnText}>{t('fuelStations.logFillUp')}</Text>
                             </Pressable>
                         </View>
                     )}
                     ListEmptyComponent={
                         <View style={styles.centerState}>
-                            <Text style={styles.emptyText}>No fuel stations found nearby</Text>
+                            <Text style={styles.emptyText}>{t('fuelStations.noFuelStationsFound')}</Text>
                         </View>
                     }
                 />
@@ -130,6 +132,7 @@ const LogFuelForm = ({
     styles: ReturnType<typeof makeStyles>;
     colors: ReturnType<typeof useAppTheme>['colors'];
 }) => {
+    const { t } = useTranslation();
     const [amount, setAmount] = useState('');
     const [litres, setLitres] = useState('');
     const { mutate, isPending } = useLogFuelExpense();
@@ -137,7 +140,7 @@ const LogFuelForm = ({
     const handleSubmit = () => {
         const amountNum = Number(amount);
         if (!amountNum || amountNum <= 0) {
-            showToast('Enter a valid amount', 'error');
+            showToast(t('fuelStations.enterValidAmount'), 'error');
             return;
         }
         mutate(
@@ -150,10 +153,10 @@ const LogFuelForm = ({
             },
             {
                 onSuccess: () => {
-                    showToast('Fuel expense logged', 'success');
+                    showToast(t('fuelStations.fuelExpenseLogged'), 'success');
                     onDone();
                 },
-                onError: () => showToast('Could not log this expense — try again', 'error'),
+                onError: () => showToast(t('fuelStations.logExpenseFailed'), 'error'),
             },
         );
     };
@@ -161,17 +164,17 @@ const LogFuelForm = ({
     return (
         <View style={styles.formCard}>
             <Text style={styles.formStation}>{station.name}</Text>
-            <Text style={styles.formStationSub}>{station.distanceKm} km away</Text>
+            <Text style={styles.formStationSub}>{t('fuelStations.kmAway', { km: station.distanceKm })}</Text>
 
-            <AppTextInput label="Amount paid (₹)" value={amount} onChange={setAmount} keyboardType="numeric" placeholder="e.g. 850" />
-            <AppTextInput label="Litres (optional)" value={litres} onChange={setLitres} keyboardType="numeric" placeholder="e.g. 8.5" />
+            <AppTextInput label={t('fuelStations.amountPaid')} value={amount} onChange={setAmount} keyboardType="numeric" placeholder={t('fuelStations.amountPaidPlaceholder')} />
+            <AppTextInput label={t('fuelStations.litresOptional')} value={litres} onChange={setLitres} keyboardType="numeric" placeholder={t('fuelStations.litresPlaceholder')} />
 
             <View style={styles.formActions}>
                 <Pressable style={styles.cancelBtn} onPress={onDone}>
-                    <Text style={styles.cancelBtnText}>Cancel</Text>
+                    <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
                 </Pressable>
                 <View style={{ flex: 1 }}>
-                    <AppButton title={isPending ? 'Saving…' : 'Save'} onPress={handleSubmit} loading={isPending} disabled={isPending} />
+                    <AppButton title={isPending ? t('addOrder.saving') : t('common.save')} onPress={handleSubmit} loading={isPending} disabled={isPending} />
                 </View>
             </View>
         </View>

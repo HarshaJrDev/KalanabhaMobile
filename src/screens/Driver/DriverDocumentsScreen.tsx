@@ -15,19 +15,22 @@ import { useMyDriverDocuments, useUploadDriverDocument } from '@features/driverD
 import { DRIVER_DOCUMENT_TYPES, DRIVER_DOCUMENT_TYPE_LABEL, type DriverDocumentType, type DriverDocument } from '@features/driverDocuments/types';
 import { showToast } from '@ui/alert/toastStore';
 import { ensureCameraPermission } from '@utils/cameraPermission';
+import { useTranslation } from 'react-i18next';
 
-const STATUS_META: Record<DriverDocument['status'], { label: string; icon: typeof CheckCircle2 }> = {
-    PENDING: { label: 'Pending review', icon: Clock },
-    UNDER_REVIEW: { label: 'Under review', icon: Clock },
-    APPROVED: { label: 'Approved', icon: CheckCircle2 },
-    REJECTED: { label: 'Rejected — re-upload', icon: XCircle },
-    EXPIRED: { label: 'Expired — re-upload', icon: XCircle },
-};
+const makeStatusMeta = (t: (key: string) => string): Record<DriverDocument['status'], { label: string; icon: typeof CheckCircle2 }> => ({
+    PENDING: { label: t('driverDocuments.pendingReview'), icon: Clock },
+    UNDER_REVIEW: { label: t('driverDocuments.underReview'), icon: Clock },
+    APPROVED: { label: t('driverDocuments.approved'), icon: CheckCircle2 },
+    REJECTED: { label: t('driverDocuments.rejectedReupload'), icon: XCircle },
+    EXPIRED: { label: t('driverDocuments.expiredReupload'), icon: XCircle },
+});
 
 const DriverDocumentsScreen = () => {
     const navigation = useNavigation();
     const { colors, fonts, spacing, radius } = useAppTheme();
+    const { t } = useTranslation();
     const styles = useMemo(() => makeStyles(colors, fonts, spacing, radius), [colors, fonts, spacing, radius]);
+    const STATUS_META = useMemo(() => makeStatusMeta(t), [t]);
 
     const { data: documents, isLoading } = useMyDriverDocuments();
     const { mutate: upload, isPending: uploading } = useUploadDriverDocument();
@@ -53,8 +56,8 @@ const DriverDocumentsScreen = () => {
         upload(
             { type, fileUri: asset.uri, fileName: asset.fileName ?? `${type.toLowerCase()}.jpg`, mimeType: asset.type ?? 'image/jpeg' },
             {
-                onSuccess: () => showToast('Document uploaded — pending review', 'success'),
-                onError: () => showToast('Upload failed — try again', 'error'),
+                onSuccess: () => showToast(t('driverDocuments.documentUploaded'), 'success'),
+                onError: () => showToast(t('driverDocuments.uploadFailed'), 'error'),
             },
         );
     };
@@ -66,7 +69,7 @@ const DriverDocumentsScreen = () => {
         if (source === 'camera') {
             const hasCameraPermission = await ensureCameraPermission();
             if (!hasCameraPermission) {
-                showToast('Camera permission is required to capture this document', 'error');
+                showToast(t('driverDocuments.cameraPermissionRequired'), 'error');
                 return;
             }
         }
@@ -83,7 +86,7 @@ const DriverDocumentsScreen = () => {
                 <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.backBtn}>
                     <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
                 </Pressable>
-                <Text style={styles.headerTitle}>My Documents</Text>
+                <Text style={styles.headerTitle}>{t('driverDocuments.myDocuments')}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -94,11 +97,11 @@ const DriverDocumentsScreen = () => {
             ) : (
                 <FlatList
                     data={DRIVER_DOCUMENT_TYPES}
-                    keyExtractor={(t) => t}
+                    keyExtractor={(docType) => docType}
                     contentContainerStyle={styles.list}
                     ListHeaderComponent={
                         <Text style={styles.helperText}>
-                            Upload each document once — admin reviews and approves/rejects it. Only you and admin/ops staff can view what you upload.
+                            {t('driverDocuments.helperText')}
                         </Text>
                     }
                     renderItem={({ item: type }) => {
@@ -128,10 +131,10 @@ const DriverDocumentsScreen = () => {
                                                 <Text style={styles.statusText}>{meta.label}</Text>
                                             </View>
                                         ) : (
-                                            <Text style={styles.notUploadedText}>Not uploaded yet</Text>
+                                            <Text style={styles.notUploadedText}>{t('driverDocuments.notUploadedYet')}</Text>
                                         )}
                                         {doc?.status === 'REJECTED' && doc.rejectionReason && (
-                                            <Text style={styles.rejectionText}>Reason: {doc.rejectionReason}</Text>
+                                            <Text style={styles.rejectionText}>{t('driverDocuments.reasonPrefix', { reason: doc.rejectionReason })}</Text>
                                         )}
                                     </View>
                                 </Pressable>
@@ -140,11 +143,11 @@ const DriverDocumentsScreen = () => {
                                     <View style={styles.pickerRow}>
                                         <Pressable style={styles.pickerBtn} onPress={() => handlePick(type, 'camera')} disabled={uploading}>
                                             <Camera size={16} color={colors.PRIMARY} />
-                                            <Text style={styles.pickerBtnText}>Camera</Text>
+                                            <Text style={styles.pickerBtnText}>{t('driverDocuments.camera')}</Text>
                                         </Pressable>
                                         <Pressable style={styles.pickerBtn} onPress={() => handlePick(type, 'gallery')} disabled={uploading}>
                                             <ImageIcon size={16} color={colors.PRIMARY} />
-                                            <Text style={styles.pickerBtnText}>Gallery</Text>
+                                            <Text style={styles.pickerBtnText}>{t('driverDocuments.gallery')}</Text>
                                         </Pressable>
                                         {uploading && <ActivityIndicator size="small" color={colors.PRIMARY} />}
                                     </View>

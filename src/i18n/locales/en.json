@@ -455,5 +455,43 @@
     "callDriver": "Call Driver",
     "chatSupport": "Chat Support",
     "viewPod": "View POD"
+  },
+  "trips": {
+    "yourTrips": "Your Trips",
+    "chatWithCustomer": "Chat with Customer",
+    "noTripsYet": "No trips yet",
+    "acceptedShowHere": "Accepted deliveries will show up here."
+  },
+  "driverDocuments": {
+    "pendingReview": "Pending review",
+    "underReview": "Under review",
+    "approved": "Approved",
+    "rejectedReupload": "Rejected — re-upload",
+    "expiredReupload": "Expired — re-upload",
+    "documentUploaded": "Document uploaded — pending review",
+    "uploadFailed": "Upload failed — try again",
+    "cameraPermissionRequired": "Camera permission is required to capture this document",
+    "myDocuments": "My Documents",
+    "helperText": "Upload each document once — admin reviews and approves/rejects it. Only you and admin/ops staff can view what you upload.",
+    "notUploadedYet": "Not uploaded yet",
+    "reasonPrefix": "Reason: {{reason}}",
+    "camera": "Camera",
+    "gallery": "Gallery"
+  },
+  "fuelStations": {
+    "unableToGetLocation": "Unable to get your current location",
+    "nearbyFuelStations": "Nearby Fuel Stations",
+    "findingFuelStations": "Finding fuel stations near you…",
+    "mapDataUnavailable": "Map data source is unavailable right now",
+    "noFuelStationsFound": "No fuel stations found nearby",
+    "kmAway": "{{km}} km away",
+    "logFillUp": "Log fill-up",
+    "enterValidAmount": "Enter a valid amount",
+    "fuelExpenseLogged": "Fuel expense logged",
+    "logExpenseFailed": "Could not log this expense — try again",
+    "amountPaid": "Amount paid (₹)",
+    "amountPaidPlaceholder": "e.g. 850",
+    "litresOptional": "Litres (optional)",
+    "litresPlaceholder": "e.g. 8.5"
   }
 }
