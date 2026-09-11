@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowRight, ArrowLeft } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 const { width, height } = Dimensions.get('window');
 
@@ -40,65 +41,27 @@ type OnBoardingScreenProp = NativeStackNavigationProp<RootStackParamList, 'OnBoa
 // intro → coverage → booking → choosing a vehicle → live tracking →
 // trust/insurance → the driver side → "there's a path for everyone"
 // (which sets up SelectAccount's actual customer/driver choice next).
-const SLIDES = [
-    {
-        key: '1',
-        title: 'Send it. ',
-        accent: 'Anywhere.',
-        description: 'Book a pickup for any package and get moving in seconds.',
-    },
-    {
-        key: '2',
-        title: 'Every City. ',
-        accent: 'Every Corner.',
-        description: 'From busy metros to your neighborhood — we deliver there.',
-    },
-    {
-        key: '3',
-        title: 'Book in ',
-        accent: 'Seconds.',
-        description: "Pick a pickup and drop, and you're on your way — no back and forth.",
-    },
-    {
-        key: '4',
-        title: 'Pick Your ',
-        accent: 'Ride.',
-        description: 'Bike, van, or truck — the right vehicle for whatever you’re sending.',
-    },
-    {
-        key: '5',
-        title: 'Always ',
-        accent: 'On Time.',
-        description: 'Live tracking keeps you posted from pickup to your doorstep.',
-    },
-    {
-        key: '6',
-        title: 'Trusted & ',
-        accent: 'Insured.',
-        description: 'Verified fleet pilots and protected deliveries, every time.',
-    },
-    {
-        key: '7',
-        title: 'Earn as a ',
-        accent: 'Driver.',
-        description: 'Deliver on your schedule and keep what you earn.',
-    },
-    {
-        key: '8',
-        title: 'Built for ',
-        accent: 'Everyone.',
-        description: "Sending, driving, or running a business — there's a place for you here.",
-    },
-] satisfies { key: string; title: string; accent: string; description: string }[];
+const makeSlides = (t: (key: string) => string) => ([
+    { key: '1', title: t('onboarding.slide1Title'), accent: t('onboarding.slide1Accent'), description: t('onboarding.slide1Desc') },
+    { key: '2', title: t('onboarding.slide2Title'), accent: t('onboarding.slide2Accent'), description: t('onboarding.slide2Desc') },
+    { key: '3', title: t('onboarding.slide3Title'), accent: t('onboarding.slide3Accent'), description: t('onboarding.slide3Desc') },
+    { key: '4', title: t('onboarding.slide4Title'), accent: t('onboarding.slide4Accent'), description: t('onboarding.slide4Desc') },
+    { key: '5', title: t('onboarding.slide5Title'), accent: t('onboarding.slide5Accent'), description: t('onboarding.slide5Desc') },
+    { key: '6', title: t('onboarding.slide6Title'), accent: t('onboarding.slide6Accent'), description: t('onboarding.slide6Desc') },
+    { key: '7', title: t('onboarding.slide7Title'), accent: t('onboarding.slide7Accent'), description: t('onboarding.slide7Desc') },
+    { key: '8', title: t('onboarding.slide8Title'), accent: t('onboarding.slide8Accent'), description: t('onboarding.slide8Desc') },
+] satisfies { key: string; title: string; accent: string; description: string }[]);
 
 const OnBoarding = () => {
     const navigation = useNavigation<OnBoardingScreenProp>();
     const { colors, fonts, fontSize, spacing, radius, isDark } = useAppTheme();
+    const { t } = useTranslation();
     const insets = useSafeAreaInsets();
     const styles = useMemo(
         () => makeStyles(colors, fonts, fontSize, spacing, radius, width, height, insets),
         [colors, fonts, fontSize, spacing, radius, insets],
     );
+    const SLIDES = useMemo(() => makeSlides(t), [t]);
     const [currentIdx, setCurrentIdx] = useState(0);
     const flatListRef = useRef<FlatList>(null);
     const scrollX = useRef(new Animated.Value(0)).current;
@@ -158,7 +121,7 @@ const OnBoarding = () => {
                 </View>
                 {!isLast && (
                     <TouchableOpacity onPress={goSkip} hitSlop={10}>
-                        <Text style={styles.skipText}>Skip</Text>
+                        <Text style={styles.skipText}>{t('onboarding.skip')}</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -205,7 +168,7 @@ const OnBoarding = () => {
                 </View>
 
                 <TouchableOpacity style={styles.nextBtn} onPress={goNext} activeOpacity={0.85}>
-                    <Text style={styles.nextBtnText}>{isLast ? 'Get Started' : 'Next'}</Text>
+                    <Text style={styles.nextBtnText}>{isLast ? t('onboarding.getStarted') : t('onboarding.next')}</Text>
                     <ArrowRight color="#fff" size={17} />
                 </TouchableOpacity>
             </View>

@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Splash'>;
@@ -31,6 +32,7 @@ const FEATURES = [
 const Splash = () => {
     const navigation = useNavigation<Nav>();
     const { colors, fonts, fontSize, spacing, radius, isDark } = useAppTheme();
+    const { t } = useTranslation();
     const styles = useMemo(() => makeStyles(colors, fonts, fontSize, spacing, radius, width), [colors, fonts, fontSize, spacing, radius]);
 
     const logoScale = useSharedValue(0.7);
@@ -75,7 +77,7 @@ const Splash = () => {
 
                 <Animated.View style={wordmarkStyle}>
                     <Text style={styles.wordmark}>KALANABHA</Text>
-                    <Text style={styles.tagline}>Move Anything, Anywhere</Text>
+                    <Text style={styles.tagline}>{t('splash.tagline')}</Text>
                 </Animated.View>
             </View>
 

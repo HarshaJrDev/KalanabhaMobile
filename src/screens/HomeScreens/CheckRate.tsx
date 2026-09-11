@@ -33,11 +33,13 @@ import FONTS from '@utils/fonts';
 import { useAutoAddress } from '../../location/useAutoAddress';
 import { useFareEstimate } from '../../location/useFareEstimate';
 import { useVehicleConfigs } from '@features/settings/hooks';
+import { useTranslation } from 'react-i18next';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'CheckRate'>;
 
 const CheckRate = () => {
     const navigation = useNavigation<NavigationProp>();
+    const { t } = useTranslation();
     const { getAddress } = useAutoAddress();
 
     const [pickup, setPickup] = useState('');
@@ -74,7 +76,7 @@ const CheckRate = () => {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <ArrowLeft color="#fff" size={24} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Check Rate</Text>
+                <Text style={styles.headerTitle}>{t('checkRate.title')}</Text>
             </View>
 
             <ScrollView
@@ -85,14 +87,14 @@ const CheckRate = () => {
             >
                 <View style={styles.inputGroup}>
                     <CustomInput
-                        placeholder="Pick up Location"
+                        placeholder={t('checkRate.pickupLocation')}
                         value={pickup}
                         onChangeText={setPickup}
                         rightIcon={LocateFixedIcon}
                         onRightIconPress={() => useCurrentLocationFor(setPickup)}
                     />
                     <CustomInput
-                        placeholder="Package Destination"
+                        placeholder={t('checkRate.packageDestination')}
                         value={drop}
                         onChangeText={setDrop}
                         rightIcon={LocateFixedIcon}
@@ -101,7 +103,7 @@ const CheckRate = () => {
                 </View>
 
                 <View>
-                    <CustomLabel label="Vehicle Type" required />
+                    <CustomLabel label={t('checkRate.vehicleType')} required />
                     {vehiclesLoading ? (
                         <View style={styles.vehicleLoadingRow}>
                             <ActivityIndicator color={COLOR.PRIMARY} size="small" />
@@ -127,7 +129,7 @@ const CheckRate = () => {
                                         <Text style={[styles.vehicleLabel, selected && styles.vehicleLabelSelected]}>
                                             {vt.name}
                                         </Text>
-                                        <Text style={styles.vehicleDesc}>Up to {vt.maxWeight} kg</Text>
+                                        <Text style={styles.vehicleDesc}>{t('checkRate.upToKg', { weight: vt.maxWeight })}</Text>
                                     </TouchableOpacity>
                                 );
                             })}
@@ -138,7 +140,7 @@ const CheckRate = () => {
                 {fareEstimate.loading && (
                     <View style={styles.resultCard}>
                         <ActivityIndicator color={COLOR.PRIMARY} />
-                        <Text style={styles.resultLoadingText}>Calculating rate…</Text>
+                        <Text style={styles.resultLoadingText}>{t('checkRate.calculatingRate')}</Text>
                     </View>
                 )}
 
@@ -150,7 +152,7 @@ const CheckRate = () => {
 
                 {!fareEstimate.loading && !fareEstimate.error && fareEstimate.price != null && (
                     <View style={styles.resultCard}>
-                        <Text style={styles.resultLabel}>Estimated Rate</Text>
+                        <Text style={styles.resultLabel}>{t('checkRate.estimatedRate')}</Text>
                         <Text style={styles.resultPrice}>₹{fareEstimate.price}</Text>
                         <Text style={styles.resultDistance}>
                             {fareEstimate.distanceKm} km · {activeVehicleConfigs.find((v) => v.name.toLowerCase() === vehicleType)?.name}
@@ -158,7 +160,7 @@ const CheckRate = () => {
 
                         <View style={styles.buttonWrapper}>
                             <Button
-                                title="Book This Shipment"
+                                title={t('checkRate.bookThisShipment')}
                                 onPress={() =>
                                     (navigation as any).navigate('addOrder', {
                                         prefill: { pickup, drop, vehicleType },
@@ -170,7 +172,7 @@ const CheckRate = () => {
                 )}
 
                 {!pickup.trim() || !drop.trim() ? (
-                    <Text style={styles.hint}>Enter both a pickup and destination to see a rate.</Text>
+                    <Text style={styles.hint}>{t('checkRate.enterBothHint')}</Text>
                 ) : null}
             </ScrollView>
         </View>

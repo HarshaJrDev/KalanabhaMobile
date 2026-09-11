@@ -30,6 +30,7 @@ import { haversineDistanceKm } from '@utils/geo';
 import { useAuthStore } from '@features/store/authStore';
 import { AsyncState } from '@components/AsyncState';
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { showToast } from '@ui/alert/toastStore';
 import type { RootStackParamList } from '../navigation/types';
 import FONTS from '@utils/fonts';
@@ -37,17 +38,17 @@ import FONTS from '@utils/fonts';
 // Was rendering "8148m ago" for anything older than an hour — never
 // rolled minutes over into hours/days, so a stale/test location ping
 // produced an absurd-looking number instead of a sane relative time.
-const formatTimeAgo = (date: Date | null): string => {
-    if (!date) return 'just now';
+const makeFormatTimeAgo = (t: (key: string, opts?: Record<string, unknown>) => string) => (date: Date | null): string => {
+    if (!date) return t('shipmentChat.justNow');
     const seconds = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
-    if (seconds < 10) return 'just now';
-    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 10) return t('shipmentChat.justNow');
+    if (seconds < 60) return t('shipmentChat.secAgo', { s: seconds });
     const minutes = Math.round(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
+    if (minutes < 60) return t('shipmentChat.minAgo', { m: minutes });
     const hours = Math.round(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
+    if (hours < 24) return t('shipmentChat.hourAgo', { h: hours });
     const days = Math.round(hours / 24);
-    return `${days}d ago`;
+    return t('shipmentChat.dayAgo', { d: days });
 };
 
 const formatClock = (iso: string) =>
@@ -55,18 +56,20 @@ const formatClock = (iso: string) =>
 
 const isSameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
 
-const dayLabel = (date: Date) => {
+const makeDayLabel = (t: (key: string) => string) => (date: Date) => {
     const today = new Date();
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    if (isSameDay(date, today)) return 'Today';
-    if (isSameDay(date, yesterday)) return 'Yesterday';
+    if (isSameDay(date, today)) return t('shipmentChat.today');
+    if (isSameDay(date, yesterday)) return t('shipmentChat.yesterday');
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
 
 // Canned quick-replies — just prefill/send real text through the same
 // sendMessage mutation every other bubble uses, not a separate mechanism.
-const QUICK_REPLIES = ['Where are you now?', 'Call when outside', 'Leave at the door'];
+const makeQuickReplies = (t: (key: string) => string) => [
+    t('shipmentChat.quickReply1'), t('shipmentChat.quickReply2'), t('shipmentChat.quickReply3'),
+];
 
 // Screen -> useChatMessages/useSendMessage/useChatSocket -> chat.api ->
 // GET/POST /shipments/:id/messages (+ live via ChatGateway) -> UI.
@@ -82,8 +85,12 @@ const QUICK_REPLIES = ['Where are you now?', 'Call when outside', 'Leave at the 
 const ShipmentChatScreen = () => {
     const navigation = useNavigation();
     const { colors, isDark } = useAppTheme();
+    const { t } = useTranslation();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => makeStyles(colors, insets), [colors, insets]);
+    const formatTimeAgo = useMemo(() => makeFormatTimeAgo(t), [t]);
+    const dayLabel = useMemo(() => makeDayLabel(t), [t]);
+    const QUICK_REPLIES = useMemo(() => makeQuickReplies(t), [t]);
     const route = useRoute<RouteProp<RootStackParamList, 'ShipmentChat'>>();
     const shipmentId = route.params?.shipmentId;
     const currentUserId = useAuthStore((s) => s.user?.id);
@@ -133,13 +140,13 @@ const ShipmentChatScreen = () => {
                     </View>
                     <View>
                         <View style={styles.headerNameRow}>
-                            <Text style={styles.headerName} numberOfLines={1}>{driverName ?? 'Pilot'}</Text>
+                            <Text style={styles.headerName} numberOfLines={1}>{driverName ?? t('shipmentChat.pilotFallback')}</Text>
                             <View style={styles.pilotBadge}>
-                                <Text style={styles.pilotBadgeText}>PILOT</Text>
+                                <Text style={styles.pilotBadgeText}>{t('shipmentChat.pilot')}</Text>
                             </View>
                         </View>
                         <Text style={styles.headerStatus} numberOfLines={1}>
-                            {isDriverEnRoute ? 'On route' : shipment?.status === 'searching' ? 'Finding a pilot…' : 'Delivered'}
+                            {isDriverEnRoute ? t('shipmentChat.onRoute') : shipment?.status === 'searching' ? t('shipmentChat.findingPilot') : t('shipmentChat.delivered')}
                         </Text>
                     </View>
                 </View>
@@ -149,10 +156,10 @@ const ShipmentChatScreen = () => {
                         onPress={() => {
                             const phone = shipment?.dispatch?.driverPhone;
                             if (!phone) {
-                                showToast('No driver phone number on file', 'info');
+                                showToast(t('shipmentChat.noDriverPhone'), 'info');
                                 return;
                             }
-                            Linking.openURL(`tel:${phone}`).catch(() => showToast('Unable to open the dialer', 'error'));
+                            Linking.openURL(`tel:${phone}`).catch(() => showToast(t('shipmentChat.unableToOpenDialer'), 'error'));
                         }}
                     >
                         <Phone color={colors.TEXT_SECONDARY} size={16} />
@@ -184,19 +191,19 @@ const ShipmentChatScreen = () => {
                         <View style={{ flex: 1 }}>
                             <Text style={styles.destTitle} numberOfLines={1}>{shipment.drop.address}</Text>
                             <Text style={styles.destSub} numberOfLines={1}>
-                                {distanceToDropKm != null ? `${distanceToDropKm.toFixed(1)} km away · ` : ''}
+                                {distanceToDropKm != null ? t('shipmentChat.kmAwayPrefix', { km: distanceToDropKm.toFixed(1) }) : ''}
                                 {shipment.vehicleType}
                             </Text>
                         </View>
                         <View style={styles.trackLink}>
                             <Navigation size={12} color={colors.PRIMARY} />
-                            <Text style={styles.trackLinkText}>Track</Text>
+                            <Text style={styles.trackLinkText}>{t('shipmentChat.track')}</Text>
                         </View>
                     </Pressable>
                     {liveDriverLocation && (
                         <View style={styles.liveRow}>
                             <View style={styles.liveDot} />
-                            <Text style={styles.liveText}>Live tracking synced {formatTimeAgo(liveDriverLocation.updatedAt)}</Text>
+                            <Text style={styles.liveText}>{t('shipmentChat.liveTrackingSynced', { time: formatTimeAgo(liveDriverLocation.updatedAt) })}</Text>
                         </View>
                     )}
                 </>
@@ -207,8 +214,8 @@ const ShipmentChatScreen = () => {
                 error={error}
                 onRetry={refetch}
                 isEmpty={!messages?.length}
-                emptyTitle="No messages yet"
-                emptyMessage="Send a message to the driver or admin about this shipment."
+                emptyTitle={t('shipmentChat.noMessagesYet')}
+                emptyMessage={t('shipmentChat.sendMessageHint')}
             >
                 <FlatList
                     data={messages ?? []}
@@ -219,10 +226,10 @@ const ShipmentChatScreen = () => {
                             <View style={styles.systemCard}>
                                 <View style={styles.systemTitleRow}>
                                     <CheckCircle2 size={13} color={colors.PRIMARY} />
-                                    <Text style={styles.systemTitle}>ORDER DISPATCHED</Text>
+                                    <Text style={styles.systemTitle}>{t('shipmentChat.orderDispatched')}</Text>
                                 </View>
                                 <Text style={styles.systemText}>
-                                    Order #{shipment.trackingId} confirmed. Pilot {shipment.dispatch.driverName} has accepted and is heading to the pickup hub.
+                                    {t('shipmentChat.orderDispatchedText', { trackingId: shipment.trackingId, driverName: shipment.dispatch.driverName })}
                                 </Text>
                                 <Text style={styles.systemTime}>{formatClock(shipment.dispatch.acceptedAt)}</Text>
                             </View>
@@ -275,7 +282,7 @@ const ShipmentChatScreen = () => {
             <View style={styles.inputRow}>
                 <Pressable
                     style={styles.attachBtn}
-                    onPress={() => showToast('Photo sharing is not available yet', 'info')}
+                    onPress={() => showToast(t('shipmentChat.photoSharingNotAvailable'), 'info')}
                 >
                     <Camera color={colors.TEXT_SECONDARY} size={18} />
                 </Pressable>
@@ -283,7 +290,7 @@ const ShipmentChatScreen = () => {
                     style={styles.input}
                     value={text}
                     onChangeText={setText}
-                    placeholder="Type a message to pilot…"
+                    placeholder={t('shipmentChat.typeMessageToPilot')}
                     placeholderTextColor={colors.PLACEHOLDER}
                     onSubmitEditing={() => handleSend()}
                     returnKeyType="send"

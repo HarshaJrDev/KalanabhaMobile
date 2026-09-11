@@ -18,10 +18,12 @@ import { useMyShipments } from '@features/shipments/hooks';
 import { useChatMessages } from '@features/chat/hooks';
 import { AsyncState } from '@components/AsyncState';
 import type { Shipment } from '@shipment/types';
+import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 
 const ConversationRow = ({ shipment }: { shipment: Shipment }) => {
     const navigation = useNavigation();
+    const { t } = useTranslation();
     // Each row's own last-message preview — cheap, and shares the cache
     // with ShipmentChatScreen so opening a thread doesn't refetch.
     const { data: messages } = useChatMessages(shipment.id);
@@ -36,9 +38,9 @@ const ConversationRow = ({ shipment }: { shipment: Shipment }) => {
                 <MessageCircle color="#2563EB" size={20} />
             </View>
             <View style={{ flex: 1 }}>
-                <Text style={styles.driverName}>{shipment.dispatch?.driverName ?? 'Driver'}</Text>
+                <Text style={styles.driverName}>{shipment.dispatch?.driverName ?? t('inbox.driverFallback')}</Text>
                 <Text style={styles.preview} numberOfLines={1}>
-                    {last ? last.text : `Shipment ${shipment.trackingId}`}
+                    {last ? last.text : t('inbox.shipmentPreview', { trackingId: shipment.trackingId })}
                 </Text>
             </View>
             <ChevronRight color="#9CA3AF" size={18} />
@@ -48,6 +50,7 @@ const ConversationRow = ({ shipment }: { shipment: Shipment }) => {
 
 const InboxScreen = () => {
     const navigation = useNavigation();
+    const { t } = useTranslation();
     const { data: shipments, isLoading, error, refetch } = useMyShipments();
 
     const conversations = (shipments ?? []).filter((s) => s.dispatch != null);
@@ -63,7 +66,7 @@ const InboxScreen = () => {
                 <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
                     <ChevronLeft color="#111" size={24} />
                 </Pressable>
-                <Text style={styles.headerTitle}>Inbox</Text>
+                <Text style={styles.headerTitle}>{t('inbox.title')}</Text>
                 <View style={{ width: 24 }} />
             </View>
 
@@ -72,8 +75,8 @@ const InboxScreen = () => {
                 error={error}
                 onRetry={refetch}
                 isEmpty={conversations.length === 0}
-                emptyTitle="No conversations yet"
-                emptyMessage="Once a driver accepts one of your shipments, you can chat with them here."
+                emptyTitle={t('inbox.noConversations')}
+                emptyMessage={t('inbox.noConversationsHint')}
             >
                 <FlatList
                     data={conversations}

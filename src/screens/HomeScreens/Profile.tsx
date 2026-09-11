@@ -208,6 +208,7 @@ const ProfileScreen = () => {
 // Screen -> useUpdateProfile -> users.api -> PATCH /users/me -> authStore + cache -> UI
 const EditProfileModal = ({ visible, onClose }: { visible: boolean; onClose: () => void }) => {
     const { colors, fonts } = useAppTheme();
+    const { t } = useTranslation();
     const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
     const user = useAuthStore((s) => s.user);
     const { mutate, isPending } = useUpdateProfile();
@@ -230,7 +231,7 @@ const EditProfileModal = ({ visible, onClose }: { visible: boolean; onClose: () 
 
     const handleSave = () => {
         if (!displayName.trim()) {
-            setError('Name is required');
+            setError(t('editProfile.nameRequired'));
             return;
         }
         setError(null);
@@ -239,7 +240,7 @@ const EditProfileModal = ({ visible, onClose }: { visible: boolean; onClose: () 
             { displayName: displayName.trim(), phone: phone.trim(), address: address.trim() },
             {
                 onSuccess: () => {
-                    showToast('Profile updated', 'success');
+                    showToast(t('editProfile.profileUpdated'), 'success');
                     onClose();
                 },
                 onError: (err) => setError(err.message),
@@ -255,26 +256,26 @@ const EditProfileModal = ({ visible, onClose }: { visible: boolean; onClose: () 
             >
                 <View style={styles.modalSheet}>
                     <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>Edit Profile</Text>
+                        <Text style={styles.modalTitle}>{t('editProfile.editProfileTitle')}</Text>
                         <TouchableOpacity onPress={onClose} hitSlop={10}>
                             <X color={colors.TEXT_SECONDARY} size={22} />
                         </TouchableOpacity>
                     </View>
 
                     <View style={styles.modalForm}>
-                        <AppTextInput label="Full Name" value={displayName} onChange={setDisplayName} />
+                        <AppTextInput label={t('editProfile.fullName')} value={displayName} onChange={setDisplayName} />
                         <AppTextInput
-                            label="Phone"
+                            label={t('editProfile.phone')}
                             value={phone}
                             onChange={setPhone}
                             keyboardType="phone-pad"
                         />
-                        <AppTextInput label="Address" value={address} onChange={setAddress} />
+                        <AppTextInput label={t('editProfile.address')} value={address} onChange={setAddress} />
                         {!!error && <Text style={styles.modalError}>{error}</Text>}
                     </View>
 
                     <AppButton
-                        title={isPending ? 'Saving…' : 'Save Changes'}
+                        title={isPending ? t('editProfile.savingChanges') : t('editProfile.saveChanges')}
                         onPress={handleSave}
                         loading={isPending}
                         disabled={isPending}
