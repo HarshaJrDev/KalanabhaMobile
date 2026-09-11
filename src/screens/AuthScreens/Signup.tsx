@@ -15,6 +15,7 @@ import { MapPin } from 'lucide-react-native';
 
 import { H, S, RF, W } from '@utils/responsive';
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 import InputField from '@components/InputField';
 import UserTypeSelector, { UserType } from '@components/UserTypeSelector';
@@ -56,6 +57,7 @@ const STEPS = [
 const Signup = () => {
     const { colors, fonts, isDark } = useAppTheme();
     const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
+    const { t } = useTranslation();
     const [form, setForm] = useState<FormState>(INITIAL_FORM);
     const [errors, setErrors] = useState<FormErrors>({});
     const [type, setType] = useState<UserType>('HOME');
@@ -104,7 +106,7 @@ const Signup = () => {
         clear();
 
         if (!validate()) {
-            show('Please fix the highlighted fields');
+            show(t('signup.fixHighlighted'));
             return;
         }
 
@@ -117,21 +119,21 @@ const Signup = () => {
             },
             {
                 onSuccess: () => {
-                    show('Account created successfully!', 'success');
+                    show(t('signup.accountCreated'), 'success');
                 },
                 onError: (err) => {
                     show(normalizeError(err));
                 },
             }
         );
-    }, [form, mutate, validate, show, clear]);
+    }, [form, mutate, validate, show, clear, t]);
 
     const handleLocation = useCallback(() => {
         getAddress(address => {
             if (address) update('address', address);
-            else show('Unable to fetch location');
+            else show(t('signup.unableToFetchLocation'));
         });
-    }, [getAddress, update, show]);
+    }, [getAddress, update, show, t]);
 
     const isLoading = isPending;
 
@@ -157,8 +159,8 @@ const Signup = () => {
                         <View style={styles.headerBadge}>
                             <Text style={styles.badgeText}>K</Text>
                         </View>
-                        <Text style={styles.headerTitle}>Create Account</Text>
-                        <Text style={styles.headerSubtitle}>Join Kalanabha Logistics</Text>
+                        <Text style={styles.headerTitle}>{t('signup.createAccount')}</Text>
+                        <Text style={styles.headerSubtitle}>{t('signup.joinKalanabha')}</Text>
                     </Animated.View>
                 </LinearGradient>
 
@@ -174,19 +176,19 @@ const Signup = () => {
                     {/* Section: Personal */}
                     <View style={styles.sectionHeader}>
                         <View style={styles.sectionDot} />
-                        <Text style={styles.sectionTitle}>Personal Information</Text>
+                        <Text style={styles.sectionTitle}>{t('signup.personalInfo')}</Text>
                     </View>
 
                     <InputField
-                        label="Full Name"
-                        placeholder="John Doe"
+                        label={t('signup.fullName')}
+                        placeholder={t('signup.fullNamePlaceholder')}
                         value={form.name}
                         onChange={v => update('name', v)}
                         error={errors.name}
                     />
                     <InputField
-                        label="Email"
-                        placeholder="your@email.com"
+                        label={t('login.email')}
+                        placeholder={t('login.emailPlaceholder')}
                         value={form.email}
                         onChange={v => update('email', v)}
                         error={errors.email}
@@ -194,8 +196,8 @@ const Signup = () => {
                         autoCapitalize="none"
                     />
                     <InputField
-                        label="Phone"
-                        placeholder="+91 9876543210"
+                        label={t('signup.phone')}
+                        placeholder={t('signup.phonePlaceholder')}
                         value={form.phone}
                         onChange={v => update('phone', v)}
                         error={errors.phone}
@@ -205,19 +207,19 @@ const Signup = () => {
                     {/* Section: Location */}
                     <View style={[styles.sectionHeader, { marginTop: H(16) }]}>
                         <View style={styles.sectionDot} />
-                        <Text style={styles.sectionTitle}>Location</Text>
+                        <Text style={styles.sectionTitle}>{t('signup.location')}</Text>
                     </View>
 
                     <InputField
-                        label="Address"
-                        placeholder="Enter your address"
+                        label={t('signup.address')}
+                        placeholder={t('signup.addressPlaceholder')}
                         value={form.address}
                         onChange={v => update('address', v)}
                         error={errors.address}
                     />
                     <Pressable style={styles.locationLinkRow} onPress={handleLocation}>
                         <MapPin size={14} color={colors.PRIMARY} />
-                        <Text style={styles.locationLink}>Use current location</Text>
+                        <Text style={styles.locationLink}>{t('signup.useCurrentLocation')}</Text>
                     </Pressable>
 
                     <UserTypeSelector value={type} onChange={setType} />
@@ -225,20 +227,20 @@ const Signup = () => {
                     {/* Section: Security */}
                     <View style={[styles.sectionHeader, { marginTop: H(16) }]}>
                         <View style={styles.sectionDot} />
-                        <Text style={styles.sectionTitle}>Security</Text>
+                        <Text style={styles.sectionTitle}>{t('signup.security')}</Text>
                     </View>
 
                     <InputField
-                        label="Password"
-                        placeholder="Min. 8 characters"
+                        label={t('login.password')}
+                        placeholder={t('signup.passwordPlaceholder')}
                         secure
                         value={form.password}
                         onChange={v => update('password', v)}
                         error={errors.password}
                     />
                     <InputField
-                        label="Confirm Password"
-                        placeholder="Re-enter your password"
+                        label={t('signup.confirmPassword')}
+                        placeholder={t('signup.confirmPasswordPlaceholder')}
                         secure
                         value={form.confirmPassword}
                         onChange={v => update('confirmPassword', v)}
@@ -247,7 +249,7 @@ const Signup = () => {
 
                     <View style={styles.submitWrapper}>
                         <AppButton
-                            title="Create Account"
+                            title={t('signup.createAccount')}
                             onPress={handleSubmit}
                             loading={isLoading}
                             disabled={isDisabled}

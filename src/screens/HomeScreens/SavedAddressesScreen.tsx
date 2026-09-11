@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, Bookmark, Pencil, Trash2 } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { useSavedAddresses, useUpdateSavedAddress, useDeleteSavedAddress } from '@features/savedAddresses/hooks';
 import type { SavedAddress } from '@features/savedAddresses/types';
 import { normalizeError } from '@utils/error';
@@ -20,6 +21,7 @@ import { showToast } from '@ui/alert/toastStore';
 const SavedAddressesScreen = () => {
     const navigation = useNavigation();
     const { colors, fonts, spacing, radius } = useAppTheme();
+    const { t } = useTranslation();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => makeStyles(colors, fonts, spacing, radius, insets), [colors, fonts, spacing, radius, insets]);
 
@@ -40,7 +42,7 @@ const SavedAddressesScreen = () => {
             { label: renameLabel.trim() },
             {
                 onSuccess: () => {
-                    showToast('Address updated', 'success');
+                    showToast(t('savedAddresses.addressUpdated'), 'success');
                     setRenaming(null);
                 },
                 onError: (err) => showToast(normalizeError(err) || 'Could not update address', 'error'),
@@ -49,14 +51,14 @@ const SavedAddressesScreen = () => {
     };
 
     const confirmDelete = (address: SavedAddress) => {
-        Alert.alert('Remove address', `Remove "${address.label}" from your saved addresses?`, [
-            { text: 'Cancel', style: 'cancel' },
+        Alert.alert(t('savedAddresses.removeAddress'), t('savedAddresses.removeConfirm', { label: address.label }), [
+            { text: t('common.cancel'), style: 'cancel' },
             {
-                text: 'Remove',
+                text: t('savedAddresses.remove'),
                 style: 'destructive',
                 onPress: () => {
                     deleteAddress.mutate(address.id, {
-                        onSuccess: () => showToast('Address removed', 'success'),
+                        onSuccess: () => showToast(t('savedAddresses.addressRemoved'), 'success'),
                         onError: (err) => showToast(normalizeError(err) || 'Could not remove address', 'error'),
                     });
                 },
@@ -88,7 +90,7 @@ const SavedAddressesScreen = () => {
                 <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.backBtn}>
                     <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
                 </Pressable>
-                <Text style={styles.headerTitle}>Saved Addresses</Text>
+                <Text style={styles.headerTitle}>{t('savedAddresses.title')}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -105,8 +107,8 @@ const SavedAddressesScreen = () => {
                     ListEmptyComponent={
                         <View style={styles.centerState}>
                             <Bookmark color={colors.GRAY} size={40} />
-                            <Text style={styles.emptyText}>No saved addresses yet</Text>
-                            <Text style={styles.emptySubtext}>Bookmark a locality while picking pickup/drop in New Order</Text>
+                            <Text style={styles.emptyText}>{t('savedAddresses.noSavedAddresses')}</Text>
+                            <Text style={styles.emptySubtext}>{t('savedAddresses.bookmarkHint')}</Text>
                         </View>
                     }
                 />
@@ -115,25 +117,25 @@ const SavedAddressesScreen = () => {
             <Modal visible={!!renaming} transparent animationType="fade" onRequestClose={() => setRenaming(null)}>
                 <View style={styles.renameOverlay}>
                     <View style={styles.renameCard}>
-                        <Text style={styles.headerTitle}>Rename</Text>
+                        <Text style={styles.headerTitle}>{t('savedAddresses.rename')}</Text>
                         <TextInput
                             style={styles.renameInput}
                             value={renameLabel}
                             onChangeText={setRenameLabel}
-                            placeholder="Label, e.g. Home, Office"
+                            placeholder={t('savedAddresses.labelPlaceholder')}
                             placeholderTextColor={colors.GRAY}
                             autoFocus
                         />
                         <View style={styles.renameActions}>
                             <Pressable style={styles.renameActionBtn} onPress={() => setRenaming(null)}>
-                                <Text style={styles.renameActionText}>Cancel</Text>
+                                <Text style={styles.renameActionText}>{t('common.cancel')}</Text>
                             </Pressable>
                             <Pressable
                                 style={styles.renameActionBtn}
                                 disabled={!renameLabel.trim() || updateAddress.isPending}
                                 onPress={confirmRename}
                             >
-                                <Text style={styles.renameActionText}>{updateAddress.isPending ? 'Saving…' : 'Save'}</Text>
+                                <Text style={styles.renameActionText}>{updateAddress.isPending ? t('savedAddresses.saving') : t('common.save')}</Text>
                             </Pressable>
                         </View>
                     </View>

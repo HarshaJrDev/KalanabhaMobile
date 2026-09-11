@@ -95,5 +95,68 @@
     "cancelled": "Cancelled",
     "assigningPilot": "Assigning Pilot",
     "expired": "Expired"
+  },
+  "signup": {
+    "createAccount": "Create Account",
+    "joinKalanabha": "Join Kalanabha Logistics",
+    "personalInfo": "Personal Information",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "John Doe",
+    "phone": "Phone",
+    "phonePlaceholder": "+91 9876543210",
+    "location": "Location",
+    "address": "Address",
+    "addressPlaceholder": "Enter your address",
+    "useCurrentLocation": "Use current location",
+    "security": "Security",
+    "passwordPlaceholder": "Min. 8 characters",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Re-enter your password",
+    "fixHighlighted": "Please fix the highlighted fields",
+    "accountCreated": "Account created successfully!",
+    "unableToFetchLocation": "Unable to fetch location"
+  },
+  "forgotPassword": {
+    "forgotPasswordTitle": "Forgot Password",
+    "resetPasswordTitle": "Reset Password",
+    "requestSubtitle": "Enter your account's email and we'll send you a reset code.",
+    "resetSubtitle": "Enter the 6-digit code we sent to {{email}} and choose a new password.",
+    "enterEmail": "Enter your email address",
+    "sending": "Sending…",
+    "sendResetCode": "Send Reset Code",
+    "codeSent": "If that email exists, a reset code has been sent",
+    "sixDigitCode": "6-digit code",
+    "enterCode": "Enter the 6-digit code from your email",
+    "newPassword": "New Password",
+    "confirmNewPassword": "Confirm New Password",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "passwordsNoMatch": "Passwords do not match",
+    "resetting": "Resetting…",
+    "resetPasswordButton": "Reset Password",
+    "resetSuccess": "Password reset — please log in",
+    "resendCode": "Didn't get a code? Send again"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "noNotificationsYet": "No notifications yet"
+  },
+  "search": {
+    "searchTrackingId": "Search Tracking ID",
+    "noMatchingShipments": "No matching shipments",
+    "checkTrackingId": "Check the tracking ID and try again."
+  },
+  "savedAddresses": {
+    "title": "Saved Addresses",
+    "noSavedAddresses": "No saved addresses yet",
+    "bookmarkHint": "Bookmark a locality while picking pickup/drop in New Order",
+    "rename": "Rename",
+    "labelPlaceholder": "Label, e.g. Home, Office",
+    "saving": "Saving…",
+    "removeAddress": "Remove address",
+    "removeConfirm": "Remove \"{{label}}\" from your saved addresses?",
+    "remove": "Remove",
+    "addressRemoved": "Address removed",
+    "addressUpdated": "Address updated"
   }
 }

@@ -9,12 +9,14 @@ import {
 import type { BackendNotification } from '@features/notifications/types';
 import { AsyncState } from '@components/AsyncState';
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 import { handleNotificationTap } from '@features/notifications/deepLink';
 
 // Screen -> hook -> notifications.api -> GET /notifications/mine -> cache -> UI
 const NotificationScreen = () => {
     const { colors } = useAppTheme();
+    const { t } = useTranslation();
     // Real device safe-area inset — this screen had none at all, so the
     // header sat under the status bar/camera cutout on real devices (same
     // overlap bug class already fixed on several other screens this
@@ -44,10 +46,10 @@ const NotificationScreen = () => {
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Notifications</Text>
+                <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
                 {!!notifications?.length && (
                     <Pressable onPress={() => markAllRead()} disabled={markingAll}>
-                        <Text style={styles.markAllText}>Mark all read</Text>
+                        <Text style={styles.markAllText}>{t('notifications.markAllRead')}</Text>
                     </Pressable>
                 )}
             </View>
@@ -57,7 +59,7 @@ const NotificationScreen = () => {
                 error={error}
                 onRetry={refetch}
                 isEmpty={!notifications?.length}
-                emptyTitle="No notifications yet"
+                emptyTitle={t('notifications.noNotificationsYet')}
             >
                 <FlatList
                     data={notifications ?? []}

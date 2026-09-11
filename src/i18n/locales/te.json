@@ -95,5 +95,68 @@
     "cancelled": "రద్దు చేయబడింది",
     "assigningPilot": "పైలట్‌ను కేటాయిస్తోంది",
     "expired": "గడువు ముగిసింది"
+  },
+  "signup": {
+    "createAccount": "ఖాతా సృష్టించండి",
+    "joinKalanabha": "కలనాభ లాజిస్టిక్స్‌లో చేరండి",
+    "personalInfo": "వ్యక్తిగత సమాచారం",
+    "fullName": "పూర్తి పేరు",
+    "fullNamePlaceholder": "జాన్ డో",
+    "phone": "ఫోన్",
+    "phonePlaceholder": "+91 9876543210",
+    "location": "స్థానం",
+    "address": "చిరునామా",
+    "addressPlaceholder": "మీ చిరునామాను నమోదు చేయండి",
+    "useCurrentLocation": "ప్రస్తుత స్థానాన్ని ఉపయోగించండి",
+    "security": "భద్రత",
+    "passwordPlaceholder": "కనీసం 8 అక్షరాలు",
+    "confirmPassword": "పాస్‌వర్డ్‌ని నిర్ధారించండి",
+    "confirmPasswordPlaceholder": "మీ పాస్‌వర్డ్‌ని మళ్లీ నమోదు చేయండి",
+    "fixHighlighted": "దయచేసి హైలైట్ చేసిన ఫీల్డ్‌లను సరిచేయండి",
+    "accountCreated": "ఖాతా విజయవంతంగా సృష్టించబడింది!",
+    "unableToFetchLocation": "స్థానాన్ని పొందడం సాధ్యం కాలేదు"
+  },
+  "forgotPassword": {
+    "forgotPasswordTitle": "పాస్‌వర్డ్ మర్చిపోయారా",
+    "resetPasswordTitle": "పాస్‌వర్డ్‌ని రీసెట్ చేయండి",
+    "requestSubtitle": "మీ ఖాతా ఇమెయిల్‌ను నమోదు చేయండి, మేము మీకు రీసెట్ కోడ్‌ను పంపుతాము.",
+    "resetSubtitle": "మేము {{email}}కి పంపిన 6-అంకెల కోడ్‌ను నమోదు చేసి, కొత్త పాస్‌వర్డ్‌ని ఎంచుకోండి.",
+    "enterEmail": "మీ ఇమెయిల్ చిరునామాను నమోదు చేయండి",
+    "sending": "పంపుతోంది…",
+    "sendResetCode": "రీసెట్ కోడ్‌ను పంపండి",
+    "codeSent": "ఆ ఇమెయిల్ ఉంటే, రీసెట్ కోడ్ పంపబడింది",
+    "sixDigitCode": "6-అంకెల కోడ్",
+    "enterCode": "మీ ఇమెయిల్ నుండి 6-అంకెల కోడ్‌ను నమోదు చేయండి",
+    "newPassword": "కొత్త పాస్‌వర్డ్",
+    "confirmNewPassword": "కొత్త పాస్‌వర్డ్‌ని నిర్ధారించండి",
+    "passwordTooShort": "పాస్‌వర్డ్ కనీసం 6 అక్షరాలు ఉండాలి",
+    "passwordsNoMatch": "పాస్‌వర్డ్‌లు సరిపోలలేదు",
+    "resetting": "రీసెట్ అవుతోంది…",
+    "resetPasswordButton": "పాస్‌వర్డ్‌ని రీసెట్ చేయండి",
+    "resetSuccess": "పాస్‌వర్డ్ రీసెట్ చేయబడింది — దయచేసి లాగిన్ అవ్వండి",
+    "resendCode": "కోడ్ రాలేదా? మళ్లీ పంపండి"
+  },
+  "notifications": {
+    "title": "నోటిఫికేషన్లు",
+    "markAllRead": "అన్నింటినీ చదివినట్లు గుర్తించండి",
+    "noNotificationsYet": "ఇంకా నోటిఫికేషన్‌లు లేవు"
+  },
+  "search": {
+    "searchTrackingId": "ట్రాకింగ్ ఐడీని వెతకండి",
+    "noMatchingShipments": "సరిపోలే షిప్‌మెంట్‌లు లేవు",
+    "checkTrackingId": "ట్రాకింగ్ ఐడీని తనిఖీ చేసి మళ్లీ ప్రయత్నించండి."
+  },
+  "savedAddresses": {
+    "title": "సేవ్ చేసిన చిరునామాలు",
+    "noSavedAddresses": "ఇంకా చిరునామాలు సేవ్ చేయలేదు",
+    "bookmarkHint": "కొత్త ఆర్డర్‌లో పికప్/డ్రాప్ ఎంచుకునేటప్పుడు ఒక ప్రాంతాన్ని బుక్‌మార్క్ చేయండి",
+    "rename": "పేరు మార్చండి",
+    "labelPlaceholder": "లేబుల్, ఉదా. ఇల్లు, ఆఫీస్",
+    "saving": "సేవ్ అవుతోంది…",
+    "removeAddress": "చిరునామాను తీసివేయండి",
+    "removeConfirm": "\"{{label}}\"ని మీ సేవ్ చేసిన చిరునామాల నుండి తీసివేయాలా?",
+    "remove": "తీసివేయండి",
+    "addressRemoved": "చిరునామా తీసివేయబడింది",
+    "addressUpdated": "చిరునామా నవీకరించబడింది"
   }
 }

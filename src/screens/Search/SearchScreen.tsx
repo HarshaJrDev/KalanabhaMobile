@@ -6,19 +6,21 @@ import { Search, ChevronRight, QrCode } from 'lucide-react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useOrderSearch } from '@features/shipments/useOrderSearch'
 import { AsyncState } from '@components/AsyncState'
+import { useTranslation } from 'react-i18next'
 import FONTS from '@utils/fonts';
 
 // Screen -> useOrderSearch -> shipments.api -> GET /shipments/mine ->
 // client filter by trackingId/shipmentId -> UI.
 const SearchScreen = () => {
     const navigation = useNavigation();
+    const { t } = useTranslation();
     const { query, setQuery, results, isLoading, error, refetch } = useOrderSearch();
 
     return (
         <SafeAreaView style={styles.container}>
             <CustomInput
                 isEnable
-                placeholder="Search Tracking ID"
+                placeholder={t('search.searchTrackingId')}
                 leftIcon={Search}
                 rightIcon={QrCode}
                 onRightIconPress={() => (navigation as any).navigate('QRScan')}
@@ -34,8 +36,8 @@ const SearchScreen = () => {
                     error={error}
                     onRetry={refetch}
                     isEmpty={results.length === 0}
-                    emptyTitle="No matching shipments"
-                    emptyMessage="Check the tracking ID and try again."
+                    emptyTitle={t('search.noMatchingShipments')}
+                    emptyMessage={t('search.checkTrackingId')}
                 >
                     <FlatList
                         data={results}

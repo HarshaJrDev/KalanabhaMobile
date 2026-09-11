@@ -31,11 +31,13 @@ import AppButton from '@components/AppButton';
 import { useForgotPassword, useResetPassword } from '@hooks/useForgotPassword';
 import { showToast } from '@ui/alert/toastStore';
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 const ForgotPasswordScreen = () => {
     const navigation = useNavigation();
     const { colors, fonts } = useAppTheme();
     const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
+    const { t } = useTranslation();
     const [step, setStep] = useState<'request' | 'reset'>('request');
 
     const [email, setEmail] = useState('');
@@ -50,12 +52,12 @@ const ForgotPasswordScreen = () => {
     const handleRequestCode = () => {
         setError(null);
         if (!email.trim()) {
-            setError('Enter your email address');
+            setError(t('forgotPassword.enterEmail'));
             return;
         }
         forgotPasswordMutation.mutate(email.trim(), {
             onSuccess: () => {
-                showToast('If that email exists, a reset code has been sent', 'success');
+                showToast(t('forgotPassword.codeSent'), 'success');
                 setStep('reset');
             },
             onError: (err) => setError(err.message),
@@ -65,22 +67,22 @@ const ForgotPasswordScreen = () => {
     const handleResetPassword = () => {
         setError(null);
         if (code.trim().length !== 6) {
-            setError('Enter the 6-digit code from your email');
+            setError(t('forgotPassword.enterCode'));
             return;
         }
         if (newPassword.length < 6) {
-            setError('Password must be at least 6 characters');
+            setError(t('forgotPassword.passwordTooShort'));
             return;
         }
         if (newPassword !== confirmPassword) {
-            setError('Passwords do not match');
+            setError(t('forgotPassword.passwordsNoMatch'));
             return;
         }
         resetPasswordMutation.mutate(
             { email: email.trim(), code: code.trim(), newPassword },
             {
                 onSuccess: () => {
-                    showToast('Password reset — please log in', 'success');
+                    showToast(t('forgotPassword.resetSuccess'), 'success');
                     navigation.goBack();
                 },
                 onError: (err) => setError(err.message),
@@ -96,18 +98,18 @@ const ForgotPasswordScreen = () => {
                 </TouchableOpacity>
 
                 <Text style={styles.title}>
-                    {step === 'request' ? 'Forgot Password' : 'Reset Password'}
+                    {step === 'request' ? t('forgotPassword.forgotPasswordTitle') : t('forgotPassword.resetPasswordTitle')}
                 </Text>
                 <Text style={styles.subtitle}>
                     {step === 'request'
-                        ? "Enter your account's email and we'll send you a reset code."
-                        : `Enter the 6-digit code we sent to ${email} and choose a new password.`}
+                        ? t('forgotPassword.requestSubtitle')
+                        : t('forgotPassword.resetSubtitle', { email })}
                 </Text>
 
                 {step === 'request' ? (
                     <>
                         <InputField
-                            label="Email"
+                            label={t('login.email')}
                             value={email}
                             onChange={setEmail}
                             keyboardType="email-address"
@@ -116,7 +118,7 @@ const ForgotPasswordScreen = () => {
                         {!!error && <Text style={styles.errorText}>{error}</Text>}
                         <View style={styles.buttonWrapper}>
                             <AppButton
-                                title={forgotPasswordMutation.isPending ? 'Sending…' : 'Send Reset Code'}
+                                title={forgotPasswordMutation.isPending ? t('forgotPassword.sending') : t('forgotPassword.sendResetCode')}
                                 onPress={handleRequestCode}
                                 loading={forgotPasswordMutation.isPending}
                                 disabled={forgotPasswordMutation.isPending}
@@ -126,20 +128,20 @@ const ForgotPasswordScreen = () => {
                 ) : (
                     <>
                         <InputField
-                            label="6-digit code"
+                            label={t('forgotPassword.sixDigitCode')}
                             value={code}
                             onChange={setCode}
                             keyboardType="number-pad"
                             maxLength={6}
                         />
                         <InputField
-                            label="New Password"
+                            label={t('forgotPassword.newPassword')}
                             value={newPassword}
                             onChange={setNewPassword}
                             secure
                         />
                         <InputField
-                            label="Confirm New Password"
+                            label={t('forgotPassword.confirmNewPassword')}
                             value={confirmPassword}
                             onChange={setConfirmPassword}
                             secure
@@ -147,14 +149,14 @@ const ForgotPasswordScreen = () => {
                         {!!error && <Text style={styles.errorText}>{error}</Text>}
                         <View style={styles.buttonWrapper}>
                             <AppButton
-                                title={resetPasswordMutation.isPending ? 'Resetting…' : 'Reset Password'}
+                                title={resetPasswordMutation.isPending ? t('forgotPassword.resetting') : t('forgotPassword.resetPasswordButton')}
                                 onPress={handleResetPassword}
                                 loading={resetPasswordMutation.isPending}
                                 disabled={resetPasswordMutation.isPending}
                             />
                         </View>
                         <TouchableOpacity onPress={() => setStep('request')} style={styles.resendWrapper}>
-                            <Text style={styles.resendText}>Didn't get a code? Send again</Text>
+                            <Text style={styles.resendText}>{t('forgotPassword.resendCode')}</Text>
                         </TouchableOpacity>
                     </>
                 )}
