@@ -120,6 +120,7 @@
     "houseShiftingHelpers": "హౌస్ షిఫ్టింగ్ · {{count}} సహాయకులు"
   },
   "status": {
+    "scheduled": "షెడ్యూల్ చేయబడింది",
     "searching": "వెతుకుతోంది",
     "accepted": "అంగీకరించబడింది",
     "inTransit": "రవాణాలో ఉంది",
@@ -381,6 +382,18 @@
     "noVehicleCanCarry": "అందుబాటులో ఉన్న ఏ వాహనం {{weight}} కిలోలు మోయలేదు — అతిపెద్ద ఎంపిక {{maxWeight}} కిలోల వరకు నిర్వహిస్తుంది. ప్యాకేజీ బరువును తగ్గించడానికి ప్రయత్నించండి.",
     "vehicleMaxWeightLabel": "{{maxWeight}} కిలోల వరకు",
     "paymentMethodSectionTitle": "చెల్లింపు విధానం",
+    "promoCodeSectionTitle": "ప్రోమో కోడ్",
+    "promoCodePlaceholder": "ప్రోమో కోడ్ నమోదు చేయండి",
+    "promoApplied": "ప్రోమో వర్తింపజేయబడింది: -₹{{discount}}",
+    "promoInvalid": "చెల్లని ప్రోమో కోడ్",
+    "schedulePickupSectionTitle": "పికప్ షెడ్యూల్ చేయండి",
+    "schedulePickupSectionSubtitle": "ఇప్పుడే బుక్ చేయండి లేదా భవిష్యత్ తేదీ/సమయం ఎంచుకోండి",
+    "scheduleForLater": "తర్వాత కోసం షెడ్యూల్ చేయండి",
+    "pickDateTime": "తేదీ & సమయం ఎంచుకోండి",
+    "scheduleToday": "ఈరోజు",
+    "scheduleTomorrow": "రేపు",
+    "scheduleDateLabel": "తేదీ",
+    "scheduleTimeLabel": "సమయం",
     "pickupTimeSlotSectionTitle": "పికప్ సమయ స్లాట్",
     "pickupTimeSlotSectionSubtitle": "మేము ఎప్పుడు సేకరించాలి?",
     "deliveryNotesSectionTitle": "డెలివరీ గమనికలు",
@@ -459,6 +472,9 @@
     "handling": "నిర్వహణ",
     "fragile": "పెళుసైనది",
     "paymentSummary": "చెల్లింపు సారాంశం",
+    "payNow": "ఇప్పుడే చెల్లించండి",
+    "paymentSuccess": "చెల్లింపు విజయవంతమైంది",
+    "paymentFailed": "చెల్లింపు విఫలమైంది",
     "paymentCod": "క్యాష్ ఆన్ డెలివరీ",
     "paymentUpi": "UPI",
     "paymentCredit": "క్రెడిట్",
@@ -480,6 +496,14 @@
     "chatWithCustomer": "కస్టమర్‌తో చాట్ చేయండి",
     "noTripsYet": "ఇంకా ట్రిప్‌లు లేవు",
     "acceptedShowHere": "అంగీకరించిన డెలివరీలు ఇక్కడ కనిపిస్తాయి."
+  },
+  "earnings": {
+    "title": "సంపాదన",
+    "today": "ఈరోజు",
+    "thisWeek": "ఈ వారం",
+    "allTime": "మొత్తం · {{trips}} ట్రిప్‌లు",
+    "recentTrips": "ఇటీవలి ట్రిప్‌లు",
+    "noTripsYet": "ఇంకా డెలివరీ చేసిన ట్రిప్‌లు లేవు"
   },
   "driverDocuments": {
     "pendingReview": "సమీక్ష పెండింగ్‌లో ఉంది",
@@ -512,6 +536,9 @@
     "amountPaidPlaceholder": "ఉదా. 850",
     "litresOptional": "లీటర్లు (ఐచ్ఛికం)",
     "litresPlaceholder": "ఉదా. 8.5"
+  },
+  "turnByTurnNav": {
+    "calculatingRoute": "మార్గం లెక్కిస్తోంది…"
   },
   "driverHome": {
     "loadingOrders": "మీ ఆర్డర్‌లు లోడ్ అవుతున్నాయి...",
@@ -800,6 +827,7 @@
     "unableToOpenDialer": "డయలర్‌ను తెరవడం సాధ్యం కాలేదు",
     "unableToShare": "షేర్ చేయడం సాధ్యం కాలేదు",
     "trackShipmentMessage": "నా కలనాభ షిప్‌మెంట్‌ను ట్రాక్ చేయండి: {{pickup}} నుండి {{drop}} వరకు {{goodsType}}. స్థితి: {{status}}.",
+    "statusScheduled": "షెడ్యూల్ చేయబడింది",
     "statusSearching": "వెతుకుతోంది",
     "statusAccepted": "అంగీకరించబడింది",
     "statusInTransit": "రవాణాలో ఉంది",

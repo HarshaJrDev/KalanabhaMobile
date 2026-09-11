@@ -45,6 +45,9 @@ import { useTranslation } from 'react-i18next';
 import { safeNumber } from '@utils/parsers';
 import { useDriverLiveLocation } from '@location/useDriverLiveLocation';
 import { openGoogleMapsDirections } from '@utils/navigation';
+import { LiveTrackingMap } from '@components/LiveTrackingMap';
+import { TurnByTurnRouteLine, TurnByTurnBanner } from '@components/TurnByTurnNav';
+import { useTurnByTurnRoute } from '@features/navigation/useTurnByTurnRoute';
 import { useAuthStore } from '@features/store/authStore';
 import { showToast } from '@ui/alert/toastStore';
 import { Linking } from 'react-native';
@@ -225,7 +228,13 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     // (`shipments` above), which by definition never contains a shipment
     // already assigned to this driver. Fixed now that
     // GET /shipments/driver/mine (`activeDelivery` above) exists.
-    useDriverLiveLocation(!!activeDelivery);
+    const driverPosition = useDriverLiveLocation(!!activeDelivery);
+    // In-app turn-by-turn (free OSRM) to whichever leg is currently active —
+    // pickup while accepted, drop once in_transit.
+    const navRoute = useTurnByTurnRoute(
+        driverPosition,
+        activeDelivery ? (activeDelivery.status === 'accepted' ? activeDelivery.pickup : activeDelivery.drop) : null,
+    );
 
     // FCM listener registration (foreground/background/killed-tap
     // navigation) is now centralized once in App.tsx — was duplicated
@@ -341,10 +350,23 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                                 <Text style={styles.chatPillText}>{t('driverHome.chat')}</Text>
                             </View>
                         </TouchableOpacity>
-                        {/* No embedded map library is installed in this
-                            app — opens the real Google Maps app/website
-                            (free, no API key) for turn-by-turn directions,
-                            same pattern ShipmentDetailsScreen already uses. */}
+                        {/* Real in-app turn-by-turn (free OSRM routing over
+                            the existing MapLibre map, no API key) — the
+                            driver's current position to whichever leg is
+                            active (pickup while accepted, drop while
+                            in_transit). "Open in Maps" stays alongside as a
+                            fallback for drivers who prefer Google/Apple Maps. */}
+                        <View style={styles.embeddedMapWrap}>
+                            <LiveTrackingMap
+                                pickup={activeDelivery.status === 'accepted' ? activeDelivery.pickup : undefined}
+                                drop={activeDelivery.pickup ? activeDelivery.drop : undefined}
+                                driver={driverPosition}
+                                height={180}
+                            >
+                                <TurnByTurnRouteLine route={navRoute.route} />
+                            </LiveTrackingMap>
+                            <TurnByTurnBanner loading={navRoute.loading} nextStep={navRoute.nextStep} />
+                        </View>
                         <TouchableOpacity
                             style={styles.openMapsRow}
                             onPress={() => openGoogleMapsDirections(activeDelivery.pickup, activeDelivery.drop)}
@@ -758,6 +780,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     chatPillText: { color: '#fff', fontSize: 12, fontFamily: FONTS.BOLD_PRIMARY },
+    embeddedMapWrap: { marginTop: 10 },
     openMapsRow: {
         flexDirection: 'row',
         alignItems: 'center',

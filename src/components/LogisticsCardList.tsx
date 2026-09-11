@@ -56,7 +56,7 @@ import FONTS from '@utils/fonts';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-type LogisticsStatus = 'searching' | 'accepted' | 'in_transit' | 'delivered' | 'cancelled';
+type LogisticsStatus = 'scheduled' | 'searching' | 'accepted' | 'in_transit' | 'delivered' | 'cancelled';
 type UserRole = 'customer' | 'driver';
 
 interface Location {
@@ -264,6 +264,7 @@ export const useDriverActions = () => {
 
 const getStatusColor = (status: LogisticsStatus): string => {
     const colors: Record<LogisticsStatus, string> = {
+        scheduled: '#8B5CF6',
         searching: '#F59E0B',
         accepted: '#3B82F6',
         in_transit: '#8B5CF6',
@@ -275,6 +276,7 @@ const getStatusColor = (status: LogisticsStatus): string => {
 
 const makeStatusLabel = (t: (key: string) => string) => (status: LogisticsStatus): string => {
     const labels: Record<LogisticsStatus, string> = {
+        scheduled: t('logisticsCard.statusScheduled'),
         searching: t('logisticsCard.statusSearching'),
         accepted: t('logisticsCard.statusAccepted'),
         in_transit: t('logisticsCard.statusInTransit'),

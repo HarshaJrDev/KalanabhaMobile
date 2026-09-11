@@ -120,6 +120,7 @@
     "houseShiftingHelpers": "House Shifting · {{count}} helper{{plural}}"
   },
   "status": {
+    "scheduled": "Scheduled",
     "searching": "Searching",
     "accepted": "Accepted",
     "inTransit": "In Transit",
@@ -381,6 +382,18 @@
     "noVehicleCanCarry": "No available vehicle can carry {{weight}} kg — the largest option handles up to {{maxWeight}} kg. Try reducing the package weight.",
     "vehicleMaxWeightLabel": "Up to {{maxWeight}} kg",
     "paymentMethodSectionTitle": "Payment Method",
+    "promoCodeSectionTitle": "Promo Code",
+    "promoCodePlaceholder": "Enter promo code",
+    "promoApplied": "Promo applied: -₹{{discount}}",
+    "promoInvalid": "Invalid promo code",
+    "schedulePickupSectionTitle": "Schedule Pickup",
+    "schedulePickupSectionSubtitle": "Book now or pick a future date/time",
+    "scheduleForLater": "Schedule for later",
+    "pickDateTime": "Pick date & time",
+    "scheduleToday": "Today",
+    "scheduleTomorrow": "Tomorrow",
+    "scheduleDateLabel": "Date",
+    "scheduleTimeLabel": "Time",
     "pickupTimeSlotSectionTitle": "Pickup Time Slot",
     "pickupTimeSlotSectionSubtitle": "When should we collect?",
     "deliveryNotesSectionTitle": "Delivery Notes",
@@ -459,6 +472,9 @@
     "handling": "Handling",
     "fragile": "Fragile",
     "paymentSummary": "Payment Summary",
+    "payNow": "Pay Now",
+    "paymentSuccess": "Payment successful",
+    "paymentFailed": "Payment failed",
     "paymentCod": "Cash on Delivery",
     "paymentUpi": "UPI",
     "paymentCredit": "Credit",
@@ -480,6 +496,14 @@
     "chatWithCustomer": "Chat with Customer",
     "noTripsYet": "No trips yet",
     "acceptedShowHere": "Accepted deliveries will show up here."
+  },
+  "earnings": {
+    "title": "Earnings",
+    "today": "Today",
+    "thisWeek": "This Week",
+    "allTime": "All Time · {{trips}} trips",
+    "recentTrips": "Recent Trips",
+    "noTripsYet": "No delivered trips yet"
   },
   "driverDocuments": {
     "pendingReview": "Pending review",
@@ -512,6 +536,9 @@
     "amountPaidPlaceholder": "e.g. 850",
     "litresOptional": "Litres (optional)",
     "litresPlaceholder": "e.g. 8.5"
+  },
+  "turnByTurnNav": {
+    "calculatingRoute": "Calculating route…"
   },
   "driverHome": {
     "loadingOrders": "Loading your orders...",
@@ -800,6 +827,7 @@
     "unableToOpenDialer": "Unable to open the dialer",
     "unableToShare": "Unable to share",
     "trackShipmentMessage": "Track my Kalanabha shipment: {{goodsType}} from {{pickup}} to {{drop}}. Status: {{status}}.",
+    "statusScheduled": "Scheduled",
     "statusSearching": "Searching",
     "statusAccepted": "Accepted",
     "statusInTransit": "In Transit",

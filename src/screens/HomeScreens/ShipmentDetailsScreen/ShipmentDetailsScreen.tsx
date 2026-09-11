@@ -38,6 +38,7 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useShipment, useShipmentHistory } from '@features/shipments/hooks';
+import { usePayForShipment } from '@features/payments/hooks';
 import { useLiveDriverLocation } from '@location/useLiveDriverLocation';
 import { haversineDistanceKm } from '@utils/geo';
 import { openGoogleMapsDirections } from '@utils/navigation';
@@ -139,6 +140,7 @@ const ShipmentDetailsScreen = () => {
     const { data: shipment, isLoading: shipmentLoading, error } = useShipment(shipmentId);
     const { data: historyEntries } = useShipmentHistory(shipmentId);
     const [copied, setCopied] = useState(false);
+    const { mutate: payForShipment, isPending: payingNow } = usePayForShipment();
     const [podViewerOpen, setPodViewerOpen] = useState(false);
 
     const isDriverEnRoute = shipment?.status === 'accepted' || shipment?.status === 'in_transit';
@@ -520,6 +522,27 @@ const ShipmentDetailsScreen = () => {
                 <Text style={styles.payTotalLabel}>{t('shipmentDetails.total')}</Text>
                 <Text style={styles.payTotalValue}>₹{shipment.price}</Text>
             </View>
+            {shipment.paymentMode === 'prepaid' && shipment.paymentStatus === 'PENDING' && (
+                <TouchableOpacity
+                    style={styles.payNowBtn}
+                    activeOpacity={0.85}
+                    disabled={payingNow}
+                    onPress={() => payForShipment({
+                        shipmentId: shipment.id,
+                        customerName: shipment.sender?.name,
+                        customerPhone: shipment.sender?.phone,
+                    }, {
+                        onError: () => showToast(t('shipmentDetails.paymentFailed'), 'error'),
+                        onSuccess: () => showToast(t('shipmentDetails.paymentSuccess'), 'success'),
+                    })}
+                >
+                    {payingNow ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={styles.payNowBtnText}>{t('shipmentDetails.payNow')}</Text>
+                    )}
+                </TouchableOpacity>
+            )}
         </AnimatedCard>
     );
 
@@ -736,6 +759,11 @@ const makeStyles = (C: DetailColors) => StyleSheet.create({
     payTotalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 },
     payTotalLabel: { fontSize: 15, color: C.text, fontFamily: FONTS.BOLD_PRIMARY },
     payTotalValue: { fontSize: 18, color: C.primary, fontFamily: FONTS.BOLD_PRIMARY },
+    payNowBtn: {
+        marginTop: 14, backgroundColor: C.primary, borderRadius: 12,
+        paddingVertical: 12, alignItems: 'center', justifyContent: 'center',
+    },
+    payNowBtnText: { color: '#fff', fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY },
     payMethodPill: { backgroundColor: C.primaryLight, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
     payMethodText: { color: C.primary, fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY },
 

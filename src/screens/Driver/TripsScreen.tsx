@@ -26,6 +26,7 @@ import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 
 const makeStatusLabel = (t: (key: string) => string): Record<ShipmentStatus, string> => ({
+    scheduled: t('status.scheduled'),
     searching: t('status.searching'),
     accepted: t('status.accepted'),
     in_transit: t('status.inTransit'),
@@ -34,6 +35,7 @@ const makeStatusLabel = (t: (key: string) => string): Record<ShipmentStatus, str
 });
 
 const STATUS_COLOR: Record<ShipmentStatus, string> = {
+    scheduled: '#8B5CF6',
     searching: '#9CA3AF',
     accepted: '#2563EB',
     in_transit: '#F59E0B',

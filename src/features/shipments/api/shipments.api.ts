@@ -4,6 +4,7 @@ import type {
     AssignShipmentPayload,
     BackendShipment,
     CreateShipmentPayload,
+    DriverEarningsSummary,
     QuoteShipmentPayload,
     ShipmentQuote,
     ShipmentStatusHistoryEntry,
@@ -57,6 +58,14 @@ export const getSearchingShipments = async (): Promise<BackendShipment[]> => {
 // (chat entry point) and trip history.
 export const getMyShipmentsAsDriver = async (): Promise<BackendShipment[]> => {
     const { data } = await apiClient.get<ApiSuccessResponse<BackendShipment[]>>('/shipments/driver/mine');
+    return data.data;
+};
+
+// driver only — Driver/EarningsScreen.tsx's single data source
+// (today/week/all-time totals + recent trip list, computed server-side
+// from this driver's own DELIVERED shipments).
+export const getDriverEarningsSummary = async (): Promise<DriverEarningsSummary> => {
+    const { data } = await apiClient.get<ApiSuccessResponse<DriverEarningsSummary>>('/shipments/driver/earnings-summary');
     return data.data;
 };
 

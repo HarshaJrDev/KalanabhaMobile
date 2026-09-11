@@ -1,4 +1,5 @@
 export type ShipmentStatus =
+    | 'scheduled'
     | 'searching'
     | 'accepted'
     | 'in_transit'
@@ -122,6 +123,17 @@ export interface Shipment {
     // driver accepts it (kalanabhaBackend's ShipmentExpiryProcessor) —
     // backs the driver Home screen's real countdown, not a fabricated one.
     expiresAt: string | null;
+
+    // Real Razorpay payment status — independent of paymentMode; only
+    // 'prepaid' shipments ever move off 'PENDING'.
+    paymentStatus: 'PENDING' | 'PAID' | 'FAILED';
+
+    // Promo code applied at booking, if any.
+    promoCode: string | null;
+    promoDiscount: number | null;
+
+    // Future-dated pickup — null means "booked now".
+    scheduledAt: string | null;
 
     // Not returned by kalanabhaBackend (no per-shipment customer snapshot
     // endpoint) — only ever populated when parsed straight from a Firestore

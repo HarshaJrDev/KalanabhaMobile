@@ -25,6 +25,7 @@ import HomeTabs from '@screens/navigation/HomeTabs';
 import DriverTabs from '@screens/Driver/HomeScreen/HomeScreenDrive';
 import DriverSettingsScreen from '@screens/Driver/SettingsScreen';
 import DriverTripsScreen from '@screens/Driver/TripsScreen';
+import DriverEarningsScreen from '@screens/Driver/EarningsScreen';
 import FuelStationsScreen from '@screens/Driver/FuelStationsScreen';
 import DriverDocumentsScreen from '@screens/Driver/DriverDocumentsScreen';
 import RatingScreen from '@screens/HomeScreens/RatingScreen';
@@ -134,6 +135,7 @@ const App = () => {
                 <Stack.Screen name="Sender" component={Sender} />
                 <Stack.Screen name="DriverSettings" component={DriverSettingsScreen} />
                 <Stack.Screen name="DriverTrips" component={DriverTripsScreen} />
+                <Stack.Screen name="DriverEarnings" component={DriverEarningsScreen} />
                 <Stack.Screen name="FuelStations" component={FuelStationsScreen} />
                 <Stack.Screen name="DriverDocuments" component={DriverDocumentsScreen} />
                 <Stack.Screen name="Rating" component={RatingScreen} />

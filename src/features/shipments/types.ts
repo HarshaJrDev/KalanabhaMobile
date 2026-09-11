@@ -3,7 +3,7 @@
 // nested shape described in shipments/entities/shipment.entity.ts (that
 // file documents intent; nothing in the backend maps rows into it before
 // sending the response). Verified against a running instance.
-export type BackendShipmentStatus = 'SEARCHING' | 'ACCEPTED' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED';
+export type BackendShipmentStatus = 'SCHEDULED' | 'SEARCHING' | 'ACCEPTED' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED';
 
 export interface BackendDispatchInfo {
     driverId: string;
@@ -124,6 +124,20 @@ export interface BackendShipment {
     // Home screen's real countdown on the incoming-request card.
     expiresAt: string | null;
 
+    // Real Razorpay payment status — independent of paymentMode
+    // ('prepaid'|'cod'|'credit'); only 'prepaid' shipments ever move off
+    // PENDING, via POST /payments/orders + /payments/verify.
+    paymentStatus: 'PENDING' | 'PAID' | 'FAILED';
+
+    // Promo code applied at booking, if any — null/undefined otherwise.
+    promoCode: string | null;
+    promoDiscount: number | null;
+
+    // Future-dated pickup — null means "book now" (the existing,
+    // only-supported behaviour before this). Status starts SCHEDULED
+    // instead of SEARCHING when this is set in the future.
+    scheduledAt: string | null;
+
     createdAt: string;
     updatedAt: string;
 }
@@ -150,6 +164,11 @@ export interface CreateShipmentPayload {
     // exists to charge one through).
     fragile?: boolean;
     insuranceRequested?: boolean;
+    // Optional promo code, validated server-side against POST
+    // /promotions/validate's same logic before the discount is applied.
+    promoCode?: string;
+    // Optional future pickup time, ISO string. Omit to book now.
+    scheduledAt?: string;
 }
 
 // POST /shipments/quote — QuoteShipmentDto / response
@@ -181,6 +200,20 @@ export interface AssignShipmentPayload {
 // enum-as-string ('SEARCHING'/'ACCEPTED'/'IN_TRANSIT'/'DELIVERED'/
 // 'CANCELLED'), not the lowercase ShipmentStatus this app displays
 // elsewhere.
+// GET /shipments/driver/earnings-summary — Driver/EarningsScreen.tsx's
+// single data source.
+export interface DriverEarningsWindow {
+    total: number;
+    trips: number;
+}
+
+export interface DriverEarningsSummary {
+    today: DriverEarningsWindow;
+    week: DriverEarningsWindow;
+    allTime: DriverEarningsWindow;
+    recentTrips: { id: string; trackingId: string; price: number; updatedAt: string; from: string; to: string }[];
+}
+
 export interface ShipmentStatusHistoryEntry {
     id: string;
     shipmentId: string;

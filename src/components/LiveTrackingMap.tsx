@@ -30,9 +30,13 @@ interface LiveTrackingMapProps {
     drop?: MapPoint | null;
     driver?: MapPoint | null;
     height?: number;
+    // Extra Source/Layer elements (e.g. TurnByTurnNav's route line) —
+    // MapLibre requires these to be direct children of <Map>, so a
+    // sibling component can't add its own layer to this map from outside.
+    children?: React.ReactNode;
 }
 
-export const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({ pickup, drop, driver, height = 220 }) => {
+export const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({ pickup, drop, driver, height = 220, children }) => {
     // Center on whichever real point is most relevant right now — the
     // moving driver if we have one, otherwise the pickup point, otherwise
     // the drop point. Never a fabricated default city/coordinate.
@@ -65,6 +69,8 @@ export const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({ pickup, drop, 
                         <View style={[styles.marker, styles.driverMarker]} />
                     </Marker>
                 )}
+
+                {children}
             </Map>
         </View>
     );

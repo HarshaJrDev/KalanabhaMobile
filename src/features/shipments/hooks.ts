@@ -47,6 +47,16 @@ export const useMyShipmentsAsDriver = () => {
     });
 };
 
+// driver only — today/week/all-time earnings totals + recent trips.
+export const useDriverEarningsSummary = () => {
+    const { isAuthenticated } = useAuthState();
+    return useQuery({
+        queryKey: [...shipmentKeys.all, 'driver-earnings-summary'] as const,
+        queryFn: shipmentsApi.getDriverEarningsSummary,
+        enabled: isAuthenticated,
+    });
+};
+
 // Every shipment this customer has ever made, any status — see
 // getMyShipmentHistory. Powers Profile.tsx's real stats and Transactions
 // History; doesn't need the active-shipment poll interval since past

@@ -120,6 +120,7 @@
     "houseShiftingHelpers": "घर शिफ्टिंग · {{count}} सहायक"
   },
   "status": {
+    "scheduled": "निर्धारित",
     "searching": "खोजा जा रहा है",
     "accepted": "स्वीकृत",
     "inTransit": "ट्रांज़िट में",
@@ -381,6 +382,18 @@
     "noVehicleCanCarry": "कोई भी उपलब्ध वाहन {{weight}} किग्रा नहीं उठा सकता — सबसे बड़ा विकल्प {{maxWeight}} किग्रा तक संभालता है। पैकेज का वजन कम करने का प्रयास करें।",
     "vehicleMaxWeightLabel": "{{maxWeight}} किग्रा तक",
     "paymentMethodSectionTitle": "भुगतान का तरीका",
+    "promoCodeSectionTitle": "प्रोमो कोड",
+    "promoCodePlaceholder": "प्रोमो कोड दर्ज करें",
+    "promoApplied": "प्रोमो लागू: -₹{{discount}}",
+    "promoInvalid": "अमान्य प्रोमो कोड",
+    "schedulePickupSectionTitle": "पिकअप शेड्यूल करें",
+    "schedulePickupSectionSubtitle": "अभी बुक करें या भविष्य की तारीख/समय चुनें",
+    "scheduleForLater": "बाद के लिए शेड्यूल करें",
+    "pickDateTime": "तारीख और समय चुनें",
+    "scheduleToday": "आज",
+    "scheduleTomorrow": "कल",
+    "scheduleDateLabel": "तारीख",
+    "scheduleTimeLabel": "समय",
     "pickupTimeSlotSectionTitle": "पिकअप समय स्लॉट",
     "pickupTimeSlotSectionSubtitle": "हमें कब लेना चाहिए?",
     "deliveryNotesSectionTitle": "डिलीवरी नोट्स",
@@ -459,6 +472,9 @@
     "handling": "हैंडलिंग",
     "fragile": "नाज़ुक",
     "paymentSummary": "भुगतान सारांश",
+    "payNow": "अभी भुगतान करें",
+    "paymentSuccess": "भुगतान सफल रहा",
+    "paymentFailed": "भुगतान विफल रहा",
     "paymentCod": "कैश ऑन डिलीवरी",
     "paymentUpi": "यूपीआई",
     "paymentCredit": "क्रेडिट",
@@ -480,6 +496,14 @@
     "chatWithCustomer": "ग्राहक से चैट करें",
     "noTripsYet": "अभी तक कोई यात्रा नहीं",
     "acceptedShowHere": "स्वीकृत डिलीवरी यहां दिखाई देंगी।"
+  },
+  "earnings": {
+    "title": "कमाई",
+    "today": "आज",
+    "thisWeek": "इस सप्ताह",
+    "allTime": "कुल समय · {{trips}} यात्राएं",
+    "recentTrips": "हाल की यात्राएं",
+    "noTripsYet": "अभी तक कोई डिलीवर की गई यात्रा नहीं"
   },
   "driverDocuments": {
     "pendingReview": "समीक्षा लंबित",
@@ -512,6 +536,9 @@
     "amountPaidPlaceholder": "जैसे 850",
     "litresOptional": "लीटर (वैकल्पिक)",
     "litresPlaceholder": "जैसे 8.5"
+  },
+  "turnByTurnNav": {
+    "calculatingRoute": "मार्ग की गणना हो रही है…"
   },
   "driverHome": {
     "loadingOrders": "आपके ऑर्डर लोड हो रहे हैं...",
@@ -800,6 +827,7 @@
     "unableToOpenDialer": "डायलर खोलने में असमर्थ",
     "unableToShare": "साझा करने में असमर्थ",
     "trackShipmentMessage": "मेरा कलानाभा शिपमेंट ट्रैक करें: {{pickup}} से {{drop}} तक {{goodsType}}। स्थिति: {{status}}।",
+    "statusScheduled": "निर्धारित",
     "statusSearching": "खोजा जा रहा है",
     "statusAccepted": "स्वीकृत",
     "statusInTransit": "ट्रांज़िट में",

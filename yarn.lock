@@ -6596,6 +6596,11 @@ react-native-nitro-modules@*, react-native-nitro-modules@^0.35.2:
   resolved "https://registry.npmjs.org/react-native-pager-view/-/react-native-pager-view-9.0.4.tgz"
   integrity sha512-FoGi40losOaXNj/bGzr0O6rvJY3KOkQKtTXGtfElo/rV66KUcXV0UegDKzhoK4Fg+rChbPJRlyhtro8qUG9abQ==
 
+react-native-razorpay@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.npmjs.org/react-native-razorpay/-/react-native-razorpay-3.0.0.tgz"
+  integrity sha512-p7bcEJd8P3/FuNuV/kDvJAhF2QCHXaOwkMA7hkZV3XnmU2IJRap3dF8BYuSBAb+OEvzAm5RQbRHlZAnkr/+h+g==
+
 react-native-reanimated@^4.3.0, "react-native-reanimated@>=3.16.0 || >=4.0.0-":
   version "4.3.0"
   resolved "https://registry.npmjs.org/react-native-reanimated/-/react-native-reanimated-4.3.0.tgz"
@@ -6662,7 +6667,7 @@ react-native-worklets@^0.8.1, react-native-worklets@0.8.x:
     convert-source-map "^2.0.0"
     semver "^7.7.3"
 
-react-native@*, "react-native@>= 0.50.0", "react-native@>= 0.61.5", react-native@>=0.57, react-native@>=0.59, react-native@>=0.80.0, "react-native@0.81 - 0.85", react-native@0.82.1:
+react-native@*, "react-native@>= 0.50.0", "react-native@>= 0.61.5", react-native@>=0.57, react-native@>=0.59, react-native@>=0.66.0, react-native@>=0.80.0, "react-native@0.81 - 0.85", react-native@0.82.1:
   version "0.82.1"
   resolved "https://registry.npmjs.org/react-native/-/react-native-0.82.1.tgz"
   integrity sha512-tFAqcU7Z4g49xf/KnyCEzI4nRTu1Opcx05Ov2helr8ZTg1z7AJR/3sr2rZ+AAVlAs2IXk+B0WOxXGmdD3+4czA==
@@ -6716,7 +6721,7 @@ react-test-renderer@19.1.1:
     react-is "^19.1.1"
     scheduler "^0.26.0"
 
-react@*, "react@^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react@^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react@^18 || ^19", react@^19.1.1, "react@> 16.7.0", "react@>= 16.8.0", "react@>= 16.9.0", "react@>= 18.2.0", react@>=16, react@>=16.8, react@>=17.0.0, react@>=18.0.0, react@>=19.1.0, react@19.1.1:
+react@*, "react@^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react@^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react@^18 || ^19", react@^19.1.1, "react@> 16.7.0", "react@>= 16.8.0", "react@>= 16.9.0", "react@>= 18.2.0", react@>=16, react@>=16.8, react@>=16.8.0, react@>=17.0.0, react@>=18.0.0, react@>=19.1.0, react@19.1.1:
   version "19.1.1"
   resolved "https://registry.npmjs.org/react/-/react-19.1.1.tgz"
   integrity sha512-w8nqGImo45dmMIfljjMwOGtbmC/mk4CMYhWIicdSflH91J9TyCyczcPFXJzrZ/ZXcgGRFeP6BU0BEJTw6tZdfQ==

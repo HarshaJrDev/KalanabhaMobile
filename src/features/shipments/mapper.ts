@@ -2,6 +2,7 @@ import type { Shipment, ShipmentStatus } from '@shipment/types';
 import type { BackendShipment } from './types';
 
 const STATUS_MAP: Record<BackendShipment['status'], ShipmentStatus> = {
+    SCHEDULED: 'scheduled',
     SEARCHING: 'searching',
     ACCEPTED: 'accepted',
     IN_TRANSIT: 'in_transit',
@@ -47,6 +48,10 @@ export const toShipment = (row: BackendShipment): Shipment => ({
     dropArrivedAt: row.dropArrivedAt ?? null,
     deliverySignatureCapturedAt: row.deliverySignatureCapturedAt ?? null,
     expiresAt: row.expiresAt ?? null,
+    paymentStatus: row.paymentStatus,
+    promoCode: row.promoCode ?? null,
+    promoDiscount: row.promoDiscount ?? null,
+    scheduledAt: row.scheduledAt ?? null,
     dispatch: row.dispatch
         ? {
             driverId: row.dispatch.driverId,

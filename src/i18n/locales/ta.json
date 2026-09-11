@@ -120,6 +120,7 @@
     "houseShiftingHelpers": "வீடு மாற்றுதல் · {{count}} உதவியாளர்"
   },
   "status": {
+    "scheduled": "திட்டமிடப்பட்டது",
     "searching": "தேடுகிறது",
     "accepted": "ஏற்கப்பட்டது",
     "inTransit": "போக்குவரத்தில் உள்ளது",
@@ -381,6 +382,18 @@
     "noVehicleCanCarry": "கிடைக்கும் எந்த வாகனமும் {{weight}} கிலோவைத் தாங்காது — மிகப்பெரிய விருப்பம் {{maxWeight}} கிலோ வரை கையாளும். பொதியின் எடையைக் குறைக்க முயற்சிக்கவும்.",
     "vehicleMaxWeightLabel": "{{maxWeight}} கிலோ வரை",
     "paymentMethodSectionTitle": "கட்டண முறை",
+    "promoCodeSectionTitle": "ப்ரோமோ குறியீடு",
+    "promoCodePlaceholder": "ப்ரோமோ குறியீட்டை உள்ளிடவும்",
+    "promoApplied": "ப்ரோமோ பயன்படுத்தப்பட்டது: -₹{{discount}}",
+    "promoInvalid": "தவறான ப்ரோமோ குறியீடு",
+    "schedulePickupSectionTitle": "பிக்அப்பை திட்டமிடுங்கள்",
+    "schedulePickupSectionSubtitle": "இப்போது முன்பதிவு செய்யவும் அல்லது எதிர்கால தேதி/நேரத்தைத் தேர்ந்தெடுக்கவும்",
+    "scheduleForLater": "பின்னர் திட்டமிடுங்கள்",
+    "pickDateTime": "தேதி & நேரத்தைத் தேர்ந்தெடுக்கவும்",
+    "scheduleToday": "இன்று",
+    "scheduleTomorrow": "நாளை",
+    "scheduleDateLabel": "தேதி",
+    "scheduleTimeLabel": "நேரம்",
     "pickupTimeSlotSectionTitle": "பிக்கப் நேர இடைவெளி",
     "pickupTimeSlotSectionSubtitle": "நாங்கள் எப்போது சேகரிக்க வேண்டும்?",
     "deliveryNotesSectionTitle": "டெலிவரி குறிப்புகள்",
@@ -459,6 +472,9 @@
     "handling": "கையாளுதல்",
     "fragile": "உடையக்கூடியது",
     "paymentSummary": "கட்டண சுருக்கம்",
+    "payNow": "இப்போது செலுத்துங்கள்",
+    "paymentSuccess": "கட்டணம் வெற்றிகரமாக செலுத்தப்பட்டது",
+    "paymentFailed": "கட்டணம் தோல்வியடைந்தது",
     "paymentCod": "பணம் செலுத்தி பெறுதல்",
     "paymentUpi": "UPI",
     "paymentCredit": "கடன்",
@@ -480,6 +496,14 @@
     "chatWithCustomer": "வாடிக்கையாளருடன் அரட்டையடி",
     "noTripsYet": "இன்னும் பயணங்கள் இல்லை",
     "acceptedShowHere": "ஏற்கப்பட்ட டெலிவரிகள் இங்கே காண்பிக்கப்படும்."
+  },
+  "earnings": {
+    "title": "வருமானம்",
+    "today": "இன்று",
+    "thisWeek": "இந்த வாரம்",
+    "allTime": "மொத்தம் · {{trips}} பயணங்கள்",
+    "recentTrips": "சமீபத்திய பயணங்கள்",
+    "noTripsYet": "இன்னும் டெலிவர் செய்யப்பட்ட பயணங்கள் இல்லை"
   },
   "driverDocuments": {
     "pendingReview": "மதிப்பாய்வு நிலுவையில் உள்ளது",
@@ -512,6 +536,9 @@
     "amountPaidPlaceholder": "எ.கா. 850",
     "litresOptional": "லிட்டர்கள் (விருப்பத்தேர்வு)",
     "litresPlaceholder": "எ.கா. 8.5"
+  },
+  "turnByTurnNav": {
+    "calculatingRoute": "பாதை கணக்கிடப்படுகிறது…"
   },
   "driverHome": {
     "loadingOrders": "உங்கள் ஆர்டர்கள் ஏற்றப்படுகின்றன...",
@@ -800,6 +827,7 @@
     "unableToOpenDialer": "டயலரைத் திறக்க முடியவில்லை",
     "unableToShare": "பகிர முடியவில்லை",
     "trackShipmentMessage": "எனது கலநாபா ஷிப்மென்டைக் கண்காணிக்கவும்: {{pickup}} இலிருந்து {{drop}} வரை {{goodsType}}. நிலை: {{status}}.",
+    "statusScheduled": "திட்டமிடப்பட்டது",
     "statusSearching": "தேடுகிறது",
     "statusAccepted": "ஏற்கப்பட்டது",
     "statusInTransit": "போக்குவரத்தில் உள்ளது",

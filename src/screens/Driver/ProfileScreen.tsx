@@ -47,7 +47,6 @@ import {
 import { useMe } from '@hooks/useMe';
 import { useLogout } from '@hooks/useLogout';
 import { useAuthStore } from '@features/store/authStore';
-import { showToast } from '@ui/alert/toastStore';
 import { useAppTheme } from '@theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 
@@ -64,10 +63,6 @@ type ProfileOption = {
 const useProfileActions = (t: (key: string) => string) => {
     const navigation = useNavigation();
     const logoutMutation = useLogout();
-
-    const comingSoon = useCallback((feature: string) => {
-        showToast(`${feature} is coming soon`, 'info');
-    }, []);
 
     // Real ticket system now (kalanabhaBackend SupportController, already
     // used by the admin panel) instead of only a mailto: link — a raised
@@ -86,7 +81,7 @@ const useProfileActions = (t: (key: string) => string) => {
     return {
         goTrips: () => navigation.navigate('DriverTrips' as never),
         goDocuments: () => navigation.navigate('DriverDocuments' as never),
-        goPayments: () => comingSoon(t('driverProfile.paymentsOption')),
+        goPayments: () => navigation.navigate('DriverEarnings' as never),
         goSupport,
         goSettings: () => navigation.navigate('DriverSettings' as never),
         logout,

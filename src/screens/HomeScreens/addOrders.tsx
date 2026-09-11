@@ -57,6 +57,9 @@ import {
     UtensilsCrossed,
     Sofa,
     Pill,
+    Tag,
+    Calendar,
+    Clock,
     type LucideIcon,
 } from 'lucide-react-native';
 import { registerFCMToken } from '@utils/cm';
@@ -69,6 +72,8 @@ import PlacePicker from '@components/PlacePicker';
 import { useFareEstimate, FareEstimate, type KnownCoords } from '@location/useFareEstimate';
 import { forwardGeocode } from '@services/location';
 import { createShipment } from '@features/shipments/api/shipments.api';
+import { useValidatePromoCode } from '@features/promotions/hooks';
+import { usePayForShipment } from '@features/payments/hooks';
 import { safeNumber } from '@utils/parsers';
 import { normalizeError } from '@utils/error';
 import { useAppTheme } from '@theme/ThemeContext';
@@ -153,6 +158,14 @@ type OrderDetailsForm = {
     notes: string;
     pickupDate: string;
     pickupSlot: string;
+    // Optional promo code, validated against POST /promotions/validate
+    // before booking (StepOrderDetails' Promo Code section).
+    promoCode: string;
+    // "Book now" (false, the existing/default behaviour) vs a future-dated
+    // pickup — scheduledAt only actually sent to the backend when true.
+    scheduled: boolean;
+    // ISO datetime, only meaningful when scheduled === true.
+    scheduledAt: string;
 };
 
 type AllOrderData = {
@@ -261,6 +274,37 @@ const makePickupSlots = (t: (key: string) => string) => [
 // makePickupSlots' translated labels are ever shown in the UI.
 const PICKUP_SLOTS = ['9:00 AM – 11:00 AM', '11:00 AM – 1:00 PM', '2:00 PM – 4:00 PM', '4:00 PM – 6:00 PM'];
 
+// Custom, themed date/time picker for "Schedule for later" — deliberately
+// not the native @react-native-community/datetimepicker (Android's system
+// dialog, can't be restyled to match the app's own theme) but plain chip
+// rows in the app's own colors, same interaction pattern as the pickup
+// slot chips right below it.
+const scheduleDateOptions = (t: (key: string, opts?: Record<string, unknown>) => string) => {
+    const options: { date: Date; label: string }[] = [];
+    for (let i = 0; i < 7; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() + i);
+        date.setHours(0, 0, 0, 0);
+        const label = i === 0
+            ? t('addOrder.scheduleToday')
+            : i === 1
+                ? t('addOrder.scheduleTomorrow')
+                : date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+        options.push({ date, label });
+    }
+    return options;
+};
+
+const SCHEDULE_TIME_OPTIONS: { hour: number; minute: number }[] = Array.from({ length: 27 }, (_, i) => {
+    const totalMinutes = 7 * 60 + i * 30; // 7:00 AM through 8:00 PM, 30-min steps
+    return { hour: Math.floor(totalMinutes / 60), minute: totalMinutes % 60 };
+});
+const formatScheduleTime = (hour: number, minute: number) => {
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+    return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
+};
+
 // ─── INITIAL STATES ───────────────────────────────────────────────────────────
 
 const INIT_SENDER: SenderForm = { name: '', phone: '', email: '', landmark: '', address: '', city: '', pincode: '' };
@@ -273,6 +317,7 @@ const INIT_PACKAGE: PackageForm = {
 const INIT_ORDER: OrderDetailsForm = {
     serviceType: 'standard', vehicleType: 'bike',
     paymentMode: 'prepaid', notes: '', pickupDate: '', pickupSlot: PICKUP_SLOTS[0],
+    promoCode: '', scheduled: false, scheduledAt: '',
 };
 
 // ─── REUSABLE SUB-COMPONENTS ──────────────────────────────────────────────────
@@ -1020,6 +1065,12 @@ const StepOrderDetails = ({
     );
     const PAYMENT_MODES = useMemo(() => makePaymentModes(t), [t]);
     const translatedSlots = useMemo(() => makePickupSlots(t), [t]);
+    const { mutate: validatePromo, data: promoResult, isPending: validatingPromo, reset: resetPromoResult } = useValidatePromoCode();
+    const dateOptions = useMemo(() => scheduleDateOptions(t), [t]);
+    // Selected date's day (y/m/d), independent of the selected time — kept
+    // apart from data.scheduledAt's minute-level value so switching the
+    // date chip doesn't need to guess/preserve whatever time was picked.
+    const [selectedScheduleDate, setSelectedScheduleDate] = useState<Date>(dateOptions[0].date);
     // Real, admin-managed vehicle types (GET /settings/vehicle-configs) —
     // previously a hardcoded bike/van/truck array here, so renaming, adding,
     // or deactivating a vehicle type in the admin panel never reached this
@@ -1148,6 +1199,121 @@ const StepOrderDetails = ({
                     </View>
                 </TouchableOpacity>
             ))}
+
+            {/* Promo Code */}
+            <SectionHeader title={t('addOrder.promoCodeSectionTitle')} />
+            <View style={odStyles.promoRow}>
+                <View style={[odStyles.notesBox, { flex: 1, marginBottom: 0 }]}>
+                    <TextInput
+                        style={odStyles.notesInput}
+                        value={data.promoCode}
+                        onChangeText={(v) => { onChange('promoCode', v.toUpperCase()); resetPromoResult(); }}
+                        placeholder={t('addOrder.promoCodePlaceholder')}
+                        placeholderTextColor={COLORS.placeholder}
+                        autoCapitalize="characters"
+                    />
+                </View>
+                <TouchableOpacity
+                    style={odStyles.promoApplyBtn}
+                    disabled={!data.promoCode.trim() || fareEstimate.price == null || validatingPromo}
+                    onPress={() => validatePromo({ code: data.promoCode.trim(), amount: fareEstimate.price ?? 0 })}
+                    activeOpacity={0.8}
+                >
+                    {validatingPromo ? (
+                        <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                        <Tag color="#fff" size={16} />
+                    )}
+                </TouchableOpacity>
+            </View>
+            {promoResult && (
+                <Text style={[odStyles.promoResultText, { color: promoResult.valid ? COLORS.success : COLORS.danger }]}>
+                    {promoResult.valid
+                        ? t('addOrder.promoApplied', { discount: promoResult.discount })
+                        : (promoResult.reason ?? t('addOrder.promoInvalid'))}
+                </Text>
+            )}
+
+            {/* Schedule pickup */}
+            <SectionHeader title={t('addOrder.schedulePickupSectionTitle')} subtitle={t('addOrder.schedulePickupSectionSubtitle')} />
+            <View style={odStyles.payRow}>
+                <Calendar color={data.scheduled ? COLORS.primary : COLORS.textSecondary} size={18} style={odStyles.payIcon} />
+                <Text style={[odStyles.payLabel, data.scheduled && { color: COLORS.primary, fontFamily: FONTS.BOLD_PRIMARY }]}>
+                    {t('addOrder.scheduleForLater')}
+                </Text>
+                <Switch
+                    value={data.scheduled}
+                    onValueChange={(v) => {
+                        onChange('scheduled', v);
+                        if (v && !data.scheduledAt) {
+                            const defaultTime = new Date(Date.now() + 60 * 60 * 1000);
+                            setSelectedScheduleDate(new Date(defaultTime.getFullYear(), defaultTime.getMonth(), defaultTime.getDate()));
+                            onChange('scheduledAt', defaultTime.toISOString());
+                        }
+                    }}
+                    trackColor={{ true: COLORS.primary }}
+                />
+            </View>
+            {data.scheduled && (
+                <>
+                    <Text style={odStyles.scheduleSubLabel}>{t('addOrder.scheduleDateLabel')}</Text>
+                    <View style={odStyles.slotGrid}>
+                        {dateOptions.map((opt) => {
+                            const isSelected = opt.date.toDateString() === selectedScheduleDate.toDateString();
+                            return (
+                                <TouchableOpacity
+                                    key={opt.date.toISOString()}
+                                    onPress={() => {
+                                        setSelectedScheduleDate(opt.date);
+                                        const current = data.scheduledAt ? new Date(data.scheduledAt) : opt.date;
+                                        const merged = new Date(opt.date);
+                                        merged.setHours(current.getHours(), current.getMinutes(), 0, 0);
+                                        onChange('scheduledAt', merged.toISOString());
+                                    }}
+                                    style={[odStyles.slotChip, isSelected && odStyles.slotChipActive]}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text style={[odStyles.slotText, isSelected && odStyles.slotTextActive]}>{opt.label}</Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+
+                    <Text style={odStyles.scheduleSubLabel}>{t('addOrder.scheduleTimeLabel')}</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={odStyles.scheduleTimeScroll}>
+                        {SCHEDULE_TIME_OPTIONS.map(({ hour, minute }) => {
+                            const label = formatScheduleTime(hour, minute);
+                            const current = data.scheduledAt ? new Date(data.scheduledAt) : null;
+                            const isSelected = !!current && current.getHours() === hour && current.getMinutes() === minute;
+                            return (
+                                <TouchableOpacity
+                                    key={label}
+                                    onPress={() => {
+                                        const merged = new Date(selectedScheduleDate);
+                                        merged.setHours(hour, minute, 0, 0);
+                                        onChange('scheduledAt', merged.toISOString());
+                                    }}
+                                    style={[odStyles.slotChip, { marginRight: 8 }, isSelected && odStyles.slotChipActive]}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text style={[odStyles.slotText, isSelected && odStyles.slotTextActive]}>{label}</Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </ScrollView>
+
+                    {data.scheduledAt && (
+                        <View style={odStyles.scheduleSummaryRow}>
+                            <Clock color={COLORS.primary} size={14} />
+                            <Text style={odStyles.scheduleSummaryText}>
+                                {new Date(data.scheduledAt).toLocaleString(undefined, {
+                                    weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
+                                })}
+                            </Text>
+                        </View>
+                    )}
+                </>
+            )}
 
             {/* Pickup Slot */}
             <SectionHeader title={t('addOrder.pickupTimeSlotSectionTitle')} subtitle={t('addOrder.pickupTimeSlotSectionSubtitle')} />
@@ -1417,6 +1583,25 @@ const makeOdStyles = (COLORS: OrderColors) => StyleSheet.create({
         minHeight: 80,
     },
     notesInput: { fontSize: 14, color: COLORS.text, lineHeight: 22 },
+
+    scheduleSubLabel: {
+        fontSize: 12, color: COLORS.textSecondary, fontFamily: FONTS.MEDIUM_PRIMARY,
+        marginBottom: 8, marginTop: 4,
+    },
+    scheduleTimeScroll: { marginBottom: 12 },
+    scheduleSummaryRow: {
+        flexDirection: 'row', alignItems: 'center', gap: 6,
+        backgroundColor: COLORS.primaryLight, borderRadius: RADIUS.md,
+        paddingHorizontal: 12, paddingVertical: 8, marginBottom: 16, alignSelf: 'flex-start',
+    },
+    scheduleSummaryText: { fontSize: 12, color: COLORS.primary, fontFamily: FONTS.BOLD_PRIMARY },
+
+    promoRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 },
+    promoApplyBtn: {
+        width: 44, height: 44, borderRadius: RADIUS.md,
+        backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center',
+    },
+    promoResultText: { fontSize: 12, fontFamily: FONTS.MEDIUM_PRIMARY, marginBottom: 16 },
 
     reviewSection: { marginTop: 8 },
     summaryCard: {
@@ -1719,6 +1904,7 @@ const NewOrder = () => {
     const [submitting, setSubmitting] = useState(false);
     const [trackingId, setTrackingId] = useState('');
     const [showSuccess, setShowSuccess] = useState(false);
+    const { mutateAsync: payForShipment } = usePayForShipment();
 
     const slideAnim = useRef(new Animated.Value(0)).current;
     const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -1915,10 +2101,29 @@ const NewOrder = () => {
                 helpersCount: isHouseShifting ? pkg.helpersCount : undefined,
                 fragile: pkg.fragile,
                 insuranceRequested: pkg.insurance,
+                promoCode: orderDetails.promoCode.trim() || undefined,
+                scheduledAt: orderDetails.scheduled && orderDetails.scheduledAt ? orderDetails.scheduledAt : undefined,
             }, idempotencyKey);
 
             setTrackingId(shipment.trackingId);
             setShowSuccess(true);
+
+            // Prepaid orders collect real payment right after booking — a
+            // failure here doesn't undo the shipment (it's already placed,
+            // same as if the customer paid COD instead); the customer can
+            // still pay later from ShipmentDetailsScreen's "Pay Now".
+            if (orderDetails.paymentMode === 'prepaid' && shipment.paymentStatus === 'PENDING') {
+                try {
+                    await payForShipment({
+                        shipmentId: shipment.id,
+                        customerName: sender.name,
+                        customerEmail: sender.email,
+                        customerPhone: sender.phone,
+                    });
+                } catch (payErr) {
+                    logError('PAY_FOR_SHIPMENT', payErr);
+                }
+            }
 
             log(scope, 'SUCCESS', { id: shipment.id });
         } catch (err: unknown) {
@@ -1928,7 +2133,7 @@ const NewOrder = () => {
             setSubmitting(false);
             log(scope, 'END');
         }
-    }, [sender, receiver, pkg, orderDetails, fareEstimate, category, t]);
+    }, [sender, receiver, pkg, orderDetails, fareEstimate, category, t, payForShipment]);
 
     const handleDone = useCallback(() => {
         setShowSuccess(false);

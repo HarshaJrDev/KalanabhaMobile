@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 
 const makeStatusColor = (colors: ReturnType<typeof useAppTheme>['colors']): Record<ShipmentStatus, string> => ({
+    scheduled: colors.INFO ?? '#8B5CF6',
     searching: colors.GRAY,
     accepted: colors.PRIMARY,
     in_transit: colors.WARNING,
@@ -26,6 +27,7 @@ const makeStatusColor = (colors: ReturnType<typeof useAppTheme>['colors']): Reco
 });
 
 const makeStatusLabel = (t: (key: string) => string): Record<ShipmentStatus, string> => ({
+    scheduled: t('status.scheduled'),
     searching: t('status.searching'),
     accepted: t('status.accepted'),
     in_transit: t('status.inTransit'),
