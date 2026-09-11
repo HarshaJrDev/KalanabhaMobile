@@ -244,6 +244,7 @@ const HomeScreen: React.FC = () => {
                     onOpenInbox={() => (navigation as any).navigate('Inbox')}
                     onOpenNotifications={() => (navigation as any).navigate('Notification')}
                     onOpenQrScan={() => (navigation as any).navigate('QRScan')}
+                    areas={activeServiceAreas}
                     colors={COLORS}
                     fonts={FONTS}
                     fadeAnim={fadeAnim}

@@ -13,6 +13,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import { MapPin, Bell, Search, QrCode, Users, MessageCircle, Zap, ChevronRight, RotateCw, ShieldCheck } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useAutoAddress } from '@location/useAutoAddress';
+import PlacePicker from '@components/PlacePicker';
+import type { ServiceArea } from '@features/settings/types';
 import { HomeColors, HomeFonts, SPACING } from './theme';
 
 const DELIVERY_TRUCK_HERO = require('../../../../assets/images/home/delivery-truck-hero.png');
@@ -28,6 +30,10 @@ interface Props {
     onOpenInbox: () => void;
     onOpenNotifications: () => void;
     onOpenQrScan: () => void;
+    // Real, admin-managed service areas (same list booking already
+    // searches) — passed down so the location pill can open the same
+    // real PlacePicker instead of only re-running the GPS fetch.
+    areas: ServiceArea[];
     colors: HomeColors;
     fonts: HomeFonts;
     // Plain React Native Animated.Value refs from Home.tsx (not
@@ -43,7 +49,7 @@ interface Props {
 
 const HomeHeader: React.FC<Props> = ({
     userName, notifCount, searchText, onSearchChange, onSubmitSearch,
-    onOpenProfile, onOpenInbox, onOpenNotifications, onOpenQrScan,
+    onOpenProfile, onOpenInbox, onOpenNotifications, onOpenQrScan, areas,
     colors: COLORS, fonts: FONTS, fadeAnim, headerScale, bellShake,
 }) => {
     const styles = React.useMemo(() => makeStyles(COLORS, FONTS), [COLORS, FONTS]);
@@ -52,6 +58,11 @@ const HomeHeader: React.FC<Props> = ({
     const [address, setAddress] = useState<string | null>(null);
     const [locating, setLocating] = useState(true);
     const [locationFailed, setLocationFailed] = useState(false);
+    // A real manual pick (via the picker below) always wins over the GPS
+    // free-text address — set once the customer actually searches/picks/
+    // favorites a real serviceable locality instead of just accepting
+    // whatever the device's reverse-geocode returned.
+    const [selectedArea, setSelectedArea] = useState<ServiceArea | null>(null);
 
     const fetchLocation = React.useCallback(() => {
         setLocating(true);
@@ -110,17 +121,27 @@ const HomeHeader: React.FC<Props> = ({
                 </View>
 
                 <View style={styles.topRow}>
-                    <Pressable style={styles.locationPill} onPress={fetchLocation} disabled={locating}>
-                        {locating ? (
-                            <RotateCw size={14} color="#F1F5F9" />
-                        ) : (
-                            <MapPin size={16} color="#F1F5F9" />
+                    <PlacePicker
+                        label={t('home.tapToSetLocation')}
+                        value={selectedArea}
+                        areas={areas}
+                        onSelect={setSelectedArea}
+                        renderTrigger={({ open }) => (
+                            <Pressable style={styles.locationPill} onPress={open} disabled={locating}>
+                                {locating ? (
+                                    <RotateCw size={14} color="#F1F5F9" />
+                                ) : (
+                                    <MapPin size={16} color="#F1F5F9" />
+                                )}
+                                <Text style={styles.cityText} numberOfLines={1}>
+                                    {selectedArea
+                                        ? `${selectedArea.name}, ${selectedArea.city}`
+                                        : locating ? t('home.findingLocation') : locationFailed ? t('home.tapToSetLocation') : (address ?? t('home.tapToSetLocation'))}
+                                </Text>
+                                <ChevronRight size={16} color="#CBD5E1" />
+                            </Pressable>
                         )}
-                        <Text style={styles.cityText} numberOfLines={1}>
-                            {locating ? t('home.findingLocation') : locationFailed ? t('home.tapToSetLocation') : (address ?? t('home.tapToSetLocation'))}
-                        </Text>
-                        <ChevronRight size={16} color="#CBD5E1" />
-                    </Pressable>
+                    />
 
                     <View style={styles.headerActions}>
                         <Pressable style={styles.notifBtn} onPress={onOpenInbox}>
