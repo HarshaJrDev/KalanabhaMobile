@@ -332,7 +332,7 @@ const ShipmentScreen = () => {
                         <Search size={16} color={C.textLight} />
                         <TextInput
                             style={[styles.searchInput, { fontFamily: FONTS.MEDIUM_PRIMARY }]}
-                            placeholder="Search by tracking ID, route, or recipient..."
+                            placeholder={t('orders.searchPlaceholder')}
                             placeholderTextColor={C.textLight}
                             value={searchText}
                             onChangeText={setSearchText}

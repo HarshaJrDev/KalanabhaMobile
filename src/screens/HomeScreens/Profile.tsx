@@ -146,7 +146,7 @@ const ProfileScreen = () => {
                             colors={['#fff', 'rgba(255,255,255,0.8)']}
                             style={styles.editButton}
                         >
-                            <Text style={styles.editText}>Edit</Text>
+                            <Text style={styles.editText}>{t('common.edit')}</Text>
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>
@@ -155,11 +155,11 @@ const ProfileScreen = () => {
             {/* Stats Cards */}
             <View style={styles.statsContainer}>
                 <View style={styles.statCard}>
-                    <Text style={styles.statTitle}>Total Shipments</Text>
+                    <Text style={styles.statTitle}>{t('profile.totalShipments')}</Text>
                     <Text style={styles.statValue}>{totalShipments}</Text>
                 </View>
                 <View style={styles.statCard}>
-                    <Text style={styles.statTitle}>Delivered</Text>
+                    <Text style={styles.statTitle}>{t('profile.delivered')}</Text>
                     <Text style={styles.statValue}>{deliveredCount}</Text>
                 </View>
             </View>

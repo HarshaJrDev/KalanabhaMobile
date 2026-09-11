@@ -32,7 +32,16 @@
     "forgotPassword": "पासवर्ड भूल गए?",
     "noAccount": "खाता नहीं है?",
     "signup": "साइन अप करें",
-    "emailPasswordRequired": "ईमेल और पासवर्ड आवश्यक हैं"
+    "emailPasswordRequired": "ईमेल और पासवर्ड आवश्यक हैं",
+    "rememberMe": "मुझे याद रखें",
+    "contactAdmin": "एडमिन से संपर्क करें",
+    "forgotCredentialsTitle": "क्रेडेंशियल भूल गए?",
+    "forgotCredentialsMessage": "कृपया अपना पासवर्ड रीसेट करने या नए क्रेडेंशियल प्राप्त करने के लिए अपने कलानाभा एडमिन से संपर्क करें।",
+    "ok": "ठीक है",
+    "loginAsDriver": "ड्राइवर के रूप में लॉग इन करें",
+    "signingIn": "आपको लॉग इन किया जा रहा है…",
+    "havingTroublePrefix": "परेशानी हो रही है? अपने एडमिन से अपना खाता जांचने के लिए कहें",
+    "kalanabhaAdminPanel": "कलानाभा एडमिन पैनल"
   },
   "profile": {
     "title": "प्रोफ़ाइल",
@@ -43,7 +52,9 @@
     "settings": "सेटिंग्स",
     "language": "भाषा",
     "helpCenter": "सहायता केंद्र",
-    "editProfile": "प्रोफ़ाइल संपादित करें"
+    "editProfile": "प्रोफ़ाइल संपादित करें",
+    "totalShipments": "कुल शिपमेंट",
+    "delivered": "डिलीवर किया गया"
   },
   "language": {
     "title": "भाषा",
@@ -214,7 +225,8 @@
     "yesCancel": "हां, रद्द करें",
     "loadingShipments": "शिपमेंट लोड हो रहे हैं…",
     "noShipmentsFound": "कोई शिपमेंट नहीं मिला",
-    "nothingInCategory": "इस श्रेणी में अभी कुछ नहीं है"
+    "nothingInCategory": "इस श्रेणी में अभी कुछ नहीं है",
+    "searchPlaceholder": "ट्रैकिंग आईडी, मार्ग, या प्राप्तकर्ता से खोजें..."
   },
   "support": {
     "myTickets": "मेरे सहायता टिकट",

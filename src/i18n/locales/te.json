@@ -32,7 +32,16 @@
     "forgotPassword": "పాస్‌వర్డ్ మర్చిపోయారా?",
     "noAccount": "ఖాతా లేదా?",
     "signup": "సైన్ అప్ చేయండి",
-    "emailPasswordRequired": "ఇమెయిల్ మరియు పాస్‌వర్డ్ అవసరం"
+    "emailPasswordRequired": "ఇమెయిల్ మరియు పాస్‌వర్డ్ అవసరం",
+    "rememberMe": "నన్ను గుర్తుంచుకో",
+    "contactAdmin": "అడ్మిన్‌ను సంప్రదించండి",
+    "forgotCredentialsTitle": "ఆధారాలు మర్చిపోయారా?",
+    "forgotCredentialsMessage": "దయచేసి మీ పాస్‌వర్డ్‌ని రీసెట్ చేయడానికి లేదా కొత్త ఆధారాలను పొందడానికి మీ కలనాభ అడ్మిన్‌ను సంప్రదించండి.",
+    "ok": "సరే",
+    "loginAsDriver": "డ్రైవర్‌గా లాగిన్ అవ్వండి",
+    "signingIn": "మిమ్మల్ని లాగిన్ చేస్తోంది…",
+    "havingTroublePrefix": "సమస్య ఉందా? మీ ఖాతాను తనిఖీ చేయమని మీ అడ్మిన్‌ను అడగండి",
+    "kalanabhaAdminPanel": "కలనాభ అడ్మిన్ ప్యానెల్"
   },
   "profile": {
     "title": "ప్రొఫైల్",
@@ -43,7 +52,9 @@
     "settings": "సెట్టింగ్‌లు",
     "language": "భాష",
     "helpCenter": "సహాయ కేంద్రం",
-    "editProfile": "ప్రొఫైల్‌ని సవరించండి"
+    "editProfile": "ప్రొఫైల్‌ని సవరించండి",
+    "totalShipments": "మొత్తం షిప్‌మెంట్‌లు",
+    "delivered": "డెలివర్ చేయబడింది"
   },
   "language": {
     "title": "భాష",
@@ -214,7 +225,8 @@
     "yesCancel": "అవును, రద్దు చేయండి",
     "loadingShipments": "షిప్‌మెంట్‌లు లోడ్ అవుతున్నాయి…",
     "noShipmentsFound": "షిప్‌మెంట్‌లు కనుగొనబడలేదు",
-    "nothingInCategory": "ఈ వర్గంలో ఇంకా ఏమీ లేదు"
+    "nothingInCategory": "ఈ వర్గంలో ఇంకా ఏమీ లేదు",
+    "searchPlaceholder": "ట్రాకింగ్ ఐడీ, మార్గం లేదా స్వీకర్త ద్వారా వెతకండి..."
   },
   "support": {
     "myTickets": "నా సపోర్ట్ టికెట్‌లు",

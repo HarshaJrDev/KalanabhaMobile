@@ -266,7 +266,7 @@ const Login = () => {
                             <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>
                                 {rememberMe && <Check color="#fff" size={RF(12)} strokeWidth={3} />}
                             </View>
-                            <Text style={styles.rememberText}>Remember me</Text>
+                            <Text style={styles.rememberText}>{t('login.rememberMe')}</Text>
                         </TouchableOpacity>
 
                         {isDriver ? (
@@ -274,13 +274,13 @@ const Login = () => {
                             <TouchableOpacity
                                 onPress={() =>
                                     Alert.alert(
-                                        'Forgot credentials?',
-                                        'Please contact your Kalanabha admin to reset your password or get new credentials.',
-                                        [{ text: 'OK' }]
+                                        t('login.forgotCredentialsTitle'),
+                                        t('login.forgotCredentialsMessage'),
+                                        [{ text: t('login.ok') }]
                                     )
                                 }
                             >
-                                <Text style={styles.forgotText}>Contact admin</Text>
+                                <Text style={styles.forgotText}>{t('login.contactAdmin')}</Text>
                             </TouchableOpacity>
                         ) : (
                             <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword' as never)}>
@@ -296,7 +296,7 @@ const Login = () => {
                                 isPending || loading
                                     ? t('login.loggingIn')
                                     : isDriver
-                                        ? 'Login as Driver'
+                                        ? t('login.loginAsDriver')
                                         : t('login.loginButton')
                             }
                             onPress={handleLogin}
@@ -327,8 +327,8 @@ const Login = () => {
                     {isDriver && (
                         <View style={styles.driverHelpRow}>
                             <Text style={styles.driverHelpText}>
-                                Having trouble? Ask your admin to check your account in the{' '}
-                                <Text style={styles.driverHelpLink}>Kalanabha Admin Panel</Text>
+                                {t('login.havingTroublePrefix')}{' '}
+                                <Text style={styles.driverHelpLink}>{t('login.kalanabhaAdminPanel')}</Text>
                             </Text>
                         </View>
                     )}
@@ -350,7 +350,7 @@ const Login = () => {
                 </Animated.View>
             </ScrollView>
 
-            <CustomLoader visible={loading} message="Signing you in…" />
+            <CustomLoader visible={loading} message={t('login.signingIn')} />
         </KeyboardAvoidingView>
     );
 };

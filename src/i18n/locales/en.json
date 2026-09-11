@@ -32,7 +32,16 @@
     "forgotPassword": "Forgot password?",
     "noAccount": "Don't have an account?",
     "signup": "Sign Up",
-    "emailPasswordRequired": "Email and password are required"
+    "emailPasswordRequired": "Email and password are required",
+    "rememberMe": "Remember me",
+    "contactAdmin": "Contact admin",
+    "forgotCredentialsTitle": "Forgot credentials?",
+    "forgotCredentialsMessage": "Please contact your Kalanabha admin to reset your password or get new credentials.",
+    "ok": "OK",
+    "loginAsDriver": "Login as Driver",
+    "signingIn": "Signing you in…",
+    "havingTroublePrefix": "Having trouble? Ask your admin to check your account in the",
+    "kalanabhaAdminPanel": "Kalanabha Admin Panel"
   },
   "profile": {
     "title": "Profile",
@@ -43,7 +52,9 @@
     "settings": "Settings",
     "language": "Language",
     "helpCenter": "Help Center",
-    "editProfile": "Edit Profile"
+    "editProfile": "Edit Profile",
+    "totalShipments": "Total Shipments",
+    "delivered": "Delivered"
   },
   "language": {
     "title": "Language",
@@ -214,7 +225,8 @@
     "yesCancel": "Yes, Cancel",
     "loadingShipments": "Loading shipments…",
     "noShipmentsFound": "No shipments found",
-    "nothingInCategory": "Nothing in this category yet"
+    "nothingInCategory": "Nothing in this category yet",
+    "searchPlaceholder": "Search by tracking ID, route, or recipient..."
   },
   "support": {
     "myTickets": "My Support Tickets",
