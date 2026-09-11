@@ -18,18 +18,21 @@ import { useShipmentRating, useSubmitRating } from '@features/ratings/hooks';
 import { RATING_TAGS, type RatingTag } from '@features/ratings/types';
 import { useAppTheme } from '@theme/ThemeContext';
 import { showToast } from '@ui/alert/toastStore';
+import { useTranslation } from 'react-i18next';
 import AppButton from '../../components/ui/AppButton';
 
-const PAYMENT_LABEL: Record<string, string> = {
-    prepaid: 'Paid via UPI',
-    cod: 'Cash on Delivery',
-    credit: 'Credit Account',
-};
+const makePaymentLabel = (t: (key: string) => string): Record<string, string> => ({
+    prepaid: t('rating.paidViaUpi'),
+    cod: t('rating.cashOnDelivery'),
+    credit: t('rating.creditAccount'),
+});
 
 const RatingScreen = () => {
     const navigation = useNavigation();
     const { colors, fonts } = useAppTheme();
+    const { t } = useTranslation();
     const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
+    const PAYMENT_LABEL = useMemo(() => makePaymentLabel(t), [t]);
     const route = useRoute<any>();
     const shipmentId: string | undefined = route.params?.shipmentId;
 
@@ -42,7 +45,7 @@ const RatingScreen = () => {
     const [note, setNote] = useState('');
 
     const toggleTag = (tag: RatingTag) => {
-        setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
+        setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((existingTag) => existingTag !== tag) : [...prev, tag]));
     };
 
     const durationLabel = useMemo(() => {
@@ -50,22 +53,22 @@ const RatingScreen = () => {
         const end = shipment?.dispatch?.completedAt;
         if (!start || !end) return null;
         const minutes = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 60000);
-        return minutes > 0 ? `Completed in ${minutes} mins` : null;
-    }, [shipment]);
+        return minutes > 0 ? t('rating.completedInMins', { mins: minutes }) : null;
+    }, [shipment, t]);
 
     const handleSubmit = () => {
         if (stars === 0) {
-            showToast('Please select a star rating', 'error');
+            showToast(t('rating.selectStarRating'), 'error');
             return;
         }
         submitRating(
             { stars, tags: selectedTags, note: note.trim() || undefined },
             {
                 onSuccess: () => {
-                    showToast('Thanks for rating your delivery!', 'success');
+                    showToast(t('rating.ratingSubmitted'), 'success');
                     navigation.goBack();
                 },
-                onError: (err: any) => showToast(err?.message ?? 'Could not submit your rating', 'error'),
+                onError: (err: any) => showToast(err?.message ?? t('rating.submitRatingFailed'), 'error'),
             },
         );
     };
@@ -80,15 +83,15 @@ const RatingScreen = () => {
             <View style={styles.root}>
                 <View style={styles.doneState}>
                     <CheckCircle2 size={40} color={colors.SUCCESS} />
-                    <Text style={styles.doneTitle}>You already rated this delivery</Text>
-                    <Text style={styles.doneSub}>{existingRating.stars} / 5 stars — thank you!</Text>
-                    <AppButton title="Done" onPress={() => navigation.goBack()} style={{ marginTop: 20, width: 160 }} />
+                    <Text style={styles.doneTitle}>{t('rating.alreadyRatedTitle')}</Text>
+                    <Text style={styles.doneSub}>{t('rating.starsThankYou', { stars: existingRating.stars })}</Text>
+                    <AppButton title={t('rating.done')} onPress={() => navigation.goBack()} style={{ marginTop: 20, width: 160 }} />
                 </View>
             </View>
         );
     }
 
-    const driverName = shipment.dispatch?.driverName ?? 'your pilot';
+    const driverName = shipment.dispatch?.driverName ?? t('rating.defaultPilotName');
 
     return (
         <View style={styles.root}>
@@ -100,7 +103,7 @@ const RatingScreen = () => {
                         <X size={20} color={colors.TEXT_SECONDARY} />
                     </Pressable>
                     <View style={styles.trackingPill}>
-                        <Text style={styles.trackingPillText}>#{shipment.trackingId} · Delivered</Text>
+                        <Text style={styles.trackingPillText}>{t('rating.trackingDelivered', { trackingId: shipment.trackingId })}</Text>
                     </View>
                     <Pressable style={styles.headsetBtn} onPress={() => (navigation as any).navigate('Search')} hitSlop={10}>
                         <Headphones size={16} color={colors.TEXT_SECONDARY} />
@@ -113,7 +116,7 @@ const RatingScreen = () => {
                         <CheckCircle2 size={20} color="#fff" />
                     </View>
                     <View>
-                        <Text style={styles.deliveredTitle}>Safely Delivered!</Text>
+                        <Text style={styles.deliveredTitle}>{t('rating.safelyDelivered')}</Text>
                         {durationLabel && <Text style={styles.deliveredSub}>{durationLabel}</Text>}
                     </View>
                 </View>
@@ -150,8 +153,8 @@ const RatingScreen = () => {
                 </View>
 
                 {/* Stars */}
-                <Text style={styles.sectionEyebrow}>TRIP EXPERIENCE</Text>
-                <Text style={styles.sectionTitle}>How was your pilot today?</Text>
+                <Text style={styles.sectionEyebrow}>{t('rating.tripExperience')}</Text>
+                <Text style={styles.sectionTitle}>{t('rating.howWasYourPilot')}</Text>
                 <View style={styles.starsRow}>
                     {[1, 2, 3, 4, 5].map((n) => (
                         <Pressable key={n} onPress={() => setStars(n)} hitSlop={6}>
@@ -161,14 +164,14 @@ const RatingScreen = () => {
                 </View>
                 {stars >= 4 && (
                     <View style={styles.starsHintPill}>
-                        <Text style={styles.starsHintText}>Excellent Service! Fast &amp; Smooth</Text>
+                        <Text style={styles.starsHintText}>{t('rating.excellentServiceHint')}</Text>
                     </View>
                 )}
 
                 {/* Tags */}
                 <View style={styles.tagsHeaderRow}>
-                    <Text style={styles.tagsTitle}>What went great?</Text>
-                    <Text style={styles.tagsHint}>Select all that apply</Text>
+                    <Text style={styles.tagsTitle}>{t('rating.whatWentGreat')}</Text>
+                    <Text style={styles.tagsHint}>{t('rating.selectAllThatApply')}</Text>
                 </View>
                 <View style={styles.tagsWrap}>
                     {RATING_TAGS.map((tag) => {
@@ -187,17 +190,17 @@ const RatingScreen = () => {
 
                 {/* Tip — not built (no payment gateway to move real money through) */}
                 <View style={styles.comingSoonCard}>
-                    <Text style={styles.comingSoonTitle}>Send a tip to {driverName.split(' ')[0]}</Text>
+                    <Text style={styles.comingSoonTitle}>{t('rating.sendTipTo', { name: driverName.split(' ')[0] })}</Text>
                     <Text style={styles.comingSoonText}>
-                        Tipping is coming soon — it needs a real payment integration we haven't built yet.
+                        {t('rating.tippingComingSoon')}
                     </Text>
                 </View>
 
                 {/* Note */}
-                <Text style={styles.tagsTitle}>Leave {driverName.split(' ')[0]} a note</Text>
+                <Text style={styles.tagsTitle}>{t('rating.leaveNote', { name: driverName.split(' ')[0] })}</Text>
                 <TextInput
                     style={styles.noteInput}
-                    placeholder="Share specific praise like safe handling, courteous manners, or freight navigation…"
+                    placeholder={t('rating.notePlaceholder')}
                     placeholderTextColor={colors.GRAY}
                     value={note}
                     onChangeText={setNote}
@@ -209,28 +212,28 @@ const RatingScreen = () => {
                 {/* Fare + invoice */}
                 <View style={styles.fareCard}>
                     <View style={styles.fareRow}>
-                        <Text style={styles.fareLabel}>Total Fare Paid</Text>
+                        <Text style={styles.fareLabel}>{t('rating.totalFarePaid')}</Text>
                         <Text style={styles.farePaidBadge}>✓ {PAYMENT_LABEL[shipment.paymentMode] ?? shipment.paymentMode}</Text>
                     </View>
                     <Text style={styles.fareValue}>₹{shipment.price.toFixed(2)}</Text>
                     <Pressable
                         style={styles.invoiceRow}
-                        onPress={() => showToast('Invoice download is not available yet', 'info')}
+                        onPress={() => showToast(t('rating.invoiceNotAvailable'), 'info')}
                     >
                         <Receipt size={14} color={colors.TEXT_SECONDARY} />
-                        <Text style={styles.invoiceText}>Download Invoice (PDF)</Text>
+                        <Text style={styles.invoiceText}>{t('rating.downloadInvoicePdf')}</Text>
                     </Pressable>
                 </View>
 
                 <AppButton
-                    title={isPending ? 'Submitting…' : 'Submit Rating'}
+                    title={isPending ? t('rating.submitting') : t('rating.submitRating')}
                     onPress={handleSubmit}
                     loading={isPending}
                     disabled={isPending}
                     style={{ marginTop: 8 }}
                 />
                 <Pressable style={styles.skipBtn} onPress={() => navigation.goBack()}>
-                    <Text style={styles.skipText}>Skip for Now</Text>
+                    <Text style={styles.skipText}>{t('rating.skipForNow')}</Text>
                 </Pressable>
             </ScrollView>
         </View>
