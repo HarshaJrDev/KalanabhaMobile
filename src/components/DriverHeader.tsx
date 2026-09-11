@@ -20,6 +20,7 @@ import { useUnreadNotificationCount } from '@features/notifications/hooks';
 import { useAppTheme } from '@theme/ThemeContext';
 import { showToast } from '@ui/alert/toastStore';
 import { normalizeError } from '@utils/error';
+import { useTranslation } from 'react-i18next';
 
 interface DriverHeaderProps {
     earnings: number;
@@ -46,6 +47,7 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
     const navigation = useNavigation();
     const user = useAuthStore((s) => s.user);
     const { colors, fonts } = useAppTheme();
+    const { t } = useTranslation();
     // Real device safe-area inset — was a bare paddingTop: 14, so the
     // avatar/name/toggle sat under the status bar/camera cutout on real
     // devices (same overlap bug already fixed on ShipmentChatScreen,
@@ -56,7 +58,7 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
     const { data: unreadCount } = useUnreadNotificationCount();
     const hasUnread = (unreadCount ?? 0) > 0;
 
-    const displayName = user?.displayName ?? 'Driver';
+    const displayName = user?.displayName ?? t('driverHeader.driverFallback');
 
     return (
         <LinearGradient colors={[colors.PRIMARY, colors.PRIMARY_DARK]} style={[styles.container, style]}>
@@ -70,7 +72,7 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
                         <Text style={styles.greeting}>{displayName}</Text>
                         <View style={styles.statusRow}>
                             <View style={[styles.statusDot, { backgroundColor: isOnline ? colors.SUCCESS : 'rgba(255,255,255,0.6)' }]} />
-                            <Text style={styles.sub}>{isOnline ? 'You are online' : 'You are offline'}</Text>
+                            <Text style={styles.sub}>{isOnline ? t('driverHeader.youAreOnline') : t('driverHeader.youAreOffline')}</Text>
                         </View>
                     </View>
                 </View>
@@ -86,12 +88,12 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
                                 // whose documents aren't admin-approved
                                 // gets a real 403 here instead of the
                                 // toggle just silently doing nothing.
-                                onError: (err) => showToast(normalizeError(err) || 'Could not update status', 'error'),
+                                onError: (err) => showToast(normalizeError(err) || t('driverHeader.couldNotUpdateStatus'), 'error'),
                             })
                         }
                     >
                         <Power size={14} color={colors.PRIMARY} />
-                        <Text style={styles.togglePillText}>{isOnline ? 'Go Offline' : 'Go Online'}</Text>
+                        <Text style={styles.togglePillText}>{isOnline ? t('driverHeader.goOffline') : t('driverHeader.goOnline')}</Text>
                     </Pressable>
                     <Pressable style={styles.bellBtn} onPress={() => (navigation as any).navigate('Notification')} hitSlop={8}>
                         <Bell size={18} color="#fff" />
@@ -106,12 +108,12 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
             <View style={styles.statsRow}>
                 <View style={styles.statBox}>
                     <Text style={styles.statNum}>₹{earnings.toLocaleString()}</Text>
-                    <Text style={styles.statLabel}>Today's earnings</Text>
+                    <Text style={styles.statLabel}>{t('driverHeader.todaysEarnings')}</Text>
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.statBox}>
                     <Text style={styles.statNum}>{deliveredToday}</Text>
-                    <Text style={styles.statLabel}>Delivered today</Text>
+                    <Text style={styles.statLabel}>{t('driverHeader.deliveredToday')}</Text>
                 </View>
             </View>
         </LinearGradient>

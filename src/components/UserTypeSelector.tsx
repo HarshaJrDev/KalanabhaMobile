@@ -8,6 +8,7 @@ import {
     FlatList,
 } from 'react-native';
 import { Home, Zap, ShoppingBag, Check, type LucideIcon } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 
 
@@ -25,29 +26,16 @@ type Option = {
     description: string;
 };
 
-const OPTIONS: Option[] = [
-    {
-        value: 'HOME',
-        label: 'Home',
-        icon: Home,
-        description: 'Personal deliveries',
-    },
-    {
-        value: 'ELECTRIC',
-        label: 'Electric',
-        icon: Zap,
-        description: 'EV-based logistics',
-    },
-    {
-        value: 'SHOP',
-        label: 'Shop',
-        icon: ShoppingBag,
-        description: 'Business shipments',
-    },
+const makeOptions = (t: (key: string) => string): Option[] => [
+    { value: 'HOME', label: t('userTypeSelector.home'), icon: Home, description: t('userTypeSelector.homeDesc') },
+    { value: 'ELECTRIC', label: t('userTypeSelector.electric'), icon: Zap, description: t('userTypeSelector.electricDesc') },
+    { value: 'SHOP', label: t('userTypeSelector.shop'), icon: ShoppingBag, description: t('userTypeSelector.shopDesc') },
 ];
 
 const UserTypeSelector: FC<Props> = ({ value, onChange }) => {
     const [visible, setVisible] = useState(false);
+    const { t } = useTranslation();
+    const OPTIONS = React.useMemo(() => makeOptions(t), [t]);
 
     const selected = OPTIONS.find(o => o.value === value);
 
@@ -90,7 +78,7 @@ const UserTypeSelector: FC<Props> = ({ value, onChange }) => {
         <>
             {/* Trigger */}
             <Pressable onPress={open} style={styles.trigger}>
-                <Text style={styles.triggerLabel}>Account Type</Text>
+                <Text style={styles.triggerLabel}>{t('userTypeSelector.accountType')}</Text>
 
                 <View style={styles.triggerContent}>
                     {selected && <selected.icon size={20} color="#111827" style={styles.icon} />}
@@ -111,7 +99,7 @@ const UserTypeSelector: FC<Props> = ({ value, onChange }) => {
                 <View style={styles.sheet}>
                     <View style={styles.handle} />
 
-                    <Text style={styles.title}>Select Account Type</Text>
+                    <Text style={styles.title}>{t('userTypeSelector.selectAccountType')}</Text>
 
                     <FlatList
                         data={OPTIONS}

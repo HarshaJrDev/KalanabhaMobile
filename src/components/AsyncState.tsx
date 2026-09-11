@@ -2,6 +2,7 @@ import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { WifiOff, AlertCircle, Inbox, RefreshCw } from 'lucide-react-native';
 import { useIsOnline } from '@api/network';
+import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 
 interface AsyncStateProps {
@@ -26,22 +27,24 @@ export const AsyncState: React.FC<AsyncStateProps> = ({
     error,
     isEmpty,
     onRetry,
-    emptyTitle = 'Nothing here yet',
+    emptyTitle,
     emptyMessage,
     children,
 }) => {
     const online = useIsOnline();
+    const { t } = useTranslation();
+    const resolvedEmptyTitle = emptyTitle ?? t('asyncState.nothingHereYet');
 
     if (!online && !isLoading) {
         return (
             <View style={styles.center}>
                 <WifiOff size={40} color="#9CA3AF" />
-                <Text style={styles.title}>You're offline</Text>
-                <Text style={styles.message}>Showing the latest data we have saved.</Text>
+                <Text style={styles.title}>{t('asyncState.offline')}</Text>
+                <Text style={styles.message}>{t('asyncState.offlineHint')}</Text>
                 {onRetry && (
                     <Pressable style={styles.retryButton} onPress={onRetry}>
                         <RefreshCw size={14} color="#fff" />
-                        <Text style={styles.retryText}>Retry</Text>
+                        <Text style={styles.retryText}>{t('common.retry')}</Text>
                     </Pressable>
                 )}
             </View>
@@ -60,12 +63,12 @@ export const AsyncState: React.FC<AsyncStateProps> = ({
         return (
             <View style={styles.center}>
                 <AlertCircle size={40} color="#EF4444" />
-                <Text style={styles.title}>Something went wrong</Text>
+                <Text style={styles.title}>{t('asyncState.somethingWentWrong')}</Text>
                 <Text style={styles.message}>{error.message}</Text>
                 {onRetry && (
                     <Pressable style={styles.retryButton} onPress={onRetry}>
                         <RefreshCw size={14} color="#fff" />
-                        <Text style={styles.retryText}>Retry</Text>
+                        <Text style={styles.retryText}>{t('common.retry')}</Text>
                     </Pressable>
                 )}
             </View>
@@ -76,7 +79,7 @@ export const AsyncState: React.FC<AsyncStateProps> = ({
         return (
             <View style={styles.center}>
                 <Inbox size={40} color="#9CA3AF" />
-                <Text style={styles.title}>{emptyTitle}</Text>
+                <Text style={styles.title}>{resolvedEmptyTitle}</Text>
                 {!!emptyMessage && <Text style={styles.message}>{emptyMessage}</Text>}
             </View>
         );

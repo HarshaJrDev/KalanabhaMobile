@@ -51,6 +51,7 @@ import { useTabBarContentPadding } from '../screens/navigation/useTabBarStyle';
 import { showToast } from '@ui/alert/toastStore';
 import { requestCompleteDelivery } from '@ui/alert/deliveryCompletionStore';
 import { requestOtp } from '@ui/alert/deliveryOtpStore';
+import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -133,14 +134,15 @@ const ActionButton: React.FC<{
 // Feedback goes through the global toast (ui/alert/toastStore), same
 // surface every other feature uses, instead of a one-off native Alert.
 const useCustomerActions = () => {
+    const { t } = useTranslation();
     const onCancel = useCallback(async (id: string) => {
         try {
             await cancelShipmentRequest(id);
-            showToast('Order cancelled successfully', 'success');
+            showToast(t('logisticsCard.orderCancelled'), 'success');
         } catch (err) {
             showToast(normalizeError(err), 'error');
         }
-    }, []);
+    }, [t]);
 
     return { onCancel };
 };
@@ -154,14 +156,15 @@ const useCustomerActions = () => {
 // this file's searching-pool list) can drive the same real
 // arrive/start/complete actions instead of duplicating them.
 export const useDriverActions = () => {
+    const { t } = useTranslation();
     const onAccept = useCallback(async (id: string) => {
         try {
             await acceptShipmentRequest(id);
-            showToast('Order accepted! Start delivery.', 'success');
+            showToast(t('logisticsCard.orderAccepted'), 'success');
         } catch (err) {
-            showToast(normalizeError(err) || 'Order already taken', 'error');
+            showToast(normalizeError(err) || t('logisticsCard.orderAlreadyTaken'), 'error');
         }
-    }, []);
+    }, [t]);
 
     // Real, geofence-validated arrival (kalanabhaBackend 7708464) — the
     // backend decides whether this is pickup or drop arrival from the
@@ -176,8 +179,8 @@ export const useDriverActions = () => {
     const onArrive = useCallback((id: string, coords?: { latitude: number; longitude: number }) => {
         const submit = (latitude: number, longitude: number) => {
             arriveAtShipment(id, latitude, longitude)
-                .then(() => showToast('Arrival recorded', 'success'))
-                .catch((err) => showToast(normalizeError(err) || 'Could not record arrival', 'error'));
+                .then(() => showToast(t('logisticsCard.arrivalRecorded'), 'success'))
+                .catch((err) => showToast(normalizeError(err) || t('logisticsCard.couldNotRecordArrival'), 'error'));
         };
 
         if (coords) {
@@ -187,10 +190,10 @@ export const useDriverActions = () => {
 
         Geolocation.getCurrentPosition(
             (position) => submit(position.coords.latitude, position.coords.longitude),
-            () => showToast('Could not get your location — check location permissions', 'error'),
+            () => showToast(t('logisticsCard.couldNotGetLocation'), 'error'),
             { enableHighAccuracy: true, timeout: 15000 },
         );
-    }, []);
+    }, [t]);
 
     // Real pickup OTP + pickup photo (kalanabhaBackend 63a33d4,
     // Shipment.pickupOtp / POST /shipments/:id/pickup-proof) — symmetric
@@ -209,7 +212,7 @@ export const useDriverActions = () => {
             // see cameraPermission.ts.
             const hasCameraPermission = await ensureCameraPermission();
             if (!hasCameraPermission) {
-                showToast('Camera permission is required to capture pickup proof', 'error');
+                showToast(t('logisticsCard.cameraPermissionPickup'), 'error');
                 return;
             }
 
@@ -222,7 +225,7 @@ export const useDriverActions = () => {
                     // was previously hidden behind a generic message).
                     if (__DEV__) console.warn('[onStartDelivery] camera error', response.errorCode, response.errorMessage);
                     showToast(
-                        response.errorCode ? `Could not capture a photo — ${response.errorMessage ?? response.errorCode}` : 'Could not capture a photo — try again',
+                        response.errorCode ? t('logisticsCard.couldNotCapturePhoto', { reason: response.errorMessage ?? response.errorCode }) : t('logisticsCard.couldNotCapturePhotoRetry'),
                         'error',
                     );
                     return;
@@ -231,19 +234,19 @@ export const useDriverActions = () => {
                 try {
                     await uploadPickupProof(id, asset.uri, asset.fileName ?? 'pickup-proof.jpg', asset.type ?? 'image/jpeg');
                 } catch (err) {
-                    showToast(normalizeError(err) || 'Pickup-proof upload failed — try again', 'error');
+                    showToast(normalizeError(err) || t('logisticsCard.pickupProofUploadFailed'), 'error');
                     return;
                 }
 
                 try {
                     await startDeliveryRequest(id, otp);
-                    showToast('Delivery in progress', 'success');
+                    showToast(t('logisticsCard.deliveryInProgress'), 'success');
                 } catch (err) {
-                    showToast(normalizeError(err) || 'Incorrect OTP or failed to start delivery', 'error');
+                    showToast(normalizeError(err) || t('logisticsCard.incorrectOtpOrFailed'), 'error');
                 }
             });
         })();
-    }, []);
+    }, [t]);
 
     // Complete Delivery is visible immediately after Accept — no GPS/
     // arrival prerequisite (product decision, kalanabhaBackend 81263b1).
@@ -252,9 +255,9 @@ export const useDriverActions = () => {
     // of the previous single OTP-prompt-then-camera sequence.
     const onCompleteDelivery = useCallback((id: string) => {
         requestCompleteDelivery(id).then((completed) => {
-            if (completed) showToast('Delivery completed!', 'success');
+            if (completed) showToast(t('logisticsCard.deliveryCompleted'), 'success');
         });
-    }, []);
+    }, [t]);
 
     return { onAccept, onArrive, onStartDelivery, onCompleteDelivery };
 };
@@ -270,14 +273,13 @@ const getStatusColor = (status: LogisticsStatus): string => {
     return colors[status] || '#6B7280';
 };
 
-const getStatusLabel = (status: LogisticsStatus): string => {
+const makeStatusLabel = (t: (key: string) => string) => (status: LogisticsStatus): string => {
     const labels: Record<LogisticsStatus, string> = {
-
-        searching: 'Searching',
-        accepted: 'Accepted',
-        in_transit: 'In Transit',
-        delivered: 'Delivered',
-        cancelled: 'Cancelled',
+        searching: t('logisticsCard.statusSearching'),
+        accepted: t('logisticsCard.statusAccepted'),
+        in_transit: t('logisticsCard.statusInTransit'),
+        delivered: t('logisticsCard.statusDelivered'),
+        cancelled: t('logisticsCard.statusCancelled'),
     };
     return labels[status] || status;
 };
@@ -289,6 +291,8 @@ const LogisticsCard: React.FC<{
     customerActions: ReturnType<typeof useCustomerActions>;
     driverActions: ReturnType<typeof useDriverActions>;
 }> = memo(({ item, index, isDriver, customerActions, driverActions }) => {
+    const { t } = useTranslation();
+    const getStatusLabel = useMemo(() => makeStatusLabel(t), [t]);
     const statusColor = useMemo(() => getStatusColor(item.status), [item.status]);
     const price = useMemo(() => `₹${item.price.toFixed(0)}`, [item.price]);
     const [chatOpen, setChatOpen] = useState(false);
@@ -327,19 +331,19 @@ const LogisticsCard: React.FC<{
     const onCall = useCallback(() => {
         const phone = isDriver ? item.customerPhone : item.driverPhone;
         if (!phone) {
-            showToast(isDriver ? 'Customer phone not available' : 'Driver not assigned yet', 'info');
+            showToast(isDriver ? t('logisticsCard.customerPhoneNotAvailable') : t('logisticsCard.driverNotAssignedYet'), 'info');
             return;
         }
         Linking.openURL(`tel:${phone}`).catch(() =>
-            showToast('Unable to open the dialer', 'error'),
+            showToast(t('logisticsCard.unableToOpenDialer'), 'error'),
         );
-    }, [isDriver, item.customerPhone, item.driverPhone]);
+    }, [isDriver, item.customerPhone, item.driverPhone, t]);
 
     const onShare = useCallback(() => {
         Share.share({
-            message: `Track my Kalanabha shipment: ${item.goodsType} from ${item.pickup?.address} to ${item.drop?.address}. Status: ${getStatusLabel(item.status)}.`,
-        }).catch(() => showToast('Unable to share', 'error'));
-    }, [item.goodsType, item.pickup, item.drop, item.status]);
+            message: t('logisticsCard.trackShipmentMessage', { goodsType: item.goodsType, pickup: item.pickup?.address, drop: item.drop?.address, status: getStatusLabel(item.status) }),
+        }).catch(() => showToast(t('logisticsCard.unableToShare'), 'error'));
+    }, [item.goodsType, item.pickup, item.drop, item.status, t, getStatusLabel]);
 
 
 
@@ -358,8 +362,8 @@ const LogisticsCard: React.FC<{
                                     measured) — showing "0.0kg" there would
                                     read as a bug, not "not applicable". */}
                                 {item.category === 'HOUSE_SHIFTING'
-                                    ? `${item.goodsType} • ${item.helpersCount ?? 0} helper${item.helpersCount === 1 ? '' : 's'}`
-                                    : `${item.goodsType} • ${item.weightKg?.toFixed(1) ?? '0'}kg`}
+                                    ? t('logisticsCard.helpersCountLabel', { goodsType: item.goodsType, count: item.helpersCount ?? 0, plural: item.helpersCount === 1 ? '' : 's' })
+                                    : t('logisticsCard.weightLabel', { goodsType: item.goodsType, weight: item.weightKg?.toFixed(1) ?? '0' })}
                             </Text>
                             <Text style={styles.headerSubtitle} numberOfLines={1}>
                                 {isDriver ? item.customerName : item.driverName}
@@ -405,17 +409,17 @@ const LogisticsCard: React.FC<{
                 <View style={styles.actionBar}>
                     <ActionButton
                         icon={<Navigation size={16} color="#000" />}
-                        label="Route"
+                        label={t('logisticsCard.route')}
                         onPress={onNavigate}
                     />
                     <ActionButton
                         icon={<Phone size={16} color="#000" />}
-                        label="Call"
+                        label={t('logisticsCard.call')}
                         onPress={onCall}
                     />
                     <ActionButton
                         icon={<Share2 size={16} color="#000" />}
-                        label="Share"
+                        label={t('logisticsCard.share')}
                         onPress={onShare}
                     />
 
@@ -423,7 +427,7 @@ const LogisticsCard: React.FC<{
                     {isDriver && item.status === 'searching' && !item.driverId && (
                         <ActionButton
                             icon={<Check size={16} color="#FFF" />}
-                            label="Accept"
+                            label={t('logisticsCard.accept')}
                             primary
                             onPress={() => driverActions.onAccept(item.id)}
                         />
@@ -438,7 +442,7 @@ const LogisticsCard: React.FC<{
                     {isDriver && isAssignedToMe && item.status === 'accepted' && (
                         <ActionButton
                             icon={<Truck size={16} color="#FFF" />}
-                            label="Verify Pickup"
+                            label={t('logisticsCard.verifyPickup')}
                             primary
                             onPress={() => driverActions.onStartDelivery(item.id)}
                         />
@@ -447,7 +451,7 @@ const LogisticsCard: React.FC<{
                     {isDriver && isAssignedToMe && item.status === 'in_transit' && (
                         <ActionButton
                             icon={<Check size={16} color="#FFF" />}
-                            label="Complete Delivery"
+                            label={t('logisticsCard.completeDelivery')}
                             primary
                             onPress={() => driverActions.onCompleteDelivery(item.id)}
                         />
@@ -461,7 +465,7 @@ const LogisticsCard: React.FC<{
                 >
                     <MessageCircle size={14} color="#2563EB" />
                     <Text style={{ color: '#2563EB', fontSize: 12, fontFamily: FONTS.SEMI_BOLD_PRIMARY }}>
-                        {chatOpen ? 'Close chat' : 'Chat with customer / admin'}
+                        {chatOpen ? t('logisticsCard.closeChat') : t('logisticsCard.chatWithCustomerAdmin')}
                     </Text>
                 </TouchableOpacity>
 
@@ -484,7 +488,7 @@ const LogisticsCard: React.FC<{
                             <TextInput
                                 value={chatMsg}
                                 onChangeText={setChatMsg}
-                                placeholder="Message..."
+                                placeholder={t('logisticsCard.messagePlaceholder')}
                                 placeholderTextColor="#9CA3AF"
                                 style={{
                                     flex: 1, borderWidth: 1, borderColor: '#E5E7EB',
@@ -495,7 +499,7 @@ const LogisticsCard: React.FC<{
                                 backgroundColor: '#2563EB', borderRadius: 8, opacity: sending ? 0.6 : 1,
                                 paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center',
                             }}>
-                                <Text style={{ color: '#fff', fontFamily: FONTS.BOLD_PRIMARY, fontSize: 12 }}>Send</Text>
+                                <Text style={{ color: '#fff', fontFamily: FONTS.BOLD_PRIMARY, fontSize: 12 }}>{t('logisticsCard.send')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>

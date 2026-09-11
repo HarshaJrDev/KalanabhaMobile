@@ -10,6 +10,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { View, StyleSheet, PanResponder, Pressable, Text } from 'react-native';
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 export type Point = { x: number; y: number };
 
@@ -42,6 +43,7 @@ const Segment: React.FC<{ a: Point; b: Point; color: string }> = ({ a, b, color 
 export const SignaturePad = React.forwardRef<{ clear: () => void; getStrokes: () => Point[][] }, SignaturePadProps>(
     ({ onChange, height = 180 }, ref) => {
         const { colors } = useAppTheme();
+        const { t } = useTranslation();
         const [strokes, setStrokes] = useState<Point[][]>([]);
         const currentStroke = useRef<Point[]>([]);
 
@@ -82,7 +84,7 @@ export const SignaturePad = React.forwardRef<{ clear: () => void; getStrokes: ()
 
         return (
             <View style={[styles.pad, { height, borderColor: colors.BORDER, backgroundColor: colors.SURFACE }]} {...panResponder.panHandlers}>
-                {strokes.length === 0 && <Text style={[styles.hint, { color: colors.GRAY }]}>Sign here</Text>}
+                {strokes.length === 0 && <Text style={[styles.hint, { color: colors.GRAY }]}>{t('signaturePad.signHere')}</Text>}
                 {strokes.map((stroke, si) =>
                     stroke.slice(1).map((point, pi) => (
                         <Segment key={`${si}-${pi}`} a={stroke[pi]} b={point} color={colors.TEXT_PRIMARY} />
@@ -95,9 +97,10 @@ export const SignaturePad = React.forwardRef<{ clear: () => void; getStrokes: ()
 
 export const SignatureClearButton: React.FC<{ onPress: () => void; disabled?: boolean }> = ({ onPress, disabled }) => {
     const { colors } = useAppTheme();
+    const { t } = useTranslation();
     return (
         <Pressable onPress={onPress} disabled={disabled} style={styles.clearBtn}>
-            <Text style={[styles.clearText, { color: colors.TEXT_SECONDARY }]}>Clear</Text>
+            <Text style={[styles.clearText, { color: colors.TEXT_SECONDARY }]}>{t('signaturePad.clear')}</Text>
         </Pressable>
     );
 };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { useDeliveryOtpStore } from './deliveryOtpStore';
+import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 
 // Mounted once at the app root (App.tsx), same pattern as GlobalToast — the
@@ -14,6 +15,7 @@ export const GlobalDeliveryOtpModal: React.FC = () => {
     const kind = useDeliveryOtpStore((s) => s.kind);
     const resolve = useDeliveryOtpStore((s) => s.resolve);
     const [otp, setOtp] = useState('');
+    const { t } = useTranslation();
 
     const close = (value: string | null) => {
         useDeliveryOtpStore.setState({ open: false, resolve: null });
@@ -25,11 +27,11 @@ export const GlobalDeliveryOtpModal: React.FC = () => {
         <Modal visible={open} transparent animationType="fade" onRequestClose={() => close(null)}>
             <View style={styles.overlay}>
                 <View style={styles.card}>
-                    <Text style={styles.title}>{kind === 'pickup' ? 'Enter pickup OTP' : 'Enter delivery OTP'}</Text>
+                    <Text style={styles.title}>{kind === 'pickup' ? t('deliveryOtpModal.enterPickupOtp') : t('deliveryOtpModal.enterDeliveryOtp')}</Text>
                     <Text style={styles.subtitle}>
                         {kind === 'pickup'
-                            ? 'Ask the customer for the 4-digit pickup code shown in their app'
-                            : 'Ask the customer for the 4-digit delivery code shown in their app'}
+                            ? t('deliveryOtpModal.askPickupOtp')
+                            : t('deliveryOtpModal.askDeliveryOtp')}
                     </Text>
                     <TextInput
                         style={styles.input}
@@ -43,14 +45,14 @@ export const GlobalDeliveryOtpModal: React.FC = () => {
                     />
                     <View style={styles.actions}>
                         <TouchableOpacity style={styles.cancelBtn} onPress={() => close(null)}>
-                            <Text style={styles.cancelText}>Cancel</Text>
+                            <Text style={styles.cancelText}>{t('deliveryOtpModal.cancel')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.confirmBtn, otp.length !== 4 && styles.confirmBtnDisabled]}
                             disabled={otp.length !== 4}
                             onPress={() => close(otp)}
                         >
-                            <Text style={styles.confirmText}>Confirm</Text>
+                            <Text style={styles.confirmText}>{t('deliveryOtpModal.confirm')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

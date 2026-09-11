@@ -29,9 +29,11 @@ import { showToast } from './toastStore';
 import { useDeliveryCompletionStore } from './deliveryCompletionStore';
 import { normalizeError } from '@utils/error';
 import { ensureCameraPermission } from '@utils/cameraPermission';
+import { useTranslation } from 'react-i18next';
 
 export const GlobalDeliveryCompletionSheet: React.FC = () => {
     const { colors, fonts } = useAppTheme();
+    const { t } = useTranslation();
     const styles = React.useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
 
     const open = useDeliveryCompletionStore((s) => s.open);
@@ -83,7 +85,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
             await verifyDeliveryOtp(shipmentId, otp);
             setOtpVerified(true);
         } catch (err) {
-            setOtpError(normalizeError(err) || 'Incorrect OTP');
+            setOtpError(normalizeError(err) || t('deliveryCompletion.incorrectOtp'));
         } finally {
             setVerifyingOtp(false);
         }
@@ -98,7 +100,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
         // for us — see cameraPermission.ts.
         const hasCameraPermission = await ensureCameraPermission();
         if (!hasCameraPermission) {
-            showToast('Camera permission is required to capture delivery proof', 'error');
+            showToast(t('deliveryCompletion.cameraPermissionRequired'), 'error');
             return;
         }
 
@@ -113,7 +115,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
                 // toast was hiding which one it actually was.
                 if (__DEV__) console.warn('[DeliveryCompletionSheet] camera error', response.errorCode, response.errorMessage);
                 showToast(
-                    response.errorCode ? `Could not capture a photo — ${response.errorMessage ?? response.errorCode}` : 'Could not capture a photo — try again',
+                    response.errorCode ? t('deliveryCompletion.couldNotCapturePhoto', { reason: response.errorMessage ?? response.errorCode }) : t('deliveryCompletion.couldNotCapturePhotoRetry'),
                     'error',
                 );
                 return;
@@ -123,7 +125,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
                 await uploadShipmentPod(shipmentId, asset.uri, asset.fileName ?? 'proof-of-delivery.jpg', asset.type ?? 'image/jpeg');
                 setPhotoUploaded(true);
             } catch (err) {
-                showToast(normalizeError(err) || 'Photo upload failed — try again', 'error');
+                showToast(normalizeError(err) || t('deliveryCompletion.photoUploadFailed'), 'error');
             } finally {
                 setUploadingPhoto(false);
             }
@@ -134,7 +136,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
         if (!shipmentId) return;
         const current = padRef.current?.getStrokes() ?? strokes;
         if (current.length === 0) {
-            showToast('Draw a signature first', 'error');
+            showToast(t('deliveryCompletion.drawSignatureFirst'), 'error');
             return;
         }
         setSavingSignature(true);
@@ -142,7 +144,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
             await saveDeliverySignature(shipmentId, current);
             setSignatureCaptured(true);
         } catch (err) {
-            showToast(normalizeError(err) || 'Could not save signature — try again', 'error');
+            showToast(normalizeError(err) || t('deliveryCompletion.couldNotSaveSignature'), 'error');
         } finally {
             setSavingSignature(false);
         }
@@ -155,10 +157,10 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
         setCompleting(true);
         try {
             await completeDelivery(shipmentId, otp);
-            showToast('Delivery completed!', 'success');
+            showToast(t('deliveryCompletion.deliveryCompleted'), 'success');
             close(true);
         } catch (err) {
-            showToast(normalizeError(err) || 'Unable to complete delivery — please complete all required steps', 'error');
+            showToast(normalizeError(err) || t('deliveryCompletion.unableToComplete'), 'error');
         } finally {
             setCompleting(false);
         }
@@ -169,22 +171,22 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
             <View style={styles.overlay}>
                 <View style={styles.sheet}>
                     <View style={styles.header}>
-                        <Text style={styles.title}>Complete Delivery</Text>
+                        <Text style={styles.title}>{t('deliveryCompletion.completeDelivery')}</Text>
                         <Pressable onPress={() => close(false)} hitSlop={12}>
                             <X size={22} color={colors.TEXT_SECONDARY} />
                         </Pressable>
                     </View>
-                    <Text style={styles.subtitle}>Complete all required steps before finishing this trip.</Text>
+                    <Text style={styles.subtitle}>{t('deliveryCompletion.subtitle')}</Text>
 
                     {/* Step 1 — Delivery OTP */}
                     <View style={styles.stepCard}>
                         <View style={styles.stepHeaderRow}>
-                            <Text style={styles.stepTitle}>① Delivery OTP</Text>
+                            <Text style={styles.stepTitle}>{t('deliveryCompletion.step1Title')}</Text>
                             {otpVerified && <CheckCircle2 size={18} color={colors.SUCCESS} />}
                         </View>
                         {!otpVerified ? (
                             <>
-                                <Text style={styles.stepHint}>Ask the receiver for their 4-digit delivery code</Text>
+                                <Text style={styles.stepHint}>{t('deliveryCompletion.askReceiverOtp')}</Text>
                                 <View style={styles.otpRow}>
                                     <TextInput
                                         style={styles.otpInput}
@@ -203,38 +205,38 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
                                         disabled={otp.length !== 4 || verifyingOtp}
                                         onPress={handleVerifyOtp}
                                     >
-                                        {verifyingOtp ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.smallBtnText}>Verify OTP</Text>}
+                                        {verifyingOtp ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.smallBtnText}>{t('deliveryCompletion.verifyOtp')}</Text>}
                                     </Pressable>
                                 </View>
                                 {otpError && <Text style={styles.errorText}>{otpError}</Text>}
                             </>
                         ) : (
-                            <Text style={styles.doneText}>Verified</Text>
+                            <Text style={styles.doneText}>{t('deliveryCompletion.verified')}</Text>
                         )}
                     </View>
 
                     {/* Step 2 — Delivery Photos */}
                     <View style={styles.stepCard}>
                         <View style={styles.stepHeaderRow}>
-                            <Text style={styles.stepTitle}>② Delivery Photo</Text>
+                            <Text style={styles.stepTitle}>{t('deliveryCompletion.step2Title')}</Text>
                             {photoUploaded && <CheckCircle2 size={18} color={colors.SUCCESS} />}
                         </View>
-                        <Text style={styles.stepHint}>Capture proof of delivery</Text>
+                        <Text style={styles.stepHint}>{t('deliveryCompletion.captureProof')}</Text>
                         <Pressable style={styles.smallBtnOutline} onPress={handleTakePhoto} disabled={uploadingPhoto}>
                             {uploadingPhoto ? (
                                 <ActivityIndicator size="small" color={colors.PRIMARY} />
                             ) : (
-                                <Text style={styles.smallBtnOutlineText}>{photoUploaded ? 'Retake Photo' : 'Take Photo'}</Text>
+                                <Text style={styles.smallBtnOutlineText}>{photoUploaded ? t('deliveryCompletion.retakePhoto') : t('deliveryCompletion.takePhoto')}</Text>
                             )}
                         </Pressable>
-                        {photoUploaded && <Text style={styles.doneText}>Photo added — retaking will replace it</Text>}
+                        {photoUploaded && <Text style={styles.doneText}>{t('deliveryCompletion.photoAddedHint')}</Text>}
                     </View>
 
                     {/* Step 3 — Customer Signature (optional) */}
                     <View style={styles.stepCard}>
                         <View style={styles.stepHeaderRow}>
-                            <Text style={styles.stepTitle}>③ Customer Signature</Text>
-                            {signatureCaptured ? <CheckCircle2 size={18} color={colors.SUCCESS} /> : <Text style={styles.optionalTag}>Optional</Text>}
+                            <Text style={styles.stepTitle}>{t('deliveryCompletion.step3Title')}</Text>
+                            {signatureCaptured ? <CheckCircle2 size={18} color={colors.SUCCESS} /> : <Text style={styles.optionalTag}>{t('deliveryCompletion.optional')}</Text>}
                         </View>
                         {!signatureCaptured ? (
                             <>
@@ -242,25 +244,25 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
                                 <View style={styles.signatureActionsRow}>
                                     <SignatureClearButton onPress={() => padRef.current?.clear()} disabled={savingSignature} />
                                     <Pressable style={styles.smallBtn} onPress={handleSaveSignature} disabled={savingSignature}>
-                                        {savingSignature ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.smallBtnText}>Save Signature</Text>}
+                                        {savingSignature ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.smallBtnText}>{t('deliveryCompletion.saveSignature')}</Text>}
                                     </Pressable>
                                 </View>
                             </>
                         ) : (
-                            <Text style={styles.doneText}>Captured</Text>
+                            <Text style={styles.doneText}>{t('deliveryCompletion.captured')}</Text>
                         )}
                     </View>
 
                     {/* Final validation */}
                     <View style={styles.validationCard}>
-                        <Text style={styles.validationTitle}>Final Validation</Text>
-                        <ValidationRow label="OTP Verified" done={otpVerified} colors={colors} />
-                        <ValidationRow label="Delivery Photo Added" done={photoUploaded} colors={colors} />
-                        <ValidationRow label="Customer Signature (optional)" done={signatureCaptured} colors={colors} muted />
+                        <Text style={styles.validationTitle}>{t('deliveryCompletion.finalValidation')}</Text>
+                        <ValidationRow label={t('deliveryCompletion.otpVerifiedLabel')} done={otpVerified} colors={colors} />
+                        <ValidationRow label={t('deliveryCompletion.deliveryPhotoAddedLabel')} done={photoUploaded} colors={colors} />
+                        <ValidationRow label={t('deliveryCompletion.customerSignatureLabel')} done={signatureCaptured} colors={colors} muted />
                     </View>
 
                     <Pressable style={[styles.completeBtn, !canComplete && styles.completeBtnDisabled]} disabled={!canComplete} onPress={handleCompleteTrip}>
-                        {completing ? <ActivityIndicator color="#fff" /> : <Text style={styles.completeBtnText}>COMPLETE TRIP</Text>}
+                        {completing ? <ActivityIndicator color="#fff" /> : <Text style={styles.completeBtnText}>{t('deliveryCompletion.completeTrip')}</Text>}
                     </Pressable>
                 </View>
             </View>
