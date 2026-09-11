@@ -41,6 +41,7 @@ import {
 } from 'lucide-react-native';
 
 import { registerFCMToken } from '@utils/cm';
+import { useTranslation } from 'react-i18next';
 import { safeNumber } from '@utils/parsers';
 import { useDriverLiveLocation } from '@location/useDriverLiveLocation';
 import { openGoogleMapsDirections } from '@utils/navigation';
@@ -69,7 +70,7 @@ interface HomeScreenProps { }
 
 // Adapts features/shipments' mapped Shipment (shipment/types.ts shape) to
 // this screen's LogisticsItem, which LogisticsCardList renders.
-const toLogisticsItem = (s: import('@shipment/types').Shipment): LogisticsItem => ({
+const makeToLogisticsItem = (t: (key: string) => string) => (s: import('@shipment/types').Shipment): LogisticsItem => ({
     id: s.id,
     goodsType: s.goodsType,
     weightKg: s.weightKg,
@@ -83,7 +84,7 @@ const toLogisticsItem = (s: import('@shipment/types').Shipment): LogisticsItem =
     driverRating: s.dispatch?.driverRating,
     driverId: s.dispatch?.driverId ?? '',
     driverPhone: s.dispatch?.driverPhone,
-    customerName: s.sender?.name ?? 'Customer',
+    customerName: s.sender?.name ?? t('driverHome.customerFallback'),
     customerPhone: s.sender?.phone,
     category: s.category,
     helpersCount: s.helpersCount,
@@ -92,6 +93,7 @@ const toLogisticsItem = (s: import('@shipment/types').Shipment): LogisticsItem =
 const HomeScreen: React.FC<HomeScreenProps> = () => {
     // Screen -> hook -> shipments.api -> GET /shipments/searching -> cache -> UI
     const navigation = useNavigation();
+    const { t } = useTranslation();
     const {
         data: searchingShipments,
         isLoading: loading,
@@ -112,8 +114,8 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     const driverActions = useDriverActions();
 
     const shipments = useMemo<LogisticsItem[]>(
-        () => (searchingShipments ?? []).map(toLogisticsItem),
-        [searchingShipments],
+        () => (searchingShipments ?? []).map(makeToLogisticsItem(t)),
+        [searchingShipments, t],
     );
     const error = shipmentsError ? shipmentsError.message : null;
 
@@ -193,14 +195,14 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     const handleAcceptIncoming = () => {
         if (!incomingRequest) return;
         acceptIncoming(undefined, {
-            onSuccess: () => showToast('Order accepted! Start delivery.', 'success'),
-            onError: () => showToast('Order already taken', 'error'),
+            onSuccess: () => showToast(t('driverHome.orderAcceptedToast'), 'success'),
+            onError: () => showToast(t('driverHome.orderAlreadyTakenToast'), 'error'),
         });
     };
 
     const handleSos = () => {
         Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=Driver%20SOS`).catch(() =>
-            showToast('No email app is set up on this device', 'error'),
+            showToast(t('driverHome.noEmailAppToast'), 'error'),
         );
     };
 
@@ -262,8 +264,8 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                 <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
                 <Animated.View entering={FadeIn} style={styles.loadingContent}>
                     <ActivityIndicator size="large" color="#FF7518" />
-                    <Text style={styles.loadingText}>Loading your orders...</Text>
-                    <Text style={styles.loadingSubtext}>Fetching the latest from Kalanabha</Text>
+                    <Text style={styles.loadingText}>{t('driverHome.loadingOrders')}</Text>
+                    <Text style={styles.loadingSubtext}>{t('driverHome.loadingSubtext')}</Text>
                 </Animated.View>
             </View>
         );
@@ -278,7 +280,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                     <View style={styles.errorIcon}>
                         <AlertCircle size={48} color="#EF4444" />
                     </View>
-                    <Text style={styles.errorTitle}>Oops! Something went wrong</Text>
+                    <Text style={styles.errorTitle}>{t('driverHome.errorTitle')}</Text>
                     <Text style={styles.errorMessage}>{error}</Text>
                     <TouchableOpacity
                         style={styles.retryButton}
@@ -286,7 +288,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                     // entering={SlideInDown.delay(200)}
                     >
                         <RefreshCw size={18} color="#FFF" />
-                        <Text style={styles.retryText}>Retry</Text>
+                        <Text style={styles.retryText}>{t('common.retry')}</Text>
                     </TouchableOpacity>
                 </Animated.View>
             </View>
@@ -325,18 +327,18 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                             />
                             <View style={styles.activeDeliveryContent}>
                                 <Text style={styles.activeDeliveryTitle}>
-                                    Active delivery · {activeDelivery.trackingId}
+                                    {t('driverHome.activeDeliveryLabel', { trackingId: activeDelivery.trackingId })}
                                 </Text>
                                 <Text style={styles.activeDeliverySub} numberOfLines={1}>
                                     {activeDelivery.from} → {activeDelivery.to}
                                 </Text>
                                 <Text style={styles.arrivalStatusText}>
-                                    {activeDelivery.status === 'accepted' ? '● Pickup verification pending' : '● In Transit'}
+                                    {activeDelivery.status === 'accepted' ? t('driverHome.pickupVerificationPending') : t('driverHome.inTransitStatus')}
                                 </Text>
                             </View>
                             <View style={styles.chatPill}>
                                 <MessageCircle color="#fff" size={14} />
-                                <Text style={styles.chatPillText}>Chat</Text>
+                                <Text style={styles.chatPillText}>{t('driverHome.chat')}</Text>
                             </View>
                         </TouchableOpacity>
                         {/* No embedded map library is installed in this
@@ -348,7 +350,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                             onPress={() => openGoogleMapsDirections(activeDelivery.pickup, activeDelivery.drop)}
                         >
                             <Navigation color="#FF7518" size={13} />
-                            <Text style={styles.openMapsText}>Open directions in Maps</Text>
+                            <Text style={styles.openMapsText}>{t('driverHome.openDirectionsInMaps')}</Text>
                         </TouchableOpacity>
 
                         {/* Status-driven CTA — visible immediately after
@@ -358,12 +360,12 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                             Delivery Completion Sheet. */}
                         {activeDelivery.status === 'accepted' && (
                             <TouchableOpacity style={styles.arrivalCtaBtn} onPress={() => driverActions.onStartDelivery(activeDelivery.id)}>
-                                <Text style={styles.arrivalCtaText}>Verify Pickup</Text>
+                                <Text style={styles.arrivalCtaText}>{t('driverHome.verifyPickup')}</Text>
                             </TouchableOpacity>
                         )}
                         {activeDelivery.status === 'in_transit' && (
                             <TouchableOpacity style={styles.arrivalCtaBtn} onPress={() => driverActions.onCompleteDelivery(activeDelivery.id)}>
-                                <Text style={styles.arrivalCtaText}>Complete Delivery</Text>
+                                <Text style={styles.arrivalCtaText}>{t('driverHome.completeDelivery')}</Text>
                             </TouchableOpacity>
                         )}
                     </View>
@@ -381,7 +383,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                     <Animated.View entering={FadeIn} style={styles.incomingCard}>
                         <View style={styles.incomingHeaderRow}>
                             <Text style={styles.incomingHeaderText}>
-                                {incomingRequest.category === 'HOUSE_SHIFTING' ? 'INCOMING MOVE REQUEST' : 'INCOMING LOAD REQUEST'}
+                                {incomingRequest.category === 'HOUSE_SHIFTING' ? t('driverHome.incomingMoveRequest') : t('driverHome.incomingLoadRequest')}
                             </Text>
                             {countdownLabel !== null && (
                                 <View style={styles.incomingCountdownPill}>
@@ -397,18 +399,18 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                             <Text style={styles.incomingPrice}>₹{incomingRequest.price}</Text>
                             <View style={styles.incomingPaymentPill}>
                                 <Text style={styles.incomingPaymentPillText}>
-                                    {incomingRequest.paymentMode === 'cod' ? 'COD' : incomingRequest.paymentMode === 'prepaid' ? 'UPI' : 'Credit'}
+                                    {incomingRequest.paymentMode === 'cod' ? t('driverHome.paymentCod') : incomingRequest.paymentMode === 'prepaid' ? t('driverHome.paymentUpi') : t('driverHome.paymentCredit')}
                                 </Text>
                             </View>
                         </View>
 
                         <View style={styles.incomingStatsRow}>
                             <View style={styles.incomingStat}>
-                                <Text style={styles.incomingStatLabel}>TOTAL RUN</Text>
+                                <Text style={styles.incomingStatLabel}>{t('driverHome.totalRun')}</Text>
                                 <Text style={styles.incomingStatValue}>{incomingRequest.distanceKm.toFixed(1)} km</Text>
                             </View>
                             <View style={styles.incomingStat}>
-                                <Text style={styles.incomingStatLabel}>TRIP NET</Text>
+                                <Text style={styles.incomingStatLabel}>{t('driverHome.tripNet')}</Text>
                                 <Text style={styles.incomingStatValue}>
                                     ₹{(incomingRequest.price / Math.max(incomingRequest.distanceKm, 0.1)).toFixed(1)}/km
                                 </Text>
@@ -422,7 +424,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                                 </Text>
                             </View>
                             <Text style={styles.incomingSenderName} numberOfLines={1}>
-                                {incomingRequest.sender?.name ?? 'Customer'}
+                                {incomingRequest.sender?.name ?? t('driverHome.customerFallback')}
                             </Text>
                         </View>
 
@@ -440,11 +442,11 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                                 // showing "Up to 0 kg" would read as a bug. Helper
                                 // count is the real number this job actually carries.
                                 <Text style={styles.incomingVehicleText}>
-                                    {incomingRequest.vehicleType} · {incomingRequest.helpersCount} helper{incomingRequest.helpersCount === 1 ? '' : 's'} needed
+                                    {t('driverHome.helpersNeeded', { vehicle: incomingRequest.vehicleType, count: incomingRequest.helpersCount, plural: incomingRequest.helpersCount === 1 ? '' : 's' })}
                                 </Text>
                             ) : (
                                 <Text style={styles.incomingVehicleText}>
-                                    {incomingRequest.vehicleType} · Up to {incomingRequest.package?.weight ?? incomingRequest.weightKg} kg
+                                    {t('driverHome.upToKgVehicle', { vehicle: incomingRequest.vehicleType, weight: incomingRequest.package?.weight ?? incomingRequest.weightKg })}
                                 </Text>
                             )}
                             <Text style={styles.incomingPackageText} numberOfLines={1}>
@@ -456,7 +458,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                             {incomingRequest.fragile && (
                                 <View style={styles.incomingFragileBadge}>
                                     <ShieldAlert size={11} color="#B45309" />
-                                    <Text style={styles.incomingFragileBadgeText}>Fragile — handle with care</Text>
+                                    <Text style={styles.incomingFragileBadgeText}>{t('driverHome.fragileHandleWithCare')}</Text>
                                 </View>
                             )}
                         </View>
@@ -475,7 +477,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                                 style={styles.declineBtn}
                                 onPress={() => setDismissedIncomingId(incomingRequest.id)}
                             >
-                                <Text style={styles.declineBtnText}>Decline</Text>
+                                <Text style={styles.declineBtnText}>{t('driverHome.decline')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.acceptBtn}
@@ -483,7 +485,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                                 disabled={acceptingIncoming}
                             >
                                 <Text style={styles.acceptBtnText}>
-                                    {acceptingIncoming ? 'Accepting…' : 'Accept Load'}
+                                    {acceptingIncoming ? t('driverHome.accepting') : t('driverHome.acceptLoad')}
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -503,8 +505,8 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                         <View style={[styles.quickIconWrap, { backgroundColor: '#FDE68A' }]}>
                             <Fuel color="#B45309" size={18} />
                         </View>
-                        <Text style={styles.quickCardTitle}>Find Fuel Stations</Text>
-                        <Text style={styles.quickCardSub}>Nearby petrol bunks · log a fill-up</Text>
+                        <Text style={styles.quickCardTitle}>{t('driverHome.findFuelStations')}</Text>
+                        <Text style={styles.quickCardSub}>{t('driverHome.nearbyPetrolBunks')}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -514,9 +516,9 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                         <View style={[styles.quickIconWrap, { backgroundColor: documentsVerified ? '#BBF7D0' : '#FDE68A' }]}>
                             <FileText color={documentsVerified ? '#16A34A' : '#B45309'} size={18} />
                         </View>
-                        <Text style={styles.quickCardTitle}>My Documents</Text>
+                        <Text style={styles.quickCardTitle}>{t('driverHome.myDocuments')}</Text>
                         <Text style={styles.quickCardSub}>
-                            {documentsVerified ? 'Verified' : 'Upload for admin review'}
+                            {documentsVerified ? t('driverHome.verified') : t('driverHome.uploadForAdminReview')}
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -531,8 +533,8 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                     style={styles.driveMoreBanner}
                 >
                     <View style={styles.driveMoreText}>
-                        <Text style={styles.driveMoreTitle}>Drive More,{'\n'}Earn More!</Text>
-                        <Text style={styles.driveMoreSub}>Stay online to get the best loads around you.</Text>
+                        <Text style={styles.driveMoreTitle}>{t('driverHome.driveMoreEarnMore')}</Text>
+                        <Text style={styles.driveMoreSub}>{t('driverHome.driveMoreSubtext')}</Text>
                     </View>
                     <Image source={DRIVE_MORE_TRUCK} resizeMode="contain" style={styles.driveMoreImage} />
                 </LinearGradient>
@@ -543,10 +545,10 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                         <View style={styles.sectionHeader}>
                             <View>
                                 <Text style={styles.sectionTitle}>
-                                    Nearby Orders
+                                    {t('driverHome.nearbyOrders')}
                                 </Text>
                                 <Text style={styles.subtitle}>
-                                    {remainingShipments.length} available • Real-time updates
+                                    {t('driverHome.availableRealtimeUpdates', { count: remainingShipments.length })}
                                 </Text>
                             </View>
                             <View style={styles.badge}>
@@ -564,9 +566,9 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                                     style={styles.emptyImage}
                                     placeholderColor="#F3F4F6"
                                 />
-                                <Text style={styles.emptyTitle}>No orders nearby</Text>
+                                <Text style={styles.emptyTitle}>{t('driverHome.noOrdersNearby')}</Text>
                                 <Text style={styles.emptyMessage}>
-                                    Check back soon for new deliveries in your area
+                                    {t('driverHome.checkBackSoon')}
                                 </Text>
                             </Animated.View>
                         ) : (
@@ -601,19 +603,19 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                             <View style={styles.statItem}>
                                 <Package color="#fff" size={24} style={styles.statEmoji} />
                                 <Text style={styles.statNumber}>{shipments.length}</Text>
-                                <Text style={styles.statLabel}>Available</Text>
+                                <Text style={styles.statLabel}>{t('driverHome.statAvailable')}</Text>
                             </View>
                             <View style={styles.statDivider} />
                             <View style={styles.statItem}>
                                 <CheckCircle2 color="#fff" size={24} style={styles.statEmoji} />
                                 <Text style={styles.statNumber}>{deliveredToday}</Text>
-                                <Text style={styles.statLabel}>Delivered</Text>
+                                <Text style={styles.statLabel}>{t('driverHome.statDelivered')}</Text>
                             </View>
                             <View style={styles.statDivider} />
                             <View style={styles.statItem}>
                                 <Wallet color="#fff" size={24} style={styles.statEmoji} />
                                 <Text style={styles.statNumber}>₹{todayEarnings.toLocaleString()}</Text>
-                                <Text style={styles.statLabel}>Earnings</Text>
+                                <Text style={styles.statLabel}>{t('driverHome.statEarnings')}</Text>
                             </View>
                         </LinearGradient>
                     </Animated.View>
