@@ -79,6 +79,7 @@ import { createShipment } from '@features/shipments/api/shipments.api';
 import { safeNumber } from '@utils/parsers';
 import { normalizeError } from '@utils/error';
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 const makeOrderColors = (BRAND: ReturnType<typeof useAppTheme>['colors']) => ({
     primary: BRAND.PRIMARY,
@@ -184,31 +185,31 @@ const logError = (scope: string, error: unknown) => {
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
-const STEPS = [
+const makeSteps = (t: (key: string) => string) => [
     {
-        label: 'Category',
+        label: t('addOrder.stepLabelCategory'),
         icon: <Truck size={24} color="#FF7518" />,
-        description: 'What are you sending?'
+        description: t('addOrder.stepDescCategory')
     },
     {
-        label: 'Sender',
+        label: t('addOrder.stepLabelSender'),
         icon: <User size={24} color="#FF7518" />,
-        description: "Sender's details"
+        description: t('addOrder.stepDescSender')
     },
     {
-        label: 'Receiver',
+        label: t('addOrder.stepLabelReceiver'),
         icon: <Send size={24} color="#FF7518" />,
-        description: "Receiver's details"
+        description: t('addOrder.stepDescReceiver')
     },
     {
-        label: 'Package',
+        label: t('addOrder.stepLabelPackage'),
         icon: <Package size={24} color="#FF7518" />,
-        description: 'Package info'
+        description: t('addOrder.stepDescPackage')
     },
     {
-        label: 'Review',
+        label: t('addOrder.stepLabelReview'),
         icon: <CircleCheck size={24} color="#FF7518" />,
-        description: 'Review & confirm'
+        description: t('addOrder.stepDescReview')
     },
 ];
 
@@ -235,10 +236,11 @@ const makeServiceTypes = (
     COLORS: OrderColors,
     expressSurcharge: number,
     sameDaySurcharge: number,
+    t: (key: string) => string,
 ): { key: OrderDetailsForm['serviceType']; label: string; desc: string; priceLabel: string; days: string; color: string }[] => [
-    { key: 'standard', label: 'Standard', desc: 'Reliable delivery', priceLabel: 'Included', days: '3-5 days', color: COLORS.textSecondary },
-    { key: 'express', label: 'Express', desc: 'Faster delivery', priceLabel: `+₹${expressSurcharge}`, days: '1-2 days', color: COLORS.primary },
-    { key: 'same-day', label: 'Same Day', desc: 'Deliver today', priceLabel: `+₹${sameDaySurcharge}`, days: 'Today', color: COLORS.success },
+    { key: 'standard', label: t('addOrder.serviceStandard'), desc: t('addOrder.serviceStandardDesc'), priceLabel: t('addOrder.serviceIncluded'), days: t('addOrder.serviceStandardDays'), color: COLORS.textSecondary },
+    { key: 'express', label: t('addOrder.serviceExpress'), desc: t('addOrder.serviceExpressDesc'), priceLabel: `+₹${expressSurcharge}`, days: t('addOrder.serviceExpressDays'), color: COLORS.primary },
+    { key: 'same-day', label: t('addOrder.serviceSameDay'), desc: t('addOrder.serviceSameDayDesc'), priceLabel: `+₹${sameDaySurcharge}`, days: t('addOrder.serviceSameDayDays'), color: COLORS.success },
 ];
 
 // VehicleConfig.icon is a free-text string set by whichever admin created
@@ -251,12 +253,19 @@ const VEHICLE_ICON_BY_NAME: Record<string, LucideIcon> = {
 };
 const vehicleIconFor = (name: string): LucideIcon => VEHICLE_ICON_BY_NAME[name.toLowerCase()] ?? Truck;
 
-const PAYMENT_MODES: { key: OrderDetailsForm['paymentMode']; label: string; icon: LucideIcon }[] = [
-    { key: 'prepaid', label: 'Online / UPI', icon: CreditCard },
-    { key: 'cod', label: 'Cash on Delivery', icon: Banknote },
-    { key: 'credit', label: 'Credit Account', icon: Landmark },
+const makePaymentModes = (t: (key: string) => string): { key: OrderDetailsForm['paymentMode']; label: string; icon: LucideIcon }[] => [
+    { key: 'prepaid', label: t('addOrder.paymentOnlineUpi'), icon: CreditCard },
+    { key: 'cod', label: t('addOrder.paymentCod'), icon: Banknote },
+    { key: 'credit', label: t('addOrder.paymentCredit'), icon: Landmark },
 ];
 
+const makePickupSlots = (t: (key: string) => string) => [
+    t('addOrder.slot9to11'), t('addOrder.slot11to1'), t('addOrder.slot2to4'), t('addOrder.slot4to6'),
+];
+// Stable English keys used as form values/backend payload — PICKUP_SLOTS
+// kept as the canonical (untranslated) values so a pickupSlot chosen in
+// one language still means the same slot after a language switch; only
+// makePickupSlots' translated labels are ever shown in the UI.
 const PICKUP_SLOTS = ['9:00 AM – 11:00 AM', '11:00 AM – 1:00 PM', '2:00 PM – 4:00 PM', '4:00 PM – 6:00 PM'];
 
 // ─── INITIAL STATES ───────────────────────────────────────────────────────────
@@ -352,7 +361,7 @@ const makeInputStyles = (COLORS: OrderColors) => StyleSheet.create({
 // down to the customer's exact spot, falling back to the area's center if
 // that search doesn't resolve — so pickup/drop coordinates always exist.
 const PlacePicker = ({
-    label, value, areas, onSelect, placeholder = 'Select a locality', error,
+    label, value, areas, onSelect, placeholder, error,
 }: {
     label: string;
     value: ServiceArea | null;
@@ -362,6 +371,7 @@ const PlacePicker = ({
     error?: string;
 }) => {
     const { colors: BRAND } = useAppTheme();
+    const { t } = useTranslation();
     const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
     const inputStyles = useMemo(() => makeInputStyles(COLORS), [COLORS]);
     const pickerStyles = useMemo(() => makePickerStyles(COLORS), [COLORS]);
@@ -391,7 +401,7 @@ const PlacePicker = ({
         if (nearest) {
             handleSelect(nearest);
         } else {
-            showToast('Could not find a serviceable locality near your current location', 'error');
+            showToast(t('addOrder.toastNoServiceableLocality'), 'error');
         }
     };
 
@@ -401,11 +411,11 @@ const PlacePicker = ({
             { label: saveLabel.trim(), serviceAreaId: saveLabelFor.id },
             {
                 onSuccess: () => {
-                    showToast('Address saved', 'success');
+                    showToast(t('addOrder.toastAddressSaved'), 'success');
                     setSaveLabelFor(null);
                     setSaveLabel('');
                 },
-                onError: (err) => showToast(normalizeError(err) || 'Could not save address', 'error'),
+                onError: (err) => showToast(normalizeError(err) || t('addOrder.toastCouldNotSaveAddress'), 'error'),
             },
         );
     };
@@ -423,7 +433,7 @@ const PlacePicker = ({
                     style={[inputStyles.input, { paddingVertical: 0 }, !value && { color: COLORS.placeholder }]}
                     numberOfLines={1}
                 >
-                    {value ? `${value.name}, ${value.city}` : placeholder}
+                    {value ? `${value.name}, ${value.city}` : (placeholder ?? t('addOrder.placePickerDefaultPlaceholder'))}
                 </Text>
                 <ChevronLeft color={COLORS.textMuted} width={16} height={16} style={{ transform: [{ rotate: '-90deg' }] }} />
             </TouchableOpacity>
@@ -434,7 +444,7 @@ const PlacePicker = ({
                     <View style={pickerStyles.modalHeader}>
                         <Text style={pickerStyles.modalTitle}>{label}</Text>
                         <TouchableOpacity onPress={() => setOpen(false)} style={pickerStyles.closeBtn}>
-                            <Text style={pickerStyles.closeBtnText}>Close</Text>
+                            <Text style={pickerStyles.closeBtnText}>{t('addOrder.close')}</Text>
                         </TouchableOpacity>
                     </View>
                     <View style={pickerStyles.searchRow}>
@@ -443,7 +453,7 @@ const PlacePicker = ({
                             style={pickerStyles.searchInput}
                             value={query}
                             onChangeText={setQuery}
-                            placeholder="Search locality or city"
+                            placeholder={t('addOrder.searchLocalityPlaceholder')}
                             placeholderTextColor={COLORS.placeholder}
                             autoFocus
                         />
@@ -452,14 +462,14 @@ const PlacePicker = ({
                     <TouchableOpacity style={pickerStyles.currentLocationRow} onPress={handleUseCurrentLocation} disabled={locatingCurrentPosition}>
                         <Navigation2 size={16} color={COLORS.primary} />
                         <Text style={pickerStyles.currentLocationText}>
-                            {locatingCurrentPosition ? 'Finding your location…' : 'Use current location'}
+                            {locatingCurrentPosition ? t('addOrder.findingLocation') : t('addOrder.useCurrentLocation')}
                         </Text>
                     </TouchableOpacity>
 
                     <ScrollView keyboardShouldPersistTaps="handled">
                         {!query.trim() && savedAddresses && savedAddresses.length > 0 && (
                             <View>
-                                <Text style={pickerStyles.cityLabel}>Saved</Text>
+                                <Text style={pickerStyles.cityLabel}>{t('addOrder.savedSectionLabel')}</Text>
                                 {savedAddresses.map((s) => (
                                     <TouchableOpacity
                                         key={`saved-${s.id}`}
@@ -485,7 +495,7 @@ const PlacePicker = ({
                         )}
                         {!query.trim() && recents.length > 0 && (
                             <View>
-                                <Text style={pickerStyles.cityLabel}>Recent</Text>
+                                <Text style={pickerStyles.cityLabel}>{t('addOrder.recentSectionLabel')}</Text>
                                 {recents.map((p) => (
                                     <TouchableOpacity key={`recent-${p.id}`} style={pickerStyles.placeRow} onPress={() => handleSelect(p)}>
                                         <Clock size={15} color={COLORS.textMuted} />
@@ -498,7 +508,7 @@ const PlacePicker = ({
                             </View>
                         )}
                         {Object.keys(filtered).length === 0 && (
-                            <Text style={pickerStyles.emptyText}>No matching locality</Text>
+                            <Text style={pickerStyles.emptyText}>{t('addOrder.noMatchingLocality')}</Text>
                         )}
                         {Object.entries(filtered).map(([city, places]) => (
                             <View key={city}>
@@ -536,7 +546,7 @@ const PlacePicker = ({
                 <Modal visible={!!saveLabelFor} transparent animationType="fade" onRequestClose={() => setSaveLabelFor(null)}>
                     <View style={pickerStyles.saveOverlay}>
                         <View style={pickerStyles.saveCard}>
-                            <Text style={pickerStyles.modalTitle}>Save address</Text>
+                            <Text style={pickerStyles.modalTitle}>{t('addOrder.saveAddressTitle')}</Text>
                             <Text style={[pickerStyles.placePincode, { marginTop: 4, marginBottom: 12 }]}>
                                 {saveLabelFor ? `${saveLabelFor.name}, ${saveLabelFor.city}` : ''}
                             </Text>
@@ -544,20 +554,20 @@ const PlacePicker = ({
                                 style={pickerStyles.searchInput}
                                 value={saveLabel}
                                 onChangeText={setSaveLabel}
-                                placeholder="Label, e.g. Home, Office"
+                                placeholder={t('addOrder.saveAddressLabelPlaceholder')}
                                 placeholderTextColor={COLORS.placeholder}
                                 autoFocus
                             />
                             <View style={pickerStyles.saveActions}>
                                 <TouchableOpacity style={pickerStyles.closeBtn} onPress={() => setSaveLabelFor(null)}>
-                                    <Text style={pickerStyles.closeBtnText}>Cancel</Text>
+                                    <Text style={pickerStyles.closeBtnText}>{t('addOrder.cancel')}</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={pickerStyles.closeBtn}
                                     disabled={!saveLabel.trim() || savingAddress}
                                     onPress={handleConfirmSave}
                                 >
-                                    <Text style={pickerStyles.closeBtnText}>{savingAddress ? 'Saving…' : 'Save'}</Text>
+                                    <Text style={pickerStyles.closeBtnText}>{savingAddress ? t('addOrder.saving') : t('addOrder.save')}</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -621,6 +631,7 @@ const LocationRefiner = ({ area, refined, onResolve }: {
     onResolve: (result: (KnownCoords & { label: string }) | null) => void;
 }) => {
     const { colors: BRAND } = useAppTheme();
+    const { t } = useTranslation();
     const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
     const refineStyles = useMemo(() => makeRefineStyles(COLORS), [COLORS]);
     const [query, setQuery] = useState('');
@@ -641,15 +652,15 @@ const LocationRefiner = ({ area, refined, onResolve }: {
 
     return (
         <View style={refineStyles.wrapper}>
-            <Text style={refineStyles.label}>Pinpoint exact location (optional)</Text>
-            <Text style={refineStyles.hint}>Search a landmark within {area.name} — powered by OpenStreetMap</Text>
+            <Text style={refineStyles.label}>{t('addOrder.pinpointLocationLabel')}</Text>
+            <Text style={refineStyles.hint}>{t('addOrder.pinpointHint', { area: area.name })}</Text>
             <View style={refineStyles.row}>
                 <Navigation size={15} color={COLORS.textMuted} style={{ marginRight: 8 }} />
                 <TextInput
                     style={refineStyles.input}
                     value={query}
                     onChangeText={(v) => { setQuery(v); if (status !== 'idle') setStatus('idle'); }}
-                    placeholder={`e.g. City Central Mall, ${area.name}`}
+                    placeholder={t('addOrder.pinpointPlaceholder', { area: area.name })}
                     placeholderTextColor={COLORS.placeholder}
                     onSubmitEditing={handleSearch}
                     returnKeyType="search"
@@ -663,15 +674,15 @@ const LocationRefiner = ({ area, refined, onResolve }: {
             {refined && (
                 <View style={refineStyles.resultRow}>
                     <Check size={13} color={COLORS.success} />
-                    <Text style={refineStyles.resultText} numberOfLines={1}>Pinpointed: {refined.label}</Text>
+                    <Text style={refineStyles.resultText} numberOfLines={1}>{t('addOrder.pinpointedResult', { label: refined.label })}</Text>
                     <TouchableOpacity onPress={() => { onResolve(null); setQuery(''); }}>
-                        <Text style={refineStyles.resetText}>Reset</Text>
+                        <Text style={refineStyles.resetText}>{t('addOrder.reset')}</Text>
                     </TouchableOpacity>
                 </View>
             )}
             {status === 'not-found' && (
                 <Text style={refineStyles.notFoundText}>
-                    Couldn't find that — we'll use {area.name}'s center for now, still accurate enough to book.
+                    {t('addOrder.pinpointNotFound', { area: area.name })}
                 </Text>
             )}
         </View>
@@ -719,7 +730,7 @@ const makeShStyles = (COLORS: OrderColors) => StyleSheet.create({
 });
 
 const NavButtons = ({
-    onBack, onNext, nextLabel = 'Continue',
+    onBack, onNext, nextLabel,
     loading = false, disabled = false, isFirst = false,
 }: {
     onBack?: () => void;
@@ -730,6 +741,7 @@ const NavButtons = ({
     isFirst?: boolean;
 }) => {
     const { colors: BRAND } = useAppTheme();
+    const { t } = useTranslation();
     const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
     const navStyles = useMemo(() => makeNavStyles(COLORS), [COLORS]);
     return (
@@ -737,7 +749,7 @@ const NavButtons = ({
             {!isFirst && (
                 <TouchableOpacity style={navStyles.backBtn} onPress={onBack} activeOpacity={0.8}>
                     <ArrowLeft color={COLORS.primary} width={16} height={16} />
-                    <Text style={navStyles.backText}>Back</Text>
+                    <Text style={navStyles.backText}>{t('addOrder.back')}</Text>
                 </TouchableOpacity>
             )}
             <TouchableOpacity
@@ -749,7 +761,7 @@ const NavButtons = ({
                 {loading
                     ? <ActivityIndicator color="#fff" size="small" />
                     : <>
-                        <Text style={navStyles.nextText}>{nextLabel}</Text>
+                        <Text style={navStyles.nextText}>{nextLabel ?? t('addOrder.continue')}</Text>
                         <ArrowRight color="#fff" width={16} height={16} />
                     </>
                 }
@@ -797,9 +809,9 @@ const CATEGORY_IMAGES: Record<ShipmentCategory, ReturnType<typeof require>> = {
     HOUSE_SHIFTING: require('../../../assets/images/home/category-house-shifting.png'),
 };
 
-const CATEGORY_OPTIONS: { key: ShipmentCategory; title: string; subtitle: string; icon: LucideIcon }[] = [
-    { key: 'PARCEL', title: 'Send a Package', subtitle: 'Parcels, documents, goods — point to point', icon: Package },
-    { key: 'HOUSE_SHIFTING', title: 'House Shifting', subtitle: 'Movers with loading/unloading help, van or truck', icon: Truck },
+const makeCategoryOptions = (t: (key: string) => string): { key: ShipmentCategory; title: string; subtitle: string; icon: LucideIcon }[] => [
+    { key: 'PARCEL', title: t('addOrder.categoryParcelTitle'), subtitle: t('addOrder.categoryParcelSubtitle'), icon: Package },
+    { key: 'HOUSE_SHIFTING', title: t('addOrder.categoryHouseShiftingTitle'), subtitle: t('addOrder.categoryHouseShiftingSubtitle'), icon: Truck },
 ];
 
 const StepCategory = ({ value, onSelect, onNext }: {
@@ -808,12 +820,14 @@ const StepCategory = ({ value, onSelect, onNext }: {
     onNext: () => void;
 }) => {
     const { colors: BRAND } = useAppTheme();
+    const { t } = useTranslation();
     const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
     const catStyles = useMemo(() => makeCategoryStyles(COLORS), [COLORS]);
+    const CATEGORY_OPTIONS = useMemo(() => makeCategoryOptions(t), [t]);
 
     return (
         <ScrollView showsVerticalScrollIndicator={false}>
-            <SectionHeader title="What are you sending?" subtitle="Choose the kind of booking you need" />
+            <SectionHeader title={t('addOrder.categorySectionTitle')} subtitle={t('addOrder.categorySectionSubtitle')} />
             {CATEGORY_OPTIONS.map((opt) => {
                 const selected = value === opt.key;
                 return (
@@ -847,7 +861,7 @@ const StepCategory = ({ value, onSelect, onNext }: {
                 <View style={catStyles.infoBox}>
                     <AlertTriangle size={14} color={COLORS.warning} />
                     <Text style={catStyles.infoText}>
-                        House Shifting only offers Van/Truck (no bike) and adds a real, admin-set per-helper charge — you'll see the exact number of helpers and rate before booking.
+                        {t('addOrder.houseShiftingInfoText')}
                     </Text>
                 </View>
             )}
@@ -902,17 +916,18 @@ const StepSender = ({
     onNext: () => void;
     onBack: () => void;
 }) => {
+    const { t } = useTranslation();
     const [errors, setErrors] = useState<Partial<Record<keyof SenderForm | 'place', string>>>({});
 
     const validate = () => {
         const e: typeof errors = {};
-        if (!data.name.trim()) e.name = 'Name is required';
-        else if (data.name.trim().length < 2) e.name = 'Name is too short';
-        if (!data.phone.trim()) e.phone = 'Phone number is required';
-        else if (!/^\d{10}$/.test(data.phone.replace(/\D/g, '').slice(-10))) e.phone = 'Enter a valid 10-digit phone number';
-        if (data.email.trim() && !EMAIL_RE.test(data.email.trim())) e.email = 'Enter a valid email address';
-        if (!place) e.place = 'Select a pickup locality';
-        else if (otherPlace && place.id === otherPlace.id) e.place = 'Pickup and drop can\'t be the same locality';
+        if (!data.name.trim()) e.name = t('addOrder.errorNameRequired');
+        else if (data.name.trim().length < 2) e.name = t('addOrder.errorNameTooShort');
+        if (!data.phone.trim()) e.phone = t('addOrder.errorPhoneRequired');
+        else if (!/^\d{10}$/.test(data.phone.replace(/\D/g, '').slice(-10))) e.phone = t('addOrder.errorPhoneInvalid');
+        if (data.email.trim() && !EMAIL_RE.test(data.email.trim())) e.email = t('addOrder.errorEmailInvalid');
+        if (!place) e.place = t('addOrder.errorSelectPickupLocality');
+        else if (otherPlace && place.id === otherPlace.id) e.place = t('addOrder.errorSamePickupDrop');
         setErrors(e);
         return Object.keys(e).length === 0;
     };
@@ -921,28 +936,28 @@ const StepSender = ({
 
     return (
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <SectionHeader title="Sender Information" subtitle="Who is sending this package?" />
+            <SectionHeader title={t('addOrder.senderSectionTitle')} subtitle={t('addOrder.senderSectionSubtitle')} />
 
-            <InputField label="Full Name *" value={data.name} onChangeText={v => onChange('name', v)}
-                placeholder="e.g. Arjun Sharma" icon={User} error={errors.name} />
-            <InputField label="Phone Number *" value={data.phone} onChangeText={v => onChange('phone', v)}
-                placeholder="98765 43210" icon={Phone} keyboardType="phone-pad" error={errors.phone} />
-            <InputField label="Email Address" value={data.email} onChangeText={v => onChange('email', v)}
-                placeholder="arjun@example.com" icon={Mail} keyboardType="email-address" error={errors.email} />
+            <InputField label={t('addOrder.labelFullNameRequired')} value={data.name} onChangeText={v => onChange('name', v)}
+                placeholder={t('addOrder.placeholderSenderName')} icon={User} error={errors.name} />
+            <InputField label={t('addOrder.labelPhoneRequired')} value={data.phone} onChangeText={v => onChange('phone', v)}
+                placeholder={t('addOrder.placeholderSenderPhone')} icon={Phone} keyboardType="phone-pad" error={errors.phone} />
+            <InputField label={t('addOrder.labelEmail')} value={data.email} onChangeText={v => onChange('email', v)}
+                placeholder={t('addOrder.placeholderSenderEmail')} icon={Mail} keyboardType="email-address" error={errors.email} />
 
-            <SectionHeader title="Pickup Address" subtitle="Where should we pick it up?" />
+            <SectionHeader title={t('addOrder.pickupAddressSectionTitle')} subtitle={t('addOrder.pickupAddressSectionSubtitle')} />
 
             <PlacePicker
-                label="Locality *"
+                label={t('addOrder.labelLocalityRequired')}
                 value={place}
                 areas={areas}
                 onSelect={onSelectPlace}
-                placeholder="e.g. Banjara Hills, Hyderabad"
+                placeholder={t('addOrder.placeholderPickupLocality')}
                 error={errors.place}
             />
             {place && <LocationRefiner area={place} refined={refined} onResolve={onRefine} />}
-            <InputField label="House / Flat No., Landmark" value={data.landmark} onChangeText={v => onChange('landmark', v)}
-                placeholder="e.g. Flat 302, near City Central Mall" icon={MapPin} />
+            <InputField label={t('addOrder.labelHouseFlatLandmark')} value={data.landmark} onChangeText={v => onChange('landmark', v)}
+                placeholder={t('addOrder.placeholderPickupLandmark')} icon={MapPin} />
 
             <NavButtons onBack={onBack} onNext={handleNext} />
         </ScrollView>
@@ -965,45 +980,46 @@ const StepReceiver = ({
     onNext: () => void;
     onBack: () => void;
 }) => {
+    const { t } = useTranslation();
     const [errors, setErrors] = useState<Partial<Record<keyof ReceiverForm | 'place', string>>>({});
 
     const validate = () => {
         const e: typeof errors = {};
-        if (!data.name.trim()) e.name = 'Name is required';
-        else if (data.name.trim().length < 2) e.name = 'Name is too short';
-        if (!data.phone.trim()) e.phone = 'Phone number is required';
-        else if (!/^\d{10}$/.test(data.phone.replace(/\D/g, '').slice(-10))) e.phone = 'Enter a valid 10-digit phone number';
-        if (data.email.trim() && !EMAIL_RE.test(data.email.trim())) e.email = 'Enter a valid email address';
-        if (!place) e.place = 'Select a delivery locality';
-        else if (otherPlace && place.id === otherPlace.id) e.place = 'Pickup and drop can\'t be the same locality';
+        if (!data.name.trim()) e.name = t('addOrder.errorNameRequired');
+        else if (data.name.trim().length < 2) e.name = t('addOrder.errorNameTooShort');
+        if (!data.phone.trim()) e.phone = t('addOrder.errorPhoneRequired');
+        else if (!/^\d{10}$/.test(data.phone.replace(/\D/g, '').slice(-10))) e.phone = t('addOrder.errorPhoneInvalid');
+        if (data.email.trim() && !EMAIL_RE.test(data.email.trim())) e.email = t('addOrder.errorEmailInvalid');
+        if (!place) e.place = t('addOrder.errorSelectDeliveryLocality');
+        else if (otherPlace && place.id === otherPlace.id) e.place = t('addOrder.errorSamePickupDrop');
         setErrors(e);
         return Object.keys(e).length === 0;
     };
 
     return (
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <SectionHeader title="Receiver Information" subtitle="Who receives this package?" />
+            <SectionHeader title={t('addOrder.receiverSectionTitle')} subtitle={t('addOrder.receiverSectionSubtitle')} />
 
-            <InputField label="Full Name *" value={data.name} onChangeText={v => onChange('name', v)}
-                placeholder="e.g. Priya Patel" icon={User} error={errors.name} />
-            <InputField label="Phone Number *" value={data.phone} onChangeText={v => onChange('phone', v)}
-                placeholder="87654 32100" icon={Phone} keyboardType="phone-pad" error={errors.phone} />
-            <InputField label="Email Address" value={data.email} onChangeText={v => onChange('email', v)}
-                placeholder="priya@example.com" icon={Mail} keyboardType="email-address" error={errors.email} />
+            <InputField label={t('addOrder.labelFullNameRequired')} value={data.name} onChangeText={v => onChange('name', v)}
+                placeholder={t('addOrder.placeholderReceiverName')} icon={User} error={errors.name} />
+            <InputField label={t('addOrder.labelPhoneRequired')} value={data.phone} onChangeText={v => onChange('phone', v)}
+                placeholder={t('addOrder.placeholderReceiverPhone')} icon={Phone} keyboardType="phone-pad" error={errors.phone} />
+            <InputField label={t('addOrder.labelEmail')} value={data.email} onChangeText={v => onChange('email', v)}
+                placeholder={t('addOrder.placeholderReceiverEmail')} icon={Mail} keyboardType="email-address" error={errors.email} />
 
-            <SectionHeader title="Delivery Address" subtitle="Where should we deliver?" />
+            <SectionHeader title={t('addOrder.deliveryAddressSectionTitle')} subtitle={t('addOrder.deliveryAddressSectionSubtitle')} />
 
             <PlacePicker
-                label="Locality *"
+                label={t('addOrder.labelLocalityRequired')}
                 value={place}
                 areas={areas}
                 onSelect={onSelectPlace}
-                placeholder="e.g. Hanamkonda, Warangal"
+                placeholder={t('addOrder.placeholderDeliveryLocality')}
                 error={errors.place}
             />
             {place && <LocationRefiner area={place} refined={refined} onResolve={onRefine} />}
-            <InputField label="House / Flat No., Landmark" value={data.landmark} onChangeText={v => onChange('landmark', v)}
-                placeholder="e.g. Shop 12, opposite bus stand" icon={MapPin} />
+            <InputField label={t('addOrder.labelHouseFlatLandmark')} value={data.landmark} onChangeText={v => onChange('landmark', v)}
+                placeholder={t('addOrder.placeholderDeliveryLandmark')} icon={MapPin} />
 
             <NavButtons onBack={onBack} onNext={() => { if (validate()) onNext(); }} />
         </ScrollView>
@@ -1023,6 +1039,7 @@ const StepPackage = ({
     onBack: () => void;
 }) => {
     const { colors: BRAND } = useAppTheme();
+    const { t } = useTranslation();
     const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
     const pkgStyles = useMemo(() => makePkgStyles(COLORS), [COLORS]);
     const [errors, setErrors] = useState<Partial<Record<keyof PackageForm, string>>>({});
@@ -1035,27 +1052,27 @@ const StepPackage = ({
 
     const validate = () => {
         const e: typeof errors = {};
-        if (!data.description.trim()) e.description = 'Description is required';
-        else if (data.description.trim().length < 3) e.description = 'Description is too short';
+        if (!data.description.trim()) e.description = t('addOrder.errorDescriptionRequired');
+        else if (data.description.trim().length < 3) e.description = t('addOrder.errorDescriptionTooShort');
 
         if (isHouseShifting) {
             if (!Number.isInteger(data.helpersCount) || data.helpersCount < 1 || data.helpersCount > 4) {
-                e.helpersCount = 'Choose between 1 and 4 helpers' as any;
+                e.helpersCount = t('addOrder.errorHelpersRange') as any;
             }
         } else {
             const weight = Number(data.weight);
-            if (!data.weight.trim() || isNaN(weight) || weight <= 0) e.weight = 'Enter a weight greater than 0';
-            else if (weight > 5000) e.weight = 'Exceeds the largest vehicle\'s 5000 kg limit';
+            if (!data.weight.trim() || isNaN(weight) || weight <= 0) e.weight = t('addOrder.errorWeightRequired');
+            else if (weight > 5000) e.weight = t('addOrder.errorWeightExceedsLimit');
 
             const quantity = Number(data.quantity);
-            if (!data.quantity.trim() || !Number.isInteger(quantity) || quantity < 1) e.quantity = 'Quantity must be a whole number ≥ 1';
+            if (!data.quantity.trim() || !Number.isInteger(quantity) || quantity < 1) e.quantity = t('addOrder.errorQuantityInvalid');
 
             // Dimensions are optional, but a garbage/negative value if entered
             // at all is still worth catching before it reaches the backend.
             (['length', 'width', 'height'] as const).forEach((dim) => {
                 if (!data[dim].trim()) return;
                 const v = Number(data[dim]);
-                if (isNaN(v) || v <= 0) e[dim] = 'Must be greater than 0';
+                if (isNaN(v) || v <= 0) e[dim] = t('addOrder.errorDimensionInvalid');
             });
         }
 
@@ -1066,14 +1083,14 @@ const StepPackage = ({
     return (
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <SectionHeader
-                title={isHouseShifting ? 'Move Details' : 'Package Details'}
-                subtitle={isHouseShifting ? 'Tell us about your move' : 'Tell us about your shipment'}
+                title={isHouseShifting ? t('addOrder.moveDetailsTitle') : t('addOrder.packageDetailsTitle')}
+                subtitle={isHouseShifting ? t('addOrder.moveDetailsSubtitle') : t('addOrder.packageDetailsSubtitle')}
             />
 
             {!isHouseShifting && (
                 <>
                     {/* Category chips */}
-                    <Text style={pkgStyles.catLabel}>Category</Text>
+                    <Text style={pkgStyles.catLabel}>{t('addOrder.categoryChipsLabel')}</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
                         {packageCategories.map((cat) => {
                             const CatIcon = packageCategoryIconFor(cat.icon);
@@ -1097,16 +1114,16 @@ const StepPackage = ({
             )}
 
             <InputField
-                label={isHouseShifting ? 'What are you moving? *' : 'Description *'}
+                label={isHouseShifting ? t('addOrder.labelWhatMoving') : t('addOrder.labelDescriptionRequired')}
                 value={data.description} onChangeText={v => onChange('description', v)}
-                placeholder={isHouseShifting ? 'e.g. 2BHK furniture, appliances, boxes' : 'e.g. Laptop, clothes, documents'}
+                placeholder={isHouseShifting ? t('addOrder.placeholderMovingDescription') : t('addOrder.placeholderPackageDescription')}
                 icon={FileText} error={errors.description}
             />
 
             {isHouseShifting ? (
                 <View style={pkgStyles.helpersCard}>
                     <View style={pkgStyles.helpersHeaderRow}>
-                        <Text style={pkgStyles.helpersTitle}>Loading/Unloading Helpers</Text>
+                        <Text style={pkgStyles.helpersTitle}>{t('addOrder.helpersTitle')}</Text>
                         {helperRate != null && (
                             <Text style={pkgStyles.helpersRate}>₹{helperRate}/helper</Text>
                         )}
@@ -1137,28 +1154,28 @@ const StepPackage = ({
                 <>
                     <View style={{ flexDirection: 'row', gap: 12 }}>
                         <View style={{ flex: 1 }}>
-                            <InputField label="Weight (kg) *" value={data.weight} onChangeText={v => onChange('weight', v)}
-                                placeholder="e.g. 2.5" icon={Weight} keyboardType="decimal-pad" error={errors.weight} />
+                            <InputField label={t('addOrder.labelWeightRequired')} value={data.weight} onChangeText={v => onChange('weight', v)}
+                                placeholder={t('addOrder.placeholderWeight')} icon={Weight} keyboardType="decimal-pad" error={errors.weight} />
                         </View>
                         <View style={{ flex: 1 }}>
-                            <InputField label="Quantity *" value={data.quantity} onChangeText={v => onChange('quantity', v)}
-                                placeholder="1" keyboardType="numeric" error={errors.quantity} />
+                            <InputField label={t('addOrder.labelQuantityRequired')} value={data.quantity} onChangeText={v => onChange('quantity', v)}
+                                placeholder={t('addOrder.placeholderQuantity')} keyboardType="numeric" error={errors.quantity} />
                         </View>
                     </View>
 
-                    <SectionHeader title="Dimensions (optional)" subtitle="Length × Width × Height in cm" />
+                    <SectionHeader title={t('addOrder.dimensionsSectionTitle')} subtitle={t('addOrder.dimensionsSectionSubtitle')} />
                     <View style={{ flexDirection: 'row', gap: 10 }}>
                         <View style={{ flex: 1 }}>
-                            <InputField label="L (cm)" value={data.length} onChangeText={v => onChange('length', v)}
-                                placeholder="30" keyboardType="numeric" icon={Ruler} error={errors.length} />
+                            <InputField label={t('addOrder.labelLength')} value={data.length} onChangeText={v => onChange('length', v)}
+                                placeholder={t('addOrder.placeholderLength')} keyboardType="numeric" icon={Ruler} error={errors.length} />
                         </View>
                         <View style={{ flex: 1 }}>
-                            <InputField label="W (cm)" value={data.width} onChangeText={v => onChange('width', v)}
-                                placeholder="20" keyboardType="numeric" error={errors.width} />
+                            <InputField label={t('addOrder.labelWidth')} value={data.width} onChangeText={v => onChange('width', v)}
+                                placeholder={t('addOrder.placeholderWidth')} keyboardType="numeric" error={errors.width} />
                         </View>
                         <View style={{ flex: 1 }}>
-                            <InputField label="H (cm)" value={data.height} onChangeText={v => onChange('height', v)}
-                                placeholder="15" keyboardType="numeric" error={errors.height} />
+                            <InputField label={t('addOrder.labelHeight')} value={data.height} onChangeText={v => onChange('height', v)}
+                                placeholder={t('addOrder.placeholderHeight')} keyboardType="numeric" error={errors.height} />
                         </View>
                     </View>
                 </>
@@ -1170,8 +1187,8 @@ const StepPackage = ({
                     <View style={pkgStyles.toggleLeft}>
                         <AlertTriangle color={COLORS.warning} width={18} height={18} />
                         <View style={{ marginLeft: 10 }}>
-                            <Text style={pkgStyles.toggleTitle}>Fragile Item</Text>
-                            <Text style={pkgStyles.toggleSub}>Handle with extra care</Text>
+                            <Text style={pkgStyles.toggleTitle}>{t('addOrder.fragileItemTitle')}</Text>
+                            <Text style={pkgStyles.toggleSub}>{t('addOrder.fragileItemSubtitle')}</Text>
                         </View>
                     </View>
                     <Switch
@@ -1188,10 +1205,10 @@ const StepPackage = ({
                     <View style={pkgStyles.toggleLeft}>
                         <CheckCircle color={COLORS.success} width={18} height={18} />
                         <View style={{ marginLeft: 10 }}>
-                            <Text style={pkgStyles.toggleTitle}>Request Insurance</Text>
+                            <Text style={pkgStyles.toggleTitle}>{t('addOrder.requestInsuranceTitle')}</Text>
                             {/* Was "Protection up to ₹10,000" — no real insurance product
                                 exists yet; this just flags the request for admin/driver. */}
-                            <Text style={pkgStyles.toggleSub}>Flags this for admin review</Text>
+                            <Text style={pkgStyles.toggleSub}>{t('addOrder.requestInsuranceSubtitle')}</Text>
                         </View>
                     </View>
                     <Switch
@@ -1263,15 +1280,18 @@ const StepOrderDetails = ({
     fareEstimate: FareEstimate;
 }) => {
     const { colors: BRAND } = useAppTheme();
+    const { t } = useTranslation();
     const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
     const odStyles = useMemo(() => makeOdStyles(COLORS), [COLORS]);
     const { data: businessSettingsData } = useBusinessSettings();
     const expressSurcharge = Number(businessSettingsData?.find((s) => s.key === 'service_type_express_surcharge')?.value ?? 0);
     const sameDaySurcharge = Number(businessSettingsData?.find((s) => s.key === 'service_type_same_day_surcharge')?.value ?? 0);
     const SERVICE_TYPES = useMemo(
-        () => makeServiceTypes(COLORS, expressSurcharge, sameDaySurcharge),
-        [COLORS, expressSurcharge, sameDaySurcharge],
+        () => makeServiceTypes(COLORS, expressSurcharge, sameDaySurcharge, t),
+        [COLORS, expressSurcharge, sameDaySurcharge, t],
     );
+    const PAYMENT_MODES = useMemo(() => makePaymentModes(t), [t]);
+    const translatedSlots = useMemo(() => makePickupSlots(t), [t]);
     // Real, admin-managed vehicle types (GET /settings/vehicle-configs) —
     // previously a hardcoded bike/van/truck array here, so renaming, adding,
     // or deactivating a vehicle type in the admin panel never reached this
@@ -1316,7 +1336,7 @@ const StepOrderDetails = ({
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
             {/* Service Type */}
-            <SectionHeader title="Service Type" subtitle="Choose your delivery speed" />
+            <SectionHeader title={t('addOrder.serviceTypeSectionTitle')} subtitle={t('addOrder.serviceTypeSectionSubtitle')} />
             <View style={odStyles.serviceRow}>
                 {SERVICE_TYPES.map(svc => (
                     <TouchableOpacity
@@ -1342,11 +1362,10 @@ const StepOrderDetails = ({
             </View>
 
             {/* Vehicle Type */}
-            <SectionHeader title="Vehicle Type" subtitle="Select based on package weight" />
+            <SectionHeader title={t('addOrder.vehicleTypeSectionTitle')} subtitle={t('addOrder.vehicleTypeSectionSubtitle')} />
             {activeVehicleConfigs.length === 0 && excludedForCapacity.length > 0 && (
                 <Text style={odStyles.summKey}>
-                    No available vehicle can carry {allData.package.weight} kg — the largest option handles up to{' '}
-                    {Math.max(...excludedForCapacity.map((v) => v.maxWeight))} kg. Try reducing the package weight.
+                    {t('addOrder.noVehicleCanCarry', { weight: allData.package.weight, maxWeight: Math.max(...excludedForCapacity.map((v) => v.maxWeight)) })}
                 </Text>
             )}
             <View style={odStyles.vehicleRow}>
@@ -1373,14 +1392,14 @@ const StepOrderDetails = ({
                             <Text style={[odStyles.vehicleLabel, isSelected && { color: COLORS.primary }]}>
                                 {vt.name}
                             </Text>
-                            <Text style={odStyles.vehicleDesc}>Up to {vt.maxWeight} kg</Text>
+                            <Text style={odStyles.vehicleDesc}>{t('addOrder.vehicleMaxWeightLabel', { maxWeight: vt.maxWeight })}</Text>
                         </TouchableOpacity>
                     );
                 })}
             </View>
 
             {/* Payment Mode */}
-            <SectionHeader title="Payment Method" />
+            <SectionHeader title={t('addOrder.paymentMethodSectionTitle')} />
             {PAYMENT_MODES.map(pm => (
                 <TouchableOpacity
                     key={pm.key}
@@ -1403,9 +1422,9 @@ const StepOrderDetails = ({
             ))}
 
             {/* Pickup Slot */}
-            <SectionHeader title="Pickup Time Slot" subtitle="When should we collect?" />
+            <SectionHeader title={t('addOrder.pickupTimeSlotSectionTitle')} subtitle={t('addOrder.pickupTimeSlotSectionSubtitle')} />
             <View style={odStyles.slotGrid}>
-                {PICKUP_SLOTS.map(slot => (
+                {PICKUP_SLOTS.map((slot, i) => (
                     <TouchableOpacity
                         key={slot}
                         onPress={() => onChange('pickupSlot', slot)}
@@ -1416,20 +1435,20 @@ const StepOrderDetails = ({
                         activeOpacity={0.8}
                     >
                         <Text style={[odStyles.slotText, data.pickupSlot === slot && odStyles.slotTextActive]}>
-                            {slot}
+                            {translatedSlots[i]}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
             {/* Notes */}
-            <SectionHeader title="Delivery Notes" subtitle="Optional instructions for courier" />
+            <SectionHeader title={t('addOrder.deliveryNotesSectionTitle')} subtitle={t('addOrder.deliveryNotesSectionSubtitle')} />
             <View style={odStyles.notesBox}>
                 <TextInput
                     style={odStyles.notesInput}
                     value={data.notes}
                     onChangeText={v => onChange('notes', v)}
-                    placeholder="e.g. Call before delivery, leave at gate..."
+                    placeholder={t('addOrder.placeholderNotes')}
                     placeholderTextColor={COLORS.placeholder}
                     multiline
                     numberOfLines={3}
@@ -1452,10 +1471,10 @@ const StepOrderDetails = ({
                     <View style={{ flex: 1 }}>
                         <Text style={odStyles.fareHeroLabel}>
                             {fareEstimate.loading
-                                ? 'Calculating your fare…'
+                                ? t('addOrder.calculatingFare')
                                 : fareEstimate.error
-                                    ? 'Unable to estimate'
-                                    : 'Estimated Fare'}
+                                    ? t('addOrder.unableToEstimate')
+                                    : t('addOrder.estimatedFare')}
                         </Text>
                         {fareEstimate.loading ? (
                             <ActivityIndicator color="#fff" style={{ alignSelf: 'flex-start', marginTop: 6 }} />
@@ -1478,7 +1497,7 @@ const StepOrderDetails = ({
 
             {/* ── Order Summary Review ── */}
             <View style={odStyles.reviewSection}>
-                <SectionHeader title="Order Summary" subtitle="Review before confirming" />
+                <SectionHeader title={t('addOrder.orderSummarySectionTitle')} subtitle={t('addOrder.orderSummarySectionSubtitle')} />
 
                 <View style={odStyles.summaryCard}>
                     {/* Route */}
@@ -1486,7 +1505,7 @@ const StepOrderDetails = ({
                         <View style={odStyles.routePoint}>
                             <View style={[odStyles.routeDot, { backgroundColor: COLORS.primary }]} />
                             <View style={{ marginLeft: 10 }}>
-                                <Text style={odStyles.routeRole}>PICKUP</Text>
+                                <Text style={odStyles.routeRole}>{t('addOrder.routeLabelPickup')}</Text>
                                 <Text style={odStyles.routeName}>{allData.sender.name}</Text>
                                 {/* address already ends in "<locality>, <city>" (composeAddress) */}
                                 <Text style={odStyles.routeAddr}>{allData.sender.address}</Text>
@@ -1496,7 +1515,7 @@ const StepOrderDetails = ({
                         <View style={odStyles.routePoint}>
                             <View style={[odStyles.routeDot, { backgroundColor: COLORS.success }]} />
                             <View style={{ marginLeft: 10 }}>
-                                <Text style={odStyles.routeRole}>DELIVERY</Text>
+                                <Text style={odStyles.routeRole}>{t('addOrder.routeLabelDelivery')}</Text>
                                 <Text style={odStyles.routeName}>{allData.receiver.name}</Text>
                                 <Text style={odStyles.routeAddr}>{allData.receiver.address}</Text>
                             </View>
@@ -1507,47 +1526,47 @@ const StepOrderDetails = ({
 
                     {/* Package Summary */}
                     <View style={odStyles.summRow}>
-                        <Text style={odStyles.summKey}>Package</Text>
+                        <Text style={odStyles.summKey}>{t('addOrder.summaryKeyPackage')}</Text>
                         <Text style={odStyles.summVal}>{allData.package.category} · {allData.package.weight} kg</Text>
                     </View>
                     <View style={odStyles.summRow}>
-                        <Text style={odStyles.summKey}>Quantity</Text>
-                        <Text style={odStyles.summVal}>{allData.package.quantity} item(s)</Text>
+                        <Text style={odStyles.summKey}>{t('addOrder.summaryKeyQuantity')}</Text>
+                        <Text style={odStyles.summVal}>{t('addOrder.summaryQuantityValue', { qty: allData.package.quantity })}</Text>
                     </View>
                     {allData.package.fragile && (
                         <View style={odStyles.summRow}>
-                            <Text style={odStyles.summKey}>Fragile</Text>
+                            <Text style={odStyles.summKey}>{t('addOrder.summaryKeyFragile')}</Text>
                             <View style={odStyles.summValRow}>
                                 <AlertTriangle size={13} color={COLORS.warning} />
-                                <Text style={[odStyles.summVal, { color: COLORS.warning }]}>Handle with care</Text>
+                                <Text style={[odStyles.summVal, { color: COLORS.warning }]}>{t('addOrder.summaryFragileValue')}</Text>
                             </View>
                         </View>
                     )}
                     {allData.package.insurance && (
                         <View style={odStyles.summRow}>
-                            <Text style={odStyles.summKey}>Insurance</Text>
+                            <Text style={odStyles.summKey}>{t('addOrder.summaryKeyInsurance')}</Text>
                             <View style={odStyles.summValRow}>
                                 <Check size={13} color={COLORS.success} strokeWidth={3} />
                                 {/* Was "Covered up to ₹10,000" — no real insurance product
                                     exists behind this yet, just a request flag driver/admin
                                     can see. Don't promise coverage that isn't real. */}
-                                <Text style={[odStyles.summVal, { color: COLORS.success }]}>Requested</Text>
+                                <Text style={[odStyles.summVal, { color: COLORS.success }]}>{t('addOrder.summaryInsuranceValue')}</Text>
                             </View>
                         </View>
                     )}
                     <View style={odStyles.summRow}>
-                        <Text style={odStyles.summKey}>Vehicle</Text>
+                        <Text style={odStyles.summKey}>{t('addOrder.summaryKeyVehicle')}</Text>
                         <Text style={odStyles.summVal}>
                             {activeVehicleConfigs.find((v) => v.name.toLowerCase() === data.vehicleType.toLowerCase())?.name
                                 ?? data.vehicleType}
                         </Text>
                     </View>
                     <View style={odStyles.summRow}>
-                        <Text style={odStyles.summKey}>Pickup Slot</Text>
-                        <Text style={odStyles.summVal}>{data.pickupSlot}</Text>
+                        <Text style={odStyles.summKey}>{t('addOrder.summaryKeyPickupSlot')}</Text>
+                        <Text style={odStyles.summVal}>{translatedSlots[PICKUP_SLOTS.indexOf(data.pickupSlot)] ?? data.pickupSlot}</Text>
                     </View>
                     <View style={odStyles.summRow}>
-                        <Text style={odStyles.summKey}>Payment</Text>
+                        <Text style={odStyles.summKey}>{t('addOrder.summaryKeyPayment')}</Text>
                         <Text style={odStyles.summVal}>{PAYMENT_MODES.find(p => p.key === data.paymentMode)?.label}</Text>
                     </View>
 
@@ -1562,7 +1581,7 @@ const StepOrderDetails = ({
                                 pickup/drop are required for dispatch/tracking, so there's
                                 no flat-estimate fallback that actually lets this order be
                                 placed; the button below is disabled until this resolves. */}
-                            <Text style={odStyles.fareError}>{fareEstimate.error} — fix the address to continue</Text>
+                            <Text style={odStyles.fareError}>{t('addOrder.fareErrorSuffix', { error: fareEstimate.error })}</Text>
                         </View>
                     )}
                     {/* helperCost is already folded into fareEstimate.price by
@@ -1570,12 +1589,12 @@ const StepOrderDetails = ({
                         added again into `total`. */}
                     {category === 'HOUSE_SHIFTING' && !!fareEstimate.helperCost && (
                         <View style={odStyles.summRow}>
-                            <Text style={odStyles.summKey}>Helpers ({allData.package.helpersCount})</Text>
+                            <Text style={odStyles.summKey}>{t('addOrder.summaryHelpersLabel', { count: allData.package.helpersCount })}</Text>
                             <Text style={odStyles.summVal}>₹{fareEstimate.helperCost}</Text>
                         </View>
                     )}
                     <View style={odStyles.totalRow}>
-                        <Text style={odStyles.totalLabel}>Total Amount</Text>
+                        <Text style={odStyles.totalLabel}>{t('addOrder.totalAmountLabel')}</Text>
                         <Text style={odStyles.totalValue}>{total != null ? `₹${total}` : '—'}</Text>
                     </View>
                 </View>
@@ -1586,10 +1605,10 @@ const StepOrderDetails = ({
                 onNext={onSubmit}
                 nextLabel={
                     fareEstimate.loading
-                        ? 'Calculating fare…'
+                        ? t('addOrder.buttonCalculatingFare')
                         : fareEstimate.error
-                            ? 'Fix address to continue'
-                            : 'Place Order'
+                            ? t('addOrder.buttonFixAddress')
+                            : t('addOrder.buttonPlaceOrder')
                 }
                 loading={submitting || fareEstimate.loading}
                 disabled={!!fareEstimate.error}
@@ -1735,6 +1754,7 @@ const SuccessModal = ({ visible, trackingId, onDone }: {
     onDone: () => void;
 }) => {
     const { colors: BRAND } = useAppTheme();
+    const { t } = useTranslation();
     const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
     const successStyles = useMemo(() => makeSuccessStyles(COLORS), [COLORS]);
     const scaleAnim = useRef(new Animated.Value(0.5)).current;
@@ -1756,18 +1776,18 @@ const SuccessModal = ({ visible, trackingId, onDone }: {
                     <View style={successStyles.iconRing}>
                         <CheckCircle color={COLORS.success} width={52} height={52} />
                     </View>
-                    <Text style={successStyles.title}>Order Placed!</Text>
-                    <Text style={successStyles.subtitle}>Your shipment has been booked successfully.</Text>
+                    <Text style={successStyles.title}>{t('addOrder.successTitle')}</Text>
+                    <Text style={successStyles.subtitle}>{t('addOrder.successSubtitle')}</Text>
 
                     <View style={successStyles.trackingBox}>
-                        <Text style={successStyles.trackingLabel}>Tracking ID</Text>
+                        <Text style={successStyles.trackingLabel}>{t('addOrder.trackingIdLabel')}</Text>
                         <Text style={successStyles.trackingId}>{trackingId}</Text>
                     </View>
 
-                    <Text style={successStyles.hint}>Save this tracking ID to monitor your shipment in real-time.</Text>
+                    <Text style={successStyles.hint}>{t('addOrder.successHint')}</Text>
 
                     <TouchableOpacity style={successStyles.doneBtn} onPress={onDone} activeOpacity={0.85}>
-                        <Text style={successStyles.doneBtnText}>Go to Home</Text>
+                        <Text style={successStyles.doneBtnText}>{t('addOrder.goToHomeButton')}</Text>
                     </TouchableOpacity>
                 </Animated.View>
             </View>
@@ -1809,7 +1829,9 @@ const makeSuccessStyles = (COLORS: OrderColors) => StyleSheet.create({
 
 const StepHeader = ({ current, total }: { current: number; total: number }) => {
     const { colors: BRAND } = useAppTheme();
+    const { t } = useTranslation();
     const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
+    const STEPS = useMemo(() => makeSteps(t), [t]);
     const headerStyles = useMemo(() => makeHeaderStyles(COLORS), [COLORS]);
     const progress = ((current) / (total - 1)) * 100;
     return (
@@ -1819,9 +1841,9 @@ const StepHeader = ({ current, total }: { current: number; total: number }) => {
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
         >
-            <Text style={headerStyles.title}>New Order</Text>
+            <Text style={headerStyles.title}>{t('addOrder.headerTitle')}</Text>
             <Text style={headerStyles.subtitle}>
-                Step {current + 1} of {total} — {STEPS[current].description}
+                {t('addOrder.stepProgress', { current: current + 1, total, description: STEPS[current].description })}
             </Text>
             <View style={headerStyles.track}>
                 <View style={[headerStyles.fill, { width: `${progress}%` }]} />
@@ -1908,7 +1930,9 @@ const makeHeaderStyles = (COLORS: OrderColors) => StyleSheet.create({
 
 const NewOrder = () => {
     const { colors: BRAND } = useAppTheme();
+    const { t } = useTranslation();
     const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
+    const STEPS = useMemo(() => makeSteps(t), [t]);
     const mainStyles = useMemo(() => makeMainStyles(COLORS), [COLORS]);
     const navigation = useNavigation();
     // Optional hand-off from CheckRate.tsx's "Book This Shipment" — only
@@ -2061,7 +2085,7 @@ const NewOrder = () => {
 
     const goNext = useCallback(() => {
         if (step < STEPS.length - 1) animateToStep(step + 1, 'forward');
-    }, [step, animateToStep]);
+    }, [step, animateToStep, STEPS.length]);
 
     const goBack = useCallback(() => {
         if (step > 0) animateToStep(step - 1, 'back');
@@ -2120,7 +2144,7 @@ const NewOrder = () => {
             setSubmitting(true);
 
             if (!fareEstimate.pickup || !fareEstimate.drop || fareEstimate.price == null) {
-                Alert.alert('Fare not ready', 'Please wait for the fare estimate to finish calculating.');
+                Alert.alert(t('addOrder.alertFareNotReadyTitle'), t('addOrder.alertFareNotReadyMessage'));
                 return;
             }
 
@@ -2171,12 +2195,12 @@ const NewOrder = () => {
             log(scope, 'SUCCESS', { id: shipment.id });
         } catch (err: unknown) {
             logError(scope, err);
-            Alert.alert('Error', normalizeError(err));
+            Alert.alert(t('addOrder.alertErrorTitle'), normalizeError(err));
         } finally {
             setSubmitting(false);
             log(scope, 'END');
         }
-    }, [sender, receiver, pkg, orderDetails, fareEstimate, category]);
+    }, [sender, receiver, pkg, orderDetails, fareEstimate, category, t]);
 
     const handleDone = useCallback(() => {
         setShowSuccess(false);

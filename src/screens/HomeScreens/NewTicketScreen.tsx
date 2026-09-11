@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { useCreateTicket } from '@features/support/hooks';
 import { TICKET_CATEGORIES } from '@features/support/types';
 import { showToast } from '@ui/alert/toastStore';
@@ -19,6 +20,7 @@ const NewTicketScreen = () => {
     const { colors, fonts, spacing, radius } = useAppTheme();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => makeStyles(colors, fonts, spacing, radius, insets), [colors, fonts, spacing, radius, insets]);
+    const { t } = useTranslation();
 
     const [category, setCategory] = useState<string>(TICKET_CATEGORIES[0]);
     const [subject, setSubject] = useState('');
@@ -32,10 +34,10 @@ const NewTicketScreen = () => {
             { subject: subject.trim(), description: description.trim(), category },
             {
                 onSuccess: () => {
-                    showToast('Ticket raised — our team will get back to you', 'success');
+                    showToast(t('support.ticketRaised'), 'success');
                     navigation.goBack();
                 },
-                onError: (err) => showToast(normalizeError(err) || 'Failed to raise ticket', 'error'),
+                onError: (err) => showToast(normalizeError(err) || t('support.failedToRaise'), 'error'),
             },
         );
     };
@@ -46,12 +48,12 @@ const NewTicketScreen = () => {
                 <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.backBtn}>
                     <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
                 </Pressable>
-                <Text style={styles.headerTitle}>New Support Ticket</Text>
+                <Text style={styles.headerTitle}>{t('support.newTicket')}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
             <ScrollView contentContainerStyle={styles.form}>
-                <Text style={styles.label}>Category</Text>
+                <Text style={styles.label}>{t('support.category')}</Text>
                 <View style={styles.categoryRow}>
                     {TICKET_CATEGORIES.map((c) => (
                         <Pressable
@@ -64,22 +66,22 @@ const NewTicketScreen = () => {
                     ))}
                 </View>
 
-                <Text style={styles.label}>Subject</Text>
+                <Text style={styles.label}>{t('support.subject')}</Text>
                 <TextInput
                     style={styles.input}
                     value={subject}
                     onChangeText={setSubject}
-                    placeholder="Short summary of the issue"
+                    placeholder={t('support.subjectPlaceholder')}
                     placeholderTextColor={colors.GRAY}
                     maxLength={120}
                 />
 
-                <Text style={styles.label}>Description</Text>
+                <Text style={styles.label}>{t('support.description')}</Text>
                 <TextInput
                     style={[styles.input, styles.textArea]}
                     value={description}
                     onChangeText={setDescription}
-                    placeholder="Tell us what happened, with any order details if relevant…"
+                    placeholder={t('support.descriptionPlaceholder')}
                     placeholderTextColor={colors.GRAY}
                     multiline
                     maxLength={2000}
@@ -90,7 +92,7 @@ const NewTicketScreen = () => {
                     disabled={!canSubmit || isPending}
                     onPress={handleSubmit}
                 >
-                    {isPending ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>Raise Ticket</Text>}
+                    {isPending ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>{t('support.raiseTicket')}</Text>}
                 </Pressable>
             </ScrollView>
         </View>

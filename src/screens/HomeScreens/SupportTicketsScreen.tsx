@@ -11,15 +11,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, Plus, MessageSquareText, Clock, CheckCircle2, XCircle } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { useMyTickets } from '@features/support/hooks';
 import type { SupportTicket, TicketStatus } from '@features/support/types';
 
-const STATUS_META: Record<TicketStatus, { label: string; icon: typeof Clock; color: 'warning' | 'success' | 'muted' }> = {
-    OPEN: { label: 'Open', icon: Clock, color: 'warning' },
-    IN_PROGRESS: { label: 'In Progress', icon: MessageSquareText, color: 'warning' },
-    RESOLVED: { label: 'Resolved', icon: CheckCircle2, color: 'success' },
-    CLOSED: { label: 'Closed', icon: XCircle, color: 'muted' },
-};
+const makeStatusMeta = (t: (key: string) => string): Record<TicketStatus, { label: string; icon: typeof Clock; color: 'warning' | 'success' | 'muted' }> => ({
+    OPEN: { label: t('support.statusOpen'), icon: Clock, color: 'warning' },
+    IN_PROGRESS: { label: t('support.statusInProgress'), icon: MessageSquareText, color: 'warning' },
+    RESOLVED: { label: t('support.statusResolved'), icon: CheckCircle2, color: 'success' },
+    CLOSED: { label: t('support.statusClosed'), icon: XCircle, color: 'muted' },
+});
 
 const SupportTicketsScreen = () => {
     const navigation = useNavigation();
@@ -29,6 +30,8 @@ const SupportTicketsScreen = () => {
     // real devices (same overlap bug class already fixed elsewhere).
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => makeStyles(colors, fonts, spacing, radius, insets), [colors, fonts, spacing, radius, insets]);
+    const { t } = useTranslation();
+    const STATUS_META = useMemo(() => makeStatusMeta(t), [t]);
 
     const { data: tickets, isLoading } = useMyTickets();
 
@@ -59,7 +62,7 @@ const SupportTicketsScreen = () => {
                 <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.backBtn}>
                     <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
                 </Pressable>
-                <Text style={styles.headerTitle}>My Support Tickets</Text>
+                <Text style={styles.headerTitle}>{t('support.myTickets')}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -76,7 +79,7 @@ const SupportTicketsScreen = () => {
                     ListEmptyComponent={
                         <View style={styles.centerState}>
                             <MessageSquareText color={colors.GRAY} size={40} />
-                            <Text style={styles.emptyText}>No support tickets yet</Text>
+                            <Text style={styles.emptyText}>{t('support.noTicketsYet')}</Text>
                         </View>
                     }
                 />

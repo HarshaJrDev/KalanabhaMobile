@@ -10,18 +10,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { ArrowLeft, Send } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@features/store/authStore';
 import { useTicket, useAddTicketMessage } from '@features/support/hooks';
 import type { SupportTicketMessage, TicketStatus } from '@features/support/types';
 import { showToast } from '@ui/alert/toastStore';
 import { normalizeError } from '@utils/error';
 
-const STATUS_LABEL: Record<TicketStatus, string> = {
-    OPEN: 'Open',
-    IN_PROGRESS: 'In Progress',
-    RESOLVED: 'Resolved',
-    CLOSED: 'Closed',
-};
+const makeStatusLabel = (t: (key: string) => string): Record<TicketStatus, string> => ({
+    OPEN: t('support.statusOpen'),
+    IN_PROGRESS: t('support.statusInProgress'),
+    RESOLVED: t('support.statusResolved'),
+    CLOSED: t('support.statusClosed'),
+});
 
 type RouteParams = { id: string };
 
@@ -32,6 +33,8 @@ const TicketDetailScreen = () => {
     const { colors, fonts, spacing, radius } = useAppTheme();
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => makeStyles(colors, fonts, spacing, radius, insets), [colors, fonts, spacing, radius, insets]);
+    const { t } = useTranslation();
+    const STATUS_LABEL = useMemo(() => makeStatusLabel(t), [t]);
     const currentUserId = useAuthStore((s) => s.user?.id);
 
     const { data: ticket, isLoading } = useTicket(ticketId);
@@ -45,7 +48,7 @@ const TicketDetailScreen = () => {
         if (!text) return;
         setDraft('');
         sendMessage(text, {
-            onError: (err) => showToast(normalizeError(err) || 'Failed to send message', 'error'),
+            onError: (err) => showToast(normalizeError(err) || t('support.failedToSend'), 'error'),
         });
     };
 
@@ -68,7 +71,7 @@ const TicketDetailScreen = () => {
                     <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
                 </Pressable>
                 <View style={{ flex: 1, marginLeft: spacing.sm }}>
-                    <Text style={styles.headerTitle} numberOfLines={1}>{ticket?.subject ?? 'Ticket'}</Text>
+                    <Text style={styles.headerTitle} numberOfLines={1}>{ticket?.subject ?? t('support.ticket')}</Text>
                     {ticket && <Text style={styles.headerStatus}>{STATUS_LABEL[ticket.status]}</Text>}
                 </View>
             </View>
@@ -89,7 +92,7 @@ const TicketDetailScreen = () => {
                         </View>
                     }
                     ListEmptyComponent={
-                        <Text style={styles.emptyText}>No replies yet — support will respond here.</Text>
+                        <Text style={styles.emptyText}>{t('support.noRepliesYet')}</Text>
                     }
                 />
             )}
@@ -100,7 +103,7 @@ const TicketDetailScreen = () => {
                         style={styles.composerInput}
                         value={draft}
                         onChangeText={setDraft}
-                        placeholder="Type a message…"
+                        placeholder={t('support.typeMessage')}
                         placeholderTextColor={colors.GRAY}
                         multiline
                     />
