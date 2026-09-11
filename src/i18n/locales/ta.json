@@ -675,5 +675,22 @@
     "profileUpdated": "சுயவிவரம் புதுப்பிக்கப்பட்டது",
     "savingChanges": "சேமிக்கிறது…",
     "saveChanges": "மாற்றங்களைச் சேமி"
+  },
+  "transactions": {
+    "title": "பரிவர்த்தனைகள்",
+    "noTransactionsYet": "இன்னும் பரிவர்த்தனைகள் இல்லை",
+    "paymentsShowHere": "உங்கள் ஷிப்மென்ட் கட்டணங்கள் இங்கே காண்பிக்கப்படும்."
+  },
+  "selectAccount": {
+    "chooseYourType": "உங்கள் வகையைத் தேர்ந்தெடுக்கவும்",
+    "toContinue": "தொடர",
+    "customerLabel": "நான் ஒரு வாடிக்கையாளர்",
+    "customerDesc": "டெலிவரியை முன்பதிவு செய்யவும் அல்லது பொதிகளை அனுப்பவும்",
+    "driverLabel": "நான் ஒரு ஓட்டுநர்",
+    "driverDesc": "பொதிகளை டெலிவரி செய்து பணம் சம்பாதியுங்கள்",
+    "continueAs": "{{type}} ஆக தொடரவும்",
+    "selectAccountType": "ஒரு கணக்கு வகையைத் தேர்ந்தெடுக்கவும்",
+    "typeCustomer": "வாடிக்கையாளர்",
+    "typeDriver": "ஓட்டுநர்"
   }
 }

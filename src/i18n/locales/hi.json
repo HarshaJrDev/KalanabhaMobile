@@ -675,5 +675,22 @@
     "profileUpdated": "प्रोफ़ाइल अपडेट किया गया",
     "savingChanges": "सहेजा जा रहा है…",
     "saveChanges": "परिवर्तन सहेजें"
+  },
+  "transactions": {
+    "title": "लेन-देन",
+    "noTransactionsYet": "अभी तक कोई लेन-देन नहीं",
+    "paymentsShowHere": "आपके शिपमेंट भुगतान यहां दिखाई देंगे।"
+  },
+  "selectAccount": {
+    "chooseYourType": "अपना प्रकार चुनें",
+    "toContinue": "जारी रखने के लिए",
+    "customerLabel": "मैं एक ग्राहक हूं",
+    "customerDesc": "डिलीवरी बुक करें या पैकेज भेजें",
+    "driverLabel": "मैं एक ड्राइवर हूं",
+    "driverDesc": "पैकेज डिलीवर करें और पैसे कमाएं",
+    "continueAs": "{{type}} के रूप में जारी रखें",
+    "selectAccountType": "एक खाता प्रकार चुनें",
+    "typeCustomer": "ग्राहक",
+    "typeDriver": "ड्राइवर"
   }
 }

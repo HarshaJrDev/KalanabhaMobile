@@ -675,5 +675,22 @@
     "profileUpdated": "Profile updated",
     "savingChanges": "Saving…",
     "saveChanges": "Save Changes"
+  },
+  "transactions": {
+    "title": "Transactions",
+    "noTransactionsYet": "No transactions yet",
+    "paymentsShowHere": "Your shipment payments will show up here."
+  },
+  "selectAccount": {
+    "chooseYourType": "Choose your type",
+    "toContinue": "to continue",
+    "customerLabel": "I'm a Customer",
+    "customerDesc": "Book delivery or send packages",
+    "driverLabel": "I'm a Driver",
+    "driverDesc": "Deliver packages & earn money",
+    "continueAs": "Continue as {{type}}",
+    "selectAccountType": "Select an account type",
+    "typeCustomer": "Customer",
+    "typeDriver": "Driver"
   }
 }

@@ -675,5 +675,22 @@
     "profileUpdated": "ప్రొఫైల్ నవీకరించబడింది",
     "savingChanges": "సేవ్ అవుతోంది…",
     "saveChanges": "మార్పులను సేవ్ చేయండి"
+  },
+  "transactions": {
+    "title": "లావాదేవీలు",
+    "noTransactionsYet": "ఇంకా లావాదేవీలు లేవు",
+    "paymentsShowHere": "మీ షిప్‌మెంట్ చెల్లింపులు ఇక్కడ కనిపిస్తాయి."
+  },
+  "selectAccount": {
+    "chooseYourType": "మీ రకాన్ని ఎంచుకోండి",
+    "toContinue": "కొనసాగించడానికి",
+    "customerLabel": "నేను ఒక కస్టమర్‌ని",
+    "customerDesc": "డెలివరీని బుక్ చేయండి లేదా ప్యాకేజీలను పంపండి",
+    "driverLabel": "నేను ఒక డ్రైవర్‌ని",
+    "driverDesc": "ప్యాకేజీలను డెలివర్ చేయండి & డబ్బు సంపాదించండి",
+    "continueAs": "{{type}}గా కొనసాగించండి",
+    "selectAccountType": "ఖాతా రకాన్ని ఎంచుకోండి",
+    "typeCustomer": "కస్టమర్",
+    "typeDriver": "డ్రైవర్"
   }
 }

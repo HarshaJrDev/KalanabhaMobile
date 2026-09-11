@@ -16,6 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'SelectAccount'>;
 type AccountType = 'Customer' | 'Driver';
@@ -30,9 +31,9 @@ interface Account {
 // gradient screen) — same two-card selection + Reanimated press/entrance
 // behavior and the exact same navigation.navigate('Login', { isDriver })
 // call underneath, untouched.
-const ACCOUNTS: Account[] = [
-    { type: 'Customer', label: "I'm a Customer", description: 'Book delivery or send packages' },
-    { type: 'Driver', label: "I'm a Driver", description: 'Deliver packages & earn money' },
+const makeAccounts = (t: (key: string) => string): Account[] => [
+    { type: 'Customer', label: t('selectAccount.customerLabel'), description: t('selectAccount.customerDesc') },
+    { type: 'Driver', label: t('selectAccount.driverLabel'), description: t('selectAccount.driverDesc') },
 ];
 
 // User-supplied K-mascot illustrations (real transparent PNGs, same
@@ -117,7 +118,9 @@ const AccountCard = memo(({ item, index, selected, onPress, styles, roleIconColo
 const SelectAccount = () => {
     const navigation = useNavigation<NavProp>();
     const { colors, fonts, fontSize, spacing, radius, isDark } = useAppTheme();
+    const { t } = useTranslation();
     const styles = useMemo(() => makeStyles(colors, fonts, fontSize, spacing, radius), [colors, fonts, fontSize, spacing, radius]);
+    const ACCOUNTS = useMemo(() => makeAccounts(t), [t]);
     const [selected, setSelected] = useState<AccountType | null>(null);
 
     const buttonScale = useSharedValue(1);
@@ -156,10 +159,10 @@ const SelectAccount = () => {
 
                 <View style={styles.content}>
                     <Animated.Text entering={FadeInUp.duration(400)} style={styles.title1}>
-                        Choose your type
+                        {t('selectAccount.chooseYourType')}
                     </Animated.Text>
                     <Animated.Text entering={FadeInUp.delay(60).duration(400)} style={styles.subtitle}>
-                        to continue
+                        {t('selectAccount.toContinue')}
                     </Animated.Text>
 
                     <View style={styles.cardList}>
@@ -187,7 +190,7 @@ const SelectAccount = () => {
                     >
                         <Animated.View style={[styles.button, buttonAnimatedStyle]}>
                             <Text style={styles.buttonText}>
-                                {selected ? `Continue as ${selected}` : 'Select an account type'}
+                                {selected ? t('selectAccount.continueAs', { type: selected === 'Customer' ? t('selectAccount.typeCustomer') : t('selectAccount.typeDriver') }) : t('selectAccount.selectAccountType')}
                             </Text>
                             {selected && <ChevronRight color="#fff" size={18} strokeWidth={2.5} />}
                         </Animated.View>

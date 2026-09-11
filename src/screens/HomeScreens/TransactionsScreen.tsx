@@ -14,6 +14,7 @@ import { useMyShipmentHistory } from '@features/shipments/hooks';
 import { AsyncState } from '@components/AsyncState';
 import type { Shipment, ShipmentStatus } from '@shipment/types';
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 
 const makeStatusColor = (colors: ReturnType<typeof useAppTheme>['colors']): Record<ShipmentStatus, string> => ({
@@ -24,25 +25,28 @@ const makeStatusColor = (colors: ReturnType<typeof useAppTheme>['colors']): Reco
     cancelled: colors.ERROR,
 });
 
-const STATUS_LABEL: Record<ShipmentStatus, string> = {
-    searching: 'Searching',
-    accepted: 'Accepted',
-    in_transit: 'In Transit',
-    delivered: 'Delivered',
-    cancelled: 'Cancelled',
-};
+const makeStatusLabel = (t: (key: string) => string): Record<ShipmentStatus, string> => ({
+    searching: t('status.searching'),
+    accepted: t('status.accepted'),
+    in_transit: t('status.inTransit'),
+    delivered: t('status.delivered'),
+    cancelled: t('status.cancelled'),
+});
 
-const PAYMENT_LABEL: Record<string, string> = {
-    prepaid: 'Online / UPI',
-    cod: 'Cash on Delivery',
-    credit: 'Credit Account',
-};
+const makePaymentLabel = (t: (key: string) => string): Record<string, string> => ({
+    prepaid: t('addOrder.paymentOnlineUpi'),
+    cod: t('addOrder.paymentCod'),
+    credit: t('addOrder.paymentCredit'),
+});
 
 const TransactionRow = ({ shipment }: { shipment: Shipment }) => {
     const navigation = useNavigation();
     const { colors } = useAppTheme();
+    const { t } = useTranslation();
     const styles = useMemo(() => makeStyles(colors), [colors]);
     const statusColor = useMemo(() => makeStatusColor(colors), [colors]);
+    const STATUS_LABEL = useMemo(() => makeStatusLabel(t), [t]);
+    const PAYMENT_LABEL = useMemo(() => makePaymentLabel(t), [t]);
     return (
         <Pressable
             style={styles.row}
@@ -71,6 +75,7 @@ const TransactionRow = ({ shipment }: { shipment: Shipment }) => {
 const TransactionsScreen = () => {
     const navigation = useNavigation();
     const { colors } = useAppTheme();
+    const { t } = useTranslation();
     const styles = useMemo(() => makeStyles(colors), [colors]);
     const { data: shipments, isLoading, error, refetch } = useMyShipmentHistory();
 
@@ -80,7 +85,7 @@ const TransactionsScreen = () => {
                 <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
                     <ChevronLeft color={colors.TEXT_PRIMARY} size={24} />
                 </Pressable>
-                <Text style={styles.headerTitle}>Transactions</Text>
+                <Text style={styles.headerTitle}>{t('transactions.title')}</Text>
                 <View style={{ width: 24 }} />
             </View>
 
@@ -89,8 +94,8 @@ const TransactionsScreen = () => {
                 error={error}
                 onRetry={refetch}
                 isEmpty={!shipments?.length}
-                emptyTitle="No transactions yet"
-                emptyMessage="Your shipment payments will show up here."
+                emptyTitle={t('transactions.noTransactionsYet')}
+                emptyMessage={t('transactions.paymentsShowHere')}
             >
                 <FlatList
                     data={shipments ?? []}
