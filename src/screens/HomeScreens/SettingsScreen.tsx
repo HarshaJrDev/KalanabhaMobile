@@ -15,12 +15,14 @@ import { ChevronLeft, LogOut } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useLogout } from '@hooks/useLogout';
 import { registerFCMToken } from '@utils/cm';
+import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version: appVersion } = require('../../../package.json');
 
 const SettingsScreen = () => {
     const navigation = useNavigation();
+    const { t } = useTranslation();
     const logoutMutation = useLogout();
     const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
     // Real device safe-area inset — this header had a bare `padding: 16`,
@@ -48,20 +50,20 @@ const SettingsScreen = () => {
                 await refreshPermission();
             } else {
                 Alert.alert(
-                    'Turn off notifications',
-                    'Notification permissions can only be changed from your device Settings app.',
+                    t('settings.turnOffTitle'),
+                    t('settings.turnOffMessage'),
                 );
             }
         },
-        [refreshPermission],
+        [refreshPermission, t],
     );
 
     const logout = useCallback(() => {
-        Alert.alert('Logout', 'Are you sure you want to log out?', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Logout', style: 'destructive', onPress: () => logoutMutation.mutate() },
+        Alert.alert(t('common.logout'), t('settings.logoutConfirm'), [
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: t('common.logout'), style: 'destructive', onPress: () => logoutMutation.mutate() },
         ]);
-    }, [logoutMutation]);
+    }, [logoutMutation, t]);
 
     return (
         <View style={styles.container}>
@@ -69,12 +71,12 @@ const SettingsScreen = () => {
                 <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
                     <ChevronLeft color="#111" size={24} />
                 </Pressable>
-                <Text style={styles.headerTitle}>Settings</Text>
+                <Text style={styles.headerTitle}>{t('settings.title')}</Text>
                 <View style={{ width: 24 }} />
             </View>
 
             <View style={styles.row}>
-                <Text style={styles.rowLabel}>Push Notifications</Text>
+                <Text style={styles.rowLabel}>{t('settings.pushNotifications')}</Text>
                 <Switch
                     value={!!notificationsEnabled}
                     onValueChange={onToggleNotifications}
@@ -83,13 +85,13 @@ const SettingsScreen = () => {
             </View>
 
             <View style={styles.row}>
-                <Text style={styles.rowLabel}>App Version</Text>
+                <Text style={styles.rowLabel}>{t('settings.appVersion')}</Text>
                 <Text style={styles.rowValue}>{appVersion}</Text>
             </View>
 
             <Pressable style={styles.logout} onPress={logout}>
                 <LogOut color="#FFF" size={16} />
-                <Text style={styles.logoutText}>Logout</Text>
+                <Text style={styles.logoutText}>{t('common.logout')}</Text>
             </Pressable>
         </View>
     );

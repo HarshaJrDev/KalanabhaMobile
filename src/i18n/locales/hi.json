@@ -158,5 +158,35 @@
     "remove": "हटाएं",
     "addressRemoved": "पता हटा दिया गया",
     "addressUpdated": "पता अपडेट किया गया"
+  },
+  "settings": {
+    "title": "सेटिंग्स",
+    "pushNotifications": "पुश सूचनाएं",
+    "appVersion": "ऐप संस्करण",
+    "turnOffTitle": "सूचनाएं बंद करें",
+    "turnOffMessage": "सूचना अनुमतियां केवल आपके डिवाइस की सेटिंग्स ऐप से बदली जा सकती हैं।",
+    "logoutConfirm": "क्या आप वाकई लॉग आउट करना चाहते हैं?"
+  },
+  "orders": {
+    "tabAll": "सभी",
+    "tabInTransit": "ट्रांज़िट में",
+    "tabSearching": "खोजा जा रहा है",
+    "tabDelivered": "डिलीवर किया गया",
+    "tabExpired": "समाप्त हो गया",
+    "statusPending": "लंबित",
+    "statusActive": "सक्रिय",
+    "filterDate": "तिथि फ़िल्टर करें",
+    "allTime": "सभी समय",
+    "export": "निर्यात करें",
+    "pickUp": "पिकअप",
+    "dropOff": "ड्रॉप ऑफ",
+    "rebook": "फिर से बुक करें",
+    "trackLive": "लाइव ट्रैक करें",
+    "viewStatus": "स्थिति देखें",
+    "keepOrder": "ऑर्डर रखें",
+    "yesCancel": "हां, रद्द करें",
+    "loadingShipments": "शिपमेंट लोड हो रहे हैं…",
+    "noShipmentsFound": "कोई शिपमेंट नहीं मिला",
+    "nothingInCategory": "इस श्रेणी में अभी कुछ नहीं है"
   }
 }

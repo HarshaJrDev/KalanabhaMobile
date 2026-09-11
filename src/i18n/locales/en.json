@@ -158,5 +158,35 @@
     "remove": "Remove",
     "addressRemoved": "Address removed",
     "addressUpdated": "Address updated"
+  },
+  "settings": {
+    "title": "Settings",
+    "pushNotifications": "Push Notifications",
+    "appVersion": "App Version",
+    "turnOffTitle": "Turn off notifications",
+    "turnOffMessage": "Notification permissions can only be changed from your device Settings app.",
+    "logoutConfirm": "Are you sure you want to log out?"
+  },
+  "orders": {
+    "tabAll": "All",
+    "tabInTransit": "In Transit",
+    "tabSearching": "Searching",
+    "tabDelivered": "Delivered",
+    "tabExpired": "Expired",
+    "statusPending": "Pending",
+    "statusActive": "Active",
+    "filterDate": "Filter Date",
+    "allTime": "All time",
+    "export": "Export",
+    "pickUp": "Pick up",
+    "dropOff": "Drop off",
+    "rebook": "Rebook",
+    "trackLive": "Track Live",
+    "viewStatus": "View Status",
+    "keepOrder": "Keep Order",
+    "yesCancel": "Yes, Cancel",
+    "loadingShipments": "Loading shipments…",
+    "noShipmentsFound": "No shipments found",
+    "nothingInCategory": "Nothing in this category yet"
   }
 }

@@ -158,5 +158,35 @@
     "remove": "తీసివేయండి",
     "addressRemoved": "చిరునామా తీసివేయబడింది",
     "addressUpdated": "చిరునామా నవీకరించబడింది"
+  },
+  "settings": {
+    "title": "సెట్టింగ్‌లు",
+    "pushNotifications": "పుష్ నోటిఫికేషన్‌లు",
+    "appVersion": "యాప్ వెర్షన్",
+    "turnOffTitle": "నోటిఫికేషన్‌లను ఆఫ్ చేయండి",
+    "turnOffMessage": "నోటిఫికేషన్ అనుమతులను మీ పరికర సెట్టింగ్‌ల యాప్ నుండి మాత్రమే మార్చవచ్చు.",
+    "logoutConfirm": "మీరు ఖచ్చితంగా లాగ్ అవుట్ చేయాలనుకుంటున్నారా?"
+  },
+  "orders": {
+    "tabAll": "అన్నీ",
+    "tabInTransit": "రవాణాలో ఉంది",
+    "tabSearching": "వెతుకుతోంది",
+    "tabDelivered": "డెలివర్ చేయబడింది",
+    "tabExpired": "గడువు ముగిసింది",
+    "statusPending": "పెండింగ్‌లో ఉంది",
+    "statusActive": "యాక్టివ్",
+    "filterDate": "తేదీని ఫిల్టర్ చేయండి",
+    "allTime": "అన్ని సమయాలు",
+    "export": "ఎగుమతి చేయండి",
+    "pickUp": "పికప్",
+    "dropOff": "డ్రాప్ ఆఫ్",
+    "rebook": "మళ్లీ బుక్ చేయండి",
+    "trackLive": "లైవ్ ట్రాక్ చేయండి",
+    "viewStatus": "స్థితిని చూడండి",
+    "keepOrder": "ఆర్డర్‌ని ఉంచండి",
+    "yesCancel": "అవును, రద్దు చేయండి",
+    "loadingShipments": "షిప్‌మెంట్‌లు లోడ్ అవుతున్నాయి…",
+    "noShipmentsFound": "షిప్‌మెంట్‌లు కనుగొనబడలేదు",
+    "nothingInCategory": "ఈ వర్గంలో ఇంకా ఏమీ లేదు"
   }
 }

@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMyShipments, useCancelShipment } from '@features/shipments/hooks';
 import type { Shipment as MyShipment } from '@shipment/types';
@@ -125,51 +126,51 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 };
 
 // Status configuration with enhanced colors
-const makeStatus = (C: ListColors): Record<string, { label: string; color: string; bg: string; icon: LucideIcon }> => ({
+const makeStatus = (C: ListColors, t: (key: string) => string): Record<string, { label: string; color: string; bg: string; icon: LucideIcon }> => ({
     searching: {
-        label: 'Searching',
+        label: t('orders.tabSearching'),
         color: C.warning,
         bg: C.warningLight,
         icon: Zap,
     },
     'in-transit': {
-        label: 'In Transit',
+        label: t('orders.tabInTransit'),
         color: C.primary,
         bg: C.primaryLight,
         icon: Truck,
     },
     delivered: {
-        label: 'Delivered',
+        label: t('orders.tabDelivered'),
         color: C.success,
         bg: C.successLight,
         icon: CheckCircle2,
     },
     expired: {
-        label: 'Expired',
+        label: t('orders.tabExpired'),
         color: C.danger,
         bg: C.dangerLight,
         icon: AlertCircle,
     },
     pending: {
-        label: 'Pending',
+        label: t('orders.statusPending'),
         color: C.warning,
         bg: C.warningLight,
         icon: Clock,
     },
     active: {
-        label: 'Active',
+        label: t('orders.statusActive'),
         color: C.primary,
         bg: C.primaryLight,
         icon: Package,
     },
 });
 
-const TABS = [
-    { key: 'all', label: 'All', icon: List },
-    { key: 'in-transit', label: 'In Transit', icon: Truck },
-    { key: 'searching', label: 'Searching', icon: Zap },
-    { key: 'delivered', label: 'Delivered', icon: CheckCircle2 },
-    { key: 'expired', label: 'Expired', icon: Hourglass },
+const makeTabs = (t: (key: string) => string) => [
+    { key: 'all', label: t('orders.tabAll'), icon: List },
+    { key: 'in-transit', label: t('orders.tabInTransit'), icon: Truck },
+    { key: 'searching', label: t('orders.tabSearching'), icon: Zap },
+    { key: 'delivered', label: t('orders.tabDelivered'), icon: CheckCircle2 },
+    { key: 'expired', label: t('orders.tabExpired'), icon: Hourglass },
 ];
 
 type HomeScreenProp = NativeStackNavigationProp<RootStackParamList, 'Shipment'>;
@@ -207,8 +208,10 @@ const toListItem = (s: MyShipment) => ({
 
 const ShipmentScreen = () => {
     const { colors: BRAND } = useAppTheme();
+    const { t } = useTranslation();
     const C = useMemo(() => makeC(BRAND), [BRAND]);
-    const STATUS = useMemo(() => makeStatus(C), [C]);
+    const STATUS = useMemo(() => makeStatus(C, t), [C, t]);
+    const TABS = useMemo(() => makeTabs(t), [t]);
     const styles = useMemo(() => makeStyles(C), [C]);
     const navigation = useNavigation<HomeScreenProp>();
     const [activeTab, setActiveTab] = useState('all');
@@ -272,8 +275,8 @@ const ShipmentScreen = () => {
     }, [shipments, activeTab, searchText]);
 
     // Count per tab
-    const counts = TABS.reduce((acc, t) => {
-        acc[t.key] = t.key === 'all' ? shipments.length : shipments.filter((s) => s.status === t.key).length;
+    const counts = TABS.reduce((acc, tab) => {
+        acc[tab.key] = tab.key === 'all' ? shipments.length : shipments.filter((s) => s.status === tab.key).length;
         return acc;
     }, {} as Record<string, number>);
     const activeTripsCount = counts['in-transit'] + (shipments.filter((s) => s.status === 'accepted').length);
@@ -346,16 +349,16 @@ const ShipmentScreen = () => {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.tabsRow}
                 >
-                    {TABS.map((t) => {
-                        const isActive = activeTab === t.key;
+                    {TABS.map((tab) => {
+                        const isActive = activeTab === tab.key;
                         return (
                             <TouchableOpacity
-                                key={t.key}
+                                key={tab.key}
                                 style={[styles.tab, isActive && styles.tabActive]}
-                                onPress={() => handleTabChange(t.key)}
+                                onPress={() => handleTabChange(tab.key)}
                                 activeOpacity={0.8}
                             >
-                                <t.icon color={isActive ? '#fff' : C.textMid} size={14} style={styles.tabEmoji} />
+                                <tab.icon color={isActive ? '#fff' : C.textMid} size={14} style={styles.tabEmoji} />
                                 <Text
                                     style={[
                                         styles.tabLabel,
@@ -363,9 +366,9 @@ const ShipmentScreen = () => {
                                         isActive && styles.tabLabelActive,
                                     ]}
                                 >
-                                    {t.label}
+                                    {tab.label}
                                 </Text>
-                                {counts[t.key] > 0 && (
+                                {counts[tab.key] > 0 && (
                                     <View style={[styles.tabBadge, isActive && styles.tabBadgeActive]}>
                                         <Text
                                             style={[
@@ -374,7 +377,7 @@ const ShipmentScreen = () => {
                                                 isActive && styles.tabBadgeTextActive,
                                             ]}
                                         >
-                                            {counts[t.key]}
+                                            {counts[tab.key]}
                                         </Text>
                                     </View>
                                 )}
@@ -389,17 +392,17 @@ const ShipmentScreen = () => {
                 <View style={styles.loadingWrap}>
                     <ActivityIndicator size="large" color={C.primary} />
                     <Text style={[styles.loadingText, { fontFamily: FONTS.MEDIUM_PRIMARY }]}>
-                        Loading shipments…
+                        {t('orders.loadingShipments')}
                     </Text>
                 </View>
             ) : filtered.length === 0 ? (
                 <Animated.View style={[styles.emptyWrap, listAnimStyle]}>
                     <Inbox color={C.textLight} size={48} style={styles.emptyEmoji} />
                     <Text style={[styles.emptyTitle, { fontFamily: FONTS.BOLD_PRIMARY }]}>
-                        No shipments found
+                        {t('orders.noShipmentsFound')}
                     </Text>
                     <Text style={[styles.emptyText, { fontFamily: FONTS.SECONDARY }]}>
-                        Nothing in this category yet
+                        {t('orders.nothingInCategory')}
                     </Text>
                 </Animated.View>
             ) : (
@@ -430,13 +433,13 @@ const ShipmentScreen = () => {
                 <Pressable style={styles.filterDateBtn} onPress={() => showToast('Date filtering is coming soon', 'info')}>
                     <CalendarDays size={16} color={C.textMid} />
                     <View>
-                        <Text style={[styles.filterDateLabel, { fontFamily: FONTS.SECONDARY }]}>Filter Date</Text>
-                        <Text style={[styles.filterDateValue, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>All time</Text>
+                        <Text style={[styles.filterDateLabel, { fontFamily: FONTS.SECONDARY }]}>{t('orders.filterDate')}</Text>
+                        <Text style={[styles.filterDateValue, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>{t('orders.allTime')}</Text>
                     </View>
                 </Pressable>
                 <Pressable style={styles.exportBtn} onPress={() => showToast('Export is not available yet', 'info')}>
                     <Download size={14} color={C.textMid} />
-                    <Text style={[styles.exportBtnText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>Export</Text>
+                    <Text style={[styles.exportBtnText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>{t('orders.export')}</Text>
                 </Pressable>
                 <Pressable style={styles.fab} onPress={() => (navigation as any).navigate('AddOrder')}>
                     <Plus size={20} color="#fff" />
@@ -463,6 +466,7 @@ const PAYMENT_LABEL: Record<string, string> = {
 };
 
 const ShipmentCard: React.FC<ShipmentCardProps> = ({ item, index, onPress, styles, colors: C, status: STATUS }) => {
+    const { t } = useTranslation();
     const cfg = STATUS[item.status] || STATUS.pending;
     const VehicleIcon = VEHICLE_ICONS[item.vehicleType] || Truck;
     const CategoryIcon = CATEGORY_ICONS[item.package?.category] || Package;
@@ -556,7 +560,7 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({ item, index, onPress, style
                                 <View style={styles.routeRow}>
                                     <View style={[styles.routeDot, { backgroundColor: C.success }]} />
                                     <View style={{ flex: 1 }}>
-                                        <Text style={[styles.routeLabel, { fontFamily: FONTS.MEDIUM_PRIMARY }]}>Pick up</Text>
+                                        <Text style={[styles.routeLabel, { fontFamily: FONTS.MEDIUM_PRIMARY }]}>{t('orders.pickUp')}</Text>
                                         <Text style={[styles.routeCity, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]} numberOfLines={1}>
                                             {item.from}
                                         </Text>
@@ -566,7 +570,7 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({ item, index, onPress, style
                                 <View style={styles.routeRow}>
                                     <View style={[styles.routeDot, { backgroundColor: C.accent }]} />
                                     <View style={{ flex: 1 }}>
-                                        <Text style={[styles.routeLabel, { fontFamily: FONTS.MEDIUM_PRIMARY }]}>Drop off</Text>
+                                        <Text style={[styles.routeLabel, { fontFamily: FONTS.MEDIUM_PRIMARY }]}>{t('orders.dropOff')}</Text>
                                         <Text style={[styles.routeCity, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]} numberOfLines={1}>
                                             {item.to}
                                         </Text>
@@ -611,7 +615,7 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({ item, index, onPress, style
                             </View>
                             <View style={styles.deliveredActions}>
                                 <TouchableOpacity onPress={() => showToast('Rebooking is coming soon', 'info')}>
-                                    <Text style={[styles.rebookText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>Rebook</Text>
+                                    <Text style={[styles.rebookText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>{t('orders.rebook')}</Text>
                                 </TouchableOpacity>
                                 <Pressable
                                     style={styles.podBtn}
@@ -648,7 +652,7 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({ item, index, onPress, style
                                 </Pressable>
                             )}
                             <Pressable style={styles.trackLiveBtn} onPress={onPress}>
-                                <Text style={[styles.trackLiveBtnText, { fontFamily: FONTS.BOLD_PRIMARY }]}>Track Live</Text>
+                                <Text style={[styles.trackLiveBtnText, { fontFamily: FONTS.BOLD_PRIMARY }]}>{t('orders.trackLive')}</Text>
                                 <ArrowRight size={13} color="#fff" />
                             </Pressable>
                         </View>
@@ -660,7 +664,7 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({ item, index, onPress, style
                                 </Text>
                             </TouchableOpacity>
                             <Pressable style={styles.viewStatusBtn} onPress={onPress}>
-                                <Text style={[styles.viewStatusBtnText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>View Status</Text>
+                                <Text style={[styles.viewStatusBtnText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>{t('orders.viewStatus')}</Text>
                             </Pressable>
                         </View>
                     )}
@@ -685,10 +689,10 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({ item, index, onPress, style
                         />
                         <View style={styles.cancelActions}>
                             <TouchableOpacity style={styles.cancelBackBtn} onPress={() => setCancelModalOpen(false)}>
-                                <Text style={[styles.cancelBackText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>Keep Order</Text>
+                                <Text style={[styles.cancelBackText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>{t('orders.keepOrder')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.cancelConfirmBtn} onPress={confirmCancel}>
-                                <Text style={[styles.cancelConfirmText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>Yes, Cancel</Text>
+                                <Text style={[styles.cancelConfirmText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>{t('orders.yesCancel')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
