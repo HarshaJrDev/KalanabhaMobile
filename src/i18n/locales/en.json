@@ -1,0 +1,64 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "continue": "Continue",
+    "retry": "Retry",
+    "loading": "Loading…",
+    "viewAll": "View all",
+    "edit": "Edit",
+    "delete": "Delete",
+    "logout": "Log Out"
+  },
+  "tabs": {
+    "home": "Home",
+    "orders": "Orders",
+    "addOrder": "Add",
+    "notifications": "Notifications",
+    "profile": "Profile"
+  },
+  "login": {
+    "title": "Welcome back",
+    "subtitle": "Log in to continue with Kalanabha",
+    "email": "Email",
+    "password": "Password",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "Your password",
+    "loginButton": "Log In",
+    "loggingIn": "Logging in…",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "signup": "Sign Up"
+  },
+  "profile": {
+    "title": "Profile",
+    "savedAddress": "Saved Address",
+    "savedAddresses": "Saved Addresses",
+    "paymentMethod": "Payment Method",
+    "transactionsHistory": "Transactions History",
+    "settings": "Settings",
+    "language": "Language",
+    "helpCenter": "Help Center",
+    "editProfile": "Edit Profile"
+  },
+  "language": {
+    "title": "Language",
+    "subtitle": "Choose the language you'd like to use across the app",
+    "english": "English",
+    "hindi": "हिन्दी (Hindi)",
+    "telugu": "తెలుగు (Telugu)",
+    "tamil": "தமிழ் (Tamil)"
+  },
+  "home": {
+    "greeting": "Hi, {{name}}",
+    "searchPlaceholder": "Search customers, drivers, tracking ID…",
+    "favorites": "Favorites",
+    "manage": "Manage",
+    "popularPickupPoints": "Popular Pickup Points",
+    "recentTrips": "Recent Trips",
+    "newOrder": "New Order"
+  }
+}

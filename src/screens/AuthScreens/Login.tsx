@@ -31,6 +31,7 @@ import { Truck, AlertTriangle, Check } from 'lucide-react-native';
 
 import { H, S, W, RF } from '@utils/responsive';
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 import InputField from '@components/InputField';
 import AppButton from '@components/AppButton';
@@ -90,6 +91,7 @@ const DEV_CREDENTIALS = {
 const Login = () => {
     const { colors, fonts, isDark } = useAppTheme();
     const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
+    const { t } = useTranslation();
     const route = useRoute<RouteProp<RootStackParamList, 'Login'>>();
     const isDriver = route.params?.isDriver ?? false;
 
@@ -209,12 +211,12 @@ const Login = () => {
                     ]}
                 >
                     <Text style={styles.title}>
-                        {isDriver ? 'Driver Login' : 'Welcome Back'}
+                        {isDriver ? 'Driver Login' : t('login.title')}
                     </Text>
                     <Text style={styles.subtitle}>
                         {isDriver
                             ? 'Sign in with the credentials your admin provided'
-                            : 'Sign in to track and manage shipments'}
+                            : t('login.subtitle')}
                     </Text>
 
                     {/* Driver info banner */}
@@ -230,8 +232,8 @@ const Login = () => {
 
                     {/* Fields */}
                     <InputField
-                        label="Email address"
-                        placeholder={isDriver ? 'your-email@kalanabha.com' : 'your@email.com'}
+                        label={t('login.email')}
+                        placeholder={isDriver ? 'your-email@kalanabha.com' : t('login.emailPlaceholder')}
                         value={email}
                         onChange={setEmail}
                         keyboardType="email-address"
@@ -239,8 +241,8 @@ const Login = () => {
                     />
 
                     <InputField
-                        label="Password"
-                        placeholder="Enter your password"
+                        label={t('login.password')}
+                        placeholder={t('login.passwordPlaceholder')}
                         secure
                         value={password}
                         onChange={setPassword}
@@ -282,7 +284,7 @@ const Login = () => {
                             </TouchableOpacity>
                         ) : (
                             <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword' as never)}>
-                                <Text style={styles.forgotText}>Forgot Password?</Text>
+                                <Text style={styles.forgotText}>{t('login.forgotPassword')}</Text>
                             </TouchableOpacity>
                         )}
                     </View>
@@ -292,10 +294,10 @@ const Login = () => {
                         <AppButton
                             title={
                                 isPending || loading
-                                    ? 'Signing in…'
+                                    ? t('login.loggingIn')
                                     : isDriver
                                         ? 'Login as Driver'
-                                        : 'Sign In'
+                                        : t('login.loginButton')
                             }
                             onPress={handleLogin}
                             disabled={isPending || loading}
@@ -336,12 +338,12 @@ const Login = () => {
                 <Animated.View style={{ opacity: fadeAnim }}>
                     {!isDriver && (
                         <Text style={styles.footerText}>
-                            Don't have an account?{' '}
+                            {t('login.noAccount')}{' '}
                             <Text
                                 style={styles.signUpLink}
                                 onPress={() => navigation.navigate('Signup' as never)}
                             >
-                                Sign Up
+                                {t('login.signup')}
                             </Text>
                         </Text>
                     )}

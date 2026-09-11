@@ -1,0 +1,64 @@
+{
+  "common": {
+    "cancel": "ரத்து செய்",
+    "save": "சேமி",
+    "close": "மூடு",
+    "back": "பின்",
+    "next": "அடுத்து",
+    "continue": "தொடரவும்",
+    "retry": "மீண்டும் முயற்சிக்கவும்",
+    "loading": "ஏற்றுகிறது…",
+    "viewAll": "அனைத்தையும் காண்க",
+    "edit": "திருத்து",
+    "delete": "நீக்கு",
+    "logout": "வெளியேறு"
+  },
+  "tabs": {
+    "home": "முகப்பு",
+    "orders": "ஆர்டர்கள்",
+    "addOrder": "சேர்",
+    "notifications": "அறிவிப்புகள்",
+    "profile": "சுயவிவரம்"
+  },
+  "login": {
+    "title": "மீண்டும் வரவேற்கிறோம்",
+    "subtitle": "கலநாபாவைத் தொடர உள்நுழையவும்",
+    "email": "மின்னஞ்சல்",
+    "password": "கடவுச்சொல்",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "உங்கள் கடவுச்சொல்",
+    "loginButton": "உள்நுழை",
+    "loggingIn": "உள்நுழைகிறது…",
+    "forgotPassword": "கடவுச்சொல் மறந்துவிட்டதா?",
+    "noAccount": "கணக்கு இல்லையா?",
+    "signup": "பதிவு செய்யவும்"
+  },
+  "profile": {
+    "title": "சுயவிவரம்",
+    "savedAddress": "சேமிக்கப்பட்ட முகவரி",
+    "savedAddresses": "சேமிக்கப்பட்ட முகவரிகள்",
+    "paymentMethod": "கட்டண முறை",
+    "transactionsHistory": "பரிவர்த்தனை வரலாறு",
+    "settings": "அமைப்புகள்",
+    "language": "மொழி",
+    "helpCenter": "உதவி மையம்",
+    "editProfile": "சுயவிவரத்தைத் திருத்து"
+  },
+  "language": {
+    "title": "மொழி",
+    "subtitle": "பயன்பாடு முழுவதும் நீங்கள் பயன்படுத்த விரும்பும் மொழியைத் தேர்ந்தெடுக்கவும்",
+    "english": "English",
+    "hindi": "हिन्दी (Hindi)",
+    "telugu": "తెలుగు (Telugu)",
+    "tamil": "தமிழ் (Tamil)"
+  },
+  "home": {
+    "greeting": "வணக்கம், {{name}}",
+    "searchPlaceholder": "வாடிக்கையாளர்கள், ஓட்டுநர்கள், கண்காணிப்பு ஐடியைத் தேடுங்கள்…",
+    "favorites": "பிடித்தவை",
+    "manage": "நிர்வகி",
+    "popularPickupPoints": "பிரபலமான பிக்கப் புள்ளிகள்",
+    "recentTrips": "சமீபத்திய பயணங்கள்",
+    "newOrder": "புதிய ஆர்டர்"
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "common": {
+    "cancel": "रद्द करें",
+    "save": "सहेजें",
+    "close": "बंद करें",
+    "back": "वापस",
+    "next": "अगला",
+    "continue": "जारी रखें",
+    "retry": "पुनः प्रयास करें",
+    "loading": "लोड हो रहा है…",
+    "viewAll": "सभी देखें",
+    "edit": "संपादित करें",
+    "delete": "हटाएं",
+    "logout": "लॉग आउट"
+  },
+  "tabs": {
+    "home": "होम",
+    "orders": "ऑर्डर",
+    "addOrder": "जोड़ें",
+    "notifications": "सूचनाएं",
+    "profile": "प्रोफ़ाइल"
+  },
+  "login": {
+    "title": "वापसी पर स्वागत है",
+    "subtitle": "कलानाभा जारी रखने के लिए लॉग इन करें",
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "आपका पासवर्ड",
+    "loginButton": "लॉग इन करें",
+    "loggingIn": "लॉग इन हो रहा है…",
+    "forgotPassword": "पासवर्ड भूल गए?",
+    "noAccount": "खाता नहीं है?",
+    "signup": "साइन अप करें"
+  },
+  "profile": {
+    "title": "प्रोफ़ाइल",
+    "savedAddress": "सहेजा गया पता",
+    "savedAddresses": "सहेजे गए पते",
+    "paymentMethod": "भुगतान का तरीका",
+    "transactionsHistory": "लेन-देन इतिहास",
+    "settings": "सेटिंग्स",
+    "language": "भाषा",
+    "helpCenter": "सहायता केंद्र",
+    "editProfile": "प्रोफ़ाइल संपादित करें"
+  },
+  "language": {
+    "title": "भाषा",
+    "subtitle": "वह भाषा चुनें जिसका आप पूरे ऐप में उपयोग करना चाहते हैं",
+    "english": "English",
+    "hindi": "हिन्दी (Hindi)",
+    "telugu": "తెలుగు (Telugu)",
+    "tamil": "தமிழ் (Tamil)"
+  },
+  "home": {
+    "greeting": "नमस्ते, {{name}}",
+    "searchPlaceholder": "ग्राहक, ड्राइवर, ट्रैकिंग आईडी खोजें…",
+    "favorites": "पसंदीदा",
+    "manage": "प्रबंधित करें",
+    "popularPickupPoints": "लोकप्रिय पिकअप पॉइंट",
+    "recentTrips": "हाल की यात्राएं",
+    "newOrder": "नया ऑर्डर"
+  }
+}

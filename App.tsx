@@ -1,6 +1,8 @@
 
 import React, { useEffect } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
+// Must run before any component using useTranslation() mounts.
+import './src/i18n';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';

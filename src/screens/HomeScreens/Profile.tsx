@@ -34,6 +34,9 @@ import AppTextInput from '../../components/ui/AppTextInput';
 import AppButton from '../../components/ui/AppButton';
 import { showToast } from '@ui/alert/toastStore';
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
+import { LanguagePickerModal } from '@components/LanguagePickerModal';
+import { LANGUAGE_LABELS, type SupportedLanguage } from '../../i18n';
 
 // Same real-initials-avatar pattern used everywhere else this app needs a
 // "photo" it doesn't actually have (Driver ProfileScreen, the incoming-
@@ -46,10 +49,12 @@ const initialsFor = (label: string) =>
 const ProfileScreen = () => {
     const { colors, fonts } = useAppTheme();
     const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
+    const { t, i18n } = useTranslation();
     const logoutMutation = useLogout();
     const navigation = useNavigation();
     const user = useAuthStore((s) => s.user); // From Zustand
     const [editVisible, setEditVisible] = useState(false);
+    const [langVisible, setLangVisible] = useState(false);
     // This screen lives under the bottom tab bar (HomeTabs.tsx "Profile")
     // — the menu ScrollView had no bottom padding at all, so the last
     // menu item (Logout) sat right behind the bar.
@@ -84,7 +89,7 @@ const ProfileScreen = () => {
     const menuItems = [
         {
             icon: MapPin,
-            label: 'Saved Address',
+            label: t('profile.savedAddress'),
             // Real value (User.address via GET /users/me) — was a hardcoded
             // Riyadh address regardless of what the user actually saved.
             // There's no separate address-book screen/endpoint (one address
@@ -93,19 +98,19 @@ const ProfileScreen = () => {
             value: user?.address || 'Add address',
             onPress: () => setEditVisible(true),
         },
-        { icon: Bookmark, label: 'Saved Addresses', onPress: () => navigation.navigate('SavedAddresses' as never) },
-    { icon: CreditCard, label: 'Payment Method', onPress: () => comingSoon('Payment methods') },
-        { icon: Clock, label: 'Transactions History', onPress: () => navigation.navigate('Transactions' as never) },
-        { icon: Settings, label: 'Settings', onPress: () => navigation.navigate('Settings' as never) },
+        { icon: Bookmark, label: t('profile.savedAddresses'), onPress: () => navigation.navigate('SavedAddresses' as never) },
+        { icon: CreditCard, label: t('profile.paymentMethod'), onPress: () => comingSoon('Payment methods') },
+        { icon: Clock, label: t('profile.transactionsHistory'), onPress: () => navigation.navigate('Transactions' as never) },
+        { icon: Settings, label: t('profile.settings'), onPress: () => navigation.navigate('Settings' as never) },
         {
             icon: Globe,
-            label: 'Language',
-            value: 'English (US)',
-            onPress: () => comingSoon('Other languages'),
+            label: t('profile.language'),
+            value: LANGUAGE_LABELS[i18n.language as SupportedLanguage] ?? LANGUAGE_LABELS.en,
+            onPress: () => setLangVisible(true),
         },
         {
             icon: HelpCircle,
-            label: 'Help Center',
+            label: t('profile.helpCenter'),
             // Real ticket system now (kalanabhaBackend SupportController,
             // already used by the admin panel) instead of only a mailto:
             // link — a raised ticket gets a real reply thread here.
@@ -113,7 +118,7 @@ const ProfileScreen = () => {
         },
         {
             icon: LogOut,
-            label: 'Log Out',
+            label: t('common.logout'),
             onPress: handleLogout,
             destructive: true,
         },
@@ -126,7 +131,7 @@ const ProfileScreen = () => {
                 colors={[colors.PRIMARY_DARK, colors.PRIMARY]}
                 style={styles.header}
             >
-                <Text style={styles.title}>My Profile</Text>
+                <Text style={styles.title}>{t('profile.title')}</Text>
 
                 <View style={styles.profileRow}>
                     <View style={styles.avatar}>
@@ -195,6 +200,7 @@ const ProfileScreen = () => {
             </ScrollView>
 
             <EditProfileModal visible={editVisible} onClose={() => setEditVisible(false)} />
+            <LanguagePickerModal visible={langVisible} onClose={() => setLangVisible(false)} />
         </View>
     );
 };

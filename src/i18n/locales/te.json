@@ -1,0 +1,64 @@
+{
+  "common": {
+    "cancel": "రద్దు చేయండి",
+    "save": "సేవ్ చేయండి",
+    "close": "మూసివేయండి",
+    "back": "వెనుకకు",
+    "next": "తదుపరి",
+    "continue": "కొనసాగించండి",
+    "retry": "మళ్లీ ప్రయత్నించండి",
+    "loading": "లోడ్ అవుతోంది…",
+    "viewAll": "అన్నీ చూడండి",
+    "edit": "సవరించండి",
+    "delete": "తొలగించండి",
+    "logout": "లాగ్ అవుట్"
+  },
+  "tabs": {
+    "home": "హోమ్",
+    "orders": "ఆర్డర్లు",
+    "addOrder": "జోడించు",
+    "notifications": "నోటిఫికేషన్లు",
+    "profile": "ప్రొఫైల్"
+  },
+  "login": {
+    "title": "తిరిగి స్వాగతం",
+    "subtitle": "కలనాభతో కొనసాగించడానికి లాగిన్ అవ్వండి",
+    "email": "ఇమెయిల్",
+    "password": "పాస్‌వర్డ్",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "మీ పాస్‌వర్డ్",
+    "loginButton": "లాగిన్",
+    "loggingIn": "లాగిన్ అవుతోంది…",
+    "forgotPassword": "పాస్‌వర్డ్ మర్చిపోయారా?",
+    "noAccount": "ఖాతా లేదా?",
+    "signup": "సైన్ అప్ చేయండి"
+  },
+  "profile": {
+    "title": "ప్రొఫైల్",
+    "savedAddress": "సేవ్ చేసిన చిరునామా",
+    "savedAddresses": "సేవ్ చేసిన చిరునామాలు",
+    "paymentMethod": "చెల్లింపు విధానం",
+    "transactionsHistory": "లావాదేవీల చరిత్ర",
+    "settings": "సెట్టింగ్‌లు",
+    "language": "భాష",
+    "helpCenter": "సహాయ కేంద్రం",
+    "editProfile": "ప్రొఫైల్‌ని సవరించండి"
+  },
+  "language": {
+    "title": "భాష",
+    "subtitle": "మీరు యాప్ అంతటా ఉపయోగించాలనుకుంటున్న భాషను ఎంచుకోండి",
+    "english": "English",
+    "hindi": "हिन्दी (Hindi)",
+    "telugu": "తెలుగు (Telugu)",
+    "tamil": "தமிழ் (Tamil)"
+  },
+  "home": {
+    "greeting": "హాయ్, {{name}}",
+    "searchPlaceholder": "కస్టమర్లు, డ్రైవర్లు, ట్రాకింగ్ ఐడీ వెతకండి…",
+    "favorites": "ఇష్టమైనవి",
+    "manage": "నిర్వహించండి",
+    "popularPickupPoints": "ప్రసిద్ధ పికప్ పాయింట్లు",
+    "recentTrips": "ఇటీవలి ట్రిప్‌లు",
+    "newOrder": "కొత్త ఆర్డర్"
+  }
+}

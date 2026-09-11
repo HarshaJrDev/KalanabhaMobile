@@ -12,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { Home as HomeIcon, User, Box, Plus, Bell, type LucideIcon } from 'lucide-react-native';
 
 import Home from '../HomeScreens/Home';
@@ -32,12 +33,12 @@ const Tab = createBottomTabNavigator<RootStackParamList>();
 // in the row like the other four — it's the app's one primary action
 // (start a booking), so it's visually raised instead of competing with
 // Home/Orders/Notification/Profile for the same tab-button styling.
-const TAB_META: Record<string, { icon: LucideIcon; label: string }> = {
-    Home: { icon: HomeIcon, label: 'Home' },
-    Orders: { icon: Box, label: 'Orders' },
-    AddOrder: { icon: Plus, label: 'Book' },
-    Notification: { icon: Bell, label: 'Notifications' },
-    Profile: { icon: User, label: 'Profile' },
+const TAB_ICONS: Record<string, LucideIcon> = {
+    Home: HomeIcon,
+    Orders: Box,
+    AddOrder: Plus,
+    Notification: Bell,
+    Profile: User,
 };
 
 /* ----------------------------- TAB BUTTON ----------------------------- */
@@ -129,7 +130,16 @@ const CenterButton = memo(({ onPress, color }: { onPress: () => void; color: str
 // out of sync the way the driver tab bar once did.
 const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
     const { colors } = useAppTheme();
+    const { t } = useTranslation();
     const barMetrics = useTabBarStyle(colors.SURFACE);
+
+    const tabLabels: Record<string, string> = {
+        Home: t('tabs.home'),
+        Orders: t('tabs.orders'),
+        AddOrder: t('tabs.addOrder'),
+        Notification: t('tabs.notifications'),
+        Profile: t('tabs.profile'),
+    };
 
     // Real signals only: an unread-notification count already backs the
     // Home header's bell badge, and "has an active shipment right now"
@@ -144,8 +154,8 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
         <View style={[styles.barWrap, { paddingBottom: barMetrics.paddingBottom, backgroundColor: barMetrics.backgroundColor }]}>
             <View style={styles.barRow}>
                 {state.routes.map((route, index) => {
-                    const meta = TAB_META[route.name];
-                    if (!meta) return null;
+                    const Icon = TAB_ICONS[route.name];
+                    if (!Icon) return null;
                     const focused = state.index === index;
 
                     const onPress = () => {
@@ -163,8 +173,8 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
                         <TabButton
                             key={route.key}
                             focused={focused}
-                            Icon={meta.icon}
-                            label={meta.label}
+                            Icon={Icon}
+                            label={tabLabels[route.name]}
                             onPress={onPress}
                             activeColor={colors.PRIMARY}
                             inactiveColor={colors.GRAY}

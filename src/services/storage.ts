@@ -7,6 +7,7 @@ const TOKEN_KEY = 'access_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
 const USER_KEY = 'auth_user';
 const ONBOARDING_KEY = 'has_seen_onboarding';
+const LANGUAGE_KEY = 'app_language';
 
 // Shape returned by GET /users/me — mirrors kalanabhaBackend's UserEntity
 // field-for-field (verified against a running instance) rather than only
@@ -97,6 +98,17 @@ export const isOnboardingSeen = (): boolean => {
 
 export const clearOnboarding = (): void => {
     storage.remove(ONBOARDING_KEY);
+};
+
+// ----------------------
+// LANGUAGE
+// ----------------------
+export const setStoredLanguage = (lang: string): void => {
+    storage.set(LANGUAGE_KEY, lang);
+};
+
+export const getStoredLanguage = (): string | null => {
+    return storage.getString(LANGUAGE_KEY) ?? null;
 };
 
 // ----------------------
