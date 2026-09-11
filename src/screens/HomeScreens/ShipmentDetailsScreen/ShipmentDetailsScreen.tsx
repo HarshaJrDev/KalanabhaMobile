@@ -69,6 +69,7 @@ import {
     type LucideIcon,
 } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 
 const makeC = (BRAND: ReturnType<typeof useAppTheme>['colors']) => ({
@@ -90,34 +91,34 @@ const makeC = (BRAND: ReturnType<typeof useAppTheme>['colors']) => ({
 });
 type DetailColors = ReturnType<typeof makeC>;
 
-const STATUS_CONFIG: Record<string, { label: string; color: keyof DetailColors; icon: LucideIcon }> = {
-    delivered: { label: 'Delivered', color: 'success', icon: CheckCircle2 },
-    in_transit: { label: 'In Transit', color: 'primary', icon: Truck },
-    accepted: { label: 'Driver Assigned', color: 'primary', icon: Truck },
-    searching: { label: 'Finding a Pilot', color: 'warning', icon: Search },
-    cancelled: { label: 'Cancelled', color: 'danger', icon: XCircle },
-};
+const makeStatusConfig = (t: (key: string) => string): Record<string, { label: string; color: keyof DetailColors; icon: LucideIcon }> => ({
+    delivered: { label: t('shipmentDetails.statusDelivered'), color: 'success', icon: CheckCircle2 },
+    in_transit: { label: t('shipmentDetails.statusInTransit'), color: 'primary', icon: Truck },
+    accepted: { label: t('shipmentDetails.statusDriverAssigned'), color: 'primary', icon: Truck },
+    searching: { label: t('shipmentDetails.statusFindingPilot'), color: 'warning', icon: Search },
+    cancelled: { label: t('shipmentDetails.statusCancelled'), color: 'danger', icon: XCircle },
+});
 
 // The app's real 4-state machine — "Picked Up" and "Out for Delivery"
 // (the mockup's 5-step version) aren't real distinct backend states here,
 // so they're not shown as if they were.
-const TIMELINE_STEPS: { status: string; label: string; icon: LucideIcon }[] = [
-    { status: 'SEARCHING', label: 'Order Placed', icon: Package },
-    { status: 'ACCEPTED', label: 'Driver Assigned', icon: Truck },
-    { status: 'IN_TRANSIT', label: 'In Transit', icon: Bike },
-    { status: 'DELIVERED', label: 'Delivered', icon: CheckCircle2 },
+const makeTimelineSteps = (t: (key: string) => string): { status: string; label: string; icon: LucideIcon }[] => [
+    { status: 'SEARCHING', label: t('shipmentDetails.timelineOrderPlaced'), icon: Package },
+    { status: 'ACCEPTED', label: t('shipmentDetails.statusDriverAssigned'), icon: Truck },
+    { status: 'IN_TRANSIT', label: t('shipmentDetails.statusInTransit'), icon: Bike },
+    { status: 'DELIVERED', label: t('shipmentDetails.statusDelivered'), icon: CheckCircle2 },
 ];
 
 type RouteParams = { id?: string };
 
-const formatTimeAgo = (date: Date | null): string => {
-    if (!date) return 'just now';
+const makeFormatTimeAgo = (t: (key: string, opts?: Record<string, unknown>) => string) => (date: Date | null): string => {
+    if (!date) return t('shipmentDetails.justNow');
     const seconds = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
-    if (seconds < 10) return 'just now';
-    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 10) return t('shipmentDetails.justNow');
+    if (seconds < 60) return t('shipmentDetails.secAgo', { s: seconds });
     const minutes = Math.round(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    return `${Math.round(minutes / 60)}h ago`;
+    if (minutes < 60) return t('shipmentDetails.minAgo', { m: minutes });
+    return t('shipmentDetails.hourAgo', { h: Math.round(minutes / 60) });
 };
 
 const formatDateTime = (iso: string) =>
@@ -125,8 +126,12 @@ const formatDateTime = (iso: string) =>
 
 const ShipmentDetailsScreen = () => {
     const { colors: BRAND } = useAppTheme();
+    const { t } = useTranslation();
     const C = useMemo(() => makeC(BRAND), [BRAND]);
     const styles = useMemo(() => makeStyles(C), [C]);
+    const STATUS_CONFIG = useMemo(() => makeStatusConfig(t), [t]);
+    const TIMELINE_STEPS = useMemo(() => makeTimelineSteps(t), [t]);
+    const formatTimeAgo = useMemo(() => makeFormatTimeAgo(t), [t]);
     const navigation = useNavigation();
     const route = useRoute<RouteProp<{ params: RouteParams }, 'params'>>();
     const shipmentId = route?.params?.id;
@@ -198,7 +203,7 @@ const ShipmentDetailsScreen = () => {
                 <StatusBar barStyle="light-content" backgroundColor={C.primaryDark} />
                 <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.loadingGrad}>
                     <ActivityIndicator size="large" color="#fff" />
-                    <Text style={styles.loadingText}>Loading shipment…</Text>
+                    <Text style={styles.loadingText}>{t('shipmentDetails.loadingShipment')}</Text>
                 </LinearGradient>
             </View>
         );
@@ -208,9 +213,9 @@ const ShipmentDetailsScreen = () => {
         return (
             <View style={styles.center}>
                 <XCircle color={C.danger} size={32} />
-                <Text style={styles.errorText}>Couldn't load this shipment</Text>
+                <Text style={styles.errorText}>{t('shipmentDetails.couldNotLoad')}</Text>
                 <TouchableOpacity style={styles.backLink} onPress={() => navigation.goBack()}>
-                    <Text style={styles.backLinkText}>Go back</Text>
+                    <Text style={styles.backLinkText}>{t('shipmentDetails.goBack')}</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -234,13 +239,13 @@ const ShipmentDetailsScreen = () => {
                     <TouchableOpacity style={styles.iconBtn} activeOpacity={0.8} onPress={() => navigation.goBack()}>
                         <Text style={styles.backArrow}>←</Text>
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Shipment Details</Text>
+                    <Text style={styles.headerTitle}>{t('shipmentDetails.title')}</Text>
                     <TouchableOpacity
                         style={styles.iconBtn}
                         activeOpacity={0.8}
                         onPress={() => {
                             Share.share({ message: `Track my Kalanabha shipment #${shipment.trackingId}` }).catch(() =>
-                                showToast('Unable to share', 'error'),
+                                showToast(t('shipmentDetails.unableToShare'), 'error'),
                             );
                         }}
                     >
@@ -249,7 +254,7 @@ const ShipmentDetailsScreen = () => {
                 </View>
 
                 <Pressable style={styles.idPill} onPress={() => copyToClipboard(shipment.trackingId)}>
-                    <Text style={styles.idLabel}>TRACKING ID</Text>
+                    <Text style={styles.idLabel}>{t('shipmentDetails.trackingIdLabel')}</Text>
                     <View style={styles.idRow}>
                         <Text style={styles.idValue}>{shipment.trackingId}</Text>
                         <View style={[styles.copyBtn, copied && styles.copyBtnDone]}>
@@ -264,7 +269,7 @@ const ShipmentDetailsScreen = () => {
                         <Text style={styles.statusLabel}>{statusCfg.label}</Text>
                     </View>
                     <View>
-                        <Text style={styles.bookedLabel}>Booked</Text>
+                        <Text style={styles.bookedLabel}>{t('shipmentDetails.booked')}</Text>
                         <Text style={styles.bookedDate}>{formatDateTime(shipment.createdAt)}</Text>
                     </View>
                 </View>
@@ -274,11 +279,11 @@ const ShipmentDetailsScreen = () => {
 
     const renderTimeline = () => (
         <AnimatedCard anim={cardAnims[0]} fade={cardFades[0]} cardStyle={styles.card}>
-            <Text style={styles.cardTitle}>Tracking Timeline</Text>
+            <Text style={styles.cardTitle}>{t('shipmentDetails.trackingTimeline')}</Text>
             {shipment.status === 'cancelled' ? (
                 <View style={styles.cancelledBox}>
                     <XCircle color={C.danger} size={18} />
-                    <Text style={styles.cancelledText}>This shipment was cancelled.</Text>
+                    <Text style={styles.cancelledText}>{t('shipmentDetails.shipmentCancelledText')}</Text>
                 </View>
             ) : (
                 <View style={styles.timeline}>
@@ -306,7 +311,7 @@ const ShipmentDetailsScreen = () => {
                                     {entry && <Text style={styles.tlTime}>{formatDateTime(entry.createdAt)}</Text>}
                                     {isActive && (
                                         <View style={styles.tlActivePill}>
-                                            <Text style={styles.tlActivePillText}>Current Status</Text>
+                                            <Text style={styles.tlActivePillText}>{t('shipmentDetails.currentStatus')}</Text>
                                         </View>
                                     )}
                                 </View>
@@ -320,14 +325,14 @@ const ShipmentDetailsScreen = () => {
 
     const renderRoute = () => (
         <AnimatedCard anim={cardAnims[1]} fade={cardFades[1]} cardStyle={styles.card}>
-            <Text style={styles.cardTitle}>Route</Text>
+            <Text style={styles.cardTitle}>{t('shipmentDetails.route')}</Text>
             <View style={styles.routeWrap}>
                 <View style={styles.routeNode}>
                     <View style={[styles.routeDot, { backgroundColor: C.primary }]}>
                         <MapPin color="#fff" size={12} />
                     </View>
                     <View style={styles.routeInfo}>
-                        <Text style={styles.routeRole}>SENDER</Text>
+                        <Text style={styles.routeRole}>{t('shipmentDetails.sender')}</Text>
                         <Text style={styles.routeName}>{shipment.sender.name ?? '—'}</Text>
                         <Text style={styles.routeAddr}>{shipment.sender.address}</Text>
                         {!!shipment.sender.phone && <Text style={styles.routePhone}>{shipment.sender.phone}</Text>}
@@ -348,7 +353,7 @@ const ShipmentDetailsScreen = () => {
                         <Home color="#fff" size={12} />
                     </View>
                     <View style={styles.routeInfo}>
-                        <Text style={[styles.routeRole, { color: C.success }]}>RECEIVER</Text>
+                        <Text style={[styles.routeRole, { color: C.success }]}>{t('shipmentDetails.receiver')}</Text>
                         <Text style={styles.routeName}>{shipment.receiver.name ?? '—'}</Text>
                         <Text style={styles.routeAddr}>{shipment.receiver.address}</Text>
                         {!!shipment.receiver.phone && <Text style={styles.routePhone}>{shipment.receiver.phone}</Text>}
@@ -363,10 +368,10 @@ const ShipmentDetailsScreen = () => {
         return (
             <AnimatedCard anim={cardAnims[1]} fade={cardFades[1]} cardStyle={styles.card}>
                 <View style={styles.cardHeader}>
-                    <Text style={styles.cardTitle}>Live Tracking</Text>
+                    <Text style={styles.cardTitle}>{t('shipmentDetails.liveTracking')}</Text>
                     <View style={styles.liveBadge}>
                         <Animated.View style={[styles.liveDot, { transform: [{ scale: pulseAnim }] }]} />
-                        <Text style={styles.liveBadgeText}>LIVE</Text>
+                        <Text style={styles.liveBadgeText}>{t('shipmentDetails.live')}</Text>
                     </View>
                 </View>
                 {/* Real map (kalanabhaMobile MapLibre integration) — every
@@ -393,10 +398,10 @@ const ShipmentDetailsScreen = () => {
                                 Showing distance only, rather than an
                                 "arrived" signal that could never fire. */}
                             {distanceToDriverKm != null
-                                ? `Driver is ${distanceToDriverKm.toFixed(1)} km away`
-                                : 'Driver location received'}
+                                ? t('shipmentDetails.driverAwayKm', { km: distanceToDriverKm.toFixed(1) })
+                                : t('shipmentDetails.driverLocationReceived')}
                         </Text>
-                        <Text style={styles.liveTrackingSub}>Updated {formatTimeAgo(liveDriverLocation.updatedAt)}</Text>
+                        <Text style={styles.liveTrackingSub}>{t('shipmentDetails.updatedTimeAgo', { time: formatTimeAgo(liveDriverLocation.updatedAt) })}</Text>
                     </View>
                 </View>
             </AnimatedCard>
@@ -436,8 +441,8 @@ const ShipmentDetailsScreen = () => {
     const renderPickupOtp = () => {
         if (!showPickupOtp) return null;
         return renderOtpCard(
-            'Pickup OTP',
-            "Share this code with your driver only once they've collected your package",
+            t('shipmentDetails.pickupOtpTitle'),
+            t('shipmentDetails.pickupOtpSubtitle'),
             shipment.pickupOtp!,
             1,
         );
@@ -446,8 +451,8 @@ const ShipmentDetailsScreen = () => {
     const renderDeliveryOtp = () => {
         if (!showDeliveryOtp) return null;
         return renderOtpCard(
-            'Delivery OTP',
-            "Share this code with your driver only once you've received your delivery",
+            t('shipmentDetails.deliveryOtpTitle'),
+            t('shipmentDetails.deliveryOtpSubtitle'),
             shipment.deliveryOtp!,
             1,
         );
@@ -455,14 +460,14 @@ const ShipmentDetailsScreen = () => {
 
     const renderPackage = () => {
         const items = [
-            { icon: Folder, label: 'Category', value: shipment.package.category ?? shipment.goodsType },
+            { icon: Folder, label: t('shipmentDetails.category'), value: shipment.package.category ?? shipment.goodsType },
             isHouseShifting
-                ? { icon: Users, label: 'Helpers', value: `${shipment.helpersCount}` }
-                : { icon: Weight, label: 'Weight', value: `${shipment.weightKg} kg` },
+                ? { icon: Users, label: t('shipmentDetails.helpers'), value: `${shipment.helpersCount}` }
+                : { icon: Weight, label: t('shipmentDetails.weight'), value: `${shipment.weightKg} kg` },
         ];
         return (
             <AnimatedCard anim={cardAnims[2]} fade={cardFades[2]} cardStyle={styles.card}>
-                <Text style={styles.cardTitle}>{isHouseShifting ? 'Move Details' : 'Package Details'}</Text>
+                <Text style={styles.cardTitle}>{isHouseShifting ? t('shipmentDetails.moveDetails') : t('shipmentDetails.packageDetails')}</Text>
                 <View style={styles.packageGrid}>
                     {items.map((item) => (
                         <View key={item.label} style={styles.packageItem}>
@@ -474,8 +479,8 @@ const ShipmentDetailsScreen = () => {
                     {shipment.fragile && (
                         <View style={styles.packageItem}>
                             <Package color={C.warning} size={18} />
-                            <Text style={styles.pkgLabel}>Handling</Text>
-                            <Text style={[styles.pkgValue, { color: C.warning }]}>Fragile</Text>
+                            <Text style={styles.pkgLabel}>{t('shipmentDetails.handling')}</Text>
+                            <Text style={[styles.pkgValue, { color: C.warning }]}>{t('shipmentDetails.fragile')}</Text>
                         </View>
                     )}
                 </View>
@@ -489,46 +494,46 @@ const ShipmentDetailsScreen = () => {
     const renderPayment = () => (
         <AnimatedCard anim={cardAnims[3]} fade={cardFades[3]} cardStyle={styles.card}>
             <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>Payment Summary</Text>
+                <Text style={styles.cardTitle}>{t('shipmentDetails.paymentSummary')}</Text>
                 <View style={styles.payMethodPill}>
                     <Text style={styles.payMethodText}>
-                        {shipment.paymentMode === 'cod' ? 'Cash on Delivery' : shipment.paymentMode === 'prepaid' ? 'UPI' : 'Credit'}
+                        {shipment.paymentMode === 'cod' ? t('shipmentDetails.paymentCod') : shipment.paymentMode === 'prepaid' ? t('shipmentDetails.paymentUpi') : t('shipmentDetails.paymentCredit')}
                     </Text>
                 </View>
             </View>
             <View style={styles.payRow}>
-                <Text style={styles.payLabel}>Distance</Text>
+                <Text style={styles.payLabel}>{t('shipmentDetails.distance')}</Text>
                 <Text style={styles.payValue}>{shipment.distanceKm} km</Text>
             </View>
             <View style={styles.payRow}>
-                <Text style={styles.payLabel}>Vehicle</Text>
+                <Text style={styles.payLabel}>{t('shipmentDetails.vehicle')}</Text>
                 <Text style={styles.payValue}>{shipment.vehicleType}</Text>
             </View>
             {isHouseShifting && (
                 <View style={styles.payRow}>
-                    <Text style={styles.payLabel}>Helpers</Text>
+                    <Text style={styles.payLabel}>{t('shipmentDetails.helpers')}</Text>
                     <Text style={styles.payValue}>{shipment.helpersCount}</Text>
                 </View>
             )}
             <View style={styles.payDivider} />
             <View style={styles.payTotalRow}>
-                <Text style={styles.payTotalLabel}>Total</Text>
+                <Text style={styles.payTotalLabel}>{t('shipmentDetails.total')}</Text>
                 <Text style={styles.payTotalValue}>₹{shipment.price}</Text>
             </View>
         </AnimatedCard>
     );
 
     const handleLiveMap = () => {
-        openGoogleMapsDirections(shipment.pickup, shipment.drop).catch(() => showToast('Unable to open maps', 'error'));
+        openGoogleMapsDirections(shipment.pickup, shipment.drop).catch(() => showToast(t('shipmentDetails.unableToOpenMaps'), 'error'));
     };
 
     const handleCallDriver = () => {
         const phone = shipment.dispatch?.driverPhone;
         if (!phone) {
-            showToast('No driver assigned yet', 'info');
+            showToast(t('shipmentDetails.noDriverAssignedYet'), 'info');
             return;
         }
-        Linking.openURL(`tel:${phone}`).catch(() => showToast('Unable to open the dialer', 'error'));
+        Linking.openURL(`tel:${phone}`).catch(() => showToast(t('shipmentDetails.unableToOpenDialer'), 'error'));
     };
 
     const handleChatSupport = () => {
@@ -540,7 +545,7 @@ const ShipmentDetailsScreen = () => {
     // once a driver actually uploads a photo on completing delivery.
     const handleDownloadPod = () => {
         if (!shipment.podUploadedAt) {
-            showToast('No proof of delivery has been uploaded for this shipment yet', 'info');
+            showToast(t('shipmentDetails.noPodUploadedYet'), 'info');
             return;
         }
         setPodViewerOpen(true);
@@ -551,11 +556,11 @@ const ShipmentDetailsScreen = () => {
             <View style={styles.actionsGrid}>
                 {[
                     shipment.status === 'delivered'
-                        ? { icon: Star, label: 'Rate Delivery', color: [C.primary, C.primaryDark] as const, onPress: () => (navigation as any).navigate('Rating', { shipmentId }) }
-                        : { icon: MapIcon, label: 'Live Map', color: [C.primary, '#6366F1'] as const, onPress: handleLiveMap },
-                    { icon: Phone, label: 'Call Driver', color: ['#10B981', '#059669'] as const, onPress: handleCallDriver },
-                    { icon: MessageCircle, label: 'Chat Support', color: ['#F59E0B', '#D97706'] as const, onPress: handleChatSupport },
-                    { icon: FileText, label: 'View POD', color: ['#EF4444', '#DC2626'] as const, onPress: handleDownloadPod },
+                        ? { icon: Star, label: t('shipmentDetails.rateDelivery'), color: [C.primary, C.primaryDark] as const, onPress: () => (navigation as any).navigate('Rating', { shipmentId }) }
+                        : { icon: MapIcon, label: t('shipmentDetails.liveMap'), color: [C.primary, '#6366F1'] as const, onPress: handleLiveMap },
+                    { icon: Phone, label: t('shipmentDetails.callDriver'), color: ['#10B981', '#059669'] as const, onPress: handleCallDriver },
+                    { icon: MessageCircle, label: t('shipmentDetails.chatSupport'), color: ['#F59E0B', '#D97706'] as const, onPress: handleChatSupport },
+                    { icon: FileText, label: t('shipmentDetails.viewPod'), color: ['#EF4444', '#DC2626'] as const, onPress: handleDownloadPod },
                 ].map((btn) => (
                     <TouchableOpacity key={btn.label} style={styles.actionBtn} activeOpacity={0.85} onPress={btn.onPress}>
                         <LinearGradient colors={btn.color} style={styles.actionBtnGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
