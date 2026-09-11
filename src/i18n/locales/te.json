@@ -566,5 +566,18 @@
     "submitting": "సమర్పిస్తోంది…",
     "submitRating": "రేటింగ్‌ను సమర్పించండి",
     "skipForNow": "ప్రస్తుతానికి దాటవేయండి"
+  },
+  "driverProfile": {
+    "paymentsComingSoon": "చెల్లింపులు త్వరలో వస్తాయి",
+    "yourTripsOption": "మీ ట్రిప్‌లు",
+    "myDocumentsOption": "నా పత్రాలు",
+    "paymentsOption": "చెల్లింపులు",
+    "supportOption": "సపోర్ట్",
+    "settingsOption": "సెట్టింగ్‌లు",
+    "noRatingsYet": "ఇంకా రేటింగ్‌లు లేవు",
+    "totalDeliveries": "మొత్తం డెలివరీలు",
+    "ratingLabel": "రేటింగ్",
+    "account": "ఖాతా",
+    "driverFallback": "డ్రైవర్"
   }
 }

@@ -566,5 +566,18 @@
     "submitting": "सबमिट हो रहा है…",
     "submitRating": "रेटिंग सबमिट करें",
     "skipForNow": "अभी के लिए छोड़ें"
+  },
+  "driverProfile": {
+    "paymentsComingSoon": "भुगतान जल्द आ रहा है",
+    "yourTripsOption": "आपकी यात्राएं",
+    "myDocumentsOption": "मेरे दस्तावेज़",
+    "paymentsOption": "भुगतान",
+    "supportOption": "सहायता",
+    "settingsOption": "सेटिंग्स",
+    "noRatingsYet": "अभी तक कोई रेटिंग नहीं",
+    "totalDeliveries": "कुल डिलीवरी",
+    "ratingLabel": "रेटिंग",
+    "account": "खाता",
+    "driverFallback": "ड्राइवर"
   }
 }

@@ -49,6 +49,7 @@ import { useLogout } from '@hooks/useLogout';
 import { useAuthStore } from '@features/store/authStore';
 import { showToast } from '@ui/alert/toastStore';
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 type ProfileOption = {
     id: string;
@@ -60,7 +61,7 @@ type ProfileOption = {
     onPress: () => void;
 };
 
-const useProfileActions = () => {
+const useProfileActions = (t: (key: string) => string) => {
     const navigation = useNavigation();
     const logoutMutation = useLogout();
 
@@ -76,16 +77,16 @@ const useProfileActions = () => {
     }, [navigation]);
 
     const logout = useCallback(() => {
-        Alert.alert('Logout', 'Are you sure you want to log out?', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Logout', style: 'destructive', onPress: () => logoutMutation.mutate() },
+        Alert.alert(t('common.logout'), t('settings.logoutConfirm'), [
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: t('common.logout'), style: 'destructive', onPress: () => logoutMutation.mutate() },
         ]);
-    }, [logoutMutation]);
+    }, [logoutMutation, t]);
 
     return {
         goTrips: () => navigation.navigate('DriverTrips' as never),
         goDocuments: () => navigation.navigate('DriverDocuments' as never),
-        goPayments: () => comingSoon('Payments'),
+        goPayments: () => comingSoon(t('driverProfile.paymentsOption')),
         goSupport,
         goSettings: () => navigation.navigate('DriverSettings' as never),
         logout,
@@ -97,27 +98,28 @@ const initialsFor = (label: string) =>
 
 const ProfileScreen = () => {
     const { colors, fonts, fontSize, spacing, radius } = useAppTheme();
+    const { t } = useTranslation();
     const styles = useMemo(() => makeStyles(colors, fonts, fontSize, spacing, radius), [colors, fonts, fontSize, spacing, radius]);
     const { data: driver, isLoading, error, refetch } = useMe();
     const documentsVerified = useAuthStore((s) => s.user?.documentsVerified ?? false);
-    const actions = useProfileActions();
+    const actions = useProfileActions(t);
 
-    const displayName = driver?.displayName || driver?.email || 'Driver';
+    const displayName = driver?.displayName || driver?.email || t('driverProfile.driverFallback');
 
     const options: ProfileOption[] = [
-        { id: '1', title: 'Your Trips', icon: Receipt, iconBg: colors.PRIMARY_LIGHT, iconColor: colors.PRIMARY, onPress: actions.goTrips },
+        { id: '1', title: t('driverProfile.yourTripsOption'), icon: Receipt, iconBg: colors.PRIMARY_LIGHT, iconColor: colors.PRIMARY, onPress: actions.goTrips },
         {
             id: '2',
-            title: 'My Documents',
-            subtitle: documentsVerified ? 'Verified' : 'Upload for admin review',
+            title: t('driverProfile.myDocumentsOption'),
+            subtitle: documentsVerified ? t('driverHome.verified') : t('driverHome.uploadForAdminReview'),
             icon: FileText,
             iconBg: documentsVerified ? '#DCFCE7' : '#FEF3C7',
             iconColor: documentsVerified ? '#16A34A' : '#D97706',
             onPress: actions.goDocuments,
         },
-        { id: '3', title: 'Payments', icon: CreditCard, iconBg: colors.PRIMARY_LIGHT, iconColor: colors.PRIMARY, onPress: actions.goPayments },
-        { id: '4', title: 'Support', icon: Headphones, iconBg: colors.PRIMARY_LIGHT, iconColor: colors.PRIMARY, onPress: actions.goSupport },
-        { id: '5', title: 'Settings', icon: Settings, iconBg: colors.PRIMARY_LIGHT, iconColor: colors.PRIMARY, onPress: actions.goSettings },
+        { id: '3', title: t('driverProfile.paymentsOption'), icon: CreditCard, iconBg: colors.PRIMARY_LIGHT, iconColor: colors.PRIMARY, onPress: actions.goPayments },
+        { id: '4', title: t('driverProfile.supportOption'), icon: Headphones, iconBg: colors.PRIMARY_LIGHT, iconColor: colors.PRIMARY, onPress: actions.goSupport },
+        { id: '5', title: t('driverProfile.settingsOption'), icon: Settings, iconBg: colors.PRIMARY_LIGHT, iconColor: colors.PRIMARY, onPress: actions.goSettings },
     ];
 
     const renderItem = useCallback(
@@ -155,7 +157,7 @@ const ProfileScreen = () => {
             <View style={styles.center}>
                 <Text style={styles.errorText}>{error.message}</Text>
                 <Pressable style={styles.retryButton} onPress={() => refetch()}>
-                    <Text style={styles.retryText}>Retry</Text>
+                    <Text style={styles.retryText}>{t('common.retry')}</Text>
                 </Pressable>
             </View>
         );
@@ -182,7 +184,7 @@ const ProfileScreen = () => {
                             <View style={styles.ratingPill}>
                                 <Star color="#FCD34D" fill="#FCD34D" size={13} />
                                 <Text style={styles.rating}>
-                                    {driver?.rating != null ? driver.rating.toFixed(1) : 'No ratings yet'}
+                                    {driver?.rating != null ? driver.rating.toFixed(1) : t('driverProfile.noRatingsYet')}
                                 </Text>
                             </View>
                         </LinearGradient>
@@ -190,17 +192,17 @@ const ProfileScreen = () => {
                         <View style={styles.statsRow}>
                             <View style={styles.statCard}>
                                 <Text style={styles.statValue}>{driver?.totalDeliveries ?? 0}</Text>
-                                <Text style={styles.statLabel}>Total Deliveries</Text>
+                                <Text style={styles.statLabel}>{t('driverProfile.totalDeliveries')}</Text>
                             </View>
                             <View style={styles.statCard}>
                                 <Text style={styles.statValue}>
                                     {driver?.rating != null ? driver.rating.toFixed(1) : '—'}
                                 </Text>
-                                <Text style={styles.statLabel}>Rating</Text>
+                                <Text style={styles.statLabel}>{t('driverProfile.ratingLabel')}</Text>
                             </View>
                         </View>
 
-                        <Text style={styles.sectionLabel}>ACCOUNT</Text>
+                        <Text style={styles.sectionLabel}>{t('driverProfile.account')}</Text>
                     </>
                 }
                 data={options}
@@ -210,7 +212,7 @@ const ProfileScreen = () => {
                 ListFooterComponent={
                     <Pressable style={styles.logout} onPress={actions.logout}>
                         <LogOut color="#FFF" size={16} />
-                        <Text style={styles.logoutText}>Logout</Text>
+                        <Text style={styles.logoutText}>{t('common.logout')}</Text>
                     </Pressable>
                 }
             />

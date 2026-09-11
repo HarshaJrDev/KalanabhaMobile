@@ -566,5 +566,18 @@
     "submitting": "Submitting…",
     "submitRating": "Submit Rating",
     "skipForNow": "Skip for Now"
+  },
+  "driverProfile": {
+    "paymentsComingSoon": "Payments is coming soon",
+    "yourTripsOption": "Your Trips",
+    "myDocumentsOption": "My Documents",
+    "paymentsOption": "Payments",
+    "supportOption": "Support",
+    "settingsOption": "Settings",
+    "noRatingsYet": "No ratings yet",
+    "totalDeliveries": "Total Deliveries",
+    "ratingLabel": "Rating",
+    "account": "ACCOUNT",
+    "driverFallback": "Driver"
   }
 }
