@@ -11,6 +11,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, TextInput, Platform, Animated, Image, Dimensions } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { MapPin, Bell, Search, QrCode, Users, MessageCircle, Zap, ChevronRight, RotateCw, ShieldCheck } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { useAutoAddress } from '@location/useAutoAddress';
 import { HomeColors, HomeFonts, SPACING } from './theme';
 
@@ -46,6 +47,7 @@ const HomeHeader: React.FC<Props> = ({
     colors: COLORS, fonts: FONTS, fadeAnim, headerScale, bellShake,
 }) => {
     const styles = React.useMemo(() => makeStyles(COLORS, FONTS), [COLORS, FONTS]);
+    const { t } = useTranslation();
     const { getAddress } = useAutoAddress();
     const [address, setAddress] = useState<string | null>(null);
     const [locating, setLocating] = useState(true);
@@ -77,9 +79,9 @@ const HomeHeader: React.FC<Props> = ({
 
     const getGreeting = () => {
         const hour = new Date().getHours();
-        if (hour < 12) return 'Good Morning';
-        if (hour < 17) return 'Good Afternoon';
-        return 'Good Evening';
+        if (hour < 12) return t('home.goodMorning');
+        if (hour < 17) return t('home.goodAfternoon');
+        return t('home.goodEvening');
     };
 
     return (
@@ -96,7 +98,7 @@ const HomeHeader: React.FC<Props> = ({
                             <View style={styles.brandNameRow}>
                                 <Text style={styles.brandName}>Kalanabha</Text>
                                 <View style={styles.fleetBadge}>
-                                    <Text style={styles.fleetBadgeText}>FLEET</Text>
+                                    <Text style={styles.fleetBadgeText}>{t('home.fleet')}</Text>
                                 </View>
                             </View>
                             <Text style={styles.brandSubtitle}>Home</Text>
@@ -115,7 +117,7 @@ const HomeHeader: React.FC<Props> = ({
                             <MapPin size={16} color="#F1F5F9" />
                         )}
                         <Text style={styles.cityText} numberOfLines={1}>
-                            {locating ? 'Finding your location…' : locationFailed ? 'Tap to set location' : (address ?? 'Tap to set location')}
+                            {locating ? t('home.findingLocation') : locationFailed ? t('home.tapToSetLocation') : (address ?? t('home.tapToSetLocation'))}
                         </Text>
                         <ChevronRight size={16} color="#CBD5E1" />
                     </Pressable>
@@ -146,14 +148,14 @@ const HomeHeader: React.FC<Props> = ({
                     <View style={styles.heroCopy}>
                         <View style={styles.dispatchCaptionRow}>
                             <Zap size={12} color={COLORS.primaryDark} />
-                            <Text style={styles.dispatchCaptionText}>FAST DISPATCH</Text>
+                            <Text style={styles.dispatchCaptionText}>{t('home.fastDispatch')}</Text>
                             <View style={styles.dispatchCaptionDot} />
                             <ShieldCheck size={12} color={COLORS.primaryDark} />
-                            <Text style={styles.dispatchCaptionText}>Insured</Text>
+                            <Text style={styles.dispatchCaptionText}>{t('home.insured')}</Text>
                         </View>
                         <Text style={styles.heroKicker}>{getGreeting()}, {userName}</Text>
-                        <Text style={styles.heroTitle}>Reliable delivery at your door</Text>
-                        <Text style={styles.heroSub}>Book verified fleet pilots with live tracking.</Text>
+                        <Text style={styles.heroTitle}>{t('home.heroTitle')}</Text>
+                        <Text style={styles.heroSub}>{t('home.heroSub')}</Text>
                     </View>
                     <Image source={DELIVERY_TRUCK_HERO} resizeMode="contain" style={styles.heroTruck} />
                 </View>
@@ -162,7 +164,7 @@ const HomeHeader: React.FC<Props> = ({
                     <Search size={18} color={COLORS.textSecondary} />
                     <TextInput
                         style={styles.searchInput}
-                        placeholder="Search tracking ID or order..."
+                        placeholder={t('home.searchPlaceholder')}
                         placeholderTextColor={COLORS.textLight}
                         value={searchText}
                         onChangeText={onSearchChange}

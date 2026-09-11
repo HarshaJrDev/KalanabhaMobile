@@ -9,6 +9,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { MapPin } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import type { ServiceArea } from '@features/settings/types';
 import { HomeColors, HomeFonts, SPACING } from './theme';
 
@@ -21,13 +22,14 @@ interface Props {
 
 const PopularPickupPoints: React.FC<Props> = ({ areas, onSelect, colors: COLORS, fonts: FONTS }) => {
     const styles = React.useMemo(() => makeStyles(COLORS, FONTS), [COLORS, FONTS]);
+    const { t } = useTranslation();
 
     if (areas.length === 0) return null;
 
     return (
         <View style={styles.section}>
-            <Text style={styles.title}>Popular Pickup Points</Text>
-            <Text style={styles.subtitle}>Tap a locality to start booking from there</Text>
+            <Text style={styles.title}>{t('home.popularPickupPoints')}</Text>
+            <Text style={styles.subtitle}>{t('home.tapLocalityHint')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 {areas.slice(0, 12).map((area) => (
                     <Pressable key={area.id} style={styles.chip} onPress={() => onSelect(area)}>

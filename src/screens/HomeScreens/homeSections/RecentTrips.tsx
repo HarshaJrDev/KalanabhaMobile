@@ -14,6 +14,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { RotateCcw, ChevronRight } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import type { Shipment } from '@shipment/types';
 import type { VehicleConfig } from '@features/settings/types';
 import VehicleVisual from '@components/VehicleVisual';
@@ -30,15 +31,16 @@ interface Props {
 
 const RecentTrips: React.FC<Props> = ({ trips, vehicleConfigs, onBookAgain, onViewAll, colors: COLORS, fonts: FONTS }) => {
     const styles = React.useMemo(() => makeStyles(COLORS, FONTS), [COLORS, FONTS]);
+    const { t } = useTranslation();
 
     if (trips.length === 0) return null;
 
     return (
         <View style={styles.section}>
             <View style={styles.header}>
-                <Text style={styles.title}>Recent Trips</Text>
+                <Text style={styles.title}>{t('home.recentTrips')}</Text>
                 <Pressable style={styles.viewAllBtn} onPress={onViewAll}>
-                    <Text style={styles.viewAllText}>View All</Text>
+                    <Text style={styles.viewAllText}>{t('common.viewAll')}</Text>
                     <ChevronRight size={14} color={COLORS.primary} />
                 </Pressable>
             </View>
@@ -69,7 +71,7 @@ const RecentTrips: React.FC<Props> = ({ trips, vehicleConfigs, onBookAgain, onVi
                             </Text>
                             <Pressable style={styles.bookAgainBtn} onPress={() => onBookAgain(trip)}>
                                 <RotateCcw size={12} color="#fff" />
-                                <Text style={styles.bookAgainText}>Book Again</Text>
+                                <Text style={styles.bookAgainText}>{t('home.bookAgain')}</Text>
                             </Pressable>
                         </View>
                     );

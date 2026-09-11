@@ -52,6 +52,7 @@ import {
 import { RootStackParamList } from '../navigation/types';
 import { useTabBarContentPadding } from '../navigation/useTabBarStyle';
 import { useAppTheme } from '@theme/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { makeHomeColors, SPACING } from './homeSections/theme';
 import HomeHeader from './homeSections/HomeHeader';
 import ActiveBookingCard from './homeSections/ActiveBookingCard';
@@ -92,12 +93,12 @@ const toHomeShipment = (s: BackendShipment): Shipment => ({
     driverPhone: s.dispatch?.driverPhone ?? null,
 });
 
-const makeStatusConfig = (COLORS: ReturnType<typeof makeHomeColors>) => ({
-    searching: { color: COLORS.warning, bg: '#FEF3C7', icon: RotateCw, label: 'Assigning Pilot' },
-    accepted: { color: COLORS.primary, bg: '#EFF6FF', icon: Truck, label: 'Accepted' },
-    'in-transit': { color: COLORS.accent, bg: '#FEF3C7', icon: Bike, label: 'In Transit' },
-    delivered: { color: COLORS.success, bg: '#ECFDF5', icon: CheckCircle2, label: 'Delivered' },
-    expired: { color: COLORS.danger, bg: '#FEF2F2', icon: AlertCircle, label: 'Expired' },
+const makeStatusConfig = (COLORS: ReturnType<typeof makeHomeColors>, t: (key: string) => string) => ({
+    searching: { color: COLORS.warning, bg: '#FEF3C7', icon: RotateCw, label: t('status.assigningPilot') },
+    accepted: { color: COLORS.primary, bg: '#EFF6FF', icon: Truck, label: t('status.accepted') },
+    'in-transit': { color: COLORS.accent, bg: '#FEF3C7', icon: Bike, label: t('status.inTransit') },
+    delivered: { color: COLORS.success, bg: '#ECFDF5', icon: CheckCircle2, label: t('status.delivered') },
+    expired: { color: COLORS.danger, bg: '#FEF2F2', icon: AlertCircle, label: t('status.expired') },
 });
 type StatusConfig = ReturnType<typeof makeStatusConfig>;
 type HomeColors = ReturnType<typeof makeHomeColors>;
@@ -107,8 +108,9 @@ type HomeScreenProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 const HomeScreen: React.FC = () => {
     const navigation = useNavigation<HomeScreenProp>();
     const { colors: BRAND, fonts: FONTS } = useAppTheme();
+    const { t } = useTranslation();
     const COLORS = useMemo(() => makeHomeColors(BRAND), [BRAND]);
-    const STATUS_CONFIG = useMemo(() => makeStatusConfig(COLORS), [COLORS]);
+    const STATUS_CONFIG = useMemo(() => makeStatusConfig(COLORS, t), [COLORS, t]);
     const styles = useMemo(() => makeStyles(COLORS, FONTS), [COLORS, FONTS]);
     const tabBarPadding = useTabBarContentPadding();
 
@@ -263,9 +265,9 @@ const HomeScreen: React.FC = () => {
 
                 <Animated.View style={[styles.statsContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
                     {[
-                        { label: 'Active', value: activeShipmentsRaw.length, color: COLORS.primary },
-                        { label: 'Delivered', value: deliveredCount, color: COLORS.success },
-                        { label: 'Pending', value: pendingCount, color: COLORS.warning },
+                        { label: t('home.statActive'), value: activeShipmentsRaw.length, color: COLORS.primary },
+                        { label: t('home.statDelivered'), value: deliveredCount, color: COLORS.success },
+                        { label: t('home.statPending'), value: pendingCount, color: COLORS.warning },
                     ].map((stat, index) => (
                         <React.Fragment key={stat.label}>
                             {index > 0 && <View style={styles.statDivider} />}
@@ -297,8 +299,8 @@ const HomeScreen: React.FC = () => {
                                 <PackagePlus size={22} color="#fff" />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={styles.firstBookingTitle}>Start your first delivery</Text>
-                                <Text style={styles.firstBookingSub}>Pick a vehicle below or tap here to book</Text>
+                                <Text style={styles.firstBookingTitle}>{t('home.startFirstDelivery')}</Text>
+                                <Text style={styles.firstBookingSub}>{t('home.pickVehicleHint')}</Text>
                             </View>
                             <ArrowRight size={18} color="#fff" />
                         </Pressable>
@@ -342,9 +344,9 @@ const HomeScreen: React.FC = () => {
                     {activeShipments.length > 0 && (
                         <Animated.View style={[styles.sectionContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
                             <View style={styles.sectionHeader}>
-                                <Text style={styles.sectionTitle}>More Active Shipments</Text>
+                                <Text style={styles.sectionTitle}>{t('home.moreActiveShipments')}</Text>
                                 <Pressable style={styles.viewAllButton} onPress={() => (navigation as any).navigate('Orders')}>
-                                    <Text style={styles.viewAllText}>View All</Text>
+                                    <Text style={styles.viewAllText}>{t('common.viewAll')}</Text>
                                     <ChevronRight size={16} color={COLORS.primary} />
                                 </Pressable>
                             </View>
@@ -359,15 +361,15 @@ const HomeScreen: React.FC = () => {
                             <View style={styles.quickActionIconWrap}>
                                 <CalendarClock size={20} color={COLORS.primary} />
                             </View>
-                            <Text style={styles.quickActionTitle}>Schedule Later</Text>
-                            <Text style={styles.quickActionSub}>Plan forward pickups</Text>
+                            <Text style={styles.quickActionTitle}>{t('home.scheduleLater')}</Text>
+                            <Text style={styles.quickActionSub}>{t('home.planForwardPickups')}</Text>
                         </Pressable>
                         <Pressable style={styles.quickActionTile} onPress={() => (navigation as any).navigate('CheckRate')}>
                             <View style={styles.quickActionIconWrap}>
                                 <Calculator size={20} color={COLORS.primary} />
                             </View>
-                            <Text style={styles.quickActionTitle}>Calculate Rates</Text>
-                            <Text style={styles.quickActionSub}>Estimate before you book</Text>
+                            <Text style={styles.quickActionTitle}>{t('home.calculateRates')}</Text>
+                            <Text style={styles.quickActionSub}>{t('home.estimateBeforeBook')}</Text>
                         </Pressable>
                     </View>
 
@@ -385,8 +387,8 @@ const HomeScreen: React.FC = () => {
                             <Truck size={22} color="#fff" />
                         </View>
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.movingBannerTitle}>House Shifting</Text>
-                            <Text style={styles.movingBannerSub}>Movers with loading/unloading help — van or truck</Text>
+                            <Text style={styles.movingBannerTitle}>{t('home.houseShifting')}</Text>
+                            <Text style={styles.movingBannerSub}>{t('home.houseShiftingSub')}</Text>
                         </View>
                         <ArrowRight size={18} color="#fff" />
                     </Pressable>
@@ -394,17 +396,17 @@ const HomeScreen: React.FC = () => {
                     <View style={styles.trustBanner}>
                         <View style={styles.trustBannerTitleRow}>
                             <Shield size={16} color={COLORS.primary} />
-                            <Text style={styles.trustBannerTitle}>Kalanabha Transit Shield</Text>
+                            <Text style={styles.trustBannerTitle}>{t('home.transitShieldTitle')}</Text>
                         </View>
-                        <Text style={styles.trustBannerText}>Insured Deliveries · Verified Fleet Pilots · Encrypted Live GPS Telemetry</Text>
+                        <Text style={styles.trustBannerText}>{t('home.transitShieldSub')}</Text>
                         <View style={styles.trustChecksRow}>
                             <View style={styles.trustCheckItem}>
                                 <CheckCircle2 size={13} color={COLORS.success} />
-                                <Text style={styles.trustCheckText}>Insured</Text>
+                                <Text style={styles.trustCheckText}>{t('home.insured')}</Text>
                             </View>
                             <View style={styles.trustCheckItem}>
                                 <CheckCircle2 size={13} color={COLORS.success} />
-                                <Text style={styles.trustCheckText}>Instant OTP Proof</Text>
+                                <Text style={styles.trustCheckText}>{t('home.instantOtpProof')}</Text>
                             </View>
                         </View>
                     </View>

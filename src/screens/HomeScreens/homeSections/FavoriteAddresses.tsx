@@ -5,6 +5,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { Bookmark } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import type { SavedAddress } from '@features/savedAddresses/types';
 import { HomeColors, HomeFonts, SPACING } from './theme';
 
@@ -18,15 +19,16 @@ interface Props {
 
 const FavoriteAddresses: React.FC<Props> = ({ addresses, onSelect, onManage, colors: COLORS, fonts: FONTS }) => {
     const styles = React.useMemo(() => makeStyles(COLORS, FONTS), [COLORS, FONTS]);
+    const { t } = useTranslation();
 
     if (addresses.length === 0) return null;
 
     return (
         <View style={styles.section}>
             <View style={styles.headerRow}>
-                <Text style={styles.title}>Favorites</Text>
+                <Text style={styles.title}>{t('home.favorites')}</Text>
                 <Pressable onPress={onManage} hitSlop={8}>
-                    <Text style={styles.manageText}>Manage</Text>
+                    <Text style={styles.manageText}>{t('home.manage')}</Text>
                 </Pressable>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
