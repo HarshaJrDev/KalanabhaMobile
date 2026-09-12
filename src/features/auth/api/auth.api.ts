@@ -36,3 +36,14 @@ export const resetPassword = async (payload: {
 }): Promise<void> => {
     await apiClient.post<ApiSuccessResponse<null>>('/auth/reset-password', payload);
 };
+
+// Real OTP-based login — an alternative to password login, delivered by
+// email (no SMS provider exists in this app).
+export const requestLoginOtp = async (email: string): Promise<void> => {
+    await apiClient.post<ApiSuccessResponse<null>>('/auth/login-otp/request', { email });
+};
+
+export const verifyLoginOtp = async (email: string, code: string): Promise<AuthTokens> => {
+    const { data } = await apiClient.post<ApiSuccessResponse<AuthTokens>>('/auth/login-otp/verify', { email, code });
+    return data.data;
+};

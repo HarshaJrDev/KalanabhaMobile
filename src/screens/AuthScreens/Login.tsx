@@ -37,6 +37,7 @@ import InputField from '@components/InputField';
 import AppButton from '@components/AppButton';
 import { CustomLoader } from '@components/CustomLoader';
 import { useLogin } from '@hooks/useLogin';
+import { useRequestLoginOtp, useVerifyLoginOtp } from '@hooks/useLoginOtp';
 
 import { getApp } from '@react-native-firebase/app';
 import { getMessaging, requestPermission, getToken, AuthorizationStatus } from '@react-native-firebase/messaging';
@@ -111,6 +112,44 @@ const Login = () => {
 
     const navigation = useNavigation();
     const { mutate, isPending } = useLogin();
+
+    // Real OTP-based login (customer only — drivers keep admin-issued
+    // password credentials, same reasoning "Forgot credentials? Contact
+    // admin" already applies for them). 'password' is the existing,
+    // default flow; 'otp' swaps the password field for an email-a-code
+    // flow, delivered by the same POST /auth/login-otp/* endpoints.
+    const [loginMode, setLoginMode] = useState<'password' | 'otp'>('password');
+    const [otpStep, setOtpStep] = useState<'request' | 'verify'>('request');
+    const [otpCode, setOtpCode] = useState('');
+    const { mutate: requestOtp, isPending: requestingOtp } = useRequestLoginOtp();
+    const { mutate: verifyOtp, isPending: verifyingOtp } = useVerifyLoginOtp();
+
+    const handleRequestOtp = useCallback(() => {
+        setError(null);
+        if (!email?.trim()) {
+            setError(t('login.emailPasswordRequired'));
+            return;
+        }
+        requestOtp(email.trim().toLowerCase(), {
+            onSuccess: () => setOtpStep('verify'),
+            onError: (err) => setError(err.message),
+        });
+    }, [email, requestOtp, t]);
+
+    const handleVerifyOtp = useCallback(() => {
+        setError(null);
+        if (!otpCode.trim()) {
+            setError(t('login.otpCodeRequired'));
+            return;
+        }
+        verifyOtp(
+            { email: email.trim().toLowerCase(), code: otpCode.trim() },
+            {
+                onSuccess: () => saveFCMToken(),
+                onError: (err) => setError(err.message),
+            },
+        );
+    }, [email, otpCode, verifyOtp, t]);
 
     // Entrance animation
     useEffect(() => {
@@ -235,18 +274,47 @@ const Login = () => {
                         label={t('login.email')}
                         placeholder={isDriver ? 'your-email@kalanabha.com' : t('login.emailPlaceholder')}
                         value={email}
-                        onChange={setEmail}
+                        onChange={(v) => { setEmail(v); if (loginMode === 'otp') setOtpStep('request'); }}
                         keyboardType="email-address"
                         autoCapitalize="none"
+                        editable={loginMode === 'password' || otpStep === 'request'}
                     />
 
-                    <InputField
-                        label={t('login.password')}
-                        placeholder={t('login.passwordPlaceholder')}
-                        secure
-                        value={password}
-                        onChange={setPassword}
-                    />
+                    {loginMode === 'password' ? (
+                        <InputField
+                            label={t('login.password')}
+                            placeholder={t('login.passwordPlaceholder')}
+                            secure
+                            value={password}
+                            onChange={setPassword}
+                        />
+                    ) : otpStep === 'verify' ? (
+                        <InputField
+                            label={t('login.otpCodeLabel')}
+                            placeholder="000000"
+                            value={otpCode}
+                            onChange={setOtpCode}
+                            keyboardType="number-pad"
+                        />
+                    ) : null}
+
+                    {/* Customer-only OTP/password toggle — drivers keep
+                        admin-issued password credentials. */}
+                    {!isDriver && (
+                        <TouchableOpacity
+                            onPress={() => {
+                                setError(null);
+                                setOtpStep('request');
+                                setOtpCode('');
+                                setLoginMode((m) => (m === 'password' ? 'otp' : 'password'));
+                            }}
+                            style={{ marginTop: H(4) }}
+                        >
+                            <Text style={styles.forgotText}>
+                                {loginMode === 'password' ? t('login.useOtpInstead') : t('login.usePasswordInstead')}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
 
                     {/* Error */}
                     {error ? (
@@ -256,7 +324,8 @@ const Login = () => {
                         </View>
                     ) : null}
 
-                    {/* Remember me + Forgot */}
+                    {/* Remember me + Forgot — password mode only */}
+                    {loginMode === 'password' && (
                     <View style={styles.row}>
                         <TouchableOpacity
                             style={styles.rememberContainer}
@@ -288,20 +357,35 @@ const Login = () => {
                             </TouchableOpacity>
                         )}
                     </View>
+                    )}
 
                     {/* Login button */}
                     <View style={styles.loginBtnWrapper}>
-                        <AppButton
-                            title={
-                                isPending || loading
-                                    ? t('login.loggingIn')
-                                    : isDriver
-                                        ? t('login.loginAsDriver')
-                                        : t('login.loginButton')
-                            }
-                            onPress={handleLogin}
-                            disabled={isPending || loading}
-                        />
+                        {loginMode === 'password' ? (
+                            <AppButton
+                                title={
+                                    isPending || loading
+                                        ? t('login.loggingIn')
+                                        : isDriver
+                                            ? t('login.loginAsDriver')
+                                            : t('login.loginButton')
+                                }
+                                onPress={handleLogin}
+                                disabled={isPending || loading}
+                            />
+                        ) : otpStep === 'request' ? (
+                            <AppButton
+                                title={requestingOtp ? t('login.sendingCode') : t('login.sendCode')}
+                                onPress={handleRequestOtp}
+                                disabled={requestingOtp}
+                            />
+                        ) : (
+                            <AppButton
+                                title={verifyingOtp ? t('login.loggingIn') : t('login.verifyAndLogin')}
+                                onPress={handleVerifyOtp}
+                                disabled={verifyingOtp}
+                            />
+                        )}
                     </View>
 
                     {/* Social logins (customer only) */}
