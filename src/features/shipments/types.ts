@@ -139,6 +139,11 @@ export interface BackendShipment {
     // instead of SEARCHING when this is set in the future.
     scheduledAt: string | null;
 
+    // Optional intermediate stops between pickup and drop, ordered by
+    // sequence — the driver must complete them strictly in order (server
+    // enforced). Empty/absent for a normal two-point shipment.
+    stops?: ShipmentStop[];
+
     createdAt: string;
     updatedAt: string;
 }
@@ -173,6 +178,35 @@ export interface CreateShipmentPayload {
     // Real driver-facing drop-off preference ("Leave at door", "Call
     // before delivery") — distinct from `notes`.
     deliveryInstructions?: string;
+    // Optional intermediate stops between pickup and drop (max 10),
+    // completed by the driver strictly in order — POST /shipments'
+    // StopDto[].
+    stops?: ShipmentStopInput[];
+}
+
+export interface ShipmentStopInput {
+    address: string;
+    lat: number;
+    lng: number;
+    contactName?: string;
+    contactPhone?: string;
+    notes?: string;
+}
+
+export type ShipmentStopStatus = 'PENDING' | 'ARRIVED' | 'COMPLETED';
+
+// Nested on Shipment — GET /shipments/:id's ordered `stops` array.
+export interface ShipmentStop {
+    id: string;
+    sequence: number;
+    address: string;
+    lat: number;
+    lng: number;
+    contactName: string | null;
+    contactPhone: string | null;
+    notes: string | null;
+    status: ShipmentStopStatus;
+    completedAt: string | null;
 }
 
 // POST /shipments/quote — QuoteShipmentDto / response

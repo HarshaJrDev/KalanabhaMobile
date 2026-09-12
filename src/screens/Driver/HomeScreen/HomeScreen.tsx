@@ -12,7 +12,7 @@ import {
     Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useSearchingShipments, useMyShipmentsAsDriver, useAcceptShipment } from '@features/shipments/hooks';
+import { useSearchingShipments, useMyShipmentsAsDriver, useAcceptShipment, useCompleteShipmentStop } from '@features/shipments/hooks';
 import Animated, {
     FadeIn,
     FadeOut,
@@ -116,6 +116,14 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
         [myShipments],
     );
     const driverActions = useDriverActions();
+    // Multi-stop bookings — completed strictly in order (server-enforced);
+    // the mutation targets activeDelivery.id so it stays wired to whichever
+    // shipment is currently active without a separate per-stop hook call.
+    const { mutate: completeStop, isPending: completingStop } = useCompleteShipmentStop(activeDelivery?.id ?? '');
+    const nextPendingStop = useMemo(
+        () => activeDelivery?.stops?.find((s) => s.status !== 'COMPLETED') ?? null,
+        [activeDelivery],
+    );
 
     const shipments = useMemo<LogisticsItem[]>(
         () => (searchingShipments ?? []).map(makeToLogisticsItem(t)),
@@ -395,6 +403,36 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                             <TouchableOpacity style={styles.arrivalCtaBtn} onPress={() => driverActions.onCompleteDelivery(activeDelivery.id)}>
                                 <Text style={styles.arrivalCtaText}>{t('driverHome.completeDelivery')}</Text>
                             </TouchableOpacity>
+                        )}
+
+                        {/* Multi-stop bookings — completed strictly in order
+                            (server rejects an out-of-order attempt), so only
+                            the next pending stop ever shows an actionable
+                            button; completed/upcoming stops are read-only. */}
+                        {!!activeDelivery.stops?.length && (
+                            <View style={styles.stopsListWrap}>
+                                {activeDelivery.stops.map((stop) => {
+                                    const isNext = nextPendingStop?.id === stop.id;
+                                    const isDone = stop.status === 'COMPLETED';
+                                    return (
+                                        <View key={stop.id} style={styles.stopListRow}>
+                                            <Text style={[styles.stopListSeq, isDone && styles.stopListSeqDone]}>
+                                                {isDone ? '✓' : stop.sequence}
+                                            </Text>
+                                            <Text style={styles.stopListAddress} numberOfLines={1}>{stop.address}</Text>
+                                            {isNext && (
+                                                <TouchableOpacity
+                                                    style={styles.stopCompleteBtn}
+                                                    disabled={completingStop}
+                                                    onPress={() => completeStop(stop.id)}
+                                                >
+                                                    <Text style={styles.stopCompleteBtnText}>{t('driverHome.completeStop')}</Text>
+                                                </TouchableOpacity>
+                                            )}
+                                        </View>
+                                    );
+                                })}
+                            </View>
                         )}
                     </View>
                 )}
@@ -807,6 +845,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     arrivalCtaText: { color: '#fff', fontSize: 13, fontFamily: FONTS.BOLD_PRIMARY },
+    stopsListWrap: { marginTop: 10, gap: 8 },
+    stopListRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    stopListSeq: {
+        width: 20, height: 20, borderRadius: 10, backgroundColor: '#FFF1E8',
+        color: '#FF7518', fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY,
+        textAlign: 'center', textAlignVertical: 'center', lineHeight: 20,
+    },
+    stopListSeqDone: { backgroundColor: '#DCFCE7', color: '#16A34A' },
+    stopListAddress: { flex: 1, fontSize: 12, color: '#333' },
+    stopCompleteBtn: { backgroundColor: '#FF7518', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10 },
+    stopCompleteBtnText: { color: '#fff', fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY },
     devSimulateBtn: {
         marginTop: 8,
         borderRadius: 10,

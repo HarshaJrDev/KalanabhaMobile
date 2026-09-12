@@ -1060,6 +1060,7 @@ const makePkgStyles = (COLORS: OrderColors) => StyleSheet.create({
 
 const StepOrderDetails = ({
     data, onChange, onBack, allData, category, submitting, onSubmit, fareEstimate,
+    areas, stops, onAddStop, onRemoveStop,
 }: {
     data: OrderDetailsForm;
     onChange: <K extends keyof OrderDetailsForm>(key: K, val: OrderDetailsForm[K]) => void;
@@ -1069,6 +1070,10 @@ const StepOrderDetails = ({
     submitting: boolean;
     onSubmit: () => void;
     fareEstimate: FareEstimate;
+    areas: ServiceArea[];
+    stops: { id: string; place: ServiceArea; landmark: string }[];
+    onAddStop: (place: ServiceArea, landmark: string) => void;
+    onRemoveStop: (id: string) => void;
 }) => {
     const { colors: BRAND } = useAppTheme();
     const { t } = useTranslation();
@@ -1111,6 +1116,15 @@ const StepOrderDetails = ({
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeVehicleConfigs]);
+    const [stopDraftPlace, setStopDraftPlace] = useState<ServiceArea | null>(null);
+    const [stopDraftLandmark, setStopDraftLandmark] = useState('');
+    const canAddMoreStops = stops.length < 10;
+    const handleAddStop = () => {
+        if (!stopDraftPlace) return;
+        onAddStop(stopDraftPlace, stopDraftLandmark);
+        setStopDraftPlace(null);
+        setStopDraftLandmark('');
+    };
     // Was adding a flat ₹49/₹29 here for fragile/insurance — a fee that
     // was never actually charged (no payment gateway exists), just
     // silently baked into the displayed total. fragile/insuranceRequested
@@ -1342,6 +1356,50 @@ const StepOrderDetails = ({
                 })}
             </View>
 
+            {/* Extra Stops */}
+            <SectionHeader title={t('addOrder.stopsSectionTitle')} subtitle={t('addOrder.stopsSectionSubtitle')} />
+            {stops.map((s, idx) => (
+                <View key={s.id} style={odStyles.stopRow}>
+                    <View style={odStyles.stopBadge}>
+                        <Text style={odStyles.stopBadgeText}>{idx + 1}</Text>
+                    </View>
+                    <Text style={odStyles.stopText} numberOfLines={1}>
+                        {composeAddress(s.landmark, s.place)}
+                    </Text>
+                    <TouchableOpacity onPress={() => onRemoveStop(s.id)} hitSlop={8}>
+                        <Text style={odStyles.stopRemove}>{t('addOrder.reset')}</Text>
+                    </TouchableOpacity>
+                </View>
+            ))}
+            {canAddMoreStops && (
+                <>
+                    <PlacePicker
+                        label={t('addOrder.addStopLabel')}
+                        value={stopDraftPlace}
+                        areas={areas}
+                        onSelect={setStopDraftPlace}
+                        placeholder={t('addOrder.addStopPlaceholder')}
+                    />
+                    {stopDraftPlace && (
+                        <InputField
+                            label={t('addOrder.labelHouseFlatLandmark')}
+                            value={stopDraftLandmark}
+                            onChangeText={setStopDraftLandmark}
+                            placeholder={t('addOrder.placeholderPickupLandmark')}
+                            icon={MapPin}
+                        />
+                    )}
+                    <TouchableOpacity
+                        style={[odStyles.addStopBtn, !stopDraftPlace && odStyles.addStopBtnDisabled]}
+                        onPress={handleAddStop}
+                        disabled={!stopDraftPlace}
+                        activeOpacity={0.8}
+                    >
+                        <Text style={odStyles.addStopBtnText}>{t('addOrder.addStopButton')}</Text>
+                    </TouchableOpacity>
+                </>
+            )}
+
             {/* Notes */}
             <SectionHeader title={t('addOrder.deliveryNotesSectionTitle')} subtitle={t('addOrder.deliveryNotesSectionSubtitle')} />
             <View style={odStyles.notesBox}>
@@ -1530,6 +1588,25 @@ const recentReceiverStyles = StyleSheet.create({
 });
 
 const makeOdStyles = (COLORS: OrderColors) => StyleSheet.create({
+    stopRow: {
+        flexDirection: 'row', alignItems: 'center', gap: 8,
+        borderWidth: 1.5, borderColor: COLORS.border, borderRadius: RADIUS.md,
+        paddingHorizontal: 12, height: 44, backgroundColor: COLORS.surface, marginBottom: 8,
+    },
+    stopBadge: {
+        width: 20, height: 20, borderRadius: 10, backgroundColor: COLORS.primaryLight,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    stopBadgeText: { fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.primary },
+    stopText: { flex: 1, fontSize: 13, color: COLORS.text },
+    stopRemove: { fontSize: 12, color: COLORS.danger, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
+    addStopBtn: {
+        borderWidth: 1.5, borderColor: COLORS.primary, borderStyle: 'dashed',
+        borderRadius: RADIUS.md, height: 44, alignItems: 'center', justifyContent: 'center',
+        marginBottom: 16,
+    },
+    addStopBtnDisabled: { borderColor: COLORS.border },
+    addStopBtnText: { fontSize: 13, fontFamily: FONTS.SEMI_BOLD_PRIMARY, color: COLORS.primary },
     serviceRow: { flexDirection: 'row', gap: 10, marginBottom: 18 },
     serviceCard: {
         flex: 1, borderRadius: RADIUS.lg, borderWidth: 1.5, borderColor: COLORS.border,
@@ -1912,6 +1989,11 @@ const NewOrder = () => {
     const [pickupRefine, setPickupRefine] = useState<(KnownCoords & { label: string }) | null>(null);
     const [dropRefine, setDropRefine] = useState<(KnownCoords & { label: string }) | null>(null);
     const [pkg, setPkg] = useState<PackageForm>(INIT_PACKAGE);
+    // Optional intermediate stops between pickup and drop (max 10) — each
+    // backed by a real service area like pickup/drop, not free text, so
+    // its lat/lng is always real. Driver completes them strictly in order
+    // (server-enforced) via PATCH /shipments/:id/stops/:stopId/complete.
+    const [stops, setStops] = useState<{ id: string; place: ServiceArea; landmark: string }[]>([]);
     const [orderDetails, setOrderDetails] = useState<OrderDetailsForm>(
         prefill?.vehicleType
             ? { ...INIT_ORDER, vehicleType: prefill.vehicleType as OrderDetailsForm['vehicleType'] }
@@ -2053,6 +2135,14 @@ const NewOrder = () => {
     const updateOrderDetails = useCallback(<K extends keyof OrderDetailsForm>(key: K, val: OrderDetailsForm[K]) =>
         setOrderDetails(prev => ({ ...prev, [key]: val })), []);
 
+    const addStop = useCallback((place: ServiceArea, landmark: string) => {
+        setStops(prev => [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, place, landmark }]);
+    }, []);
+
+    const removeStop = useCallback((id: string) => {
+        setStops(prev => prev.filter(s => s.id !== id));
+    }, []);
+
     const allData: AllOrderData = useMemo(() => ({
         sender, receiver, package: pkg, orderDetails,
     }), [sender, receiver, pkg, orderDetails]);
@@ -2120,6 +2210,13 @@ const NewOrder = () => {
                 promoCode: orderDetails.promoCode.trim() || undefined,
                 scheduledAt: orderDetails.scheduled && orderDetails.scheduledAt ? orderDetails.scheduledAt : undefined,
                 deliveryInstructions: orderDetails.deliveryInstructions.trim() || undefined,
+                stops: stops.length > 0
+                    ? stops.map(s => ({
+                        address: composeAddress(s.landmark, s.place),
+                        lat: s.place.lat,
+                        lng: s.place.lng,
+                    }))
+                    : undefined,
             }, idempotencyKey);
 
             setTrackingId(shipment.trackingId);
@@ -2150,7 +2247,7 @@ const NewOrder = () => {
             setSubmitting(false);
             log(scope, 'END');
         }
-    }, [sender, receiver, pkg, orderDetails, fareEstimate, category, t, payForShipment]);
+    }, [sender, receiver, pkg, orderDetails, stops, fareEstimate, category, t, payForShipment]);
 
     const handleDone = useCallback(() => {
         setShowSuccess(false);
@@ -2230,6 +2327,10 @@ const NewOrder = () => {
                             submitting={submitting}
                             onSubmit={handleSubmit}
                             fareEstimate={fareEstimate}
+                            areas={activeAreas}
+                            stops={stops}
+                            onAddStop={addStop}
+                            onRemoveStop={removeStop}
                         />
                     )}
                 </Animated.View>

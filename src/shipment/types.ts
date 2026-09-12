@@ -12,6 +12,19 @@ export interface LatLng {
     lng: number;
 }
 
+export interface ShipmentStopEntry {
+    id: string;
+    sequence: number;
+    address: string;
+    lat: number;
+    lng: number;
+    contactName: string | null;
+    contactPhone: string | null;
+    notes: string | null;
+    status: 'PENDING' | 'ARRIVED' | 'COMPLETED';
+    completedAt: string | null;
+}
+
 export interface UserMeta {
     uid: string;
     email: string | null;
@@ -135,6 +148,10 @@ export interface Shipment {
 
     // Future-dated pickup — null means "booked now".
     scheduledAt: string | null;
+
+    // Optional intermediate stops between pickup and drop, ordered by
+    // sequence — completed strictly in order (server enforced).
+    stops?: ShipmentStopEntry[];
 
     // Not returned by kalanabhaBackend (no per-shipment customer snapshot
     // endpoint) — only ever populated when parsed straight from a Firestore

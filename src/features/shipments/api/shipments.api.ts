@@ -175,6 +175,14 @@ export const rescheduleShipment = async (id: string, scheduledAt: string): Promi
     return data.data;
 };
 
+// driver only — marks one intermediate stop completed. Server enforces
+// strict sequence order (rejects if an earlier stop isn't COMPLETED yet)
+// and that the caller is the shipment's assigned driver.
+export const completeShipmentStop = async (shipmentId: string, stopId: string): Promise<BackendShipment> => {
+    const { data } = await apiClient.patch<ApiSuccessResponse<BackendShipment>>(`/shipments/${shipmentId}/stops/${stopId}/complete`);
+    return data.data;
+};
+
 // Proof of Delivery — driver only, must be the shipment's own assigned
 // driver (kalanabhaBackend enforces this, not just this screen). Same
 // multipart shape driverDocuments.api.ts's upload already uses.

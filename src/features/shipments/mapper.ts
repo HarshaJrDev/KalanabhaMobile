@@ -53,6 +53,7 @@ export const toShipment = (row: BackendShipment): Shipment => ({
     promoCode: row.promoCode ?? null,
     promoDiscount: row.promoDiscount ?? null,
     scheduledAt: row.scheduledAt ?? null,
+    stops: row.stops,
     dispatch: row.dispatch
         ? {
             driverId: row.dispatch.driverId,

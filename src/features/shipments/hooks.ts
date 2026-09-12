@@ -186,6 +186,14 @@ export const useCompleteDelivery = (id: string) => {
     });
 };
 
+export const useCompleteShipmentStop = (id: string) => {
+    const invalidate = useInvalidateShipmentCaches(id);
+    return useMutation({
+        mutationFn: (stopId: string) => shipmentsApi.completeShipmentStop(id, stopId),
+        onSuccess: invalidate,
+    });
+};
+
 export const useCancelShipment = (id: string) => {
     const invalidate = useInvalidateShipmentCaches(id);
     return useMutation({
