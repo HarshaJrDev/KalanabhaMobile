@@ -19,6 +19,10 @@ export interface RegisterPayload {
     password: string;
     displayName?: string;
     role: BackendUserRole;
+    // Real "invite a friend" — an existing user's own referral code,
+    // entered at signup. Silently ignored server-side if it doesn't match
+    // a real user.
+    referralCode?: string;
 }
 
 // POST /auth/refresh — kalanabhaBackend RefreshTokenDto

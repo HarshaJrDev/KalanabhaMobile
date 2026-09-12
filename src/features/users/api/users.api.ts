@@ -29,3 +29,22 @@ export const setOnlineStatus = async (isOnline: boolean): Promise<StoredUser> =>
     const { data } = await apiClient.patch<ApiSuccessResponse<StoredUser>>('/users/me/online-status', { isOnline });
     return data.data;
 };
+
+// GET /users/me/referral — this user's own real referral code (lazily
+// generated server-side for accounts that predate this feature).
+export const getMyReferralCode = async (): Promise<{ referralCode: string }> => {
+    const { data } = await apiClient.get<ApiSuccessResponse<{ referralCode: string }>>('/users/me/referral');
+    return data.data;
+};
+
+export interface NotificationPreferencesPayload {
+    notifyOrderUpdates?: boolean;
+    notifyPromotions?: boolean;
+    notifyReminders?: boolean;
+}
+
+// PATCH /users/me/notification-preferences — per-category push mute.
+export const updateNotificationPreferences = async (payload: NotificationPreferencesPayload): Promise<StoredUser> => {
+    const { data } = await apiClient.patch<ApiSuccessResponse<StoredUser>>('/users/me/notification-preferences', payload);
+    return data.data;
+};

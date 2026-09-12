@@ -14,6 +14,8 @@ import { getMessaging, hasPermission, AuthorizationStatus } from '@react-native-
 import { ChevronLeft, LogOut } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useLogout } from '@hooks/useLogout';
+import { useMe } from '@hooks/useMe';
+import { useUpdateNotificationPreferences } from '@hooks/useNotificationPreferences';
 import { registerFCMToken } from '@utils/cm';
 import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
@@ -24,6 +26,8 @@ const SettingsScreen = () => {
     const navigation = useNavigation();
     const { t } = useTranslation();
     const logoutMutation = useLogout();
+    const { data: me } = useMe();
+    const { mutate: updatePrefs } = useUpdateNotificationPreferences();
     const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
     // Real device safe-area inset — this header had a bare `padding: 16`,
     // so it sat under the status bar/camera cutout on real devices (same
@@ -83,6 +87,36 @@ const SettingsScreen = () => {
                     disabled={notificationsEnabled === null}
                 />
             </View>
+
+            {/* Real per-category push mute (PATCH /users/me/notification-preferences)
+                — the switch above is the OS-level on/off; these three are
+                which kinds of pushes actually reach the device once it's on. */}
+            <View style={styles.row}>
+                <Text style={styles.rowLabel}>{t('settings.notifyOrderUpdates')}</Text>
+                <Switch
+                    value={me?.notifyOrderUpdates ?? true}
+                    onValueChange={(v) => updatePrefs({ notifyOrderUpdates: v })}
+                />
+            </View>
+            <View style={styles.row}>
+                <Text style={styles.rowLabel}>{t('settings.notifyPromotions')}</Text>
+                <Switch
+                    value={me?.notifyPromotions ?? true}
+                    onValueChange={(v) => updatePrefs({ notifyPromotions: v })}
+                />
+            </View>
+            <View style={styles.row}>
+                <Text style={styles.rowLabel}>{t('settings.notifyReminders')}</Text>
+                <Switch
+                    value={me?.notifyReminders ?? true}
+                    onValueChange={(v) => updatePrefs({ notifyReminders: v })}
+                />
+            </View>
+
+            <Pressable style={styles.row} onPress={() => (navigation as any).navigate('Referral')}>
+                <Text style={styles.rowLabel}>{t('settings.inviteAFriend')}</Text>
+                <Text style={styles.rowValue}>›</Text>
+            </Pressable>
 
             <View style={styles.row}>
                 <Text style={styles.rowLabel}>{t('settings.appVersion')}</Text>

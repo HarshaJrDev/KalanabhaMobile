@@ -34,6 +34,7 @@ export const toShipment = (row: BackendShipment): Shipment => ({
     paymentMode: row.paymentMode,
     pickupSlot: row.pickupSlot,
     notes: row.notes ?? undefined,
+    deliveryInstructions: row.deliveryInstructions,
     status: STATUS_MAP[row.status],
     category: row.category,
     helpersCount: row.helpersCount,

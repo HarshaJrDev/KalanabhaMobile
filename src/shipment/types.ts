@@ -77,6 +77,7 @@ export interface Shipment {
     paymentMode: string;
     pickupSlot: string;
     notes?: string;
+    deliveryInstructions?: string | null;
 
     status: ShipmentStatus;
     dispatch: DispatchInfo | null;

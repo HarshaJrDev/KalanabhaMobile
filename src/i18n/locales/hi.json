@@ -145,6 +145,8 @@
     "passwordPlaceholder": "कम से कम 8 अक्षर",
     "confirmPassword": "पासवर्ड की पुष्टि करें",
     "confirmPasswordPlaceholder": "अपना पासवर्ड फिर से दर्ज करें",
+    "referralCodeOptional": "रेफरल कोड (वैकल्पिक)",
+    "referralCodePlaceholder": "किसी मित्र का रेफरल कोड दर्ज करें",
     "fixHighlighted": "कृपया हाइलाइट किए गए फ़ील्ड ठीक करें",
     "accountCreated": "खाता सफलतापूर्वक बनाया गया!",
     "unableToFetchLocation": "स्थान प्राप्त करने में असमर्थ",
@@ -201,6 +203,10 @@
   "settings": {
     "title": "सेटिंग्स",
     "pushNotifications": "पुश सूचनाएं",
+    "notifyOrderUpdates": "ऑर्डर अपडेट",
+    "notifyPromotions": "प्रमोशन और ऑफर",
+    "notifyReminders": "पिकअप रिमाइंडर",
+    "inviteAFriend": "किसी मित्र को आमंत्रित करें",
     "appVersion": "ऐप संस्करण",
     "turnOffTitle": "सूचनाएं बंद करें",
     "turnOffMessage": "सूचना अनुमतियां केवल आपके डिवाइस की सेटिंग्स ऐप से बदली जा सकती हैं।",
@@ -397,6 +403,12 @@
     "scheduleTimeLabel": "समय",
     "pickupTimeSlotSectionTitle": "पिकअप समय स्लॉट",
     "pickupTimeSlotSectionSubtitle": "हमें कब लेना चाहिए?",
+    "deliveryInstructionsSectionTitle": "डिलीवरी निर्देश",
+    "deliveryInstructionsSectionSubtitle": "ड्राइवर को यह कैसे सौंपना चाहिए?",
+    "deliveryInstruction_leaveAtDoor": "दरवाजे पर छोड़ दें",
+    "deliveryInstruction_callBeforeDelivery": "डिलीवरी से पहले कॉल करें",
+    "deliveryInstruction_handToSecurity": "सुरक्षा गार्ड को सौंपें",
+    "deliveryInstruction_callOnArrival": "पहुंचने पर कॉल करें",
     "deliveryNotesSectionTitle": "डिलीवरी नोट्स",
     "deliveryNotesSectionSubtitle": "कूरियर के लिए वैकल्पिक निर्देश",
     "placeholderNotes": "जैसे डिलीवरी से पहले कॉल करें, गेट पर छोड़ दें...",
@@ -431,6 +443,14 @@
     "alertFareNotReadyTitle": "किराया तैयार नहीं है",
     "alertFareNotReadyMessage": "कृपया किराया अनुमान की गणना पूरी होने की प्रतीक्षा करें।",
     "alertErrorTitle": "त्रुटि"
+  },
+  "referral": {
+    "title": "किसी मित्र को आमंत्रित करें",
+    "heading": "कलानाभा साझा करें, पुरस्कार पाएं",
+    "subheading": "अपना कोड किसी मित्र को दें। जब वे अपना पहला ऑर्डर पूरा करेंगे, तो आप दोनों को छूट कोड मिलेगा।",
+    "shareButton": "मेरा कोड साझा करें",
+    "shareMessage": "साइन अप करते समय मेरा कलानाभा रेफरल कोड {{code}} उपयोग करें — आपके पहले ऑर्डर पर हम दोनों को पुरस्कार मिलेगा!",
+    "footnote": "आपके मित्र का पहला ऑर्डर डिलीवर होते ही पुरस्कार स्वतः जारी कर दिए जाते हैं।"
   },
   "receipt": {
     "title": "रसीद",
@@ -574,6 +594,7 @@
     "noEmailAppToast": "इस डिवाइस पर कोई ईमेल ऐप सेट अप नहीं है",
     "activeDeliveryLabel": "सक्रिय डिलीवरी · {{trackingId}}",
     "pickupVerificationPending": "● पिकअप सत्यापन लंबित",
+    "deliveryInstructionsLabel": "निर्देश",
     "inTransitStatus": "● ट्रांज़िट में",
     "chat": "चैट",
     "openDirectionsInMaps": "मैप्स में दिशा-निर्देश खोलें",
@@ -749,7 +770,8 @@
   "transactions": {
     "title": "लेन-देन",
     "noTransactionsYet": "अभी तक कोई लेन-देन नहीं",
-    "paymentsShowHere": "आपके शिपमेंट भुगतान यहां दिखाई देंगे।"
+    "paymentsShowHere": "आपके शिपमेंट भुगतान यहां दिखाई देंगे।",
+    "reorder": "फिर से ऑर्डर करें"
   },
   "selectAccount": {
     "chooseYourType": "अपना प्रकार चुनें",

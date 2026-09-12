@@ -69,6 +69,26 @@ const TransactionRow = ({ shipment }: { shipment: Shipment }) => {
                 <Text style={[styles.status, { color: statusColor[shipment.status] }]}>
                     {STATUS_LABEL[shipment.status]}
                 </Text>
+                {/* Real "repeat order" — reuses the same prefill mechanism
+                    CheckRate.tsx already feeds into addOrders.tsx, just
+                    sourced from a past order's route/vehicle instead of a
+                    fresh fare estimate. */}
+                <Pressable
+                    style={styles.reorderBtn}
+                    onPress={(e) => {
+                        e.stopPropagation();
+                        (navigation as any).navigate('addOrder', {
+                            prefill: {
+                                pickup: shipment.from,
+                                drop: shipment.to,
+                                vehicleType: shipment.vehicleType,
+                                category: shipment.category,
+                            },
+                        });
+                    }}
+                >
+                    <Text style={styles.reorderBtnText}>{t('transactions.reorder')}</Text>
+                </Pressable>
             </View>
         </Pressable>
     );
@@ -146,6 +166,11 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSh
     trackingId: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: colors.TEXT_PRIMARY },
     meta: { fontSize: 12, color: colors.TEXT_SECONDARY, marginTop: 2 },
     rowRight: { alignItems: 'flex-end' },
+    reorderBtn: {
+        marginTop: 6, borderWidth: 1, borderColor: colors.PRIMARY, borderRadius: 8,
+        paddingHorizontal: 10, paddingVertical: 4,
+    },
+    reorderBtnText: { fontSize: 11, color: colors.PRIMARY, fontFamily: FONTS.BOLD_PRIMARY },
     price: { fontSize: 15, fontFamily: FONTS.BOLD_PRIMARY, color: colors.TEXT_PRIMARY },
     status: { fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY, marginTop: 2 },
 });

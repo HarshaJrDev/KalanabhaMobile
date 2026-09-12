@@ -145,6 +145,8 @@
     "passwordPlaceholder": "குறைந்தது 8 எழுத்துகள்",
     "confirmPassword": "கடவுச்சொல்லை உறுதிப்படுத்தவும்",
     "confirmPasswordPlaceholder": "உங்கள் கடவுச்சொல்லை மீண்டும் உள்ளிடவும்",
+    "referralCodeOptional": "பரிந்துரை குறியீடு (விருப்பத்தேர்வு)",
+    "referralCodePlaceholder": "நண்பரின் பரிந்துரை குறியீட்டை உள்ளிடவும்",
     "fixHighlighted": "தயவுசெய்து சிறப்பிக்கப்பட்ட புலங்களை சரிசெய்யவும்",
     "accountCreated": "கணக்கு வெற்றிகரமாக உருவாக்கப்பட்டது!",
     "unableToFetchLocation": "இருப்பிடத்தைப் பெற முடியவில்லை",
@@ -201,6 +203,10 @@
   "settings": {
     "title": "அமைப்புகள்",
     "pushNotifications": "புஷ் அறிவிப்புகள்",
+    "notifyOrderUpdates": "ஆர்டர் புதுப்பிப்புகள்",
+    "notifyPromotions": "விளம்பரங்கள் & சலுகைகள்",
+    "notifyReminders": "பிக்அப் நினைவூட்டல்கள்",
+    "inviteAFriend": "நண்பரை அழைக்கவும்",
     "appVersion": "ஆப் பதிப்பு",
     "turnOffTitle": "அறிவிப்புகளை அணைக்கவும்",
     "turnOffMessage": "அறிவிப்பு அனுமதிகளை உங்கள் சாதன அமைப்புகள் ஆப்பிலிருந்து மட்டுமே மாற்ற முடியும்.",
@@ -397,6 +403,12 @@
     "scheduleTimeLabel": "நேரம்",
     "pickupTimeSlotSectionTitle": "பிக்கப் நேர இடைவெளி",
     "pickupTimeSlotSectionSubtitle": "நாங்கள் எப்போது சேகரிக்க வேண்டும்?",
+    "deliveryInstructionsSectionTitle": "டெலிவரி வழிமுறைகள்",
+    "deliveryInstructionsSectionSubtitle": "ஓட்டுநர் இதை எப்படி ஒப்படைக்க வேண்டும்?",
+    "deliveryInstruction_leaveAtDoor": "கதவில் விடவும்",
+    "deliveryInstruction_callBeforeDelivery": "டெலிவரிக்கு முன் அழைக்கவும்",
+    "deliveryInstruction_handToSecurity": "பாதுகாப்பினரிடம் ஒப்படைக்கவும்",
+    "deliveryInstruction_callOnArrival": "வந்தவுடன் அழைக்கவும்",
     "deliveryNotesSectionTitle": "டெலிவரி குறிப்புகள்",
     "deliveryNotesSectionSubtitle": "கூரியருக்கான விருப்ப வழிமுறைகள்",
     "placeholderNotes": "எ.கா. டெலிவரிக்கு முன் அழைக்கவும், கேட்டில் விடவும்...",
@@ -431,6 +443,14 @@
     "alertFareNotReadyTitle": "கட்டணம் தயாராக இல்லை",
     "alertFareNotReadyMessage": "கட்டண மதிப்பீடு கணக்கீடு முடியும் வரை காத்திருக்கவும்.",
     "alertErrorTitle": "பிழை"
+  },
+  "referral": {
+    "title": "நண்பரை அழைக்கவும்",
+    "heading": "கலநாபாவைப் பகிரவும், வெகுமதிகளைப் பெறவும்",
+    "subheading": "உங்கள் குறியீட்டை ஒரு நண்பருக்குக் கொடுங்கள். அவர்கள் தங்கள் முதல் ஆர்டரை முடித்தவுடன், நீங்கள் இருவரும் தள்ளுபடி குறியீட்டைப் பெறுவீர்கள்.",
+    "shareButton": "எனது குறியீட்டைப் பகிரவும்",
+    "shareMessage": "பதிவு செய்யும்போது எனது கலநாபா பரிந்துரை குறியீடு {{code}} ஐப் பயன்படுத்துங்கள் — உங்கள் முதல் ஆர்டரில் நாம் இருவரும் வெகுமதி பெறுவோம்!",
+    "footnote": "உங்கள் நண்பரின் முதல் ஆர்டர் டெலிவரி செய்யப்பட்டவுடன் வெகுமதிகள் தானாகவே வழங்கப்படும்."
   },
   "receipt": {
     "title": "ரசீது",
@@ -574,6 +594,7 @@
     "noEmailAppToast": "இந்த சாதனத்தில் மின்னஞ்சல் ஆப் அமைக்கப்படவில்லை",
     "activeDeliveryLabel": "செயலில் உள்ள டெலிவரி · {{trackingId}}",
     "pickupVerificationPending": "● பிக்கப் சரிபார்ப்பு நிலுவையில் உள்ளது",
+    "deliveryInstructionsLabel": "வழிமுறைகள்",
     "inTransitStatus": "● போக்குவரத்தில் உள்ளது",
     "chat": "அரட்டை",
     "openDirectionsInMaps": "வரைபடங்களில் திசைகளைத் திற",
@@ -749,7 +770,8 @@
   "transactions": {
     "title": "பரிவர்த்தனைகள்",
     "noTransactionsYet": "இன்னும் பரிவர்த்தனைகள் இல்லை",
-    "paymentsShowHere": "உங்கள் ஷிப்மென்ட் கட்டணங்கள் இங்கே காண்பிக்கப்படும்."
+    "paymentsShowHere": "உங்கள் ஷிப்மென்ட் கட்டணங்கள் இங்கே காண்பிக்கப்படும்.",
+    "reorder": "மீண்டும் ஆர்டர் செய்யவும்"
   },
   "selectAccount": {
     "chooseYourType": "உங்கள் வகையைத் தேர்ந்தெடுக்கவும்",

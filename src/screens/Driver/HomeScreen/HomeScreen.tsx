@@ -91,6 +91,7 @@ const makeToLogisticsItem = (t: (key: string) => string) => (s: import('@shipmen
     customerPhone: s.sender?.phone,
     category: s.category,
     helpersCount: s.helpersCount,
+    deliveryInstructions: s.deliveryInstructions,
 });
 
 const HomeScreen: React.FC<HomeScreenProps> = () => {
@@ -344,6 +345,11 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                                 <Text style={styles.arrivalStatusText}>
                                     {activeDelivery.status === 'accepted' ? t('driverHome.pickupVerificationPending') : t('driverHome.inTransitStatus')}
                                 </Text>
+                                {!!activeDelivery.deliveryInstructions && (
+                                    <Text style={styles.deliveryInstructionsText} numberOfLines={1}>
+                                        {t('driverHome.deliveryInstructionsLabel')}: {activeDelivery.deliveryInstructions}
+                                    </Text>
+                                )}
                             </View>
                             <View style={styles.chatPill}>
                                 <MessageCircle color="#fff" size={14} />
@@ -792,6 +798,7 @@ const styles = StyleSheet.create({
     },
     openMapsText: { fontSize: 12, fontFamily: FONTS.BOLD_PRIMARY, color: '#FF7518' },
     arrivalStatusText: { fontSize: 11, fontFamily: FONTS.SEMI_BOLD_PRIMARY, color: '#FF7518', marginTop: 4 },
+    deliveryInstructionsText: { fontSize: 11, color: '#6B7280', marginTop: 2 },
     arrivalCtaBtn: {
         marginTop: 10,
         backgroundColor: '#FF7518',

@@ -89,6 +89,8 @@ export interface LogisticsItem {
     // Real driver arrival sub-state (kalanabhaBackend 7708464) — drives
     // the arrival-aware CTA below.
     arrivalState?: 'NONE' | 'EN_ROUTE_TO_PICKUP' | 'ARRIVED_AT_PICKUP' | 'EN_ROUTE_TO_DROP' | 'ARRIVED_AT_DROP';
+    // Real customer-set drop-off preference ("Leave at door", etc.).
+    deliveryInstructions?: string | null;
 }
 
 // Role now comes from the backend-authenticated user (features/store/authStore),

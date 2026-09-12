@@ -145,6 +145,8 @@
     "passwordPlaceholder": "కనీసం 8 అక్షరాలు",
     "confirmPassword": "పాస్‌వర్డ్‌ని నిర్ధారించండి",
     "confirmPasswordPlaceholder": "మీ పాస్‌వర్డ్‌ని మళ్లీ నమోదు చేయండి",
+    "referralCodeOptional": "రెఫరల్ కోడ్ (ఐచ్ఛికం)",
+    "referralCodePlaceholder": "స్నేహితుడి రెఫరల్ కోడ్‌ను నమోదు చేయండి",
     "fixHighlighted": "దయచేసి హైలైట్ చేసిన ఫీల్డ్‌లను సరిచేయండి",
     "accountCreated": "ఖాతా విజయవంతంగా సృష్టించబడింది!",
     "unableToFetchLocation": "స్థానాన్ని పొందడం సాధ్యం కాలేదు",
@@ -201,6 +203,10 @@
   "settings": {
     "title": "సెట్టింగ్‌లు",
     "pushNotifications": "పుష్ నోటిఫికేషన్‌లు",
+    "notifyOrderUpdates": "ఆర్డర్ అప్‌డేట్‌లు",
+    "notifyPromotions": "ప్రమోషన్‌లు & ఆఫర్‌లు",
+    "notifyReminders": "పికప్ రిమైండర్‌లు",
+    "inviteAFriend": "స్నేహితుడిని ఆహ్వానించండి",
     "appVersion": "యాప్ వెర్షన్",
     "turnOffTitle": "నోటిఫికేషన్‌లను ఆఫ్ చేయండి",
     "turnOffMessage": "నోటిఫికేషన్ అనుమతులను మీ పరికర సెట్టింగ్‌ల యాప్ నుండి మాత్రమే మార్చవచ్చు.",
@@ -397,6 +403,12 @@
     "scheduleTimeLabel": "సమయం",
     "pickupTimeSlotSectionTitle": "పికప్ సమయ స్లాట్",
     "pickupTimeSlotSectionSubtitle": "మేము ఎప్పుడు సేకరించాలి?",
+    "deliveryInstructionsSectionTitle": "డెలివరీ సూచనలు",
+    "deliveryInstructionsSectionSubtitle": "డ్రైవర్ దీన్ని ఎలా అందించాలి?",
+    "deliveryInstruction_leaveAtDoor": "తలుపు వద్ద వదిలేయండి",
+    "deliveryInstruction_callBeforeDelivery": "డెలివరీకి ముందు కాల్ చేయండి",
+    "deliveryInstruction_handToSecurity": "సెక్యూరిటీకి అందించండి",
+    "deliveryInstruction_callOnArrival": "చేరుకున్నప్పుడు కాల్ చేయండి",
     "deliveryNotesSectionTitle": "డెలివరీ గమనికలు",
     "deliveryNotesSectionSubtitle": "కొరియర్ కోసం ఐచ్ఛిక సూచనలు",
     "placeholderNotes": "ఉదా. డెలివరీకి ముందు కాల్ చేయండి, గేట్ వద్ద వదిలేయండి...",
@@ -431,6 +443,14 @@
     "alertFareNotReadyTitle": "ఛార్జీ సిద్ధంగా లేదు",
     "alertFareNotReadyMessage": "దయచేసి ఛార్జీ అంచనా గణన పూర్తయ్యే వరకు వేచి ఉండండి.",
     "alertErrorTitle": "లోపం"
+  },
+  "referral": {
+    "title": "స్నేహితుడిని ఆహ్వానించండి",
+    "heading": "కలనాభను షేర్ చేయండి, రివార్డులు పొందండి",
+    "subheading": "మీ కోడ్‌ను స్నేహితుడికి ఇవ్వండి. వారు తమ మొదటి ఆర్డర్‌ను పూర్తి చేసినప్పుడు, మీరిద్దరూ డిస్కౌంట్ కోడ్ పొందుతారు.",
+    "shareButton": "నా కోడ్‌ను షేర్ చేయండి",
+    "shareMessage": "సైన్ అప్ చేసేటప్పుడు నా కలనాభ రెఫరల్ కోడ్ {{code}} వాడండి — మీ మొదటి ఆర్డర్‌పై మనం ఇద్దరం రివార్డ్ పొందుతాము!",
+    "footnote": "మీ స్నేహితుడి మొదటి ఆర్డర్ డెలివరీ అయిన వెంటనే రివార్డులు స్వయంచాలకంగా జారీ చేయబడతాయి."
   },
   "receipt": {
     "title": "రసీదు",
@@ -574,6 +594,7 @@
     "noEmailAppToast": "ఈ పరికరంలో ఇమెయిల్ యాప్ సెటప్ చేయబడలేదు",
     "activeDeliveryLabel": "యాక్టివ్ డెలివరీ · {{trackingId}}",
     "pickupVerificationPending": "● పికప్ ధృవీకరణ పెండింగ్‌లో ఉంది",
+    "deliveryInstructionsLabel": "సూచనలు",
     "inTransitStatus": "● రవాణాలో ఉంది",
     "chat": "చాట్",
     "openDirectionsInMaps": "మ్యాప్స్‌లో దిశలను తెరవండి",
@@ -749,7 +770,8 @@
   "transactions": {
     "title": "లావాదేవీలు",
     "noTransactionsYet": "ఇంకా లావాదేవీలు లేవు",
-    "paymentsShowHere": "మీ షిప్‌మెంట్ చెల్లింపులు ఇక్కడ కనిపిస్తాయి."
+    "paymentsShowHere": "మీ షిప్‌మెంట్ చెల్లింపులు ఇక్కడ కనిపిస్తాయి.",
+    "reorder": "మళ్లీ ఆర్డర్ చేయండి"
   },
   "selectAccount": {
     "chooseYourType": "మీ రకాన్ని ఎంచుకోండి",

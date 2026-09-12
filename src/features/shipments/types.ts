@@ -67,6 +67,7 @@ export interface BackendShipment {
     paymentMode: string;
     pickupSlot: string;
     notes: string | null;
+    deliveryInstructions: string | null;
 
     status: BackendShipmentStatus;
 
@@ -169,6 +170,9 @@ export interface CreateShipmentPayload {
     promoCode?: string;
     // Optional future pickup time, ISO string. Omit to book now.
     scheduledAt?: string;
+    // Real driver-facing drop-off preference ("Leave at door", "Call
+    // before delivery") — distinct from `notes`.
+    deliveryInstructions?: string;
 }
 
 // POST /shipments/quote — QuoteShipmentDto / response

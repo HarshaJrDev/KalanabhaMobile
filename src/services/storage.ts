@@ -28,6 +28,10 @@ export interface StoredUser {
     totalDeliveries: number;
     documentsVerified: boolean;
     createdByAdmin: boolean;
+    referralCode: string | null;
+    notifyOrderUpdates: boolean;
+    notifyPromotions: boolean;
+    notifyReminders: boolean;
     createdAt: string;
     updatedAt: string;
 }

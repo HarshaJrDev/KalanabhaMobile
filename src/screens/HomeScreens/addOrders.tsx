@@ -167,6 +167,9 @@ type OrderDetailsForm = {
     scheduled: boolean;
     // ISO datetime, only meaningful when scheduled === true.
     scheduledAt: string;
+    // Real driver-facing drop-off preference ("Leave at door", "Call
+    // before delivery") — distinct from `notes`, which is general.
+    deliveryInstructions: string;
 };
 
 type AllOrderData = {
@@ -275,6 +278,11 @@ const makePickupSlots = (t: (key: string) => string) => [
 // makePickupSlots' translated labels are ever shown in the UI.
 const PICKUP_SLOTS = ['9:00 AM – 11:00 AM', '11:00 AM – 1:00 PM', '2:00 PM – 4:00 PM', '4:00 PM – 6:00 PM'];
 
+// Quick-select drop-off preferences — Shipment.deliveryInstructions is
+// plain free text (shown as-is to the driver), so the translated label
+// itself is what gets stored; a customer can also just type their own.
+const DELIVERY_INSTRUCTION_OPTIONS = ['leaveAtDoor', 'callBeforeDelivery', 'handToSecurity', 'callOnArrival'] as const;
+
 
 // ─── INITIAL STATES ───────────────────────────────────────────────────────────
 
@@ -288,7 +296,7 @@ const INIT_PACKAGE: PackageForm = {
 const INIT_ORDER: OrderDetailsForm = {
     serviceType: 'standard', vehicleType: 'bike',
     paymentMode: 'prepaid', notes: '', pickupDate: '', pickupSlot: PICKUP_SLOTS[0],
-    promoCode: '', scheduled: false, scheduledAt: '',
+    promoCode: '', scheduled: false, scheduledAt: '', deliveryInstructions: '',
 };
 
 // ─── REUSABLE SUB-COMPONENTS ──────────────────────────────────────────────────
@@ -1314,6 +1322,26 @@ const StepOrderDetails = ({
                 ))}
             </View>
 
+            {/* Delivery Instructions — real driver-facing drop-off
+                preference, distinct from the general Notes box below. */}
+            <SectionHeader title={t('addOrder.deliveryInstructionsSectionTitle')} subtitle={t('addOrder.deliveryInstructionsSectionSubtitle')} />
+            <View style={odStyles.slotGrid}>
+                {DELIVERY_INSTRUCTION_OPTIONS.map((key) => {
+                    const label = t(`addOrder.deliveryInstruction_${key}`);
+                    const isSelected = data.deliveryInstructions === label;
+                    return (
+                        <TouchableOpacity
+                            key={key}
+                            onPress={() => onChange('deliveryInstructions', isSelected ? '' : label)}
+                            style={[odStyles.slotChip, isSelected && odStyles.slotChipActive]}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={[odStyles.slotText, isSelected && odStyles.slotTextActive]}>{label}</Text>
+                        </TouchableOpacity>
+                    );
+                })}
+            </View>
+
             {/* Notes */}
             <SectionHeader title={t('addOrder.deliveryNotesSectionTitle')} subtitle={t('addOrder.deliveryNotesSectionSubtitle')} />
             <View style={odStyles.notesBox}>
@@ -2091,6 +2119,7 @@ const NewOrder = () => {
                 insuranceRequested: pkg.insurance,
                 promoCode: orderDetails.promoCode.trim() || undefined,
                 scheduledAt: orderDetails.scheduled && orderDetails.scheduledAt ? orderDetails.scheduledAt : undefined,
+                deliveryInstructions: orderDetails.deliveryInstructions.trim() || undefined,
             }, idempotencyKey);
 
             setTrackingId(shipment.trackingId);

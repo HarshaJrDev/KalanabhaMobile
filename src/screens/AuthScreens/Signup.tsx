@@ -61,6 +61,11 @@ const Signup = () => {
     const [form, setForm] = useState<FormState>(INITIAL_FORM);
     const [errors, setErrors] = useState<FormErrors>({});
     const [type, setType] = useState<UserType>('HOME');
+    // Kept separate from FormState (not INITIAL_FORM/FIELD_MESSAGE_KEY) so
+    // it stays genuinely optional — FormState fields are all required by
+    // isDisabled's "every field truthy" check below, but a referral code
+    // shouldn't block signup for someone who doesn't have one.
+    const [referralCode, setReferralCode] = useState('');
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(30)).current;
@@ -129,6 +134,7 @@ const Signup = () => {
                 password: form.password,
                 displayName: form.name.trim(),
                 role: 'customer',
+                referralCode: referralCode.trim() || undefined,
             },
             {
                 onSuccess: () => {
@@ -139,7 +145,7 @@ const Signup = () => {
                 },
             }
         );
-    }, [form, mutate, validate, show, clear, t]);
+    }, [form, mutate, validate, show, clear, t, referralCode]);
 
     const handleLocation = useCallback(() => {
         getAddress(address => {
@@ -258,6 +264,13 @@ const Signup = () => {
                         value={form.confirmPassword}
                         onChange={v => update('confirmPassword', v)}
                         error={errors.confirmPassword}
+                    />
+                    <InputField
+                        label={t('signup.referralCodeOptional')}
+                        placeholder={t('signup.referralCodePlaceholder')}
+                        value={referralCode}
+                        onChange={v => setReferralCode(v.toUpperCase())}
+                        autoCapitalize="characters"
                     />
 
                     <View style={styles.submitWrapper}>

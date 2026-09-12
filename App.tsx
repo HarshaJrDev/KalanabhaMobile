@@ -40,6 +40,7 @@ import SearchScreen from '@screens/Search/SearchScreen';
 import CheckRate from '@screens/HomeScreens/CheckRate';
 import ShipmentDetailsScreen from '@screens/HomeScreens/ShipmentDetailsScreen/ShipmentDetailsScreen';
 import ReceiptScreen from '@screens/HomeScreens/ReceiptScreen';
+import ReferralScreen from '@screens/HomeScreens/ReferralScreen';
 import ShipmentChatScreen from '@screens/HomeScreens/ShipmentChatScreen';
 import InboxScreen from '@screens/HomeScreens/InboxScreen';
 import QRScanScreen from '@screens/Search/QRScanScreen';
@@ -128,6 +129,7 @@ const App = () => {
                 <Stack.Screen name="CheckRate" component={CheckRate} />
                 <Stack.Screen name="ShipmentDetailsScreen" component={ShipmentDetailsScreen} />
                 <Stack.Screen name="Receipt" component={ReceiptScreen} />
+                <Stack.Screen name="Referral" component={ReferralScreen} />
                 <Stack.Screen name="ShipmentChat" component={ShipmentChatScreen} />
                 <Stack.Screen name="Inbox" component={InboxScreen} />
                 <Stack.Screen name="QRScan" component={QRScanScreen} />

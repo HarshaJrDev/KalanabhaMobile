@@ -145,6 +145,8 @@
     "passwordPlaceholder": "Min. 8 characters",
     "confirmPassword": "Confirm Password",
     "confirmPasswordPlaceholder": "Re-enter your password",
+    "referralCodeOptional": "Referral Code (optional)",
+    "referralCodePlaceholder": "Enter a friend's referral code",
     "fixHighlighted": "Please fix the highlighted fields",
     "accountCreated": "Account created successfully!",
     "unableToFetchLocation": "Unable to fetch location",
@@ -201,6 +203,10 @@
   "settings": {
     "title": "Settings",
     "pushNotifications": "Push Notifications",
+    "notifyOrderUpdates": "Order Updates",
+    "notifyPromotions": "Promotions & Offers",
+    "notifyReminders": "Pickup Reminders",
+    "inviteAFriend": "Invite a Friend",
     "appVersion": "App Version",
     "turnOffTitle": "Turn off notifications",
     "turnOffMessage": "Notification permissions can only be changed from your device Settings app.",
@@ -397,6 +403,12 @@
     "scheduleTimeLabel": "Time",
     "pickupTimeSlotSectionTitle": "Pickup Time Slot",
     "pickupTimeSlotSectionSubtitle": "When should we collect?",
+    "deliveryInstructionsSectionTitle": "Delivery Instructions",
+    "deliveryInstructionsSectionSubtitle": "How should the driver hand this over?",
+    "deliveryInstruction_leaveAtDoor": "Leave at door",
+    "deliveryInstruction_callBeforeDelivery": "Call before delivery",
+    "deliveryInstruction_handToSecurity": "Hand to security",
+    "deliveryInstruction_callOnArrival": "Call on arrival",
     "deliveryNotesSectionTitle": "Delivery Notes",
     "deliveryNotesSectionSubtitle": "Optional instructions for courier",
     "placeholderNotes": "e.g. Call before delivery, leave at gate...",
@@ -431,6 +443,14 @@
     "alertFareNotReadyTitle": "Fare not ready",
     "alertFareNotReadyMessage": "Please wait for the fare estimate to finish calculating.",
     "alertErrorTitle": "Error"
+  },
+  "referral": {
+    "title": "Invite a Friend",
+    "heading": "Share Kalanabha, earn rewards",
+    "subheading": "Give your code to a friend. When they complete their first order, you both get a discount code.",
+    "shareButton": "Share My Code",
+    "shareMessage": "Use my Kalanabha referral code {{code}} when you sign up — we both get a reward on your first order!",
+    "footnote": "Rewards are issued automatically once your friend's first order is delivered."
   },
   "receipt": {
     "title": "Receipt",
@@ -574,6 +594,7 @@
     "noEmailAppToast": "No email app is set up on this device",
     "activeDeliveryLabel": "Active delivery · {{trackingId}}",
     "pickupVerificationPending": "● Pickup verification pending",
+    "deliveryInstructionsLabel": "Instructions",
     "inTransitStatus": "● In Transit",
     "chat": "Chat",
     "openDirectionsInMaps": "Open directions in Maps",
@@ -749,7 +770,8 @@
   "transactions": {
     "title": "Transactions",
     "noTransactionsYet": "No transactions yet",
-    "paymentsShowHere": "Your shipment payments will show up here."
+    "paymentsShowHere": "Your shipment payments will show up here.",
+    "reorder": "Reorder"
   },
   "selectAccount": {
     "chooseYourType": "Choose your type",
