@@ -8,7 +8,10 @@ export interface FuelExpense {
     lng: number;
     litres: number | null;
     amount: number;
-    receiptFileKey: string | null;
+    // receiptFileKey is never returned by the API (same as
+    // DriverDocument.fileKey) — this just says whether one exists; the
+    // real bytes come from GET /fuel-expenses/:id/receipt.
+    hasReceipt: boolean;
     createdAt: string;
 }
 
