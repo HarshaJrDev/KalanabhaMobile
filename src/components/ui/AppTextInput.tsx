@@ -81,7 +81,12 @@ const AppTextInput = memo(
                         paddingHorizontal: spacing.md,
                         backgroundColor: colors.SURFACE,
                     },
-                    input: { flex: 1, color: colors.TEXT_SECONDARY, fontFamily: fonts.PRIMARY, fontSize: fontSize.md },
+                    // backgroundColor set directly on the input (not just
+                    // inputContainer) — Samsung's autofill chrome (phone
+                    // fields especially) paints its own opaque surface at
+                    // the native TextInput layer and swallows text left on
+                    // a transparent input.
+                    input: { flex: 1, color: colors.TEXT_SECONDARY, fontFamily: fonts.PRIMARY, fontSize: fontSize.md, backgroundColor: colors.SURFACE },
                     errorBorder: { borderColor: colors.DANGER },
                     errorText: { color: colors.DANGER, fontSize: fontSize.xs, fontFamily: fonts.PRIMARY },
                 }),
@@ -100,7 +105,7 @@ const AppTextInput = memo(
                         width: '100%',
                     },
                     leftIcon: { marginRight: spacing.sm },
-                    input: { flex: 1, fontSize: fontSize.xl, fontFamily: fonts.PRIMARY, color: colors.BLACK, width: '100%' },
+                    input: { flex: 1, fontSize: fontSize.xl, fontFamily: fonts.PRIMARY, color: colors.BLACK, width: '100%', backgroundColor: colors.WHITE },
                     rightIcon: { marginLeft: spacing.sm },
                 }),
             }),
@@ -146,6 +151,10 @@ const AppTextInput = memo(
                         secureTextEntry={isSecure}
                         placeholderTextColor={colors.PLACEHOLDER}
                         autoCapitalize="none"
+                        importantForAutofill="no"
+                        autoComplete="off"
+                        autoCorrect={false}
+                        spellCheck={false}
                         {...rest}
                     />
 

@@ -474,7 +474,8 @@
     "paymentMode": "చెల్లింపు విధానం",
     "paymentStatus": "చెల్లింపు స్థితి",
     "promoApplied": "ప్రోమో వర్తింపజేయబడింది",
-    "total": "మొత్తం"
+    "total": "మొత్తం",
+    "downloadFailed": "రసీదు తయారు చేయలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి."
   },
   "shipmentDetails": {
     "justNow": "ఇప్పుడే",

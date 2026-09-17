@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import Geolocation from 'react-native-geolocation-service';
 import { reverseGeocode } from '../services/location';
+import { ensureLocationPermission } from '@utils/locationPermission';
 
 interface UseAutoAddressReturn {
   getAddress: (onSuccess: (addr: string) => void) => void;
@@ -8,7 +9,13 @@ interface UseAutoAddressReturn {
 
 export const useAutoAddress = (): UseAutoAddressReturn => {
   const getAddress = useCallback(
-    (onSuccess: (addr: string) => void) => {
+    async (onSuccess: (addr: string) => void) => {
+      const granted = await ensureLocationPermission();
+      if (!granted) {
+        console.warn('[useAutoAddress] location permission denied');
+        return;
+      }
+
       Geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords;

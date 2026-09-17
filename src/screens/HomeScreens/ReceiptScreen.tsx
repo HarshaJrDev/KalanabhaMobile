@@ -2,20 +2,24 @@
 //
 // A real, structured payment receipt for a shipment — every field here is
 // data the backend already returns (price, promo discount, payment
-// status/mode, tracking id, dates), just laid out and shareable. Not a
-// generated PDF: no PDF-rendering library exists in this app, and adding
-// one just to produce a document that says the same thing this screen
-// already shows would be extra surface area for no real benefit. Share
-// uses RN's own Share API (plain text) so a customer can still forward it
-// (email, WhatsApp, etc.) without this app needing to be a file-generation
-// service.
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Share, ActivityIndicator } from 'react-native';
+// status/mode, tracking id, dates). "Download" generates an actual PDF
+// file (react-native-html-to-pdf, rendering receiptTemplate.ts's branded
+// HTML) and opens the native share sheet on it via react-native-share —
+// from there the user can save it to Files/Drive/etc, which is the
+// mobile-native equivalent of a browser's download. Previously this
+// screen only had a plain-text OS share (no file at all), which is what
+// customers were reporting as "the receipt doesn't download."
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { ChevronLeft, Share2 } from 'lucide-react-native';
+import { ChevronLeft, Download } from 'lucide-react-native';
+import { generatePDF } from 'react-native-html-to-pdf';
+import Share from 'react-native-share';
 import { useShipment } from '@features/shipments/hooks';
 import { useAppTheme } from '@theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import { showToast } from '@ui/alert/toastStore';
+import { buildReceiptHtml } from '@utils/receiptTemplate';
 import FONTS from '@utils/fonts';
 
 type RouteParams = { id?: string };
@@ -35,21 +39,30 @@ const ReceiptScreen = () => {
     const { data: shipment, isLoading } = useShipment(shipmentId);
 
     const styles = React.useMemo(() => makeStyles(colors), [colors]);
+    const [downloading, setDownloading] = useState(false);
 
-    const handleShare = () => {
-        if (!shipment) return;
-        const lines = [
-            `Kalanabha — ${t('receipt.title')}`,
-            `${t('receipt.trackingId')}: ${shipment.trackingId}`,
-            `${t('receipt.date')}: ${new Date(shipment.createdAt).toLocaleString()}`,
-            `${t('receipt.route')}: ${shipment.from} → ${shipment.to}`,
-            `${t('receipt.vehicle')}: ${shipment.vehicleType}`,
-            `${t('receipt.paymentMode')}: ${PAYMENT_MODE_LABEL[shipment.paymentMode] ?? shipment.paymentMode}`,
-            `${t('receipt.paymentStatus')}: ${shipment.paymentStatus}`,
-            shipment.promoCode ? `${t('receipt.promoApplied')}: ${shipment.promoCode} (-₹${shipment.promoDiscount ?? 0})` : null,
-            `${t('receipt.total')}: ₹${shipment.price}`,
-        ].filter(Boolean).join('\n');
-        Share.share({ message: lines });
+    const handleDownload = async () => {
+        if (!shipment || downloading) return;
+        setDownloading(true);
+        try {
+            const { filePath } = await generatePDF({
+                html: buildReceiptHtml(shipment),
+                fileName: `Kalanabha-Receipt-${shipment.trackingId}`,
+                base64: false,
+            });
+            if (!filePath) throw new Error('PDF generation returned no file path');
+
+            await Share.open({
+                url: Platform.OS === 'android' ? `file://${filePath}` : filePath,
+                type: 'application/pdf',
+                failOnCancel: false,
+            });
+        } catch (err) {
+            if (__DEV__) console.warn('[ReceiptScreen] download failed', err);
+            showToast(t('receipt.downloadFailed'), 'error');
+        } finally {
+            setDownloading(false);
+        }
     };
 
     if (isLoading || !shipment) {
@@ -67,8 +80,10 @@ const ReceiptScreen = () => {
                     <ChevronLeft color={colors.TEXT_PRIMARY} size={24} />
                 </Pressable>
                 <Text style={styles.headerTitle}>{t('receipt.title')}</Text>
-                <Pressable onPress={handleShare} hitSlop={12}>
-                    <Share2 color={colors.PRIMARY} size={20} />
+                <Pressable onPress={handleDownload} hitSlop={12} disabled={downloading}>
+                    {downloading
+                        ? <ActivityIndicator color={colors.PRIMARY} size="small" />
+                        : <Download color={colors.PRIMARY} size={20} />}
                 </Pressable>
             </View>
 

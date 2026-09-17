@@ -338,14 +338,15 @@ const InputField = ({
                     onFocus={() => setFocused(true)}
                     onBlur={() => setFocused(false)}
                     autoCapitalize="none"
-                    // Android draws its own white "autofill" highlight box
-                    // over fields it detects as autofillable (phone number
-                    // especially) regardless of the TextInput's own style —
-                    // this is that, not a real style bug in inputStyles.row.
-                    // Turning autofill off keeps every field on the app's
-                    // actual dark theme.
+                    // Android (Samsung especially) can still draw its own
+                    // autofill/suggestion chrome over a phone-type field
+                    // regardless of these flags — inputStyles.input now also
+                    // sets an explicit backgroundColor so that chrome can't
+                    // paint an opaque surface with no color underneath.
                     importantForAutofill="no"
                     autoComplete="off"
+                    autoCorrect={false}
+                    spellCheck={false}
                 />
             </View>
             {error ? <Text style={inputStyles.error}>{error}</Text> : null}
@@ -365,7 +366,12 @@ const makeInputStyles = (COLORS: OrderColors) => StyleSheet.create({
     rowFocused: { borderColor: COLORS.primary, backgroundColor: '#FAFCFF' },
     rowError: { borderColor: COLORS.danger },
     icon: { marginRight: 8 },
-    input: { flex: 1, fontSize: 14, color: COLORS.text, height: '100%' },
+    // backgroundColor is required here, not just on `row` — Samsung's
+    // autofill overlay (phone-number fields especially) paints its own
+    // opaque white surface directly on the native TextInput view, which
+    // sits above the wrapper View's background and swallows an
+    // unstyled/transparent input, making the typed text unreadable.
+    input: { flex: 1, fontSize: 14, color: COLORS.text, height: '100%', backgroundColor: COLORS.surface },
     error: { color: COLORS.danger, fontSize: 11, marginTop: 3 },
 });
 
@@ -578,7 +584,7 @@ const StepCategory = ({ value, onSelect, onNext }: {
     const CATEGORY_OPTIONS = useMemo(() => makeCategoryOptions(t), [t]);
 
     return (
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView showsVerticalScrollIndicator={true}>
             <SectionHeader title={t('addOrder.categorySectionTitle')} subtitle={t('addOrder.categorySectionSubtitle')} />
             {CATEGORY_OPTIONS.map((opt) => {
                 const selected = value === opt.key;
@@ -687,7 +693,7 @@ const StepSender = ({
     const handleNext = () => { if (validate()) onNext(); };
 
     return (
-        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView showsVerticalScrollIndicator={true} keyboardShouldPersistTaps="handled">
             <SectionHeader title={t('addOrder.senderSectionTitle')} subtitle={t('addOrder.senderSectionSubtitle')} />
 
             <InputField label={t('addOrder.labelFullNameRequired')} value={data.name} onChangeText={v => onChange('name', v)}
@@ -766,7 +772,7 @@ const StepReceiver = ({
     };
 
     return (
-        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView showsVerticalScrollIndicator={true} keyboardShouldPersistTaps="handled">
             <SectionHeader title={t('addOrder.receiverSectionTitle')} subtitle={t('addOrder.receiverSectionSubtitle')} />
 
             {recentReceivers.length > 0 && (
@@ -872,7 +878,7 @@ const StepPackage = ({
     };
 
     return (
-        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView showsVerticalScrollIndicator={true} keyboardShouldPersistTaps="handled">
             <SectionHeader
                 title={isHouseShifting ? t('addOrder.moveDetailsTitle') : t('addOrder.packageDetailsTitle')}
                 subtitle={isHouseShifting ? t('addOrder.moveDetailsSubtitle') : t('addOrder.packageDetailsSubtitle')}
@@ -1140,7 +1146,7 @@ const StepOrderDetails = ({
     const total = basePrice;
 
     return (
-        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView showsVerticalScrollIndicator={true} keyboardShouldPersistTaps="handled">
 
             {/* Service Type */}
             <SectionHeader title={t('addOrder.serviceTypeSectionTitle')} subtitle={t('addOrder.serviceTypeSectionSubtitle')} />
@@ -2001,6 +2007,10 @@ const NewOrder = () => {
     );
     const [submitting, setSubmitting] = useState(false);
     const [trackingId, setTrackingId] = useState('');
+    // See handleSubmit's comment — one key per order attempt, reused
+    // across retries so a post-Network-Error retap is correctly deduped
+    // server-side instead of hitting the duplicate-shipment guard.
+    const submitIdempotencyKeyRef = useRef<string | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
     const { mutateAsync: payForShipment } = usePayForShipment();
 
@@ -2103,45 +2113,65 @@ const NewOrder = () => {
         if (step > 0) animateToStep(step - 1, 'back');
     }, [step, animateToStep]);
 
-    const updateSender = useCallback((key: keyof SenderForm, val: string) =>
+    // Any edit after reaching Review invalidates a previously-minted
+    // submit idempotency key — otherwise a materially different order
+    // (re-submitted after tweaking a field) would incorrectly reuse the
+    // old key and get deduped against the stale attempt.
+    const clearSubmitIdempotencyKey = useCallback(() => {
+        submitIdempotencyKeyRef.current = null;
+    }, []);
+
+    const updateSender = useCallback((key: keyof SenderForm, val: string) => {
+        clearSubmitIdempotencyKey();
         setSender(prev => {
             const next = { ...prev, [key]: val };
             if (key === 'landmark') next.address = composeAddress(val, pickupPlace);
             return next;
-        }), [pickupPlace]);
+        });
+    }, [pickupPlace, clearSubmitIdempotencyKey]);
 
-    const updateReceiver = useCallback((key: keyof ReceiverForm, val: string) =>
+    const updateReceiver = useCallback((key: keyof ReceiverForm, val: string) => {
+        clearSubmitIdempotencyKey();
         setReceiver(prev => {
             const next = { ...prev, [key]: val };
             if (key === 'landmark') next.address = composeAddress(val, dropPlace);
             return next;
-        }), [dropPlace]);
+        });
+    }, [dropPlace, clearSubmitIdempotencyKey]);
 
     const selectPickupPlace = useCallback((p: ServiceArea) => {
+        clearSubmitIdempotencyKey();
         setPickupPlace(p);
         setPickupRefine(null); // a refined point belonged to the previous area
         setSender(prev => ({ ...prev, address: composeAddress(prev.landmark, p), city: p.city, pincode: p.pincode }));
-    }, []);
+    }, [clearSubmitIdempotencyKey]);
 
     const selectDropPlace = useCallback((p: ServiceArea) => {
+        clearSubmitIdempotencyKey();
         setDropPlace(p);
         setDropRefine(null);
         setReceiver(prev => ({ ...prev, address: composeAddress(prev.landmark, p), city: p.city, pincode: p.pincode }));
-    }, []);
+    }, [clearSubmitIdempotencyKey]);
 
-    const updatePkg = useCallback(<K extends keyof PackageForm>(key: K, val: PackageForm[K]) =>
-        setPkg(prev => ({ ...prev, [key]: val })), []);
+    const updatePkg = useCallback(<K extends keyof PackageForm>(key: K, val: PackageForm[K]) => {
+        clearSubmitIdempotencyKey();
+        setPkg(prev => ({ ...prev, [key]: val }));
+    }, [clearSubmitIdempotencyKey]);
 
-    const updateOrderDetails = useCallback(<K extends keyof OrderDetailsForm>(key: K, val: OrderDetailsForm[K]) =>
-        setOrderDetails(prev => ({ ...prev, [key]: val })), []);
+    const updateOrderDetails = useCallback(<K extends keyof OrderDetailsForm>(key: K, val: OrderDetailsForm[K]) => {
+        clearSubmitIdempotencyKey();
+        setOrderDetails(prev => ({ ...prev, [key]: val }));
+    }, [clearSubmitIdempotencyKey]);
 
     const addStop = useCallback((place: ServiceArea, landmark: string) => {
+        clearSubmitIdempotencyKey();
         setStops(prev => [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, place, landmark }]);
-    }, []);
+    }, [clearSubmitIdempotencyKey]);
 
     const removeStop = useCallback((id: string) => {
+        clearSubmitIdempotencyKey();
         setStops(prev => prev.filter(s => s.id !== id));
-    }, []);
+    }, [clearSubmitIdempotencyKey]);
 
     const allData: AllOrderData = useMemo(() => ({
         sender, receiver, package: pkg, orderDetails,
@@ -2153,11 +2183,21 @@ const NewOrder = () => {
     // neither needs doing client-side any more.
     const handleSubmit = useCallback(async (): Promise<void> => {
         const scope = 'CREATE_SHIPMENT';
-        // One key per tap of the submit button — a network-level retry of
-        // this same request (e.g. the axios 401-refresh-and-retry path)
-        // reuses this same request config/header, so it still de-dupes;
-        // a fresh tap after this one gets a new key/new logical attempt.
-        const idempotencyKey = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        // One key per order ATTEMPT, not per tap — minted lazily on first
+        // submit and reused across retries via submitIdempotencyKeyRef.
+        // Was generating a fresh key on every single call, which meant a
+        // user re-tapping "Place Order" after a perceived Network Error
+        // (the request may have actually succeeded server-side) never got
+        // deduped by the backend's IdempotencyInterceptor — it sailed
+        // through as a "new" request and hit ShipmentsService's separate
+        // duplicate-shipment guard instead, surfacing a confusing "This
+        // shipment already exists" error. The ref is cleared on success
+        // (submitIdempotencyKeyRef reset below) and whenever the user
+        // edits the order after reaching Review (see goBack/clearIdempotencyKey).
+        if (!submitIdempotencyKeyRef.current) {
+            submitIdempotencyKeyRef.current = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        }
+        const idempotencyKey = submitIdempotencyKeyRef.current;
 
         try {
             log(scope, 'START');
@@ -2219,6 +2259,7 @@ const NewOrder = () => {
                     : undefined,
             }, idempotencyKey);
 
+            submitIdempotencyKeyRef.current = null;
             setTrackingId(shipment.trackingId);
             setShowSuccess(true);
 

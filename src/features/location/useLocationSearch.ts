@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Geolocation from 'react-native-geolocation-service';
 import { storage } from '@services/storage';
 import { haversineDistanceKm } from '@utils/geo';
+import { ensureLocationPermission } from '@utils/locationPermission';
 import type { ServiceArea } from '@features/settings/types';
 
 const RECENTS_KEY = 'recent_service_areas';
@@ -87,7 +88,10 @@ export const useLocationSearch = (areas: ServiceArea[]): UseLocationSearchResult
         // reflect that instead of showing a fabricated stale copy.
     }, [areas]);
 
-    const locateNearestServiceArea = useCallback((): Promise<ServiceArea | null> => {
+    const locateNearestServiceArea = useCallback(async (): Promise<ServiceArea | null> => {
+        const granted = await ensureLocationPermission();
+        if (!granted) return null;
+
         return new Promise((resolve) => {
             setLocatingCurrentPosition(true);
             Geolocation.getCurrentPosition(

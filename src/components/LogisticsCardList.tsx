@@ -45,6 +45,7 @@ import {
 import { launchCamera } from 'react-native-image-picker';
 import Geolocation from 'react-native-geolocation-service';
 import { ensureCameraPermission } from '@utils/cameraPermission';
+import { ensureLocationPermission } from '@utils/locationPermission';
 import { useChatMessages, useChatSocket, useSendMessage } from '@features/chat/hooks';
 import { normalizeError } from '@utils/error';
 import { useTabBarContentPadding } from '../screens/navigation/useTabBarStyle';
@@ -190,11 +191,18 @@ export const useDriverActions = () => {
             return;
         }
 
-        Geolocation.getCurrentPosition(
-            (position) => submit(position.coords.latitude, position.coords.longitude),
-            () => showToast(t('logisticsCard.couldNotGetLocation'), 'error'),
-            { enableHighAccuracy: true, timeout: 15000 },
-        );
+        (async () => {
+            const granted = await ensureLocationPermission();
+            if (!granted) {
+                showToast(t('logisticsCard.couldNotGetLocation'), 'error');
+                return;
+            }
+            Geolocation.getCurrentPosition(
+                (position) => submit(position.coords.latitude, position.coords.longitude),
+                () => showToast(t('logisticsCard.couldNotGetLocation'), 'error'),
+                { enableHighAccuracy: true, timeout: 15000 },
+            );
+        })();
     }, [t]);
 
     // Real pickup OTP + pickup photo (kalanabhaBackend 63a33d4,

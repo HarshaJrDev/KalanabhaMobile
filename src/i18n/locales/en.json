@@ -474,7 +474,8 @@
     "paymentMode": "Payment Mode",
     "paymentStatus": "Payment Status",
     "promoApplied": "Promo Applied",
-    "total": "Total"
+    "total": "Total",
+    "downloadFailed": "Couldn't generate the receipt. Please try again."
   },
   "shipmentDetails": {
     "justNow": "just now",

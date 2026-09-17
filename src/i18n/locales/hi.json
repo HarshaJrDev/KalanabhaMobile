@@ -474,7 +474,8 @@
     "paymentMode": "भुगतान का तरीका",
     "paymentStatus": "भुगतान स्थिति",
     "promoApplied": "प्रोमो लागू",
-    "total": "कुल"
+    "total": "कुल",
+    "downloadFailed": "रसीद जनरेट नहीं हो सकी। कृपया फिर से प्रयास करें।"
   },
   "shipmentDetails": {
     "justNow": "अभी अभी",

@@ -22,6 +22,7 @@ import { ArrowLeft, Fuel, MapPin, Navigation } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
 import { useNearbyFuelStations } from '@features/maps/hooks';
 import { useLogFuelExpense } from '@features/fuelExpenses/hooks';
+import { ensureLocationPermission } from '@utils/locationPermission';
 import type { FuelStation } from '@features/maps/types';
 import AppTextInput from '../../components/ui/AppTextInput';
 import AppButton from '../../components/ui/AppButton';
@@ -38,11 +39,21 @@ const FuelStationsScreen = () => {
     const [locationError, setLocationError] = useState<string | null>(null);
 
     useEffect(() => {
-        Geolocation.getCurrentPosition(
-            (position) => setCoords({ lat: position.coords.latitude, lng: position.coords.longitude }),
-            () => setLocationError(t('fuelStations.unableToGetLocation')),
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000, forceRequestLocation: true },
-        );
+        let cancelled = false;
+        (async () => {
+            const granted = await ensureLocationPermission();
+            if (cancelled) return;
+            if (!granted) {
+                setLocationError(t('fuelStations.unableToGetLocation'));
+                return;
+            }
+            Geolocation.getCurrentPosition(
+                (position) => setCoords({ lat: position.coords.latitude, lng: position.coords.longitude }),
+                () => setLocationError(t('fuelStations.unableToGetLocation')),
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000, forceRequestLocation: true },
+            );
+        })();
+        return () => { cancelled = true; };
     }, [t]);
 
     const { data: stations, isLoading, error, refetch } = useNearbyFuelStations(coords?.lat ?? null, coords?.lng ?? null);

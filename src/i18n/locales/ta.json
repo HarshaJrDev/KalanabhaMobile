@@ -474,7 +474,8 @@
     "paymentMode": "கட்டண முறை",
     "paymentStatus": "கட்டண நிலை",
     "promoApplied": "ப்ரோமோ பயன்படுத்தப்பட்டது",
-    "total": "மொத்தம்"
+    "total": "மொத்தம்",
+    "downloadFailed": "ரசீதை உருவாக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்."
   },
   "shipmentDetails": {
     "justNow": "இப்போதுதான்",
