@@ -21,6 +21,7 @@ import {
     StatusBar,
     RefreshControl,
     ScrollView,
+    Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -280,6 +281,20 @@ const HomeScreen: React.FC = () => {
                     ))}
                 </Animated.View>
 
+                {/* Real referral-program banner — links straight to the
+                    working Referral screen (real reward codes, not a
+                    decorative dead-end), not a fabricated coupon carousel. */}
+                <Pressable
+                    style={styles.promoBanner}
+                    onPress={() => (navigation as any).navigate('Referral')}
+                >
+                    <Image
+                        source={require('../../../assets/images/home/promo-banner.jpg')}
+                        style={styles.promoBannerImage}
+                        resizeMode="cover"
+                    />
+                </Pressable>
+
                 <View style={styles.mainContent}>
                     {/* New-customer first-booking nudge — only shown when
                         there's genuinely no history at all, not decoration
@@ -510,6 +525,11 @@ const makeStyles = (COLORS: HomeColors, FONTS: ReturnType<typeof useAppTheme>['f
     statNumber: { fontSize: 24, fontFamily: FONTS.PRIMARY, marginBottom: 2 },
     statLabel: { fontSize: 12, color: COLORS.textLight, fontFamily: FONTS.PRIMARY, letterSpacing: 0.5 },
     statDivider: { width: 1, backgroundColor: COLORS.border, height: 24, marginVertical: 8 },
+    promoBanner: {
+        marginHorizontal: SPACING.xl, marginTop: SPACING.l,
+        borderRadius: 18, overflow: 'hidden',
+    },
+    promoBannerImage: { width: '100%', aspectRatio: 1000 / 474 },
     mainContent: { paddingHorizontal: SPACING.xl },
     firstBookingCard: {
         flexDirection: 'row', alignItems: 'center', gap: 12,
