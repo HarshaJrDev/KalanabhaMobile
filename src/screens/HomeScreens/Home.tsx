@@ -295,6 +295,14 @@ const HomeScreen: React.FC = () => {
                     />
                 </Pressable>
 
+                <View style={styles.processBanner}>
+                    <Image
+                        source={require('../../../assets/images/home/process-banner.jpg')}
+                        style={styles.processBannerImage}
+                        resizeMode="cover"
+                    />
+                </View>
+
                 <View style={styles.mainContent}>
                     {/* New-customer first-booking nudge — only shown when
                         there's genuinely no history at all, not decoration
@@ -530,6 +538,11 @@ const makeStyles = (COLORS: HomeColors, FONTS: ReturnType<typeof useAppTheme>['f
         borderRadius: 18, overflow: 'hidden',
     },
     promoBannerImage: { width: '100%', aspectRatio: 1000 / 474 },
+    processBanner: {
+        marginHorizontal: SPACING.xl, marginTop: SPACING.m,
+        borderRadius: 18, overflow: 'hidden',
+    },
+    processBannerImage: { width: '100%', aspectRatio: 1000 / 380 },
     mainContent: { paddingHorizontal: SPACING.xl },
     firstBookingCard: {
         flexDirection: 'row', alignItems: 'center', gap: 12,

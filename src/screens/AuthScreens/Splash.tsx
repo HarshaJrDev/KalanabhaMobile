@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, StatusBar, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, Dimensions, Image } from 'react-native';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -9,7 +9,6 @@ import Animated, {
     Easing,
 } from 'react-native-reanimated';
 import { Package, Zap, ShieldCheck } from 'lucide-react-native';
-import { KalanabhaMark } from '@components/KalanabhaMark';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
@@ -72,12 +71,15 @@ const Splash = () => {
             <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.BACKGROUND} />
 
             <View style={styles.center}>
-                <Animated.View style={[styles.logo, logoStyle]}>
-                    <KalanabhaMark size={34} color="#fff" />
+                <Animated.View style={[styles.logoCard, logoStyle]}>
+                    <Image
+                        source={require('../../../assets/images/home/splash-lockup.jpg')}
+                        style={styles.logoImage}
+                        resizeMode="contain"
+                    />
                 </Animated.View>
 
                 <Animated.View style={wordmarkStyle}>
-                    <Text style={styles.wordmark}>KALANABHA</Text>
                     <Text style={styles.tagline}>{t('splash.tagline')}</Text>
                 </Animated.View>
             </View>
@@ -123,25 +125,24 @@ const makeStyles = (
         alignItems: 'center',
         gap: spacing.lg,
     },
-    logo: {
-        width: 72,
-        height: 72,
+    logoCard: {
+        width: width * 0.62,
+        maxWidth: 280,
+        aspectRatio: 900 / 518,
         borderRadius: radius.lg + 8,
-        backgroundColor: colors.PRIMARY,
+        backgroundColor: '#fff',
         alignItems: 'center',
         justifyContent: 'center',
+        padding: spacing.md,
         shadowColor: colors.PRIMARY,
         shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
+        shadowOpacity: 0.18,
         shadowRadius: 16,
         elevation: 8,
     },
-    wordmark: {
-        fontFamily: fonts.BOLD_PRIMARY,
-        fontSize: 28,
-        color: colors.PRIMARY,
-        textAlign: 'center',
-        letterSpacing: 1,
+    logoImage: {
+        width: '100%',
+        height: '100%',
     },
     tagline: {
         fontFamily: fonts.MEDIUM_PRIMARY,
