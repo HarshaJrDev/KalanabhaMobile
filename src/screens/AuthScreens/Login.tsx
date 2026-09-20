@@ -27,7 +27,8 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { Truck, AlertTriangle, Check } from 'lucide-react-native';
+import { AlertTriangle, Check } from 'lucide-react-native';
+import { KalanabhaMark } from '@components/KalanabhaMark';
 
 import { H, S, W, RF } from '@utils/responsive';
 import { useAppTheme } from '@theme/ThemeContext';
@@ -224,11 +225,7 @@ const Login = () => {
 
                     <Animated.View style={{ transform: [{ scale: logoScale }] }}>
                         <View style={[styles.logoBadge, isDriver && styles.logoBadgeDriver]}>
-                            {isDriver ? (
-                                <Truck color="#fff" size={RF(30)} />
-                            ) : (
-                                <Text style={styles.logoText}>K</Text>
-                            )}
+                            <KalanabhaMark size={RF(32)} color="#fff" />
                         </View>
                     </Animated.View>
 

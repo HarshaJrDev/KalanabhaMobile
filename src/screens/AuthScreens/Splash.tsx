@@ -8,7 +8,8 @@ import Animated, {
     withDelay,
     Easing,
 } from 'react-native-reanimated';
-import { Truck, Package, Zap, ShieldCheck } from 'lucide-react-native';
+import { Package, Zap, ShieldCheck } from 'lucide-react-native';
+import { KalanabhaMark } from '@components/KalanabhaMark';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
@@ -72,7 +73,7 @@ const Splash = () => {
 
             <View style={styles.center}>
                 <Animated.View style={[styles.logo, logoStyle]}>
-                    <Truck color="#fff" size={30} strokeWidth={2.25} />
+                    <KalanabhaMark size={34} color="#fff" />
                 </Animated.View>
 
                 <Animated.View style={wordmarkStyle}>
