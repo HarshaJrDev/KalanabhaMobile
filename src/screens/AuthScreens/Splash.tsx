@@ -128,7 +128,7 @@ const makeStyles = (
     logoCard: {
         width: width * 0.62,
         maxWidth: 280,
-        aspectRatio: 900 / 518,
+        aspectRatio: 900 / 422,
         borderRadius: radius.lg + 8,
         backgroundColor: '#fff',
         alignItems: 'center',

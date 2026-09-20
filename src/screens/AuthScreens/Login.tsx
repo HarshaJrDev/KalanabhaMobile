@@ -225,7 +225,7 @@ const Login = () => {
 
                     <Animated.View style={{ transform: [{ scale: logoScale }] }}>
                         <View style={[styles.logoBadge, isDriver && styles.logoBadgeDriver]}>
-                            <KalanabhaMark size={RF(32)} color="#fff" />
+                            <KalanabhaMark size={RF(52)} />
                         </View>
                     </Animated.View>
 
