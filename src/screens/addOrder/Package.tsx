@@ -18,8 +18,7 @@ const Package: React.FC<PackageProps> = ({ onNext }) => {
                 from="123 Main St, Cityville"
                 to="456 Market St, Townsville"
                 shipmentType="truck"
-                status="Coming"
-                ShipmentStatus="#12345"
+                status="Order Placed"
                 label="Order #12345"
                 date="Oct 26, 2025"
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, GestureResponderEvent } from 'react-native';
-import { Icon as LucideIcon } from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
 import FONTS from '@utils/fonts';
 
 interface IconLabelProps {

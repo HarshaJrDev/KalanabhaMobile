@@ -95,7 +95,7 @@ const Sender: React.FC<SenderProps> = ({ onNext }) => {
             <CustomInput placeholder="Any special instructions" multiline />
 
             {/* ✅ Submit Button */}
-            <Button title="Save Sender Details" onPress={onNext} />
+            <Button title="Save Sender Details" onPress={onNext ?? (() => {})} />
         </ScrollView>
     );
 };

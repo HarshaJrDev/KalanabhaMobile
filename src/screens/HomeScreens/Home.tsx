@@ -202,7 +202,7 @@ const HomeScreen: React.FC = () => {
 
     const goBookAgain = (trip: BackendShipment) => {
         (navigation as any).navigate('AddOrder', {
-            prefill: { pickup: trip.pickup.address, drop: trip.drop.address, vehicleType: trip.vehicleType },
+            prefill: { pickup: trip.pickup.address, drop: trip.drop.address, vehicleType: trip.vehicleType, category: trip.category },
         });
     };
 
@@ -284,7 +284,7 @@ const HomeScreen: React.FC = () => {
                 {/* Real referral-program banner — links straight to the
                     working Referral screen (real reward codes, not a
                     decorative dead-end), not a fabricated coupon carousel. */}
-                <Pressable
+               {/* <Pressable
                     style={styles.promoBanner}
                     onPress={() => (navigation as any).navigate('Referral')}
                 >
@@ -293,15 +293,15 @@ const HomeScreen: React.FC = () => {
                         style={styles.promoBannerImage}
                         resizeMode="cover"
                     />
-                </Pressable>
+                </Pressable> */}
 
-                <View style={styles.processBanner}>
+                {/* <View style={styles.processBanner}>
                     <Image
                         source={require('../../../assets/images/home/process-banner.jpg')}
                         style={styles.processBannerImage}
                         resizeMode="cover"
                     />
-                </View>
+                </View> */}
 
                 <View style={styles.mainContent}>
                     {/* New-customer first-booking nudge — only shown when

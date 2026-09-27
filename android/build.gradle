@@ -6,6 +6,12 @@ buildscript {
         targetSdkVersion = 36
         ndkVersion = "27.1.12297006"
         kotlinVersion = "2.1.20"
+        // react-native-geolocation-service falls back to play-services-location
+        // 18.0.0 unless this is set, which conflicts with the much newer Play
+        // Services artifacts pulled in transitively by @react-native-firebase/*
+        // (SettingsClient changed from a class to an interface between those
+        // versions) — pin everyone to the same current version.
+        playServicesLocationVersion = "21.3.0"
     }
     repositories {
         google()

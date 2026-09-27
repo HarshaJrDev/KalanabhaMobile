@@ -13,6 +13,8 @@ import { getMessaging, hasPermission, AuthorizationStatus } from '@react-native-
 import { ChevronLeft, LogOut } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useLogout } from '@hooks/useLogout';
+import { useMe } from '@hooks/useMe';
+import { useUpdateNotificationPreferences } from '@hooks/useNotificationPreferences';
 import { registerFCMToken } from '@utils/cm';
 import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
@@ -23,6 +25,8 @@ const SettingsScreen = () => {
     const navigation = useNavigation();
     const { t } = useTranslation();
     const logoutMutation = useLogout();
+    const { data: me } = useMe();
+    const { mutate: updatePrefs } = useUpdateNotificationPreferences();
     const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
 
     // Modular API — the namespaced `messaging()` call style is deprecated
@@ -82,6 +86,28 @@ const SettingsScreen = () => {
                     value={!!notificationsEnabled}
                     onValueChange={onToggleNotifications}
                     disabled={notificationsEnabled === null}
+                />
+            </View>
+
+            <View style={styles.row}>
+                <Text style={styles.rowLabel}>{t('settings.notifyOrderUpdates')}</Text>
+                <Switch
+                    value={me?.notifyOrderUpdates ?? true}
+                    onValueChange={(v) => updatePrefs({ notifyOrderUpdates: v })}
+                />
+            </View>
+            <View style={styles.row}>
+                <Text style={styles.rowLabel}>{t('settings.notifyPromotions')}</Text>
+                <Switch
+                    value={me?.notifyPromotions ?? true}
+                    onValueChange={(v) => updatePrefs({ notifyPromotions: v })}
+                />
+            </View>
+            <View style={styles.row}>
+                <Text style={styles.rowLabel}>{t('settings.notifyReminders')}</Text>
+                <Switch
+                    value={me?.notifyReminders ?? true}
+                    onValueChange={(v) => updatePrefs({ notifyReminders: v })}
                 />
             </View>
 

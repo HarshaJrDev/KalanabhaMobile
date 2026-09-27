@@ -65,8 +65,8 @@ const TruckSelector = ({ onSelect }: { onSelect?: (truck: any) => void }) => {
     const scrollX = useRef(new Animated.Value(0)).current;
     const scrollRef = useRef<ScrollView>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
-    const autoSlideTimer = useRef<NodeJS.Timeout | null>(null);
-    const resumeTimer = useRef<NodeJS.Timeout | null>(null);
+    const autoSlideTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+    const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [isAutoScrolling, setIsAutoScrolling] = useState(true);
 
     // 🕒 Auto-slide function

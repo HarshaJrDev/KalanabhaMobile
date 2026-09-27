@@ -157,6 +157,14 @@ apiClient.interceptors.response.use(
             showToast(apiError.message, 'error');
         }
 
+        // A 5xx while the user is signed in is treated the same as an
+        // expired session — no in-app screen can meaningfully continue
+        // against a broken backend, so drop the local session rather than
+        // leaving the user stuck on a stale, half-authenticated screen.
+        if (isServerError && !isAuthPath && getToken()) {
+            endSession();
+        }
+
         return Promise.reject(apiError);
     },
 );

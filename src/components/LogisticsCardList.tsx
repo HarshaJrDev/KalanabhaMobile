@@ -1,10 +1,9 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     Pressable,
-    Dimensions,
     TouchableOpacity,
     Linking,
     Share,
@@ -12,7 +11,6 @@ import {
 import { FlashList } from '@shopify/flash-list';
 import Animated, {
     FadeInUp,
-    ZoomIn,
     useSharedValue,
     useAnimatedStyle,
     withSpring,
@@ -28,10 +26,8 @@ import {
     Phone,
     Route,
     Share2,
-    X,
     User,
     Truck,
-    Zap,
 } from 'lucide-react-native';
 import { ScrollView, TextInput } from 'react-native-gesture-handler';
 import { useAuthStore } from '@features/store/authStore';
@@ -54,8 +50,6 @@ import { requestCompleteDelivery } from '@ui/alert/deliveryCompletionStore';
 import { requestOtp } from '@ui/alert/deliveryOtpStore';
 import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type LogisticsStatus = 'scheduled' | 'searching' | 'accepted' | 'in_transit' | 'delivered' | 'cancelled';
 type UserRole = 'customer' | 'driver';
@@ -302,7 +296,7 @@ const LogisticsCard: React.FC<{
     isDriver: boolean;
     customerActions: ReturnType<typeof useCustomerActions>;
     driverActions: ReturnType<typeof useDriverActions>;
-}> = memo(({ item, index, isDriver, customerActions, driverActions }) => {
+}> = memo(({ item, index, isDriver, customerActions: _customerActions, driverActions }) => {
     const { t } = useTranslation();
     const getStatusLabel = useMemo(() => makeStatusLabel(t), [t]);
     const statusColor = useMemo(() => getStatusColor(item.status), [item.status]);
@@ -521,10 +515,11 @@ const LogisticsCard: React.FC<{
     );
 });
 
-export const LogisticsCardList: React.FC<{ data: LogisticsItem[]; refreshControl?: any }>
+export const LogisticsCardList: React.FC<{ data: LogisticsItem[]; refreshControl?: any; scrollEnabled?: boolean }>
     = ({
         data,
         refreshControl,
+        scrollEnabled = true,
     }) => {
         const isDriver = useUserRole() === 'driver';
         const customerActions = useCustomerActions();
@@ -549,10 +544,28 @@ export const LogisticsCardList: React.FC<{ data: LogisticsItem[]; refreshControl
         // on every tab-hosted "Nearby Orders"/"My Orders" screen) sat
         // right behind the bottom tab bar instead of scrolling clear of it.
         const bottomPadding = useTabBarContentPadding();
+        const items = Array.isArray(data) ? data : [];
+
+        if (!scrollEnabled) {
+            return (
+                <View style={{ paddingBottom: bottomPadding }}>
+                    {items.map((item, index) => (
+                        <LogisticsCard
+                            key={item.id}
+                            item={item}
+                            index={index}
+                            isDriver={isDriver}
+                            customerActions={customerActions}
+                            driverActions={driverActions}
+                        />
+                    ))}
+                </View>
+            );
+        }
 
         return (
             <FlashList
-                data={Array.isArray(data) ? data : []}
+                data={items}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.id}
                 // estimatedItemSize={240}

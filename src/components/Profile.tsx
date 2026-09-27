@@ -47,14 +47,13 @@ const ProfileCom: React.FC<ProfileProps> = ({
         <ScrollView contentContainerStyle={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <Image
-                    source={
-                        avatarUrl
-                            ? { uri: avatarUrl }
-                            : null
-                    }
-                    style={styles.avatar}
-                />
+                {avatarUrl ? (
+                    <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+                ) : (
+                    <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                        <Text style={styles.avatarInitial}>{name.trim()[0]?.toUpperCase() ?? '?'}</Text>
+                    </View>
+                )}
                 <View>
                     <Text style={styles.name}>{name}</Text>
                     {bio && <Text style={styles.bio}>{bio}</Text>}
@@ -109,6 +108,16 @@ const styles = StyleSheet.create({
         borderRadius: 35,
         marginRight: 16,
         backgroundColor: '#ddd',
+    },
+    avatarPlaceholder: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#FFF1E8',
+    },
+    avatarInitial: {
+        fontSize: 24,
+        fontFamily: FONTS.BOLD_PRIMARY,
+        color: '#FF7518',
     },
     name: {
         fontSize: 20,

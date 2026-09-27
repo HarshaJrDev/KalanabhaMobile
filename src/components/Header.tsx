@@ -5,14 +5,7 @@ import COLOR from '@utils/color';
 import { H } from '@utils/responsive';
 import { ArrowLeft } from 'lucide-react-native';
 import FONTS from '@utils/fonts';
-
-
-
-type RootStackParamList = {
-    ShipmentDetailsScreen: { shipmentId?: number };
-    HomeScreen: undefined;
-    [key: string]: object | undefined; // fallback for dynamic routes
-};
+import type { RootStackParamList } from '@screens/navigation/types';
 
 interface HeaderProps {
     title?: string;
@@ -44,7 +37,7 @@ const Header: React.FC<HeaderProps> = ({
         lastPress.current = now;
 
         if (backScreen) {
-            navigation.navigate(backScreen, params);
+            (navigation as any).navigate(backScreen, params);
         } else {
             navigation.goBack();
         }

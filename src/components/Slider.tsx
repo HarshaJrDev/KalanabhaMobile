@@ -27,7 +27,7 @@ interface SliderProps {
 const Slider: React.FC<SliderProps> = ({ data, autoPlayInterval = 3000 }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const flatListRef = useRef<FlatList>(null);
-    const intervalRef = useRef<NodeJS.Timer | null>(null);
+    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
 
     useEffect(() => {

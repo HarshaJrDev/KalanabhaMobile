@@ -60,6 +60,16 @@ const EarningsScreen = () => {
                                 <Text style={styles.cardValue}>₹{summary?.allTime.total ?? 0}</Text>
                                 <Text style={styles.cardLabel}>{t('earnings.allTime', { trips: summary?.allTime.trips ?? 0 })}</Text>
                             </View>
+                            <View style={styles.walletPanel}>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.walletTitle}>Wallet summary</Text>
+                                    <Text style={styles.walletSub}>Completed trips are sent to admin payouts for settlement.</Text>
+                                </View>
+                                <View style={styles.walletMetric}>
+                                    <Text style={styles.walletMetricValue}>{summary?.today.trips ?? 0}</Text>
+                                    <Text style={styles.walletMetricLabel}>today trips</Text>
+                                </View>
+                            </View>
                             <Text style={styles.sectionTitle}>{t('earnings.recentTrips')}</Text>
                         </>
                     }
@@ -106,6 +116,20 @@ const styles = StyleSheet.create({
     cardValueLight: { fontSize: 20, fontFamily: FONTS.BOLD_PRIMARY, color: '#fff' },
     cardLabel: { fontSize: 12, fontFamily: FONTS.PRIMARY, color: '#6B7280' },
     cardLabelLight: { fontSize: 12, fontFamily: FONTS.PRIMARY, color: '#FFEEDF' },
+    walletPanel: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        backgroundColor: '#111827',
+        borderRadius: 14,
+        padding: 16,
+        marginBottom: 10,
+    },
+    walletTitle: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: '#fff' },
+    walletSub: { fontSize: 12, fontFamily: FONTS.PRIMARY, color: '#D1D5DB', marginTop: 3, lineHeight: 16 },
+    walletMetric: { alignItems: 'center', minWidth: 64 },
+    walletMetricValue: { fontSize: 20, fontFamily: FONTS.BOLD_PRIMARY, color: '#FBBF24' },
+    walletMetricLabel: { fontSize: 10, fontFamily: FONTS.PRIMARY, color: '#D1D5DB' },
     sectionTitle: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827', marginBottom: 6, marginTop: 4 },
     tripRow: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',

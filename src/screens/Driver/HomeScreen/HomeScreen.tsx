@@ -6,7 +6,6 @@ import {
     RefreshControl,
     ActivityIndicator,
     StatusBar,
-    Dimensions,
     ScrollView,
     TouchableOpacity,
     Image,
@@ -15,9 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useSearchingShipments, useMyShipmentsAsDriver, useAcceptShipment, useCompleteShipmentStop } from '@features/shipments/hooks';
 import Animated, {
     FadeIn,
-    FadeOut,
     SlideInDown,
-    Layout,
     useSharedValue,
     useAnimatedStyle,
     withSpring,
@@ -38,11 +35,11 @@ import {
     MapPin,
     Navigation,
     X,
+    Radar,
 } from 'lucide-react-native';
 
 import { registerFCMToken } from '@utils/cm';
 import { useTranslation } from 'react-i18next';
-import { safeNumber } from '@utils/parsers';
 import { useDriverLiveLocation } from '@location/useDriverLiveLocation';
 import { openGoogleMapsDirections } from '@utils/navigation';
 import { LiveTrackingMap } from '@components/LiveTrackingMap';
@@ -53,8 +50,8 @@ import { showToast } from '@ui/alert/toastStore';
 import { Linking } from 'react-native';
 import { useVehicleConfigs } from '@features/settings/hooks';
 import VehicleVisual from '@components/VehicleVisual';
-import FadeImage from '@components/FadeImage';
 import FONTS from '@utils/fonts';
+import { useTabBarContentPadding } from '../../navigation/useTabBarStyle';
 
 // Same real K-branded truck photo already used on the customer Home
 // header — reused here rather than sourcing a new image.
@@ -65,9 +62,6 @@ const DRIVE_MORE_TRUCK = require('../../../../assets/images/home/delivery-truck-
 // support channel Profile.tsx's Help Center already uses rather than
 // inventing a fake SOS hotline.
 const SUPPORT_EMAIL = 'support@kalanabha.com';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 
 interface HomeScreenProps { }
 
@@ -110,7 +104,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     // added specifically so there's a way to reach the chat for whichever
     // delivery this driver is actively on. Previously nothing on this
     // screen (or anywhere else in the driver app) surfaced this.
-    const { data: myShipments } = useMyShipmentsAsDriver();
+    const { data: myShipments, refetch: refetchMyShipments } = useMyShipmentsAsDriver();
     const activeDelivery = useMemo(
         () => myShipments?.find((s) => s.status === 'accepted' || s.status === 'in_transit'),
         [myShipments],
@@ -179,7 +173,6 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     );
     const { mutate: acceptIncoming, isPending: acceptingIncoming } = useAcceptShipment(incomingRequest?.id ?? '');
     const [dismissedIncomingId, setDismissedIncomingId] = useState<string | null>(null);
-    const showIncomingCard = incomingRequest && incomingRequest.id !== dismissedIncomingId;
 
     // Real countdown to the shipment's real, admin-set expiry
     // (Shipment.expiresAt, set by kalanabhaBackend's ShipmentsService.create
@@ -192,17 +185,29 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
             return;
         }
         const expiresAtMs = new Date(incomingRequest.expiresAt).getTime();
+        let interval: ReturnType<typeof setInterval> | null = null;
         const tick = () => {
-            setRemainingSeconds(Math.max(0, Math.round((expiresAtMs - Date.now()) / 1000)));
+            const nextRemainingSeconds = Math.max(0, Math.round((expiresAtMs - Date.now()) / 1000));
+            setRemainingSeconds(nextRemainingSeconds);
+            if (nextRemainingSeconds === 0) {
+                refetchShipments();
+                if (interval) {
+                    clearInterval(interval);
+                }
+            }
         };
         tick();
-        const interval = setInterval(tick, 1000);
-        return () => clearInterval(interval);
-    }, [incomingRequest?.expiresAt]);
+        interval = setInterval(tick, 1000);
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [incomingRequest?.expiresAt, refetchShipments]);
 
     const countdownLabel = remainingSeconds === null
         ? null
         : `${String(Math.floor(remainingSeconds / 60)).padStart(2, '0')}:${String(remainingSeconds % 60).padStart(2, '0')}`;
+    const isIncomingExpired = remainingSeconds !== null && remainingSeconds <= 0;
+    const showIncomingCard = !!incomingRequest && incomingRequest.id !== dismissedIncomingId && !isIncomingExpired;
 
     const handleAcceptIncoming = () => {
         if (!incomingRequest) return;
@@ -225,6 +230,8 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     useEffect(() => {
         headerScale.value = withSpring(1, { damping: 12, mass: 1 });
         contentOpacity.value = withSpring(1, { damping: 10, mass: 1 });
+        // headerScale/contentOpacity are Reanimated shared values with stable identity.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
 
@@ -244,6 +251,17 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
         driverPosition,
         activeDelivery ? (activeDelivery.status === 'accepted' ? activeDelivery.pickup : activeDelivery.drop) : null,
     );
+    const activeDeliverySteps = useMemo(() => {
+        if (!activeDelivery) return [];
+        const pickupDone = activeDelivery.status === 'in_transit' || activeDelivery.status === 'delivered';
+        const deliveryDone = activeDelivery.status === 'delivered';
+        return [
+            { label: 'Accepted', done: true, active: activeDelivery.status === 'accepted' && !activeDelivery.pickupProofUploadedAt },
+            { label: 'Pickup OTP', done: pickupDone, active: activeDelivery.status === 'accepted' },
+            { label: 'In transit', done: pickupDone, active: activeDelivery.status === 'in_transit' },
+            { label: 'Delivery OTP', done: deliveryDone, active: activeDelivery.status === 'in_transit' },
+        ];
+    }, [activeDelivery]);
 
     // FCM listener registration (foreground/background/killed-tap
     // navigation) is now centralized once in App.tsx — was duplicated
@@ -259,7 +277,8 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     // ━━━━━ Pull to Refresh
     const onRefresh = useCallback(() => {
         refetchShipments();
-    }, [refetchShipments]);
+        refetchMyShipments();
+    }, [refetchShipments, refetchMyShipments]);
 
     // ━━━━━ Retry handler
     const onRetry = useCallback(() => {
@@ -274,6 +293,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     const contentAnimStyle = useAnimatedStyle(() => ({
         opacity: contentOpacity.value,
     }));
+    const tabBarPadding = useTabBarContentPadding();
 
     // ━━━━━ Loading State
     if (loading) {
@@ -317,6 +337,19 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
         <>
             <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
             <View style={styles.container}>
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            colors={['#FF7518']}
+                            tintColor="#FF7518"
+                            progressBackgroundColor="#F0F0F0"
+                        />
+                    }
+                    contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarPadding }]}
+                >
                 {/* 🚚 Driver Header */}
                 <Animated.View style={[headerAnimStyle, { width: '100%' }]}>
                     <DriverHeader
@@ -364,6 +397,34 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                                 <Text style={styles.chatPillText}>{t('driverHome.chat')}</Text>
                             </View>
                         </TouchableOpacity>
+                        <View style={styles.deliveryFlowWrap}>
+                            {activeDeliverySteps.map((step, index) => (
+                                <React.Fragment key={step.label}>
+                                    {index > 0 && <View style={[styles.deliveryFlowLine, step.done && styles.deliveryFlowLineDone]} />}
+                                    <View style={styles.deliveryFlowStep}>
+                                        <View
+                                            style={[
+                                                styles.deliveryFlowDot,
+                                                step.done && styles.deliveryFlowDotDone,
+                                                step.active && styles.deliveryFlowDotActive,
+                                            ]}
+                                        >
+                                            {step.done ? <CheckCircle2 size={13} color="#fff" /> : <Text style={styles.deliveryFlowDotText}>{index + 1}</Text>}
+                                        </View>
+                                        <Text
+                                            style={[
+                                                styles.deliveryFlowLabel,
+                                                step.done && styles.deliveryFlowLabelDone,
+                                                step.active && styles.deliveryFlowLabelActive,
+                                            ]}
+                                            numberOfLines={1}
+                                        >
+                                            {step.label}
+                                        </Text>
+                                    </View>
+                                </React.Fragment>
+                            ))}
+                        </View>
                         {/* Real in-app turn-by-turn (free OSRM routing over
                             the existing MapLibre map, no API key) — the
                             driver's current position to whichever leg is
@@ -606,7 +667,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                 </LinearGradient>
 
                 {/* 📦 Orders Section */}
-                <Animated.View style={[{ flex: 1 }, contentAnimStyle]}>
+                <Animated.View style={contentAnimStyle}>
                     <View style={styles.ordersSection}>
                         <View style={styles.sectionHeader}>
                             <View>
@@ -627,28 +688,25 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                                 entering={FadeIn.delay(300)}
                                 style={styles.emptyState}
                             >
-                                <FadeImage
-                                    uri="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/A_Courier_Delivering_a_Parcel.jpg/960px-A_Courier_Delivering_a_Parcel.jpg"
-                                    style={styles.emptyImage}
-                                    placeholderColor="#F3F4F6"
-                                />
+                                <View style={styles.emptyIconPanel}>
+                                    <View style={styles.emptyIconRing}>
+                                        <Radar size={34} color="#FF7518" />
+                                    </View>
+                                    <View style={styles.emptyPulseDot} />
+                                </View>
                                 <Text style={styles.emptyTitle}>{t('driverHome.noOrdersNearby')}</Text>
                                 <Text style={styles.emptyMessage}>
                                     {t('driverHome.checkBackSoon')}
                                 </Text>
+                                <TouchableOpacity style={styles.emptyRefreshButton} onPress={onRefresh}>
+                                    <RefreshCw size={15} color="#FF7518" />
+                                    <Text style={styles.emptyRefreshText}>{t('common.retry')}</Text>
+                                </TouchableOpacity>
                             </Animated.View>
                         ) : (
                             <LogisticsCardList
                                 data={remainingShipments}
-                                refreshControl={
-                                    <RefreshControl
-                                        refreshing={refreshing}
-                                        onRefresh={onRefresh}
-                                        colors={['#FF7518']}
-                                        tintColor="#FF7518"
-                                        progressBackgroundColor="#F0F0F0"
-                                    />
-                                }
+                                scrollEnabled={false}
                             />
                         )}
                     </View>
@@ -686,6 +744,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                         </LinearGradient>
                     </Animated.View>
                 )}
+                </ScrollView>
             </View>
         </>
     );
@@ -698,6 +757,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F8F9FA',
+    },
+    scrollContent: {
+        flexGrow: 1,
     },
 
     // Loading States
@@ -824,6 +886,65 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     chatPillText: { color: '#fff', fontSize: 12, fontFamily: FONTS.BOLD_PRIMARY },
+    deliveryFlowWrap: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        marginTop: 14,
+        paddingVertical: 12,
+        paddingHorizontal: 10,
+        backgroundColor: '#FFF7ED',
+        borderRadius: 12,
+    },
+    deliveryFlowStep: {
+        width: 64,
+        alignItems: 'center',
+        gap: 5,
+    },
+    deliveryFlowDot: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#FED7AA',
+    },
+    deliveryFlowDotActive: {
+        borderColor: '#FF7518',
+        backgroundColor: '#FFFFFF',
+    },
+    deliveryFlowDotDone: {
+        backgroundColor: '#22C55E',
+        borderColor: '#22C55E',
+    },
+    deliveryFlowDotText: {
+        fontSize: 11,
+        fontFamily: FONTS.BOLD_PRIMARY,
+        color: '#9CA3AF',
+    },
+    deliveryFlowLabel: {
+        fontSize: 9.5,
+        fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+        color: '#9CA3AF',
+        textAlign: 'center',
+    },
+    deliveryFlowLabelActive: {
+        color: '#FF7518',
+    },
+    deliveryFlowLabelDone: {
+        color: '#15803D',
+    },
+    deliveryFlowLine: {
+        flex: 1,
+        height: 2,
+        backgroundColor: '#FED7AA',
+        marginTop: 11,
+        marginHorizontal: -12,
+    },
+    deliveryFlowLineDone: {
+        backgroundColor: '#22C55E',
+    },
     embeddedMapWrap: { marginTop: 10 },
     openMapsRow: {
         flexDirection: 'row',
@@ -1009,17 +1130,43 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 60,
+        paddingVertical: 44,
+        paddingHorizontal: 22,
+        backgroundColor: '#FFF',
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: '#F3F4F6',
     },
-    emptyEmoji: {
-        fontSize: 56,
-        marginBottom: 12,
+    emptyIconPanel: {
+        width: 96,
+        height: 96,
+        borderRadius: 24,
+        backgroundColor: '#FFF7ED',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 18,
+        position: 'relative',
     },
-    emptyImage: {
-        width: 160,
-        height: 160,
-        borderRadius: 80,
-        marginBottom: 16,
+    emptyIconRing: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        borderWidth: 1,
+        borderColor: '#FED7AA',
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyPulseDot: {
+        position: 'absolute',
+        top: 20,
+        right: 22,
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        backgroundColor: '#22C55E',
+        borderWidth: 2,
+        borderColor: '#FFFFFF',
     },
     emptyTitle: {
         fontSize: 18,
@@ -1032,6 +1179,21 @@ const styles = StyleSheet.create({
         color: '#8E8E93',
         textAlign: 'center',
         maxWidth: 240,
+    },
+    emptyRefreshButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginTop: 18,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 12,
+        backgroundColor: '#FFF1E8',
+    },
+    emptyRefreshText: {
+        fontSize: 13,
+        fontFamily: FONTS.BOLD_PRIMARY,
+        color: '#FF7518',
     },
 
     // Stats Footer

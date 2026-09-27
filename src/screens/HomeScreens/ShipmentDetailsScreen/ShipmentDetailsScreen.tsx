@@ -649,6 +649,51 @@ const ShipmentDetailsScreen = () => {
         setPodViewerOpen(true);
     };
 
+    const nextAction = (() => {
+        if (shipment.status === 'scheduled') {
+            return {
+                title: t('shipmentDetails.nextPickupScheduledTitle'),
+                body: shipment.scheduledAt
+                    ? t('shipmentDetails.nextPickupScheduledBodyWithDate', { date: formatDateTime(shipment.scheduledAt) })
+                    : t('shipmentDetails.nextPickupScheduledBody'),
+            };
+        }
+        if (shipment.status === 'searching') {
+            return { title: t('shipmentDetails.nextFindingDriverTitle'), body: t('shipmentDetails.nextFindingDriverBody') };
+        }
+        if (shipment.status === 'accepted' && shipment.pickupOtp) {
+            return { title: t('shipmentDetails.nextPickupOtpTitle'), body: t('shipmentDetails.nextPickupOtpBody') };
+        }
+        if (shipment.status === 'in_transit' && shipment.deliveryOtp) {
+            return { title: t('shipmentDetails.nextDeliveryOtpTitle'), body: t('shipmentDetails.nextDeliveryOtpBody') };
+        }
+        if (shipment.status === 'delivered') {
+            return {
+                title: t('shipmentDetails.nextDeliveredTitle'),
+                body: shipment.podUploadedAt ? t('shipmentDetails.nextDeliveredPodBody') : t('shipmentDetails.nextDeliveredBody'),
+            };
+        }
+        if (shipment.status === 'cancelled') {
+            return { title: t('shipmentDetails.nextCancelledTitle'), body: t('shipmentDetails.nextCancelledBody') };
+        }
+        return null;
+    })();
+
+    const renderNextAction = () => {
+        if (!nextAction) return null;
+        return (
+            <View style={styles.nextActionCard}>
+                <View style={styles.nextActionIcon}>
+                    <Truck color={C.primary} size={18} />
+                </View>
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.nextActionTitle}>{nextAction.title}</Text>
+                    <Text style={styles.nextActionText}>{nextAction.body}</Text>
+                </View>
+            </View>
+        );
+    };
+
     const renderActions = () => (
         <AnimatedCard anim={cardAnims[4]} fade={cardFades[4]} noPad cardStyle={styles.card}>
             <View style={styles.actionsGrid}>
@@ -661,7 +706,7 @@ const ShipmentDetailsScreen = () => {
                     { icon: FileText, label: t('shipmentDetails.viewPod'), color: ['#EF4444', '#DC2626'] as const, onPress: handleDownloadPod },
                 ].map((btn) => (
                     <TouchableOpacity key={btn.label} style={styles.actionBtn} activeOpacity={0.85} onPress={btn.onPress}>
-                        <LinearGradient colors={btn.color} style={styles.actionBtnGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                        <LinearGradient colors={[...btn.color]} style={styles.actionBtnGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
                             <btn.icon color="#fff" size={20} />
                         </LinearGradient>
                         <Text style={styles.actionBtnLabel}>{btn.label}</Text>
@@ -678,6 +723,7 @@ const ShipmentDetailsScreen = () => {
                 {renderHeader()}
                 <View style={styles.body}>
                     {renderScheduleActions()}
+                    {renderNextAction()}
                     {renderTimeline()}
                     {renderRoute()}
                     {renderLiveTracking()}
@@ -817,6 +863,26 @@ const makeStyles = (C: DetailColors) => StyleSheet.create({
     },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
     cardTitle: { fontSize: 15, fontFamily: FONTS.BOLD_PRIMARY, color: C.text, marginBottom: 14, letterSpacing: 0.2 },
+    nextActionCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        backgroundColor: C.primaryLight,
+        borderRadius: 18,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: C.border,
+    },
+    nextActionIcon: {
+        width: 42,
+        height: 42,
+        borderRadius: 12,
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    nextActionTitle: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: C.text },
+    nextActionText: { fontSize: 12, fontFamily: FONTS.PRIMARY, color: C.textMid, lineHeight: 17, marginTop: 3 },
 
     cancelledBox: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: C.dangerLight, borderRadius: 14, padding: 14 },
     cancelledText: { flex: 1, fontSize: 13, color: C.danger, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
