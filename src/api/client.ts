@@ -23,6 +23,12 @@ declare module 'axios' {
         _retry?: boolean;
         skipGlobalErrorToast?: boolean;
     }
+    // AxiosRequestConfig (not just the internal post-merge variant above)
+    // needs the same field — it's what `apiClient.get(url, config)` call
+    // sites are actually typed against.
+    export interface AxiosRequestConfig {
+        skipGlobalErrorToast?: boolean;
+    }
 }
 
 export const apiClient = axios.create({

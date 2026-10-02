@@ -13,13 +13,20 @@ export interface SavedAddressServiceArea {
     lng: number;
 }
 
+export type SavedAddressType = 'HOME' | 'WORK' | 'HOTEL' | 'OTHER';
+
 export interface SavedAddress {
     id: string;
     userId: string;
     label: string;
+    type: SavedAddressType;
+    isDefault: boolean;
     serviceAreaId: string;
     serviceArea: SavedAddressServiceArea;
+    houseNo: string | null;
+    floor: string | null;
     addressLine: string | null;
+    landmark: string | null;
     contactName: string | null;
     contactPhone: string | null;
     createdAt: string;
@@ -28,8 +35,13 @@ export interface SavedAddress {
 
 export interface CreateSavedAddressPayload {
     label: string;
+    type?: SavedAddressType;
+    isDefault?: boolean;
     serviceAreaId: string;
+    houseNo?: string;
+    floor?: string;
     addressLine?: string;
+    landmark?: string;
     contactName?: string;
     contactPhone?: string;
 }

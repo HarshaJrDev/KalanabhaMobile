@@ -7,6 +7,7 @@
 // picker and uploads straight to POST /files/driver-documents.
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator } from 'react-native';
+import { SkeletonList } from '@components/ui';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, FileText, CheckCircle2, Clock, XCircle, Camera, Image as ImageIcon } from 'lucide-react-native';
@@ -91,9 +92,7 @@ const DriverDocumentsScreen = () => {
             </View>
 
             {isLoading ? (
-                <View style={styles.centerState}>
-                    <ActivityIndicator size="large" color={colors.PRIMARY} />
-                </View>
+                <SkeletonList />
             ) : (
                 <FlatList
                     data={DRIVER_DOCUMENT_TYPES}

@@ -20,6 +20,7 @@ import { useAppTheme } from '@theme/ThemeContext';
 import { showToast } from '@ui/alert/toastStore';
 import { useTranslation } from 'react-i18next';
 import AppButton from '../../components/ui/AppButton';
+import { SkeletonDetail } from '@components/ui';
 
 const makePaymentLabel = (t: (key: string) => string): Record<string, string> => ({
     prepaid: t('rating.paidViaUpi'),
@@ -74,7 +75,11 @@ const RatingScreen = () => {
     };
 
     if (isLoading || !shipment) {
-        return <View style={styles.root} />;
+        return (
+            <View style={styles.root}>
+                <SkeletonDetail rows={2} />
+            </View>
+        );
     }
 
     // Already rated — nothing more to do here.

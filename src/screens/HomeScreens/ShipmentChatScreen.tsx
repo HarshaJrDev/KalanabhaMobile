@@ -214,6 +214,7 @@ const ShipmentChatScreen = () => {
                 error={error}
                 onRetry={refetch}
                 isEmpty={!messages?.length}
+                skeleton="detail"
                 emptyTitle={t('shipmentChat.noMessagesYet')}
                 emptyMessage={t('shipmentChat.sendMessageHint')}
             >

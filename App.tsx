@@ -6,16 +6,19 @@ import './src/i18n';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './src/api/queryClient';
 import { initNetworkMonitoring } from './src/api/network';
 import { GlobalToast } from '@ui/alert/GlobalToast';
 import { GlobalDeliveryOtpModal } from '@ui/alert/GlobalDeliveryOtpModal';
 import { GlobalDeliveryCompletionSheet } from '@ui/alert/GlobalDeliveryCompletionSheet';
+import { GlobalConfirmDialog } from '@ui/alert/GlobalConfirmDialog';
 import { registerFCMToken, setupFCMListeners } from '@utils/cm';
 import { navigationRef, flushPendingNotificationTarget, handleNotificationTap } from '@features/notifications/deepLink';
 import { ThemeProvider, useAppTheme } from '@theme/ThemeContext';
 import Splash from '@screens/AuthScreens/Splash';
+import LanguageSelect from '@screens/AuthScreens/LanguageSelect';
 import OnBoarding from '@screens/AuthScreens/onBoarding';
 import Login from '@screens/AuthScreens/Login';
 import Signup from '@screens/AuthScreens/Signup';
@@ -39,6 +42,8 @@ import notification from '@screens/HomeScreens/notification';
 import SearchScreen from '@screens/Search/SearchScreen';
 import CheckRate from '@screens/HomeScreens/CheckRate';
 import ShipmentDetailsScreen from '@screens/HomeScreens/ShipmentDetailsScreen/ShipmentDetailsScreen';
+import LocationPinPicker from '@screens/Location/LocationPinPicker';
+import WebViewScreen from '@screens/HomeScreens/WebViewScreen';
 import ReceiptScreen from '@screens/HomeScreens/ReceiptScreen';
 import ReferralScreen from '@screens/HomeScreens/ReferralScreen';
 import ShipmentChatScreen from '@screens/HomeScreens/ShipmentChatScreen';
@@ -101,10 +106,12 @@ const App = () => {
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={{ flex: 1 }}>
+      <BottomSheetModalProvider>
         <NotificationsSocketBridge />
         <GlobalToast />
         <GlobalDeliveryOtpModal />
         <GlobalDeliveryCompletionSheet />
+        <GlobalConfirmDialog />
         <NavigationContainer ref={navigationRef} onReady={flushPendingNotificationTarget}>
           <Stack.Navigator
             screenOptions={{ headerShown: false }}
@@ -114,6 +121,7 @@ const App = () => {
             {!showAppFlow ? (
               <>
                 <Stack.Screen name="Splash" component={Splash} />
+                <Stack.Screen name="LanguageSelect" component={LanguageSelect} />
                 <Stack.Screen name="OnBoarding" component={OnBoarding} />
                 <Stack.Screen name="SelectAccount" component={SelectAccount} />
                 <Stack.Screen name="Login" component={Login} />
@@ -128,6 +136,8 @@ const App = () => {
                 <Stack.Screen name="Search" component={SearchScreen} />
                 <Stack.Screen name="CheckRate" component={CheckRate} />
                 <Stack.Screen name="ShipmentDetailsScreen" component={ShipmentDetailsScreen} />
+                <Stack.Screen name="LocationPinPicker" component={LocationPinPicker} options={{ animation: 'slide_from_bottom' }} />
+                <Stack.Screen name="WebView" component={WebViewScreen} />
                 <Stack.Screen name="Receipt" component={ReceiptScreen} />
                 <Stack.Screen name="Referral" component={ReferralScreen} />
                 <Stack.Screen name="ShipmentChat" component={ShipmentChatScreen} />
@@ -154,6 +164,7 @@ const App = () => {
 
           </Stack.Navigator>
         </NavigationContainer>
+      </BottomSheetModalProvider>
       </GestureHandlerRootView>
       </QueryClientProvider>
     </ThemeProvider>

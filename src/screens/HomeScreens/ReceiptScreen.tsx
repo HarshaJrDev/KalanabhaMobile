@@ -11,6 +11,7 @@
 // customers were reporting as "the receipt doesn't download."
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Platform } from 'react-native';
+import { SkeletonDetail } from '@components/ui';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { ChevronLeft, Download } from 'lucide-react-native';
 import { generatePDF } from 'react-native-html-to-pdf';
@@ -67,8 +68,8 @@ const ReceiptScreen = () => {
 
     if (isLoading || !shipment) {
         return (
-            <View style={styles.center}>
-                <ActivityIndicator color={colors.PRIMARY} />
+            <View style={styles.container}>
+                <SkeletonDetail rows={3} />
             </View>
         );
     }

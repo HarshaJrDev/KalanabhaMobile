@@ -36,6 +36,7 @@ const EarningsScreen = () => {
                 error={error}
                 onRetry={refetch}
                 isEmpty={false}
+                skeleton="stats"
             >
                 <FlatList
                     data={summary?.recentTrips ?? []}

@@ -13,10 +13,10 @@ import {
     StyleSheet,
     FlatList,
     Pressable,
-    ActivityIndicator,
     StatusBar,
 } from 'react-native';
 import Geolocation from 'react-native-geolocation-service';
+import { SkeletonList } from '@components/ui';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, Fuel, MapPin, Navigation } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
@@ -83,10 +83,7 @@ const FuelStationsScreen = () => {
                     <Text style={styles.emptyText}>{locationError}</Text>
                 </View>
             ) : isLoading || !coords ? (
-                <View style={styles.centerState}>
-                    <ActivityIndicator size="large" color={colors.PRIMARY} />
-                    <Text style={styles.emptyText}>{t('fuelStations.findingFuelStations')}</Text>
-                </View>
+                <SkeletonList />
             ) : error ? (
                 <View style={styles.centerState}>
                     <Text style={styles.emptyText}>{t('fuelStations.mapDataUnavailable')}</Text>

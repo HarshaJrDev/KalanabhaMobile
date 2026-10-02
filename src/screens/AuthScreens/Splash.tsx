@@ -14,6 +14,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '@theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import { getStoredLanguage } from '@services/storage';
 
 const { width } = Dimensions.get('window');
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Splash'>;
@@ -48,7 +49,11 @@ const Splash = () => {
         wordmarkY.value = withDelay(200, withSpring(0, { damping: 12 }));
         progress.value = withTiming(1, { duration: 1600, easing: Easing.out(Easing.cubic) });
 
-        const timer = setTimeout(() => navigation.replace('OnBoarding'), 1700);
+        // First-ever open (no language chosen yet) routes through the
+        // language selector once; every later launch goes straight to
+        // OnBoarding as before.
+        const nextRoute = getStoredLanguage() === null ? 'LanguageSelect' : 'OnBoarding';
+        const timer = setTimeout(() => navigation.replace(nextRoute), 1700);
         return () => clearTimeout(timer);
     }, []);
 

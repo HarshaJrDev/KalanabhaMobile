@@ -22,11 +22,24 @@ import AddOrders from '../HomeScreens/addOrders';
 import NotificationScreen from '../HomeScreens/notification';
 import { useUnreadNotificationCount } from '@features/notifications/hooks';
 import { useMyShipments } from '@features/shipments/hooks';
-import { RootStackParamList } from './types';
 import { useTabBarStyle } from './useTabBarStyle';
 import FONTS from '@utils/fonts';
 
-const Tab = createBottomTabNavigator<RootStackParamList>();
+// This tab navigator's own route names — previously typed against the
+// root Stack's RootStackParamList, which only happened to type-check
+// because it coincidentally also had a `Home` key; that stopped being
+// true once the inner tab was renamed to `HomeTab` to resolve a
+// duplicate-screen-name warning (the root Stack's own screen is also
+// called "Home", one level up, wrapping this whole tab navigator).
+type HomeTabParamList = {
+    HomeTab: undefined;
+    Orders: undefined;
+    AddOrder: undefined;
+    Notification: undefined;
+    Profile: undefined;
+};
+
+const Tab = createBottomTabNavigator<HomeTabParamList>();
 
 /* ----------------------------- TAB CONFIG ----------------------------- */
 // "AddOrder" gets special center-FAB treatment below rather than sitting
@@ -34,7 +47,7 @@ const Tab = createBottomTabNavigator<RootStackParamList>();
 // (start a booking), so it's visually raised instead of competing with
 // Home/Orders/Notification/Profile for the same tab-button styling.
 const TAB_ICONS: Record<string, LucideIcon> = {
-    Home: HomeIcon,
+    HomeTab: HomeIcon,
     Orders: Box,
     AddOrder: Plus,
     Notification: Bell,
@@ -134,7 +147,7 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
     const barMetrics = useTabBarStyle(colors.SURFACE);
 
     const tabLabels: Record<string, string> = {
-        Home: t('tabs.home'),
+        HomeTab: t('tabs.home'),
         Orders: t('tabs.orders'),
         AddOrder: t('tabs.addOrder'),
         Notification: t('tabs.notifications'),
@@ -201,7 +214,7 @@ const HomeTabs: React.FC = () => {
             tabBar={renderCustomTabBar}
             screenOptions={{ headerShown: false }}
         >
-            <Tab.Screen name="Home" component={Home} />
+            <Tab.Screen name="HomeTab" component={Home} />
             <Tab.Screen name="Orders" component={Shipment} />
             <Tab.Screen name="AddOrder" component={AddOrders} />
             <Tab.Screen name="Notification" component={NotificationScreen} />

@@ -4,7 +4,6 @@ import {
     View,
     Text,
     RefreshControl,
-    ActivityIndicator,
     StatusBar,
     ScrollView,
     TouchableOpacity,
@@ -51,6 +50,7 @@ import { Linking } from 'react-native';
 import { useVehicleConfigs } from '@features/settings/hooks';
 import VehicleVisual from '@components/VehicleVisual';
 import FONTS from '@utils/fonts';
+import { SkeletonDashboard } from '@components/ui';
 import { useTabBarContentPadding } from '../../navigation/useTabBarStyle';
 
 // Same real K-branded truck photo already used on the customer Home
@@ -298,13 +298,9 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     // ━━━━━ Loading State
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
+            <View style={styles.container}>
                 <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
-                <Animated.View entering={FadeIn} style={styles.loadingContent}>
-                    <ActivityIndicator size="large" color="#FF7518" />
-                    <Text style={styles.loadingText}>{t('driverHome.loadingOrders')}</Text>
-                    <Text style={styles.loadingSubtext}>{t('driverHome.loadingSubtext')}</Text>
-                </Animated.View>
+                <SkeletonDashboard />
             </View>
         );
     }

@@ -32,6 +32,17 @@ export const useUpdateSavedAddress = (id: string) => {
     });
 };
 
+// Id-agnostic variant for list rows — e.g. "set as default" on whichever
+// card was tapped, without needing a separate useUpdateSavedAddress(id)
+// hook instance bound ahead of time for every row in the list.
+export const useSetDefaultSavedAddress = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => savedAddressesApi.updateSavedAddress(id, { isDefault: true }),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: savedAddressKeys.mine }),
+    });
+};
+
 export const useDeleteSavedAddress = () => {
     const queryClient = useQueryClient();
     return useMutation({

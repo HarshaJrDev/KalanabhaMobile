@@ -61,8 +61,10 @@ import QuickVehicleSelector from './homeSections/QuickVehicleSelector';
 import RecentTrips from './homeSections/RecentTrips';
 import PopularPickupPoints from './homeSections/PopularPickupPoints';
 import FavoriteAddresses from './homeSections/FavoriteAddresses';
-import HomeSkeleton from './homeSections/HomeSkeleton';
 import FadeImage from '@components/FadeImage';
+import { SkeletonDashboard } from '@components/ui';
+import { ensureServiceAreaTilesCached } from '@location/offlineMapCache';
+import { getOfflineMapsEnabled } from '@services/storage';
 
 type Shipment = {
     id: string;
@@ -128,6 +130,17 @@ const HomeScreen: React.FC = () => {
     const { data: serviceAreas, refetch: refetchServiceAreas } = useServiceAreas();
     const activeServiceAreas = useMemo(() => (serviceAreas ?? []).filter((a) => a.active), [serviceAreas]);
     const { data: savedAddresses } = useSavedAddresses();
+
+    // Best-effort, silent background tile caching for every active
+    // locality — so the map still renders (LocationPinPicker, live
+    // tracking) if the connection drops mid-trip. Runs once per app
+    // session's worth of distinct areas, not on every Home remount.
+    useEffect(() => {
+        if (activeServiceAreas.length > 0 && getOfflineMapsEnabled()) {
+            ensureServiceAreaTilesCached(activeServiceAreas);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeServiceAreas.length]);
 
     const activeShipmentsRaw = useMemo(() => myShipments ?? [], [myShipments]);
     const heroShipment = activeShipmentsRaw[0] ?? null;
@@ -220,7 +233,7 @@ const HomeScreen: React.FC = () => {
         return (
             <View style={styles.container}>
                 <StatusBar barStyle="light-content" backgroundColor={COLORS.gradientEnd} />
-                <HomeSkeleton colors={COLORS} />
+                <SkeletonDashboard />
             </View>
         );
     }

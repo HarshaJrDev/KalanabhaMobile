@@ -1,9 +1,10 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { WifiOff, AlertCircle, Inbox, RefreshCw } from 'lucide-react-native';
 import { useIsOnline } from '@api/network';
 import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
+import { SkeletonList, SkeletonDetail, SkeletonStatTiles } from '@components/ui';
 
 interface AsyncStateProps {
     isLoading: boolean;
@@ -12,6 +13,9 @@ interface AsyncStateProps {
     onRetry?: () => void;
     emptyTitle?: string;
     emptyMessage?: string;
+    /** Shape of the loading skeleton — defaults to a list of rows, the
+     * most common case across the screens using this component. */
+    skeleton?: 'list' | 'detail' | 'stats';
     children: React.ReactNode;
 }
 
@@ -29,6 +33,7 @@ export const AsyncState: React.FC<AsyncStateProps> = ({
     onRetry,
     emptyTitle,
     emptyMessage,
+    skeleton = 'list',
     children,
 }) => {
     const online = useIsOnline();
@@ -52,11 +57,9 @@ export const AsyncState: React.FC<AsyncStateProps> = ({
     }
 
     if (isLoading) {
-        return (
-            <View style={styles.center}>
-                <ActivityIndicator size="large" color="#2563EB" />
-            </View>
-        );
+        if (skeleton === 'detail') return <SkeletonDetail />;
+        if (skeleton === 'stats') return <SkeletonStatTiles />;
+        return <SkeletonList />;
     }
 
     if (error) {

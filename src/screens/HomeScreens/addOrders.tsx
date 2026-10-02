@@ -390,6 +390,7 @@ const LocationRefiner = ({ area, refined, onResolve }: {
 }) => {
     const { colors: BRAND } = useAppTheme();
     const { t } = useTranslation();
+    const navigation = useNavigation<any>();
     const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
     const refineStyles = useMemo(() => makeRefineStyles(COLORS), [COLORS]);
     const [query, setQuery] = useState('');
@@ -406,6 +407,16 @@ const LocationRefiner = ({ area, refined, onResolve }: {
             onResolve(null);
             setStatus('not-found');
         }
+    };
+
+    const handlePinOnMap = () => {
+        navigation.navigate('LocationPinPicker', {
+            initial: refined ? { lat: refined.lat, lng: refined.lng } : { lat: area.lat, lng: area.lng },
+            initialAddress: refined?.label,
+            onConfirm: (point: { lat: number; lng: number; address: string }) => {
+                onResolve({ lat: point.lat, lng: point.lng, label: point.address });
+            },
+        });
     };
 
     return (
@@ -429,6 +440,10 @@ const LocationRefiner = ({ area, refined, onResolve }: {
                         : <Search size={16} color={COLORS.primary} />}
                 </TouchableOpacity>
             </View>
+            <TouchableOpacity onPress={handlePinOnMap} style={refineStyles.pinOnMapRow}>
+                <MapPin size={14} color={COLORS.primary} />
+                <Text style={refineStyles.pinOnMapText}>{t('addOrder.pinOnMap')}</Text>
+            </TouchableOpacity>
             {refined && (
                 <View style={refineStyles.resultRow}>
                     <Check size={13} color={COLORS.success} />
@@ -463,6 +478,8 @@ const makeRefineStyles = (COLORS: OrderColors) => StyleSheet.create({
     resultText: { flex: 1, fontSize: 12, color: COLORS.success, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
     resetText: { fontSize: 12, color: COLORS.primary, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
     notFoundText: { fontSize: 11, color: COLORS.warning, marginTop: 6, lineHeight: 15 },
+    pinOnMapRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8, alignSelf: 'flex-start' },
+    pinOnMapText: { fontSize: 12, color: COLORS.primary, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
 });
 
 const SectionHeader = ({ title, subtitle }: { title: string; subtitle?: string }) => {

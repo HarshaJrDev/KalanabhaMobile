@@ -8,13 +8,13 @@ import {
     StatusBar,
     Platform,
     FlatList,
-    ActivityIndicator,
     Pressable,
     Dimensions,
     TextInput,
     Modal,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import { SkeletonList } from '@components/ui';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -389,12 +389,7 @@ const ShipmentScreen = () => {
 
             {/* Content */}
             {loading ? (
-                <View style={styles.loadingWrap}>
-                    <ActivityIndicator size="large" color={C.primary} />
-                    <Text style={[styles.loadingText, { fontFamily: FONTS.MEDIUM_PRIMARY }]}>
-                        {t('orders.loadingShipments')}
-                    </Text>
-                </View>
+                <SkeletonList />
             ) : filtered.length === 0 ? (
                 <Animated.View style={[styles.emptyWrap, listAnimStyle]}>
                     <Inbox color={C.textLight} size={48} style={styles.emptyEmoji} />

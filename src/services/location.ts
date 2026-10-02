@@ -1,24 +1,20 @@
+import { apiClient } from '@api/client';
+
+// Routed through kalanabhaBackend's /maps/geocode/* proxy (not Nominatim
+// directly) — every device sharing one backend-enforced rate limit and
+// cache instead of each phone hammering the public Nominatim instance
+// independently, which was out of compliance with its usage policy.
 export const reverseGeocode = async (
     lat: number,
     lon: number,
-    signal?: AbortSignal
+    signal?: AbortSignal,
 ): Promise<string> => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 7000);
-
-    try {
-        const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
-            { signal: signal ?? controller.signal }
-        );
-
-        if (!res.ok) throw new Error('Failed address fetch');
-
-        const json = await res.json();
-        return json.display_name;
-    } finally {
-        clearTimeout(timeout);
-    }
+    const { data } = await apiClient.get('/maps/geocode/reverse', {
+        params: { lat, lng: lon },
+        signal,
+        skipGlobalErrorToast: true,
+    });
+    return data.data.displayName;
 };
 
 // Sender/receiver addresses in the order form are free-typed text with no
@@ -27,26 +23,18 @@ export const reverseGeocode = async (
 // of the flat per-service-type price.
 export const forwardGeocode = async (
     address: string,
-    signal?: AbortSignal
+    signal?: AbortSignal,
 ): Promise<{ lat: number; lng: number } | null> => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 7000);
-
     try {
-        const res = await fetch(
-            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`,
-            { signal: signal ?? controller.signal }
-        );
-
-        if (!res.ok) return null;
-
-        const json = await res.json();
-        if (!Array.isArray(json) || json.length === 0) return null;
-
-        return { lat: parseFloat(json[0].lat), lng: parseFloat(json[0].lon) };
+        const { data } = await apiClient.get('/maps/geocode/search', {
+            params: { q: address },
+            signal,
+            skipGlobalErrorToast: true,
+        });
+        const results: Array<{ lat: number; lng: number }> = data.data;
+        if (!results.length) return null;
+        return { lat: results[0].lat, lng: results[0].lng };
     } catch {
         return null;
-    } finally {
-        clearTimeout(timeout);
     }
 };

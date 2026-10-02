@@ -6,7 +6,8 @@
 // opened a mailto: link; this is a real "My Tickets" list + "New Ticket"
 // entry point.
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
+import { SkeletonList } from '@components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, Plus, MessageSquareText, Clock, CheckCircle2, XCircle } from 'lucide-react-native';
@@ -67,9 +68,7 @@ const SupportTicketsScreen = () => {
             </View>
 
             {isLoading ? (
-                <View style={styles.centerState}>
-                    <ActivityIndicator size="large" color={colors.PRIMARY} />
-                </View>
+                <SkeletonList />
             ) : (
                 <FlatList
                     data={tickets ?? []}

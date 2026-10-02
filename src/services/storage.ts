@@ -8,6 +8,7 @@ const REFRESH_TOKEN_KEY = 'refresh_token';
 const USER_KEY = 'auth_user';
 const ONBOARDING_KEY = 'has_seen_onboarding';
 const LANGUAGE_KEY = 'app_language';
+const OFFLINE_MAPS_KEY = 'offline_maps_enabled';
 
 // Shape returned by GET /users/me — mirrors kalanabhaBackend's UserEntity
 // field-for-field (verified against a running instance) rather than only
@@ -113,6 +114,21 @@ export const setStoredLanguage = (lang: string): void => {
 
 export const getStoredLanguage = (): string | null => {
     return storage.getString(LANGUAGE_KEY) ?? null;
+};
+
+// ----------------------
+// OFFLINE MAPS
+// ----------------------
+// Gates offlineMapCache.ts's background tile downloads (Settings >
+// Offline Maps) — defaults on (undefined -> true) since most users
+// benefit from it, but downloads real data on the user's connection, so
+// it needs a real off switch, not just an always-on background task.
+export const setOfflineMapsEnabled = (enabled: boolean): void => {
+    storage.set(OFFLINE_MAPS_KEY, enabled);
+};
+
+export const getOfflineMapsEnabled = (): boolean => {
+    return storage.getBoolean(OFFLINE_MAPS_KEY) ?? true;
 };
 
 // ----------------------

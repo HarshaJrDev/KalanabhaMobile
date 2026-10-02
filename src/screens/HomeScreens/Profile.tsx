@@ -5,16 +5,11 @@ import {
     StyleSheet,
     TouchableOpacity,
     ScrollView,
-    Alert,
-    Modal,
-    KeyboardAvoidingView,
-    Platform,
 } from 'react-native';
 import {
     ChevronRight,
-    MapPin,
     Bookmark,
-    CreditCard,
+    Gift,
     Clock,
     Settings,
     Globe,
@@ -32,7 +27,9 @@ import LinearGradient from 'react-native-linear-gradient';
 import { useTabBarContentPadding } from '../navigation/useTabBarStyle';
 import AppTextInput from '../../components/ui/AppTextInput';
 import AppButton from '../../components/ui/AppButton';
+import { AppBottomSheet, type AppBottomSheetRef } from '../../components/ui/AppBottomSheet';
 import { showToast } from '@ui/alert/toastStore';
+import { confirmDialog } from '@ui/alert/confirmStore';
 import { useAppTheme } from '@theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { LanguagePickerModal } from '@components/LanguagePickerModal';
@@ -69,37 +66,28 @@ const ProfileScreen = () => {
         [history],
     );
 
-    const handleLogout = () => {
-        Alert.alert(
-            'Logout',
-            'Are you sure you want to log out?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Logout',
-                    style: 'destructive',
-                    onPress: () => logoutMutation.mutate(),
-                },
-            ]
-        );
+    const handleLogout = async () => {
+        const confirmed = await confirmDialog({
+            title: t('profile.logoutTitle'),
+            message: t('profile.logoutMessage'),
+            confirmText: t('common.logout'),
+            destructive: true,
+        });
+        if (confirmed) logoutMutation.mutate();
     };
 
-    const comingSoon = (feature: string) => showToast(`${feature} is coming soon`, 'info');
-
+    // Previously "Saved Address" (singular, this row) and "Saved Addresses"
+    // (plural, the real multi-address book) sat back-to-back — two rows
+    // that looked like two features but the singular one just reopened
+    // Edit Profile's single address field. Removed; that field is still
+    // editable from the "Edit" button on the header above, and the real
+    // address book is the one remaining "Addresses" row below. Payment
+    // Method was a pure "coming soon" stub with no feature behind it —
+    // replaced with the real Refer & Earn screen instead of leaving a
+    // fake row in a real menu.
     const menuItems = [
-        {
-            icon: MapPin,
-            label: t('profile.savedAddress'),
-            // Real value (User.address via GET /users/me) — was a hardcoded
-            // Riyadh address regardless of what the user actually saved.
-            // There's no separate address-book screen/endpoint (one address
-            // per user), so this opens the same Edit Profile modal that
-            // already edits it, instead of a dead "AddressScreen" route.
-            value: user?.address || 'Add address',
-            onPress: () => setEditVisible(true),
-        },
         { icon: Bookmark, label: t('profile.savedAddresses'), onPress: () => navigation.navigate('SavedAddresses' as never) },
-        { icon: CreditCard, label: t('profile.paymentMethod'), onPress: () => comingSoon('Payment methods') },
+        { icon: Gift, label: t('profile.referAndEarn'), onPress: () => navigation.navigate('Referral' as never) },
         { icon: Clock, label: t('profile.transactionsHistory'), onPress: () => navigation.navigate('Transactions' as never) },
         { icon: Settings, label: t('profile.settings'), onPress: () => navigation.navigate('Settings' as never) },
         {
@@ -212,6 +200,7 @@ const EditProfileModal = ({ visible, onClose }: { visible: boolean; onClose: () 
     const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
     const user = useAuthStore((s) => s.user);
     const { mutate, isPending } = useUpdateProfile();
+    const sheetRef = React.useRef<AppBottomSheetRef>(null);
 
     const [displayName, setDisplayName] = useState(user?.displayName ?? '');
     const [phone, setPhone] = useState(user?.phone ?? '');
@@ -226,6 +215,9 @@ const EditProfileModal = ({ visible, onClose }: { visible: boolean; onClose: () 
             setPhone(user?.phone ?? '');
             setAddress(user?.address ?? '');
             setError(null);
+            sheetRef.current?.present();
+        } else {
+            sheetRef.current?.dismiss();
         }
     }, [visible, user]);
 
@@ -249,40 +241,33 @@ const EditProfileModal = ({ visible, onClose }: { visible: boolean; onClose: () 
     };
 
     return (
-        <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-            <KeyboardAvoidingView
-                style={styles.modalOverlay}
-                behavior={Platform.select({ ios: 'padding' })}
-            >
-                <View style={styles.modalSheet}>
-                    <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>{t('editProfile.editProfileTitle')}</Text>
-                        <TouchableOpacity onPress={onClose} hitSlop={10}>
-                            <X color={colors.TEXT_SECONDARY} size={22} />
-                        </TouchableOpacity>
-                    </View>
+        <AppBottomSheet ref={sheetRef} onDismiss={onClose}>
+            <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>{t('editProfile.editProfileTitle')}</Text>
+                <TouchableOpacity onPress={onClose} hitSlop={10}>
+                    <X color={colors.TEXT_SECONDARY} size={22} />
+                </TouchableOpacity>
+            </View>
 
-                    <View style={styles.modalForm}>
-                        <AppTextInput label={t('editProfile.fullName')} value={displayName} onChange={setDisplayName} />
-                        <AppTextInput
-                            label={t('editProfile.phone')}
-                            value={phone}
-                            onChange={setPhone}
-                            keyboardType="phone-pad"
-                        />
-                        <AppTextInput label={t('editProfile.address')} value={address} onChange={setAddress} />
-                        {!!error && <Text style={styles.modalError}>{error}</Text>}
-                    </View>
+            <View style={styles.modalForm}>
+                <AppTextInput label={t('editProfile.fullName')} value={displayName} onChange={setDisplayName} />
+                <AppTextInput
+                    label={t('editProfile.phone')}
+                    value={phone}
+                    onChange={setPhone}
+                    keyboardType="phone-pad"
+                />
+                <AppTextInput label={t('editProfile.address')} value={address} onChange={setAddress} />
+                {!!error && <Text style={styles.modalError}>{error}</Text>}
+            </View>
 
-                    <AppButton
-                        title={isPending ? t('editProfile.savingChanges') : t('editProfile.saveChanges')}
-                        onPress={handleSave}
-                        loading={isPending}
-                        disabled={isPending}
-                    />
-                </View>
-            </KeyboardAvoidingView>
-        </Modal>
+            <AppButton
+                title={isPending ? t('editProfile.savingChanges') : t('editProfile.saveChanges')}
+                onPress={handleSave}
+                loading={isPending}
+                disabled={isPending}
+            />
+        </AppBottomSheet>
     );
 };
 
@@ -441,19 +426,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
         fontFamily: fonts.PRIMARY,
     },
 
-    // Edit Profile modal
-    modalOverlay: {
-        flex: 1,
-        justifyContent: 'flex-end',
-        backgroundColor: 'rgba(0,0,0,0.4)',
-    },
-    modalSheet: {
-        backgroundColor: colors.SURFACE,
-        borderTopLeftRadius: W(24),
-        borderTopRightRadius: W(24),
-        padding: W(20),
-        paddingBottom: H(32),
-    },
+    // Edit Profile sheet
     modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',

@@ -7,7 +7,14 @@ export type AddOrderPrefill = {
 
 export type RootStackParamList = {
   Splash: undefined;
+  LanguageSelect: undefined;
   OnBoarding: undefined;
+  LocationPinPicker: {
+    initial?: { lat: number; lng: number };
+    initialAddress?: string;
+    onConfirm: (point: { lat: number; lng: number; address: string }) => void;
+  };
+  WebView: { url: string; title: string };
   SelectAccount: undefined;
   Login: { isDriver: boolean };
   Signup: undefined;
@@ -30,7 +37,7 @@ export type RootStackParamList = {
   Transactions: undefined;
   SupportTickets: undefined;
   SavedAddresses: undefined;
-  NewTicket: undefined;
+  NewTicket: { prefillCategory?: string; prefillSubject?: string; prefillDescription?: string } | undefined;
   TicketDetail: { id: string };
 
   Shipment: undefined;

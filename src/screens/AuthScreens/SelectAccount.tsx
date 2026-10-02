@@ -1,16 +1,6 @@
 import React, { useCallback, useMemo, useState, memo } from 'react';
 import { View, Text, Image, StyleSheet, Pressable, StatusBar, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, {
-    FadeInDown,
-    FadeInUp,
-    ZoomIn,
-    ZoomOut,
-    useSharedValue,
-    useAnimatedStyle,
-    withSpring,
-    withTiming,
-} from 'react-native-reanimated';
 import { User, Truck, ArrowLeft, ChevronRight } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -28,9 +18,9 @@ interface Account {
 }
 
 // Re-themed to Kalanabha's light brand surface (was a dark navy/purple
-// gradient screen) — same two-card selection + Reanimated press/entrance
-// behavior and the exact same navigation.navigate('Login', { isDriver })
-// call underneath, untouched.
+// gradient screen). No entrance/press animations — plain state-driven
+// styling — and the same navigation.navigate('Login', { isDriver }) call
+// underneath, untouched.
 const makeAccounts = (t: (key: string) => string): Account[] => [
     { type: 'Customer', label: t('selectAccount.customerLabel'), description: t('selectAccount.customerDesc') },
     { type: 'Driver', label: t('selectAccount.driverLabel'), description: t('selectAccount.driverDesc') },
@@ -53,65 +43,47 @@ type Styles = ReturnType<typeof makeStyles>;
 
 interface CardProps {
     item: Account;
-    index: number;
     selected: boolean;
     onPress: () => void;
     styles: Styles;
     roleIconColor: string;
 }
 
-const AccountCard = memo(({ item, index, selected, onPress, styles, roleIconColor }: CardProps) => {
-    const scale = useSharedValue(1);
+const AccountCard = memo(({ item, selected, onPress, styles, roleIconColor }: CardProps) => {
     const RoleIcon = ROLE_ICONS[item.type];
 
-    const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-
     return (
-        <Animated.View
-            entering={FadeInDown.delay(120 + index * 90).duration(400).springify().damping(16)}
-            style={animatedStyle}
+        <Pressable
+            onPress={onPress}
+            accessibilityRole="radio"
+            accessibilityState={{ selected }}
+            accessibilityLabel={`${item.label} account`}
+            style={[styles.card, selected && styles.cardSelected]}
         >
-            <Pressable
-                onPress={onPress}
-                onPressIn={() => { scale.value = withSpring(0.97, { damping: 18, stiffness: 260 }); }}
-                onPressOut={() => { scale.value = withSpring(1, { damping: 18, stiffness: 260 }); }}
-                accessibilityRole="radio"
-                accessibilityState={{ selected }}
-                accessibilityLabel={`${item.label} account`}
-                style={[styles.card, selected && styles.cardSelected]}
-            >
-                {/* Full-bleed illustration, not a small boxed icon — the
-                    brand's own K-mascot art scaled up and clipped by the
-                    card's rounded left edge, matching the reference
-                    mockup's layout. */}
-                <View style={styles.bleedWrap}>
-                    <Image source={ACCOUNT_IMAGES[item.type]} resizeMode="contain" style={styles.bleedImage} />
-                </View>
+            {/* Full-bleed illustration, not a small boxed icon — the
+                brand's own K-mascot art scaled up and clipped by the
+                card's rounded left edge, matching the reference
+                mockup's layout. */}
+            <View style={styles.bleedWrap}>
+                <Image source={ACCOUNT_IMAGES[item.type]} resizeMode="contain" style={styles.bleedImage} />
+            </View>
 
-                <View style={styles.cardBody}>
-                    <View style={[styles.roleBadge, selected && styles.roleBadgeSelected]}>
-                        <RoleIcon color={selected ? '#fff' : roleIconColor} size={16} strokeWidth={2.2} />
-                    </View>
-                    <Text style={styles.title}>{item.label}</Text>
-                    <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>
+            <View style={styles.cardBody}>
+                <View style={[styles.roleBadge, selected && styles.roleBadgeSelected]}>
+                    <RoleIcon color={selected ? '#fff' : roleIconColor} size={16} strokeWidth={2.2} />
                 </View>
+                <Text style={styles.title}>{item.label}</Text>
+                <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>
+            </View>
 
-                {/* The whole card is already the tap target — this ring
-                    stays visible on both cards (so the pair reads as a
-                    real choice, per the reference), but its fill only
-                    animates in once selected rather than being a static
-                    always-drawn dot. */}
-                <View style={[styles.radioRing, selected && styles.radioRingSelected]}>
-                    {selected && (
-                        <Animated.View
-                            entering={ZoomIn.springify().damping(12).stiffness(220)}
-                            exiting={ZoomOut.duration(150)}
-                            style={styles.radioDot}
-                        />
-                    )}
-                </View>
-            </Pressable>
-        </Animated.View>
+            {/* The whole card is already the tap target — this ring stays
+                visible on both cards (so the pair reads as a real choice,
+                per the reference); its dot just shows/hides on selection,
+                no animation. */}
+            <View style={[styles.radioRing, selected && styles.radioRingSelected]}>
+                {selected && <View style={styles.radioDot} />}
+            </View>
+        </Pressable>
     );
 });
 
@@ -122,12 +94,6 @@ const SelectAccount = () => {
     const styles = useMemo(() => makeStyles(colors, fonts, fontSize, spacing, radius), [colors, fonts, fontSize, spacing, radius]);
     const ACCOUNTS = useMemo(() => makeAccounts(t), [t]);
     const [selected, setSelected] = useState<AccountType | null>(null);
-
-    const buttonScale = useSharedValue(1);
-    const buttonAnimatedStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: buttonScale.value }],
-        opacity: withTiming(selected ? 1 : 0.5, { duration: 200 }),
-    }));
 
     const handleSelect = useCallback((type: AccountType) => setSelected(type), []);
 
@@ -158,19 +124,18 @@ const SelectAccount = () => {
                 </View>
 
                 <View style={styles.content}>
-                    <Animated.Text entering={FadeInUp.duration(400)} style={styles.title1}>
+                    <Text style={styles.title1}>
                         {t('selectAccount.chooseYourType')}
-                    </Animated.Text>
-                    <Animated.Text entering={FadeInUp.delay(60).duration(400)} style={styles.subtitle}>
+                    </Text>
+                    <Text style={styles.subtitle}>
                         {t('selectAccount.toContinue')}
-                    </Animated.Text>
+                    </Text>
 
                     <View style={styles.cardList}>
-                        {ACCOUNTS.map((item, index) => (
+                        {ACCOUNTS.map((item) => (
                             <AccountCard
                                 key={item.type}
                                 item={item}
-                                index={index}
                                 selected={selected === item.type}
                                 onPress={() => handleSelect(item.type)}
                                 styles={styles}
@@ -180,22 +145,14 @@ const SelectAccount = () => {
                     </View>
                 </View>
 
-                <Animated.View entering={FadeInUp.delay(260).duration(450)}>
-                    <Pressable
-                        disabled={!selected}
-                        onPress={handleContinue}
-                        onPressIn={() => { if (selected) buttonScale.value = withSpring(0.98, { damping: 18, stiffness: 260 }); }}
-                        onPressOut={() => { buttonScale.value = withSpring(1, { damping: 18, stiffness: 260 }); }}
-                        hitSlop={8}
-                    >
-                        <Animated.View style={[styles.button, buttonAnimatedStyle]}>
-                            <Text style={styles.buttonText}>
-                                {selected ? t('selectAccount.continueAs', { type: selected === 'Customer' ? t('selectAccount.typeCustomer') : t('selectAccount.typeDriver') }) : t('selectAccount.selectAccountType')}
-                            </Text>
-                            {selected && <ChevronRight color="#fff" size={18} strokeWidth={2.5} />}
-                        </Animated.View>
-                    </Pressable>
-                </Animated.View>
+                <Pressable disabled={!selected} onPress={handleContinue} hitSlop={8}>
+                    <View style={[styles.button, !selected && styles.buttonDisabled]}>
+                        <Text style={styles.buttonText}>
+                            {selected ? t('selectAccount.continueAs', { type: selected === 'Customer' ? t('selectAccount.typeCustomer') : t('selectAccount.typeDriver') }) : t('selectAccount.selectAccountType')}
+                        </Text>
+                        {selected && <ChevronRight color="#fff" size={18} strokeWidth={2.5} />}
+                    </View>
+                </Pressable>
             </SafeAreaView>
         </View>
     );
@@ -334,5 +291,6 @@ const makeStyles = (
         marginBottom: spacing.sm,
         backgroundColor: colors.PRIMARY,
     },
+    buttonDisabled: { opacity: 0.5 },
     buttonText: { fontFamily: fonts.BOLD_PRIMARY, fontSize: fontSize.xl, color: '#fff' },
 });

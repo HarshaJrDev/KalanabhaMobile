@@ -7,27 +7,33 @@
 // project), and logout. No new backend endpoints — everything here is
 // either on-device or reuses the existing POST /auth/logout flow.
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert, Switch } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Switch } from 'react-native';
 import { getApp } from '@react-native-firebase/app';
 import { getMessaging, hasPermission, AuthorizationStatus } from '@react-native-firebase/messaging';
-import { ChevronLeft, LogOut } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Globe, LogOut } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useLogout } from '@hooks/useLogout';
 import { useMe } from '@hooks/useMe';
 import { useUpdateNotificationPreferences } from '@hooks/useNotificationPreferences';
 import { registerFCMToken } from '@utils/cm';
+import { useAppTheme } from '@theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import { confirmDialog } from '@ui/alert/confirmStore';
+import { LanguagePickerModal } from '@components/LanguagePickerModal';
+import { LANGUAGE_LABELS, type SupportedLanguage } from '../../i18n';
 import FONTS from '@utils/fonts';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version: appVersion } = require('../../../package.json');
 
 const SettingsScreen = () => {
     const navigation = useNavigation();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const { colors } = useAppTheme();
     const logoutMutation = useLogout();
     const { data: me } = useMe();
     const { mutate: updatePrefs } = useUpdateNotificationPreferences();
     const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
+    const [langVisible, setLangVisible] = useState(false);
 
     // Modular API — the namespaced `messaging()` call style is deprecated
     // as of RNFirebase v22 and logs a console warning on every use.
@@ -54,21 +60,41 @@ const SettingsScreen = () => {
                 // iOS/Android don't let apps revoke their own notification
                 // permission — the OS settings screen is the only way.
                 // Reflect that honestly instead of pretending to toggle it off.
-                Alert.alert(
-                    t('settings.turnOffTitle'),
-                    t('settings.turnOffMessage'),
-                );
+                await confirmDialog({
+                    title: t('settings.turnOffTitle'),
+                    message: t('settings.turnOffMessage'),
+                    confirmText: t('common.close'),
+                });
             }
         },
         [refreshPermission, t],
     );
 
-    const logout = useCallback(() => {
-        Alert.alert(t('common.logout'), t('settings.logoutConfirm'), [
-            { text: t('common.cancel'), style: 'cancel' },
-            { text: t('common.logout'), style: 'destructive', onPress: () => logoutMutation.mutate() },
-        ]);
+    const logout = useCallback(async () => {
+        const confirmed = await confirmDialog({
+            title: t('common.logout'),
+            message: t('settings.logoutConfirm'),
+            confirmText: t('common.logout'),
+            destructive: true,
+        });
+        if (confirmed) logoutMutation.mutate();
     }, [logoutMutation, t]);
+
+    const requestDeleteAccount = useCallback(async () => {
+        const confirmed = await confirmDialog({
+            title: t('settings.deleteAccountTitle'),
+            message: t('settings.deleteAccountMessage'),
+            confirmText: t('settings.deleteAccountConfirm'),
+            destructive: true,
+        });
+        if (confirmed) {
+            (navigation as any).navigate('NewTicket', {
+                prefillCategory: 'Other',
+                prefillSubject: t('settings.deleteAccountTicketSubject'),
+                prefillDescription: t('settings.deleteAccountTicketDescription'),
+            });
+        }
+    }, [navigation, t]);
 
     return (
         <View style={styles.container}>
@@ -111,6 +137,33 @@ const SettingsScreen = () => {
                 />
             </View>
 
+            <Pressable style={styles.row} onPress={() => setLangVisible(true)}>
+                <Text style={styles.rowLabel}>{t('profile.language')}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={styles.rowValue}>{LANGUAGE_LABELS[i18n.language as SupportedLanguage] ?? LANGUAGE_LABELS.en}</Text>
+                    <ChevronRight size={16} color={colors.GRAY} />
+                </View>
+            </Pressable>
+
+            <Pressable
+                style={styles.row}
+                onPress={() => (navigation as any).navigate('WebView', { url: 'https://kalanabhalogistics.com/privacy', title: t('settings.privacyPolicy') })}
+            >
+                <Text style={styles.rowLabel}>{t('settings.privacyPolicy')}</Text>
+                <ChevronRight size={16} color={colors.GRAY} />
+            </Pressable>
+            <Pressable
+                style={styles.row}
+                onPress={() => (navigation as any).navigate('WebView', { url: 'https://kalanabhalogistics.com/terms', title: t('settings.termsOfService') })}
+            >
+                <Text style={styles.rowLabel}>{t('settings.termsOfService')}</Text>
+                <ChevronRight size={16} color={colors.GRAY} />
+            </Pressable>
+            <Pressable style={styles.row} onPress={requestDeleteAccount}>
+                <Text style={[styles.rowLabel, { color: colors.ERROR }]}>{t('settings.deleteAccount')}</Text>
+                <ChevronRight size={16} color={colors.GRAY} />
+            </Pressable>
+
             <View style={styles.row}>
                 <Text style={styles.rowLabel}>{t('settings.appVersion')}</Text>
                 <Text style={styles.rowValue}>{appVersion}</Text>
@@ -120,6 +173,8 @@ const SettingsScreen = () => {
                 <LogOut color="#FFF" size={16} />
                 <Text style={styles.logoutText}>{t('common.logout')}</Text>
             </Pressable>
+
+            <LanguagePickerModal visible={langVisible} onClose={() => setLangVisible(false)} />
         </View>
     );
 };

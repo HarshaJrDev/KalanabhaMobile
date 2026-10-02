@@ -6,6 +6,7 @@
 // admin panel's SupportTicketsPage.
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { SkeletonDetail } from '@components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { ArrowLeft, Send } from 'lucide-react-native';
@@ -77,9 +78,7 @@ const TicketDetailScreen = () => {
             </View>
 
             {isLoading || !ticket ? (
-                <View style={styles.centerState}>
-                    <ActivityIndicator size="large" color={colors.PRIMARY} />
-                </View>
+                <SkeletonDetail />
             ) : (
                 <FlatList
                     data={ticket.messages ?? []}

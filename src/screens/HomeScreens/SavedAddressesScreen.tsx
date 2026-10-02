@@ -7,16 +7,26 @@
 // affordance); this screen is where the list actually lives — rename
 // (label only, the ServiceArea itself is fixed once saved) and delete.
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
+import { SkeletonList } from '@components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { ArrowLeft, Bookmark, Pencil, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Bookmark, Briefcase, Home as HomeIcon, Hotel, MapPin, Pencil, Plus, Star, Trash2 } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
-import { useSavedAddresses, useUpdateSavedAddress, useDeleteSavedAddress } from '@features/savedAddresses/hooks';
-import type { SavedAddress } from '@features/savedAddresses/types';
+import { useSavedAddresses, useSetDefaultSavedAddress, useDeleteSavedAddress } from '@features/savedAddresses/hooks';
+import type { SavedAddress, SavedAddressType } from '@features/savedAddresses/types';
+import { AddressFormModal } from '@components/AddressFormModal';
 import { normalizeError } from '@utils/error';
 import { showToast } from '@ui/alert/toastStore';
+import { confirmDialog } from '@ui/alert/confirmStore';
+
+const TYPE_ICON: Record<SavedAddressType, typeof HomeIcon> = {
+    HOME: HomeIcon,
+    WORK: Briefcase,
+    HOTEL: Hotel,
+    OTHER: MapPin,
+};
 
 const SavedAddressesScreen = () => {
     const navigation = useNavigation();
@@ -26,63 +36,74 @@ const SavedAddressesScreen = () => {
     const styles = useMemo(() => makeStyles(colors, fonts, spacing, radius, insets), [colors, fonts, spacing, radius, insets]);
 
     const { data: addresses, isLoading } = useSavedAddresses();
-    const [renaming, setRenaming] = useState<SavedAddress | null>(null);
-    const [renameLabel, setRenameLabel] = useState('');
-    const updateAddress = useUpdateSavedAddress(renaming?.id ?? '');
+    const [formVisible, setFormVisible] = useState(false);
+    const [editing, setEditing] = useState<SavedAddress | null>(null);
+    const setDefaultAddress = useSetDefaultSavedAddress();
     const deleteAddress = useDeleteSavedAddress();
 
-    const openRename = (address: SavedAddress) => {
-        setRenaming(address);
-        setRenameLabel(address.label);
+    const openAdd = () => {
+        setEditing(null);
+        setFormVisible(true);
     };
 
-    const confirmRename = () => {
-        if (!renaming || !renameLabel.trim()) return;
-        updateAddress.mutate(
-            { label: renameLabel.trim() },
-            {
-                onSuccess: () => {
-                    showToast(t('savedAddresses.addressUpdated'), 'success');
-                    setRenaming(null);
-                },
-                onError: (err) => showToast(normalizeError(err) || 'Could not update address', 'error'),
-            },
+    const openEdit = (address: SavedAddress) => {
+        setEditing(address);
+        setFormVisible(true);
+    };
+
+    const makeDefault = (address: SavedAddress) => {
+        if (address.isDefault) return;
+        setDefaultAddress.mutate(address.id, {
+            onSuccess: () => showToast(t('savedAddresses.defaultAddressSet'), 'success'),
+            onError: (err) => showToast(normalizeError(err) || 'Could not set default address', 'error'),
+        });
+    };
+
+    const confirmDelete = async (address: SavedAddress) => {
+        const confirmed = await confirmDialog({
+            title: t('savedAddresses.removeAddress'),
+            message: t('savedAddresses.removeConfirm', { label: address.label }),
+            confirmText: t('savedAddresses.remove'),
+            destructive: true,
+        });
+        if (confirmed) {
+            deleteAddress.mutate(address.id, {
+                onSuccess: () => showToast(t('savedAddresses.addressRemoved'), 'success'),
+                onError: (err) => showToast(normalizeError(err) || 'Could not remove address', 'error'),
+            });
+        }
+    };
+
+    const renderItem = ({ item }: { item: SavedAddress }) => {
+        const TypeIcon = TYPE_ICON[item.type];
+        return (
+            <View style={[styles.card, item.isDefault && styles.cardDefault]}>
+                <View style={styles.cardIconWrap}>
+                    <TypeIcon color={colors.PRIMARY} size={18} />
+                </View>
+                <View style={{ flex: 1 }}>
+                    <View style={styles.cardLabelRow}>
+                        <Text style={styles.cardLabel} numberOfLines={1}>{item.label}</Text>
+                        {item.isDefault && (
+                            <View style={styles.defaultBadge}>
+                                <Text style={styles.defaultBadgeText}>{t('savedAddresses.default')}</Text>
+                            </View>
+                        )}
+                    </View>
+                    <Text style={styles.cardArea} numberOfLines={1}>{item.serviceArea.name}, {item.serviceArea.city}</Text>
+                </View>
+                <Pressable onPress={() => makeDefault(item)} hitSlop={10} style={styles.iconBtn}>
+                    <Star color={item.isDefault ? colors.PRIMARY : colors.TEXT_SECONDARY} fill={item.isDefault ? colors.PRIMARY : 'transparent'} size={16} />
+                </Pressable>
+                <Pressable onPress={() => openEdit(item)} hitSlop={10} style={styles.iconBtn}>
+                    <Pencil color={colors.TEXT_SECONDARY} size={16} />
+                </Pressable>
+                <Pressable onPress={() => confirmDelete(item)} hitSlop={10} style={styles.iconBtn}>
+                    <Trash2 color={colors.ERROR} size={16} />
+                </Pressable>
+            </View>
         );
     };
-
-    const confirmDelete = (address: SavedAddress) => {
-        Alert.alert(t('savedAddresses.removeAddress'), t('savedAddresses.removeConfirm', { label: address.label }), [
-            { text: t('common.cancel'), style: 'cancel' },
-            {
-                text: t('savedAddresses.remove'),
-                style: 'destructive',
-                onPress: () => {
-                    deleteAddress.mutate(address.id, {
-                        onSuccess: () => showToast(t('savedAddresses.addressRemoved'), 'success'),
-                        onError: (err) => showToast(normalizeError(err) || 'Could not remove address', 'error'),
-                    });
-                },
-            },
-        ]);
-    };
-
-    const renderItem = ({ item }: { item: SavedAddress }) => (
-        <View style={styles.card}>
-            <View style={styles.cardIconWrap}>
-                <Bookmark color={colors.PRIMARY} size={18} />
-            </View>
-            <View style={{ flex: 1 }}>
-                <Text style={styles.cardLabel} numberOfLines={1}>{item.label}</Text>
-                <Text style={styles.cardArea} numberOfLines={1}>{item.serviceArea.name}, {item.serviceArea.city}</Text>
-            </View>
-            <Pressable onPress={() => openRename(item)} hitSlop={10} style={styles.iconBtn}>
-                <Pencil color={colors.TEXT_SECONDARY} size={16} />
-            </Pressable>
-            <Pressable onPress={() => confirmDelete(item)} hitSlop={10} style={styles.iconBtn}>
-                <Trash2 color={colors.ERROR} size={16} />
-            </Pressable>
-        </View>
-    );
 
     return (
         <View style={styles.root}>
@@ -91,13 +112,13 @@ const SavedAddressesScreen = () => {
                     <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
                 </Pressable>
                 <Text style={styles.headerTitle}>{t('savedAddresses.title')}</Text>
-                <View style={{ width: 40 }} />
+                <Pressable onPress={openAdd} hitSlop={12} style={styles.backBtn}>
+                    <Plus color={colors.PRIMARY} size={20} />
+                </Pressable>
             </View>
 
             {isLoading ? (
-                <View style={styles.centerState}>
-                    <ActivityIndicator size="large" color={colors.PRIMARY} />
-                </View>
+                <SkeletonList />
             ) : (
                 <FlatList
                     data={addresses ?? []}
@@ -114,33 +135,11 @@ const SavedAddressesScreen = () => {
                 />
             )}
 
-            <Modal visible={!!renaming} transparent animationType="fade" onRequestClose={() => setRenaming(null)}>
-                <View style={styles.renameOverlay}>
-                    <View style={styles.renameCard}>
-                        <Text style={styles.headerTitle}>{t('savedAddresses.rename')}</Text>
-                        <TextInput
-                            style={styles.renameInput}
-                            value={renameLabel}
-                            onChangeText={setRenameLabel}
-                            placeholder={t('savedAddresses.labelPlaceholder')}
-                            placeholderTextColor={colors.GRAY}
-                            autoFocus
-                        />
-                        <View style={styles.renameActions}>
-                            <Pressable style={styles.renameActionBtn} onPress={() => setRenaming(null)}>
-                                <Text style={styles.renameActionText}>{t('common.cancel')}</Text>
-                            </Pressable>
-                            <Pressable
-                                style={styles.renameActionBtn}
-                                disabled={!renameLabel.trim() || updateAddress.isPending}
-                                onPress={confirmRename}
-                            >
-                                <Text style={styles.renameActionText}>{updateAddress.isPending ? t('savedAddresses.saving') : t('common.save')}</Text>
-                            </Pressable>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
+            <AddressFormModal
+                visible={formVisible}
+                onClose={() => setFormVisible(false)}
+                initial={editing}
+            />
         </View>
     );
 };
@@ -191,24 +190,21 @@ const makeStyles = (
         padding: spacing.md,
         marginBottom: spacing.sm,
     },
+    cardDefault: { borderColor: colors.PRIMARY },
     cardIconWrap: {
         width: 36, height: 36, borderRadius: 18,
         alignItems: 'center', justifyContent: 'center',
         backgroundColor: colors.BACKGROUND,
     },
+    cardLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     cardLabel: { fontFamily: fonts.SEMI_BOLD_PRIMARY, fontSize: 14, color: colors.TEXT_PRIMARY },
     cardArea: { fontFamily: fonts.PRIMARY, fontSize: 12, color: colors.TEXT_SECONDARY, marginTop: 2 },
     iconBtn: { padding: 6 },
-
-    renameOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 },
-    renameCard: { backgroundColor: colors.SURFACE, borderRadius: radius.lg, padding: 20 },
-    renameInput: {
-        marginTop: 12, height: 46, paddingHorizontal: 14,
-        backgroundColor: colors.BACKGROUND, borderRadius: radius.md,
-        borderWidth: 1.5, borderColor: colors.BORDER,
-        color: colors.TEXT_PRIMARY, fontFamily: fonts.PRIMARY,
+    defaultBadge: {
+        backgroundColor: colors.PRIMARY_LIGHT,
+        borderRadius: 6,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
     },
-    renameActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 16, marginTop: 16 },
-    renameActionBtn: { paddingHorizontal: 10, paddingVertical: 6 },
-    renameActionText: { color: colors.PRIMARY, fontSize: 14, fontFamily: fonts.SEMI_BOLD_PRIMARY },
+    defaultBadgeText: { fontFamily: fonts.BOLD_PRIMARY, fontSize: 9.5, color: colors.PRIMARY },
 });

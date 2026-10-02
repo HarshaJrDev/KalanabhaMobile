@@ -75,6 +75,7 @@ import {
 import { useAppTheme } from '@theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
+import { SkeletonDetail } from '@components/ui';
 
 const makeC = (BRAND: ReturnType<typeof useAppTheme>['colors']) => ({
     primary: BRAND.PRIMARY,
@@ -210,11 +211,8 @@ const ShipmentDetailsScreen = () => {
     if (!shipmentId || (shipmentLoading && !shipment)) {
         return (
             <View style={styles.loadingWrap}>
-                <StatusBar barStyle="light-content" backgroundColor={C.primaryDark} />
-                <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.loadingGrad}>
-                    <ActivityIndicator size="large" color="#fff" />
-                    <Text style={styles.loadingText}>{t('shipmentDetails.loadingShipment')}</Text>
-                </LinearGradient>
+                <StatusBar barStyle="dark-content" />
+                <SkeletonDetail rows={3} />
             </View>
         );
     }

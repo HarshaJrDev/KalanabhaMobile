@@ -28,10 +28,9 @@ import {
     Text,
     StyleSheet,
     Pressable,
-    Alert,
-    ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { SkeletonDetail } from '@components/ui';
 import LinearGradient from 'react-native-linear-gradient';
 import { FlashList } from '@shopify/flash-list';
 import {
@@ -49,6 +48,7 @@ import { useLogout } from '@hooks/useLogout';
 import { useAuthStore } from '@features/store/authStore';
 import { useAppTheme } from '@theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import { confirmDialog } from '@ui/alert/confirmStore';
 
 type ProfileOption = {
     id: string;
@@ -71,11 +71,14 @@ const useProfileActions = (t: (key: string) => string) => {
         navigation.navigate('SupportTickets' as never);
     }, [navigation]);
 
-    const logout = useCallback(() => {
-        Alert.alert(t('common.logout'), t('settings.logoutConfirm'), [
-            { text: t('common.cancel'), style: 'cancel' },
-            { text: t('common.logout'), style: 'destructive', onPress: () => logoutMutation.mutate() },
-        ]);
+    const logout = useCallback(async () => {
+        const confirmed = await confirmDialog({
+            title: t('common.logout'),
+            message: t('settings.logoutConfirm'),
+            confirmText: t('common.logout'),
+            destructive: true,
+        });
+        if (confirmed) logoutMutation.mutate();
     }, [logoutMutation, t]);
 
     return {
@@ -140,11 +143,7 @@ const ProfileScreen = () => {
     );
 
     if (isLoading) {
-        return (
-            <View style={styles.center}>
-                <ActivityIndicator size="large" color={colors.PRIMARY} />
-            </View>
-        );
+        return <SkeletonDetail rows={3} />;
     }
 
     if (error) {
