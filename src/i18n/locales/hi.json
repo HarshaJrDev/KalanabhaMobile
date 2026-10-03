@@ -11,7 +11,8 @@
     "viewAll": "सभी देखें",
     "edit": "संपादित करें",
     "delete": "हटाएं",
-    "logout": "लॉग आउट"
+    "logout": "लॉग आउट",
+    "confirm": "पुष्टि करें"
   },
   "tabs": {
     "home": "होम",
@@ -61,7 +62,10 @@
     "helpCenter": "सहायता केंद्र",
     "editProfile": "प्रोफ़ाइल संपादित करें",
     "totalShipments": "कुल शिपमेंट",
-    "delivered": "डिलीवर किया गया"
+    "delivered": "डिलीवर किया गया",
+    "logoutMessage": "क्या आप वाकई लॉग आउट करना चाहते हैं?",
+    "logoutTitle": "लॉग आउट",
+    "referAndEarn": "रेफर करें और कमाएं"
   },
   "language": {
     "title": "भाषा",
@@ -205,7 +209,32 @@
     "removeConfirm": "\"{{label}}\" को आपके सहेजे गए पतों से हटाएं?",
     "remove": "हटाएं",
     "addressRemoved": "पता हटा दिया गया",
-    "addressUpdated": "पता अपडेट किया गया"
+    "addressUpdated": "पता अपडेट किया गया",
+    "addAddress": "पता जोड़ें",
+    "addressSaved": "पता सहेजा गया",
+    "category": "श्रेणी",
+    "contactName": "संपर्क नाम",
+    "contactNamePlaceholder": "ड्राइवर को किससे पूछना चाहिए?",
+    "contactPhone": "संपर्क फ़ोन",
+    "contactPhonePlaceholder": "10-अंकीय मोबाइल नंबर",
+    "default": "डिफ़ॉल्ट",
+    "defaultAddressSet": "डिफ़ॉल्ट पता सेट किया गया",
+    "editAddress": "पता संपादित करें",
+    "floor": "मंज़िल",
+    "floorPlaceholder": "उदा. दूसरी मंज़िल",
+    "houseNo": "मकान / फ्लैट नंबर",
+    "houseNoPlaceholder": "उदा. 4-1-123",
+    "landmark": "लैंडमार्क",
+    "landmarkPlaceholder": "उदा. सिटी सेंट्रल मॉल के पास",
+    "locality": "इलाका",
+    "selectLocality": "एक इलाका चुनें",
+    "setAsDefault": "डिफ़ॉल्ट पता के रूप में सेट करें",
+    "street": "सड़क / भवन",
+    "streetPlaceholder": "उदा. साई नगर कॉलोनी",
+    "typeHome": "घर",
+    "typeHotel": "होटल",
+    "typeOther": "अन्य",
+    "typeWork": "कार्यालय"
   },
   "settings": {
     "title": "सेटिंग्स",
@@ -217,7 +246,21 @@
     "appVersion": "ऐप संस्करण",
     "turnOffTitle": "सूचनाएं बंद करें",
     "turnOffMessage": "सूचना अनुमतियां केवल आपके डिवाइस की सेटिंग्स ऐप से बदली जा सकती हैं।",
-    "logoutConfirm": "क्या आप वाकई लॉग आउट करना चाहते हैं?"
+    "logoutConfirm": "क्या आप वाकई लॉग आउट करना चाहते हैं?",
+    "aboutSection": "जानकारी",
+    "deleteAccount": "खाता हटाएं",
+    "deleteAccountConfirm": "हटाने का अनुरोध करें",
+    "deleteAccountMessage": "यह हमारी टीम को आपका खाता और डेटा हटाने का अनुरोध भेजता है। कुछ भी हटाने से पहले हम आपसे पुष्टि करेंगे।",
+    "deleteAccountTicketDescription": "मैं अपना कलानाभा खाता और संबंधित डेटा हटवाना चाहता/चाहती हूं। कृपया अगले कदमों की पुष्टि करें।",
+    "deleteAccountTicketSubject": "खाता हटाने का अनुरोध",
+    "deleteAccountTitle": "अपना खाता हटाएं?",
+    "legalSection": "कानूनी",
+    "notificationsSection": "सूचनाएं",
+    "offlineMaps": "ऑफ़लाइन मानचित्र",
+    "offlineMapsHint": "अपने इलाकों के लिए मानचित्र टाइल डाउनलोड करें ताकि कमज़ोर सिग्नल में भी मानचित्र काम करें",
+    "preferencesSection": "प्राथमिकताएं",
+    "privacyPolicy": "गोपनीयता नीति",
+    "termsOfService": "सेवा की शर्तें"
   },
   "orders": {
     "tabAll": "सभी",
@@ -454,7 +497,8 @@
     "goToHomeButton": "होम पर जाएं",
     "alertFareNotReadyTitle": "किराया तैयार नहीं है",
     "alertFareNotReadyMessage": "कृपया किराया अनुमान की गणना पूरी होने की प्रतीक्षा करें।",
-    "alertErrorTitle": "त्रुटि"
+    "alertErrorTitle": "त्रुटि",
+    "pinOnMap": "या इसे मानचित्र पर पिन करें"
   },
   "referral": {
     "title": "किसी मित्र को आमंत्रित करें",
@@ -919,5 +963,12 @@
     "send": "भेजें",
     "closeChat": "चैट बंद करें",
     "chatWithCustomerAdmin": "ग्राहक / एडमिन से चैट करें"
+  },
+  "locationPicker": {
+    "confirmLocation": "स्थान की पुष्टि करें",
+    "locating": "पता लगाया जा रहा है…",
+    "panToSelect": "स्थान चुनने के लिए मानचित्र को खिसकाएं",
+    "searchPlaceholder": "कोई जगह खोजें",
+    "useCurrentLocation": "वर्तमान स्थान"
   }
 }

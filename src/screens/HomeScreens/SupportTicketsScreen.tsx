@@ -10,162 +10,209 @@ import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
 import { SkeletonList } from '@components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { ArrowLeft, Plus, MessageSquareText, Clock, CheckCircle2, XCircle } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  Plus,
+  MessageSquareText,
+  Clock,
+  CheckCircle2,
+  XCircle,
+} from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { useMyTickets } from '@features/support/hooks';
 import type { SupportTicket, TicketStatus } from '@features/support/types';
+import { EmptyState } from '@components/EmptyState';
 
-const makeStatusMeta = (t: (key: string) => string): Record<TicketStatus, { label: string; icon: typeof Clock; color: 'warning' | 'success' | 'muted' }> => ({
-    OPEN: { label: t('support.statusOpen'), icon: Clock, color: 'warning' },
-    IN_PROGRESS: { label: t('support.statusInProgress'), icon: MessageSquareText, color: 'warning' },
-    RESOLVED: { label: t('support.statusResolved'), icon: CheckCircle2, color: 'success' },
-    CLOSED: { label: t('support.statusClosed'), icon: XCircle, color: 'muted' },
+const makeStatusMeta = (
+  t: (key: string) => string,
+): Record<
+  TicketStatus,
+  { label: string; icon: typeof Clock; color: 'warning' | 'success' | 'muted' }
+> => ({
+  OPEN: { label: t('support.statusOpen'), icon: Clock, color: 'warning' },
+  IN_PROGRESS: {
+    label: t('support.statusInProgress'),
+    icon: MessageSquareText,
+    color: 'warning',
+  },
+  RESOLVED: {
+    label: t('support.statusResolved'),
+    icon: CheckCircle2,
+    color: 'success',
+  },
+  CLOSED: { label: t('support.statusClosed'), icon: XCircle, color: 'muted' },
 });
 
 const SupportTicketsScreen = () => {
-    const navigation = useNavigation();
-    const { colors, fonts, spacing, radius } = useAppTheme();
-    // Real device safe-area inset — this header used a bare
-    // `paddingTop: 50`, so it sat under the status bar/camera cutout on
-    // real devices (same overlap bug class already fixed elsewhere).
-    const insets = useSafeAreaInsets();
-    const styles = useMemo(() => makeStyles(colors, fonts, spacing, radius, insets), [colors, fonts, spacing, radius, insets]);
-    const { t } = useTranslation();
-    const STATUS_META = useMemo(() => makeStatusMeta(t), [t]);
+  const navigation = useNavigation();
+  const { colors, fonts, spacing, radius } = useAppTheme();
+  // Real device safe-area inset — this header used a bare
+  // `paddingTop: 50`, so it sat under the status bar/camera cutout on
+  // real devices (same overlap bug class already fixed elsewhere).
+  const insets = useSafeAreaInsets();
+  const styles = useMemo(
+    () => makeStyles(colors, fonts, spacing, radius, insets),
+    [colors, fonts, spacing, radius, insets],
+  );
+  const { t } = useTranslation();
+  const STATUS_META = useMemo(() => makeStatusMeta(t), [t]);
 
-    const { data: tickets, isLoading } = useMyTickets();
+  const { data: tickets, isLoading } = useMyTickets();
 
-    const renderItem = ({ item }: { item: SupportTicket }) => {
-        const meta = STATUS_META[item.status];
-        const StatusIcon = meta.icon;
-        const statusColor = meta.color === 'success' ? colors.SUCCESS : meta.color === 'warning' ? colors.WARNING : colors.GRAY;
-        return (
-            <Pressable
-                style={styles.card}
-                onPress={() => (navigation as any).navigate('TicketDetail', { id: item.id })}
-            >
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.cardSubject} numberOfLines={1}>{item.subject}</Text>
-                    <Text style={styles.cardCategory}>{item.category}</Text>
-                </View>
-                <View style={styles.statusPill}>
-                    <StatusIcon size={12} color={statusColor} />
-                    <Text style={[styles.statusPillText, { color: statusColor }]}>{meta.label}</Text>
-                </View>
-            </Pressable>
-        );
-    };
-
+  const renderItem = ({ item }: { item: SupportTicket }) => {
+    const meta = STATUS_META[item.status];
+    const StatusIcon = meta.icon;
+    const statusColor =
+      meta.color === 'success'
+        ? colors.SUCCESS
+        : meta.color === 'warning'
+        ? colors.WARNING
+        : colors.GRAY;
     return (
-        <View style={styles.root}>
-            <View style={styles.header}>
-                <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.backBtn}>
-                    <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
-                </Pressable>
-                <Text style={styles.headerTitle}>{t('support.myTickets')}</Text>
-                <View style={{ width: 40 }} />
-            </View>
-
-            {isLoading ? (
-                <SkeletonList />
-            ) : (
-                <FlatList
-                    data={tickets ?? []}
-                    keyExtractor={(t) => t.id}
-                    contentContainerStyle={styles.list}
-                    renderItem={renderItem}
-                    ListEmptyComponent={
-                        <View style={styles.centerState}>
-                            <MessageSquareText color={colors.GRAY} size={40} />
-                            <Text style={styles.emptyText}>{t('support.noTicketsYet')}</Text>
-                        </View>
-                    }
-                />
-            )}
-
-            <Pressable
-                style={styles.fab}
-                onPress={() => (navigation as any).navigate('NewTicket')}
-            >
-                <Plus color="#fff" size={22} />
-            </Pressable>
+      <Pressable
+        style={styles.card}
+        onPress={() =>
+          (navigation as any).navigate('TicketDetail', { id: item.id })
+        }
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={styles.cardSubject} numberOfLines={1}>
+            {item.subject}
+          </Text>
+          <Text style={styles.cardCategory}>{item.category}</Text>
         </View>
+        <View style={styles.statusPill}>
+          <StatusIcon size={12} color={statusColor} />
+          <Text style={[styles.statusPillText, { color: statusColor }]}>
+            {meta.label}
+          </Text>
+        </View>
+      </Pressable>
     );
+  };
+
+  return (
+    <View style={styles.root}>
+      <View style={styles.header}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          hitSlop={12}
+          style={styles.backBtn}
+        >
+          <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
+        </Pressable>
+        <Text style={styles.headerTitle}>{t('support.myTickets')}</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      {isLoading ? (
+        <SkeletonList />
+      ) : (
+        <FlatList
+          data={tickets ?? []}
+          keyExtractor={t => t.id}
+          contentContainerStyle={styles.list}
+          renderItem={renderItem}
+          ListEmptyComponent={
+            <EmptyState variant="ticket" title={t('support.noTicketsYet')} />
+          }
+        />
+      )}
+
+      <Pressable
+        style={styles.fab}
+        onPress={() => (navigation as any).navigate('NewTicket')}
+      >
+        <Plus color="#fff" size={22} />
+      </Pressable>
+    </View>
+  );
 };
 
 export default SupportTicketsScreen;
 
 const makeStyles = (
-    colors: ReturnType<typeof useAppTheme>['colors'],
-    fonts: ReturnType<typeof useAppTheme>['fonts'],
-    spacing: ReturnType<typeof useAppTheme>['spacing'],
-    radius: ReturnType<typeof useAppTheme>['radius'],
-    insets: { top: number },
-) => StyleSheet.create({
+  colors: ReturnType<typeof useAppTheme>['colors'],
+  fonts: ReturnType<typeof useAppTheme>['fonts'],
+  spacing: ReturnType<typeof useAppTheme>['spacing'],
+  radius: ReturnType<typeof useAppTheme>['radius'],
+  insets: { top: number },
+) =>
+  StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.BACKGROUND },
     header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg,
-        paddingTop: insets.top + 10,
-        paddingBottom: spacing.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      paddingTop: insets.top + 10,
+      paddingBottom: spacing.md,
     },
     backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.SURFACE,
-        borderWidth: 1,
-        borderColor: colors.BORDER,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.SURFACE,
+      borderWidth: 1,
+      borderColor: colors.BORDER,
     },
-    headerTitle: { fontFamily: fonts.BOLD_PRIMARY, fontSize: 16, color: colors.TEXT_PRIMARY },
-
-    centerState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingTop: 60 },
-    emptyText: { fontFamily: fonts.PRIMARY, fontSize: 13, color: colors.GRAY },
+    headerTitle: {
+      fontFamily: fonts.BOLD_PRIMARY,
+      fontSize: 16,
+      color: colors.TEXT_PRIMARY,
+    },
 
     list: { padding: spacing.lg, gap: spacing.sm, flexGrow: 1 },
     card: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.md,
-        backgroundColor: colors.SURFACE,
-        borderRadius: radius.lg,
-        borderWidth: 1,
-        borderColor: colors.BORDER,
-        padding: spacing.md,
-        marginBottom: spacing.sm,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      backgroundColor: colors.SURFACE,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.BORDER,
+      padding: spacing.md,
+      marginBottom: spacing.sm,
     },
-    cardSubject: { fontFamily: fonts.SEMI_BOLD_PRIMARY, fontSize: 14, color: colors.TEXT_PRIMARY },
-    cardCategory: { fontFamily: fonts.PRIMARY, fontSize: 12, color: colors.TEXT_SECONDARY, marginTop: 2 },
+    cardSubject: {
+      fontFamily: fonts.SEMI_BOLD_PRIMARY,
+      fontSize: 14,
+      color: colors.TEXT_PRIMARY,
+    },
+    cardCategory: {
+      fontFamily: fonts.PRIMARY,
+      fontSize: 12,
+      color: colors.TEXT_SECONDARY,
+      marginTop: 2,
+    },
     statusPill: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 999,
-        backgroundColor: colors.BACKGROUND,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 999,
+      backgroundColor: colors.BACKGROUND,
     },
     statusPillText: { fontFamily: fonts.SEMI_BOLD_PRIMARY, fontSize: 11 },
 
     fab: {
-        position: 'absolute',
-        right: spacing.lg,
-        bottom: spacing.xl,
-        width: 52,
-        height: 52,
-        borderRadius: 26,
-        backgroundColor: colors.PRIMARY,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 6,
+      position: 'absolute',
+      right: spacing.lg,
+      bottom: spacing.xl,
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: colors.PRIMARY,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 6,
     },
-});
+  });

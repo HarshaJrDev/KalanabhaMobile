@@ -1,10 +1,18 @@
 import React, { useMemo } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-    useMarkAllNotificationsRead,
-    useMarkNotificationRead,
-    useMyNotifications,
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useMyNotifications,
 } from '@features/notifications/hooks';
 import type { BackendNotification } from '@features/notifications/types';
 import { AsyncState } from '@components/AsyncState';
@@ -15,88 +23,136 @@ import { handleNotificationTap } from '@features/notifications/deepLink';
 
 // Screen -> hook -> notifications.api -> GET /notifications/mine -> cache -> UI
 const NotificationScreen = () => {
-    const { colors } = useAppTheme();
-    const { t } = useTranslation();
-    // Real device safe-area inset — this screen had none at all, so the
-    // header sat under the status bar/camera cutout on real devices (same
-    // overlap bug class already fixed on several other screens this
-    // session).
-    const insets = useSafeAreaInsets();
-    const styles = useMemo(() => makeStyles(colors, insets), [colors, insets]);
-    const { data: notifications, isLoading, isRefetching, refetch, error } = useMyNotifications();
-    const { mutate: markRead } = useMarkNotificationRead();
-    const { mutate: markAllRead, isPending: markingAll } = useMarkAllNotificationsRead();
+  const { colors } = useAppTheme();
+  const { t } = useTranslation();
+  // Real device safe-area inset — this screen had none at all, so the
+  // header sat under the status bar/camera cutout on real devices (same
+  // overlap bug class already fixed on several other screens this
+  // session).
+  const insets = useSafeAreaInsets();
+  const styles = useMemo(() => makeStyles(colors, insets), [colors, insets]);
+  const {
+    data: notifications,
+    isLoading,
+    isRefetching,
+    refetch,
+    error,
+  } = useMyNotifications();
+  const { mutate: markRead } = useMarkNotificationRead();
+  const { mutate: markAllRead, isPending: markingAll } =
+    useMarkAllNotificationsRead();
 
-    // Was mark-as-read only — tapping a notification here went nowhere,
-    // same real gap the FCM background/killed-tap handlers had.
-    const renderItem = ({ item }: { item: BackendNotification }) => (
-        <Pressable
-            style={[styles.card, !item.read && styles.cardUnread]}
-            onPress={() => {
-                if (!item.read) markRead(item.id);
-                handleNotificationTap(item.type, item.shipmentId, item.ticketId);
-            }}
-        >
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.body}>{item.body}</Text>
-            <Text style={styles.time}>{new Date(item.createdAt).toLocaleString()}</Text>
-        </Pressable>
-    );
+  // Was mark-as-read only — tapping a notification here went nowhere,
+  // same real gap the FCM background/killed-tap handlers had.
+  const renderItem = ({ item }: { item: BackendNotification }) => (
+    <Pressable
+      style={[styles.card, !item.read && styles.cardUnread]}
+      onPress={() => {
+        if (!item.read) markRead(item.id);
+        handleNotificationTap(item.type, item.shipmentId, item.ticketId);
+      }}
+    >
+      <Text style={styles.title}>{item.title}</Text>
+      <Text style={styles.body}>{item.body}</Text>
+      <Text style={styles.time}>
+        {new Date(item.createdAt).toLocaleString()}
+      </Text>
+    </Pressable>
+  );
 
-    return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
-                {!!notifications?.length && (
-                    <Pressable onPress={() => markAllRead()} disabled={markingAll}>
-                        <Text style={styles.markAllText}>{t('notifications.markAllRead')}</Text>
-                    </Pressable>
-                )}
-            </View>
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
+        {!!notifications?.length && (
+          <Pressable
+            onPress={() => markAllRead()}
+            disabled={markingAll}
+            style={styles.markAllBtn}
+          >
+            {markingAll ? (
+              <ActivityIndicator size="small" color={colors.PRIMARY} />
+            ) : (
+              <Text style={styles.markAllText}>
+                {t('notifications.markAllRead')}
+              </Text>
+            )}
+          </Pressable>
+        )}
+      </View>
 
-            <AsyncState
-                isLoading={isLoading}
-                error={error}
-                onRetry={refetch}
-                isEmpty={!notifications?.length}
-                emptyTitle={t('notifications.noNotificationsYet')}
-            >
-                <FlatList
-                    data={notifications ?? []}
-                    keyExtractor={(item) => item.id}
-                    renderItem={renderItem}
-                    refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
-                />
-            </AsyncState>
-        </View>
-    );
+      {/* Once the list has loaded at least once, never fall back to
+                the full skeleton again (e.g. during the background
+                refetch that mark-all-read's cache invalidation triggers)
+                — that refetch should be invisible, not a jarring "the
+                whole screen is loading" flash over a list the user is
+                actively looking at. */}
+      <AsyncState
+        isLoading={isLoading && !notifications}
+        error={error}
+        onRetry={refetch}
+        isEmpty={!notifications?.length}
+        emptyTitle={t('notifications.noNotificationsYet')}
+      >
+        <FlatList
+          data={notifications ?? []}
+          keyExtractor={item => item.id}
+          renderItem={renderItem}
+          refreshControl={
+            <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+          }
+        />
+      </AsyncState>
+    </View>
+  );
 };
 
 export default NotificationScreen;
 
 // Computed from useAppTheme() so this screen repaints correctly in dark
 // mode instead of staying pinned to the light palette baked at import.
-const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], insets: { top: number }) => StyleSheet.create({
+const makeStyles = (
+  colors: ReturnType<typeof useAppTheme>['colors'],
+  insets: { top: number },
+) =>
+  StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.BACKGROUND },
     header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingTop: insets.top + 14,
-        paddingBottom: 14,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingTop: insets.top + 14,
+      paddingBottom: 14,
     },
-    headerTitle: { fontSize: 18, fontFamily: FONTS.BOLD_PRIMARY, color: colors.TEXT_PRIMARY },
-    markAllText: { color: colors.PRIMARY, fontSize: 13, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
+    headerTitle: {
+      fontSize: 18,
+      fontFamily: FONTS.BOLD_PRIMARY,
+      color: colors.TEXT_PRIMARY,
+    },
+    markAllBtn: {
+      minWidth: 70,
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+    },
+    markAllText: {
+      color: colors.PRIMARY,
+      fontSize: 13,
+      fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+    },
     card: {
-        backgroundColor: colors.SURFACE,
-        marginHorizontal: 16,
-        marginBottom: 10,
-        padding: 14,
-        borderRadius: 12,
+      backgroundColor: colors.SURFACE,
+      marginHorizontal: 16,
+      marginBottom: 10,
+      padding: 14,
+      borderRadius: 12,
     },
     cardUnread: { borderLeftWidth: 3, borderLeftColor: colors.PRIMARY },
-    title: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: colors.TEXT_PRIMARY },
+    title: {
+      fontSize: 14,
+      fontFamily: FONTS.BOLD_PRIMARY,
+      color: colors.TEXT_PRIMARY,
+    },
     body: { fontSize: 13, color: colors.TEXT_SECONDARY, marginTop: 4 },
     time: { fontSize: 11, color: colors.GRAY, marginTop: 6 },
-});
+  });

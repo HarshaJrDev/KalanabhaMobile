@@ -11,7 +11,8 @@
     "viewAll": "அனைத்தையும் காண்க",
     "edit": "திருத்து",
     "delete": "நீக்கு",
-    "logout": "வெளியேறு"
+    "logout": "வெளியேறு",
+    "confirm": "உறுதிப்படுத்து"
   },
   "tabs": {
     "home": "முகப்பு",
@@ -61,7 +62,10 @@
     "helpCenter": "உதவி மையம்",
     "editProfile": "சுயவிவரத்தைத் திருத்து",
     "totalShipments": "மொத்த ஷிப்மென்ட்கள்",
-    "delivered": "டெலிவரி செய்யப்பட்டது"
+    "delivered": "டெலிவரி செய்யப்பட்டது",
+    "logoutMessage": "நீங்கள் நிச்சயமாக வெளியேற விரும்புகிறீர்களா?",
+    "logoutTitle": "வெளியேறு",
+    "referAndEarn": "பரிந்துரைத்து சம்பாதிக்கவும்"
   },
   "language": {
     "title": "மொழி",
@@ -205,7 +209,32 @@
     "removeConfirm": "\"{{label}}\" ஐ உங்கள் சேமிக்கப்பட்ட முகவரிகளிலிருந்து அகற்றவா?",
     "remove": "அகற்று",
     "addressRemoved": "முகவரி அகற்றப்பட்டது",
-    "addressUpdated": "முகவரி புதுப்பிக்கப்பட்டது"
+    "addressUpdated": "முகவரி புதுப்பிக்கப்பட்டது",
+    "addAddress": "முகவரி சேர்க்கவும்",
+    "addressSaved": "முகவரி சேமிக்கப்பட்டது",
+    "category": "வகை",
+    "contactName": "தொடர்பு பெயர்",
+    "contactNamePlaceholder": "ஓட்டுநர் யாரிடம் கேட்க வேண்டும்?",
+    "contactPhone": "தொடர்பு எண்",
+    "contactPhonePlaceholder": "10-இலக்க மொபைல் எண்",
+    "default": "இயல்புநிலை",
+    "defaultAddressSet": "இயல்புநிலை முகவரி அமைக்கப்பட்டது",
+    "editAddress": "முகவரியைத் திருத்து",
+    "floor": "மாடி",
+    "floorPlaceholder": "எ.கா. 2வது மாடி",
+    "houseNo": "வீடு / அடுக்ககம் எண்",
+    "houseNoPlaceholder": "எ.கா. 4-1-123",
+    "landmark": "அடையாளம்",
+    "landmarkPlaceholder": "எ.கா. சிட்டி சென்ட்ரல் மால் அருகில்",
+    "locality": "பகுதி",
+    "selectLocality": "ஒரு பகுதியைத் தேர்ந்தெடுக்கவும்",
+    "setAsDefault": "இயல்புநிலை முகவரியாக அமைக்கவும்",
+    "street": "தெரு / கட்டிடம்",
+    "streetPlaceholder": "எ.கா. சாய் நகர் காலனி",
+    "typeHome": "வீடு",
+    "typeHotel": "ஹோட்டல்",
+    "typeOther": "மற்றவை",
+    "typeWork": "பணியிடம்"
   },
   "settings": {
     "title": "அமைப்புகள்",
@@ -217,7 +246,21 @@
     "appVersion": "ஆப் பதிப்பு",
     "turnOffTitle": "அறிவிப்புகளை அணைக்கவும்",
     "turnOffMessage": "அறிவிப்பு அனுமதிகளை உங்கள் சாதன அமைப்புகள் ஆப்பிலிருந்து மட்டுமே மாற்ற முடியும்.",
-    "logoutConfirm": "நீங்கள் நிச்சயமாக வெளியேற விரும்புகிறீர்களா?"
+    "logoutConfirm": "நீங்கள் நிச்சயமாக வெளியேற விரும்புகிறீர்களா?",
+    "aboutSection": "பற்றி",
+    "deleteAccount": "கணக்கை நீக்கு",
+    "deleteAccountConfirm": "நீக்கத்தை கோரவும்",
+    "deleteAccountMessage": "இது உங்கள் கணக்கு மற்றும் தரவை நீக்குமாறு எங்கள் குழுவிடம் ஒரு ஆதரவு கோரிக்கையை அனுப்புகிறது. எதையும் அகற்றும் முன் நாங்கள் உங்களுடன் உறுதிப்படுத்துவோம்.",
+    "deleteAccountTicketDescription": "எனது கலநாப கணக்கு மற்றும் தொடர்புடைய தரவை நீக்க விரும்புகிறேன். அடுத்த படிகளை உறுதிப்படுத்தவும்.",
+    "deleteAccountTicketSubject": "கணக்கு நீக்க கோரிக்கை",
+    "deleteAccountTitle": "உங்கள் கணக்கை நீக்கவா?",
+    "legalSection": "சட்டரீதியான",
+    "notificationsSection": "அறிவிப்புகள்",
+    "offlineMaps": "ஆஃப்லைன் வரைபடங்கள்",
+    "offlineMapsHint": "பலவீனமான சிக்னலிலும் வரைபடங்கள் வேலை செய்ய உங்கள் பகுதிகளுக்கான வரைபட டைல்களைப் பதிவிறக்கவும்",
+    "preferencesSection": "விருப்பத்தேர்வுகள்",
+    "privacyPolicy": "தனியுரிமைக் கொள்கை",
+    "termsOfService": "சேவை விதிமுறைகள்"
   },
   "orders": {
     "tabAll": "அனைத்தும்",
@@ -454,7 +497,8 @@
     "goToHomeButton": "முகப்புக்குச் செல்",
     "alertFareNotReadyTitle": "கட்டணம் தயாராக இல்லை",
     "alertFareNotReadyMessage": "கட்டண மதிப்பீடு கணக்கீடு முடியும் வரை காத்திருக்கவும்.",
-    "alertErrorTitle": "பிழை"
+    "alertErrorTitle": "பிழை",
+    "pinOnMap": "அல்லது வரைபடத்தில் பின் செய்யவும்"
   },
   "referral": {
     "title": "நண்பரை அழைக்கவும்",
@@ -919,5 +963,12 @@
     "send": "அனுப்பு",
     "closeChat": "அரட்டையை மூடு",
     "chatWithCustomerAdmin": "வாடிக்கையாளர் / நிர்வாகியுடன் அரட்டையடி"
+  },
+  "locationPicker": {
+    "confirmLocation": "இருப்பிடத்தை உறுதிப்படுத்தவும்",
+    "locating": "கண்டறியப்படுகிறது…",
+    "panToSelect": "இருப்பிடத்தைத் தேர்ந்தெடுக்க வரைபடத்தை நகர்த்தவும்",
+    "searchPlaceholder": "ஒரு இடத்தைத் தேடு",
+    "useCurrentLocation": "தற்போதைய இருப்பிடம்"
   }
 }

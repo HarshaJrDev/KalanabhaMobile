@@ -47,7 +47,9 @@ import { useTurnByTurnRoute } from '@features/navigation/useTurnByTurnRoute';
 import { useAuthStore } from '@features/store/authStore';
 import { showToast } from '@ui/alert/toastStore';
 import { Linking } from 'react-native';
-import { useVehicleConfigs } from '@features/settings/hooks';
+import { useVehicleConfigs, useServiceAreas, useBusinessSettings } from '@features/settings/hooks';
+import { ensureServiceAreaTilesCached } from '@location/offlineMapCache';
+import { getOfflineMapsEnabled } from '@services/storage';
 import VehicleVisual from '@components/VehicleVisual';
 import FONTS from '@utils/fonts';
 import { SkeletonDashboard } from '@components/ui';
@@ -160,6 +162,20 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
         [vehicleConfigsData],
     );
 
+    // Same background tile-caching as the customer Home screen (Settings >
+    // Offline Maps) — arguably matters more here, since a driver mid-trip
+    // relying on the live-tracking map is exactly the moment a weak
+    // signal is most disruptive.
+    const { data: driverServiceAreas } = useServiceAreas();
+    const { data: businessSettings } = useBusinessSettings();
+    useEffect(() => {
+        const active = (driverServiceAreas ?? []).filter((a) => a.active);
+        if (active.length > 0 && getOfflineMapsEnabled()) {
+            ensureServiceAreaTilesCached(active);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [driverServiceAreas?.length]);
+
     // First searching-pool request becomes the "Incoming Load Request"
     // hero card below, matching what the reference mockup highlights —
     // everything on it (price, distance, package, sender, insured flag)
@@ -218,6 +234,16 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     };
 
     const handleSos = () => {
+        // Calls the admin-configured emergency_contact_phone directly when
+        // set; falls back to the existing mailto flow otherwise (the setting
+        // defaults to empty — no real emergency number exists to fabricate).
+        const emergencyPhone = businessSettings?.find((s) => s.key === 'emergency_contact_phone')?.value;
+        if (emergencyPhone) {
+            Linking.openURL(`tel:${emergencyPhone}`).catch(() =>
+                showToast(t('driverHome.noEmailAppToast'), 'error'),
+            );
+            return;
+        }
         Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=Driver%20SOS`).catch(() =>
             showToast(t('driverHome.noEmailAppToast'), 'error'),
         );

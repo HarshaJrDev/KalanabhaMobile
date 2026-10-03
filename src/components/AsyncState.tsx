@@ -1,22 +1,36 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { WifiOff, AlertCircle, Inbox, RefreshCw } from 'lucide-react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useIsOnline } from '@api/network';
 import { useTranslation } from 'react-i18next';
-import FONTS from '@utils/fonts';
-import { SkeletonList, SkeletonDetail, SkeletonStatTiles } from '@components/ui';
+import {
+  SkeletonList,
+  SkeletonDetail,
+  SkeletonStatTiles,
+} from '@components/ui';
+import { EmptyState, type EmptyStateVariant } from '@components/EmptyState';
+
+// 150ms fade on every branch swap here (skeleton -> content, content ->
+// empty, etc.) — each conditional branch below is a fresh mount, so
+// Reanimated's `entering` fires automatically each time React swaps one
+// out for another, turning what was an instant hard cut into a soft
+// crossfade with zero per-screen wiring.
+const CROSSFADE = FadeIn.duration(150);
 
 interface AsyncStateProps {
-    isLoading: boolean;
-    error?: Error | null;
-    isEmpty?: boolean;
-    onRetry?: () => void;
-    emptyTitle?: string;
-    emptyMessage?: string;
-    /** Shape of the loading skeleton — defaults to a list of rows, the
-     * most common case across the screens using this component. */
-    skeleton?: 'list' | 'detail' | 'stats';
-    children: React.ReactNode;
+  isLoading: boolean;
+  error?: Error | null;
+  isEmpty?: boolean;
+  onRetry?: () => void;
+  emptyTitle?: string;
+  emptyMessage?: string;
+  /** Which illustration glyph the empty state shows — defaults to a
+   * generic inbox, the safest fallback when a screen doesn't specify
+   * one more specific to its content. */
+  emptyVariant?: EmptyStateVariant;
+  /** Shape of the loading skeleton — defaults to a list of rows, the
+   * most common case across the screens using this component. */
+  skeleton?: 'list' | 'detail' | 'stats';
+  children: React.ReactNode;
 }
 
 /**
@@ -27,83 +41,75 @@ interface AsyncStateProps {
  * Usage: `<AsyncState isLoading={...} error={...} isEmpty={!data?.length} onRetry={refetch}>...</AsyncState>`
  */
 export const AsyncState: React.FC<AsyncStateProps> = ({
-    isLoading,
-    error,
-    isEmpty,
-    onRetry,
-    emptyTitle,
-    emptyMessage,
-    skeleton = 'list',
-    children,
+  isLoading,
+  error,
+  isEmpty,
+  onRetry,
+  emptyTitle,
+  emptyMessage,
+  emptyVariant = 'inbox',
+  skeleton = 'list',
+  children,
 }) => {
-    const online = useIsOnline();
-    const { t } = useTranslation();
-    const resolvedEmptyTitle = emptyTitle ?? t('asyncState.nothingHereYet');
+  const online = useIsOnline();
+  const { t } = useTranslation();
+  const resolvedEmptyTitle = emptyTitle ?? t('asyncState.nothingHereYet');
 
-    if (!online && !isLoading) {
-        return (
-            <View style={styles.center}>
-                <WifiOff size={40} color="#9CA3AF" />
-                <Text style={styles.title}>{t('asyncState.offline')}</Text>
-                <Text style={styles.message}>{t('asyncState.offlineHint')}</Text>
-                {onRetry && (
-                    <Pressable style={styles.retryButton} onPress={onRetry}>
-                        <RefreshCw size={14} color="#fff" />
-                        <Text style={styles.retryText}>{t('common.retry')}</Text>
-                    </Pressable>
-                )}
-            </View>
-        );
-    }
+  if (!online && !isLoading) {
+    return (
+      <Animated.View entering={CROSSFADE} style={{ flex: 1 }}>
+        <EmptyState
+          variant="offline"
+          title={t('asyncState.offline')}
+          message={t('asyncState.offlineHint')}
+          onRetry={onRetry}
+        />
+      </Animated.View>
+    );
+  }
 
-    if (isLoading) {
-        if (skeleton === 'detail') return <SkeletonDetail />;
-        if (skeleton === 'stats') return <SkeletonStatTiles />;
-        return <SkeletonList />;
-    }
+  if (isLoading) {
+    return (
+      <Animated.View entering={CROSSFADE} style={{ flex: 1 }}>
+        {skeleton === 'detail' ? (
+          <SkeletonDetail />
+        ) : skeleton === 'stats' ? (
+          <SkeletonStatTiles />
+        ) : (
+          <SkeletonList />
+        )}
+      </Animated.View>
+    );
+  }
 
-    if (error) {
-        return (
-            <View style={styles.center}>
-                <AlertCircle size={40} color="#EF4444" />
-                <Text style={styles.title}>{t('asyncState.somethingWentWrong')}</Text>
-                <Text style={styles.message}>{error.message}</Text>
-                {onRetry && (
-                    <Pressable style={styles.retryButton} onPress={onRetry}>
-                        <RefreshCw size={14} color="#fff" />
-                        <Text style={styles.retryText}>{t('common.retry')}</Text>
-                    </Pressable>
-                )}
-            </View>
-        );
-    }
+  if (error) {
+    return (
+      <Animated.View entering={CROSSFADE} style={{ flex: 1 }}>
+        <EmptyState
+          variant="error"
+          title={t('asyncState.somethingWentWrong')}
+          message={error.message}
+          onRetry={onRetry}
+        />
+      </Animated.View>
+    );
+  }
 
-    if (isEmpty) {
-        return (
-            <View style={styles.center}>
-                <Inbox size={40} color="#9CA3AF" />
-                <Text style={styles.title}>{resolvedEmptyTitle}</Text>
-                {!!emptyMessage && <Text style={styles.message}>{emptyMessage}</Text>}
-            </View>
-        );
-    }
+  if (isEmpty) {
+    return (
+      <Animated.View entering={CROSSFADE} style={{ flex: 1 }}>
+        <EmptyState
+          variant={emptyVariant}
+          title={resolvedEmptyTitle}
+          message={emptyMessage}
+        />
+      </Animated.View>
+    );
+  }
 
-    return <>{children}</>;
+  return (
+    <Animated.View entering={CROSSFADE} style={{ flex: 1 }}>
+      {children}
+    </Animated.View>
+  );
 };
-
-const styles = StyleSheet.create({
-    center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 6 },
-    title: { fontSize: 15, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827', marginTop: 8 },
-    message: { fontSize: 13, color: '#6B7280', textAlign: 'center' },
-    retryButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        backgroundColor: '#2563EB',
-        paddingHorizontal: 18,
-        paddingVertical: 10,
-        borderRadius: 10,
-        marginTop: 12,
-    },
-    retryText: { color: '#fff', fontFamily: FONTS.SEMI_BOLD_PRIMARY, fontSize: 13 },
-});

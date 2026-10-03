@@ -18,8 +18,8 @@ const ACCESS_TOKEN_KEY = 'access_token';
 const isAuthenticated = () => !!storage.getString(ACCESS_TOKEN_KEY);
 
 export interface NotificationTarget {
-    screen: string;
-    params?: Record<string, unknown>;
+  screen: string;
+  params?: Record<string, unknown>;
 }
 
 // Every notification `type` this app's backend actually emits today
@@ -34,27 +34,46 @@ export interface NotificationTarget {
 // KYC/verification types have no single entity to open, only a real
 // screen to check — DriverDocumentsScreen. ADMIN_BROADCAST has neither,
 // so it goes to the Notifications list itself.
-const TICKET_NOTIFICATION_TYPES = new Set(['SUPPORT_REPLY', 'SUPPORT_TICKET_RESOLVED', 'SUPPORT_TICKET_CLOSED']);
-const DRIVER_DOCUMENT_NOTIFICATION_TYPES = new Set(['KYC_APPROVED', 'KYC_REJECTED', 'DRIVER_VERIFIED', 'DRIVER_UNVERIFIED']);
+const TICKET_NOTIFICATION_TYPES = new Set([
+  'SUPPORT_REPLY',
+  'SUPPORT_TICKET_RESOLVED',
+  'SUPPORT_TICKET_CLOSED',
+]);
+const DRIVER_DOCUMENT_NOTIFICATION_TYPES = new Set([
+  'KYC_APPROVED',
+  'KYC_REJECTED',
+  'DRIVER_VERIFIED',
+  'DRIVER_UNVERIFIED',
+]);
 
 export const resolveNotificationTarget = (
-    type: string | null | undefined,
-    shipmentId: string | null | undefined,
-    ticketId?: string | null,
+  type: string | null | undefined,
+  shipmentId: string | null | undefined,
+  ticketId?: string | null,
 ): NotificationTarget | null => {
-    if (shipmentId) {
-        return { screen: 'ShipmentDetailsScreen', params: { id: shipmentId } };
-    }
-    if (type && TICKET_NOTIFICATION_TYPES.has(type) && ticketId) {
-        return { screen: 'TicketDetail', params: { id: ticketId } };
-    }
-    if (type && DRIVER_DOCUMENT_NOTIFICATION_TYPES.has(type)) {
-        return { screen: 'DriverDocuments' };
-    }
-    if (type === 'ADMIN_BROADCAST') {
-        return { screen: 'Notification' };
-    }
-    return null;
+  if (shipmentId) {
+    return { screen: 'ShipmentDetailsScreen', params: { id: shipmentId } };
+  }
+  if (type && TICKET_NOTIFICATION_TYPES.has(type) && ticketId) {
+    return { screen: 'TicketDetail', params: { id: ticketId } };
+  }
+  if (type && DRIVER_DOCUMENT_NOTIFICATION_TYPES.has(type)) {
+    return { screen: 'DriverDocuments' };
+  }
+  if (type === 'ADMIN_BROADCAST') {
+    return { screen: 'Notification' };
+  }
+  // Neither carries a shipmentId/ticketId (driver-payouts.service.ts /
+  // referrals.listener.ts), so both previously fell all the way through
+  // to `null` here — tapping them did nothing at all. Each still has a
+  // real screen to land on even without a specific entity id.
+  if (type === 'PAYOUT_ISSUED') {
+    return { screen: 'DriverEarnings' };
+  }
+  if (type === 'REFERRAL_REWARD') {
+    return { screen: 'Referral' };
+  }
+  return null;
 };
 
 // FCM listeners (utils/cm.ts) and the in-app Notifications list fire
@@ -67,26 +86,26 @@ export const resolveNotificationTarget = (
 let pendingTarget: NotificationTarget | null = null;
 
 export const handleNotificationTap = (
-    type: string | null | undefined,
-    shipmentId: string | null | undefined,
-    ticketId?: string | null,
+  type: string | null | undefined,
+  shipmentId: string | null | undefined,
+  ticketId?: string | null,
 ) => {
-    const target = resolveNotificationTarget(type, shipmentId, ticketId);
-    if (!target) return;
+  const target = resolveNotificationTarget(type, shipmentId, ticketId);
+  if (!target) return;
 
-    // Every real target here (ShipmentDetailsScreen, Notification) only
-    // exists in the authenticated app-flow screen set (App.tsx) — the auth
-    // flow (Login/OnBoarding/...) doesn't register them at all. Tapping a
-    // notification while logged out — a real, previously-unhandled case —
-    // now queues the same way a cold-start tap does, and is resumed once
-    // login actually completes (flushPendingNotificationTarget, called
-    // from App.tsx when `showAppFlow` turns true) instead of silently
-    // failing to navigate or throwing on an unregistered screen name.
-    if (navigationRef.isReady() && isAuthenticated()) {
-        (navigationRef as any).navigate(target.screen, target.params);
-    } else {
-        pendingTarget = target;
-    }
+  // Every real target here (ShipmentDetailsScreen, Notification) only
+  // exists in the authenticated app-flow screen set (App.tsx) — the auth
+  // flow (Login/OnBoarding/...) doesn't register them at all. Tapping a
+  // notification while logged out — a real, previously-unhandled case —
+  // now queues the same way a cold-start tap does, and is resumed once
+  // login actually completes (flushPendingNotificationTarget, called
+  // from App.tsx when `showAppFlow` turns true) instead of silently
+  // failing to navigate or throwing on an unregistered screen name.
+  if (navigationRef.isReady() && isAuthenticated()) {
+    (navigationRef as any).navigate(target.screen, target.params);
+  } else {
+    pendingTarget = target;
+  }
 };
 
 // Called from NavigationContainer's onReady (cold start) AND from App.tsx
@@ -94,8 +113,8 @@ export const handleNotificationTap = (
 // completes) — both are real "safe to navigate now" moments, so this is
 // intentionally callable more than once; it no-ops once the queue is empty.
 export const flushPendingNotificationTarget = () => {
-    if (pendingTarget && navigationRef.isReady() && isAuthenticated()) {
-        (navigationRef as any).navigate(pendingTarget.screen, pendingTarget.params);
-        pendingTarget = null;
-    }
+  if (pendingTarget && navigationRef.isReady() && isAuthenticated()) {
+    (navigationRef as any).navigate(pendingTarget.screen, pendingTarget.params);
+    pendingTarget = null;
+  }
 };

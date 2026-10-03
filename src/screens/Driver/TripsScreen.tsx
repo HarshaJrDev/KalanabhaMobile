@@ -25,145 +25,196 @@ import type { Shipment, ShipmentStatus } from '@shipment/types';
 import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 
-const makeStatusLabel = (t: (key: string) => string): Record<ShipmentStatus, string> => ({
-    scheduled: t('status.scheduled'),
-    searching: t('status.searching'),
-    accepted: t('status.accepted'),
-    in_transit: t('status.inTransit'),
-    delivered: t('status.delivered'),
-    cancelled: t('status.cancelled'),
+const makeStatusLabel = (
+  t: (key: string) => string,
+): Record<ShipmentStatus, string> => ({
+  scheduled: t('status.scheduled'),
+  searching: t('status.searching'),
+  accepted: t('status.accepted'),
+  in_transit: t('status.inTransit'),
+  delivered: t('status.delivered'),
+  cancelled: t('status.cancelled'),
 });
 
 const STATUS_COLOR: Record<ShipmentStatus, string> = {
-    scheduled: '#8B5CF6',
-    searching: '#9CA3AF',
-    accepted: '#2563EB',
-    in_transit: '#F59E0B',
-    delivered: '#10B981',
-    cancelled: '#DC2626',
+  scheduled: '#8B5CF6',
+  searching: '#9CA3AF',
+  accepted: '#2563EB',
+  in_transit: '#F59E0B',
+  delivered: '#10B981',
+  cancelled: '#DC2626',
 };
 
-const TripRow = ({ shipment, onChat }: { shipment: Shipment; onChat: (id: string) => void }) => {
-    const navigation = useNavigation();
-    const { t } = useTranslation();
-    const STATUS_LABEL = React.useMemo(() => makeStatusLabel(t), [t]);
-    const isActive = shipment.status === 'accepted' || shipment.status === 'in_transit';
+const TripRow = ({
+  shipment,
+  onChat,
+}: {
+  shipment: Shipment;
+  onChat: (id: string) => void;
+}) => {
+  const navigation = useNavigation();
+  const { t } = useTranslation();
+  const STATUS_LABEL = React.useMemo(() => makeStatusLabel(t), [t]);
+  const isActive =
+    shipment.status === 'accepted' || shipment.status === 'in_transit';
 
-    return (
-        <Pressable
-            style={styles.row}
-            onPress={() => (navigation as any).navigate('ShipmentDetailsScreen', { id: shipment.id })}
+  return (
+    <Pressable
+      style={styles.row}
+      onPress={() =>
+        (navigation as any).navigate('ShipmentDetailsScreen', {
+          id: shipment.id,
+        })
+      }
+    >
+      <View style={styles.rowTop}>
+        <Text style={styles.trackingId}>{shipment.trackingId}</Text>
+        <View
+          style={[
+            styles.statusPill,
+            { backgroundColor: `${STATUS_COLOR[shipment.status]}22` },
+          ]}
         >
-            <View style={styles.rowTop}>
-                <Text style={styles.trackingId}>{shipment.trackingId}</Text>
-                <View style={[styles.statusPill, { backgroundColor: `${STATUS_COLOR[shipment.status]}22` }]}>
-                    <Text style={[styles.statusText, { color: STATUS_COLOR[shipment.status] }]}>
-                        {STATUS_LABEL[shipment.status]}
-                    </Text>
-                </View>
-            </View>
-            <Text style={styles.route} numberOfLines={1}>
-                {shipment.from} → {shipment.to}
+          <Text
+            style={[
+              styles.statusText,
+              { color: STATUS_COLOR[shipment.status] },
+            ]}
+          >
+            {STATUS_LABEL[shipment.status]}
+          </Text>
+        </View>
+      </View>
+      <Text style={styles.route} numberOfLines={1}>
+        {shipment.from} → {shipment.to}
+      </Text>
+      <View style={styles.rowBottom}>
+        <Text style={styles.price}>₹{shipment.price}</Text>
+        {isActive && (
+          <Pressable style={styles.chatBtn} onPress={() => onChat(shipment.id)}>
+            <MessageCircle color="#2563EB" size={16} />
+            <Text style={styles.chatBtnText}>
+              {t('trips.chatWithCustomer')}
             </Text>
-            <View style={styles.rowBottom}>
-                <Text style={styles.price}>₹{shipment.price}</Text>
-                {isActive && (
-                    <Pressable style={styles.chatBtn} onPress={() => onChat(shipment.id)}>
-                        <MessageCircle color="#2563EB" size={16} />
-                        <Text style={styles.chatBtnText}>{t('trips.chatWithCustomer')}</Text>
-                    </Pressable>
-                )}
-            </View>
-        </Pressable>
-    );
+          </Pressable>
+        )}
+      </View>
+    </Pressable>
+  );
 };
 
 const TripsScreen = () => {
-    const navigation = useNavigation();
-    const { t } = useTranslation();
-    const { data: shipments, isLoading, error, refetch } = useMyShipmentsAsDriver();
+  const navigation = useNavigation();
+  const { t } = useTranslation();
+  const {
+    data: shipments,
+    isLoading,
+    error,
+    refetch,
+  } = useMyShipmentsAsDriver();
 
-    const onChat = useCallback(
-        (shipmentId: string) => (navigation as any).navigate('ShipmentChat', { shipmentId }),
-        [navigation],
-    );
+  const onChat = useCallback(
+    (shipmentId: string) =>
+      (navigation as any).navigate('ShipmentChat', { shipmentId }),
+    [navigation],
+  );
 
-    const renderItem = useCallback(
-        ({ item }: { item: Shipment }) => <TripRow shipment={item} onChat={onChat} />,
-        [onChat],
-    );
+  const renderItem = useCallback(
+    ({ item }: { item: Shipment }) => (
+      <TripRow shipment={item} onChat={onChat} />
+    ),
+    [onChat],
+  );
 
-    return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-                    <ChevronLeft color="#111" size={24} />
-                </Pressable>
-                <Text style={styles.headerTitle}>{t('trips.yourTrips')}</Text>
-                <View style={{ width: 24 }} />
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
+          <ChevronLeft color="#111" size={24} />
+        </Pressable>
+        <Text style={styles.headerTitle}>{t('trips.yourTrips')}</Text>
+        <View style={{ width: 24 }} />
+      </View>
+
+      <AsyncState
+        isLoading={isLoading}
+        error={error}
+        onRetry={refetch}
+        isEmpty={!shipments?.length}
+        emptyVariant="trip"
+        emptyTitle={t('trips.noTripsYet')}
+        emptyMessage={t('trips.acceptedShowHere')}
+      >
+        <FlatList
+          data={shipments ?? []}
+          keyExtractor={item => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <View style={styles.emptyIcon}>
+              <Package color="#D1D5DB" size={40} />
             </View>
-
-            <AsyncState
-                isLoading={isLoading}
-                error={error}
-                onRetry={refetch}
-                isEmpty={!shipments?.length}
-                emptyTitle={t('trips.noTripsYet')}
-                emptyMessage={t('trips.acceptedShowHere')}
-            >
-                <FlatList
-                    data={shipments ?? []}
-                    keyExtractor={(item) => item.id}
-                    renderItem={renderItem}
-                    contentContainerStyle={styles.list}
-                    ListEmptyComponent={
-                        <View style={styles.emptyIcon}>
-                            <Package color="#D1D5DB" size={40} />
-                        </View>
-                    }
-                />
-            </AsyncState>
-        </View>
-    );
+          }
+        />
+      </AsyncState>
+    </View>
+  );
 };
 
 export default TripsScreen;
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F7F7F7' },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: 16,
-        backgroundColor: '#FFF',
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#EEE',
-    },
-    headerTitle: { fontSize: 16, fontFamily: FONTS.BOLD_PRIMARY },
-    list: { padding: 12, gap: 10 },
-    emptyIcon: { alignItems: 'center', paddingTop: 40 },
-    row: {
-        backgroundColor: '#FFF',
-        borderRadius: 14,
-        padding: 14,
-        gap: 6,
-    },
-    rowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    trackingId: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827' },
-    statusPill: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },
-    statusText: { fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY },
-    route: { fontSize: 12, fontFamily: FONTS.PRIMARY, color: '#6B7280' },
-    rowBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
-    price: { fontSize: 15, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827' },
-    chatBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        backgroundColor: '#EFF6FF',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 10,
-    },
-    chatBtnText: { fontSize: 12, fontFamily: FONTS.BOLD_PRIMARY, color: '#2563EB' },
+  container: { flex: 1, backgroundColor: '#F7F7F7' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: '#FFF',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#EEE',
+  },
+  headerTitle: { fontSize: 16, fontFamily: FONTS.BOLD_PRIMARY },
+  list: { padding: 12, gap: 10 },
+  emptyIcon: { alignItems: 'center', paddingTop: 40 },
+  row: {
+    backgroundColor: '#FFF',
+    borderRadius: 14,
+    padding: 14,
+    gap: 6,
+  },
+  rowTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  trackingId: {
+    fontSize: 14,
+    fontFamily: FONTS.BOLD_PRIMARY,
+    color: '#111827',
+  },
+  statusPill: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },
+  statusText: { fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY },
+  route: { fontSize: 12, fontFamily: FONTS.PRIMARY, color: '#6B7280' },
+  rowBottom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  price: { fontSize: 15, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827' },
+  chatBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  chatBtnText: {
+    fontSize: 12,
+    fontFamily: FONTS.BOLD_PRIMARY,
+    color: '#2563EB',
+  },
 });

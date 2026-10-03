@@ -11,7 +11,8 @@
     "viewAll": "అన్నీ చూడండి",
     "edit": "సవరించండి",
     "delete": "తొలగించండి",
-    "logout": "లాగ్ అవుట్"
+    "logout": "లాగ్ అవుట్",
+    "confirm": "నిర్ధారించండి"
   },
   "tabs": {
     "home": "హోమ్",
@@ -61,7 +62,10 @@
     "helpCenter": "సహాయ కేంద్రం",
     "editProfile": "ప్రొఫైల్‌ని సవరించండి",
     "totalShipments": "మొత్తం షిప్‌మెంట్‌లు",
-    "delivered": "డెలివర్ చేయబడింది"
+    "delivered": "డెలివర్ చేయబడింది",
+    "logoutMessage": "మీరు ఖచ్చితంగా లాగ్ అవుట్ చేయాలనుకుంటున్నారా?",
+    "logoutTitle": "లాగ్ అవుట్",
+    "referAndEarn": "రెఫర్ చేసి సంపాదించండి"
   },
   "language": {
     "title": "భాష",
@@ -205,7 +209,32 @@
     "removeConfirm": "\"{{label}}\"ని మీ సేవ్ చేసిన చిరునామాల నుండి తీసివేయాలా?",
     "remove": "తీసివేయండి",
     "addressRemoved": "చిరునామా తీసివేయబడింది",
-    "addressUpdated": "చిరునామా నవీకరించబడింది"
+    "addressUpdated": "చిరునామా నవీకరించబడింది",
+    "addAddress": "చిరునామా జోడించండి",
+    "addressSaved": "చిరునామా సేవ్ చేయబడింది",
+    "category": "వర్గం",
+    "contactName": "సంప్రదింపు పేరు",
+    "contactNamePlaceholder": "డ్రైవర్ ఎవరిని అడగాలి?",
+    "contactPhone": "సంప్రదింపు ఫోన్",
+    "contactPhonePlaceholder": "10-అంకెల మొబైల్ నంబర్",
+    "default": "డిఫాల్ట్",
+    "defaultAddressSet": "డిఫాల్ట్ చిరునామా సెట్ చేయబడింది",
+    "editAddress": "చిరునామాను సవరించండి",
+    "floor": "అంతస్తు",
+    "floorPlaceholder": "ఉదా. 2వ అంతస్తు",
+    "houseNo": "ఇల్లు / ఫ్లాట్ నంబర్",
+    "houseNoPlaceholder": "ఉదా. 4-1-123",
+    "landmark": "ల్యాండ్‌మార్క్",
+    "landmarkPlaceholder": "ఉదా. సిటీ సెంట్రల్ మాల్ దగ్గర",
+    "locality": "ప్రాంతం",
+    "selectLocality": "ఒక ప్రాంతాన్ని ఎంచుకోండి",
+    "setAsDefault": "డిఫాల్ట్ చిరునామాగా సెట్ చేయండి",
+    "street": "వీధి / భవనం",
+    "streetPlaceholder": "ఉదా. సాయి నగర్ కాలనీ",
+    "typeHome": "ఇల్లు",
+    "typeHotel": "హోటల్",
+    "typeOther": "ఇతర",
+    "typeWork": "కార్యాలయం"
   },
   "settings": {
     "title": "సెట్టింగ్‌లు",
@@ -217,7 +246,21 @@
     "appVersion": "యాప్ వెర్షన్",
     "turnOffTitle": "నోటిఫికేషన్‌లను ఆఫ్ చేయండి",
     "turnOffMessage": "నోటిఫికేషన్ అనుమతులను మీ పరికర సెట్టింగ్‌ల యాప్ నుండి మాత్రమే మార్చవచ్చు.",
-    "logoutConfirm": "మీరు ఖచ్చితంగా లాగ్ అవుట్ చేయాలనుకుంటున్నారా?"
+    "logoutConfirm": "మీరు ఖచ్చితంగా లాగ్ అవుట్ చేయాలనుకుంటున్నారా?",
+    "aboutSection": "గురించి",
+    "deleteAccount": "ఖాతాను తొలగించండి",
+    "deleteAccountConfirm": "తొలగింపు అభ్యర్థన",
+    "deleteAccountMessage": "ఇది మీ ఖాతా మరియు డేటాను తొలగించమని మా బృందానికి మద్దతు అభ్యర్థనను పంపుతుంది. ఏదైనా తీసివేయడానికి ముందు మేము మీతో నిర్ధారిస్తాము.",
+    "deleteAccountTicketDescription": "నేను నా కలనాభ ఖాతాను మరియు సంబంధిత డేటాను తొలగించాలనుకుంటున్నాను. దయచేసి తదుపరి దశలను నిర్ధారించండి.",
+    "deleteAccountTicketSubject": "ఖాతా తొలగింపు అభ్యర్థన",
+    "deleteAccountTitle": "మీ ఖాతాను తొలగించాలా?",
+    "legalSection": "చట్టపరమైన",
+    "notificationsSection": "నోటిఫికేషన్‌లు",
+    "offlineMaps": "ఆఫ్‌లైన్ మ్యాప్‌లు",
+    "offlineMapsHint": "సిగ్నల్ బలహీనంగా ఉన్నా మ్యాప్‌లు పనిచేసేలా మీ ప్రాంతాల కోసం మ్యాప్ టైల్స్‌ను డౌన్‌లోడ్ చేయండి",
+    "preferencesSection": "ప్రాధాన్యతలు",
+    "privacyPolicy": "గోప్యతా విధానం",
+    "termsOfService": "సేవా నిబంధనలు"
   },
   "orders": {
     "tabAll": "అన్నీ",
@@ -454,7 +497,8 @@
     "goToHomeButton": "హోమ్‌కు వెళ్లండి",
     "alertFareNotReadyTitle": "ఛార్జీ సిద్ధంగా లేదు",
     "alertFareNotReadyMessage": "దయచేసి ఛార్జీ అంచనా గణన పూర్తయ్యే వరకు వేచి ఉండండి.",
-    "alertErrorTitle": "లోపం"
+    "alertErrorTitle": "లోపం",
+    "pinOnMap": "లేదా మ్యాప్‌లో పిన్ చేయండి"
   },
   "referral": {
     "title": "స్నేహితుడిని ఆహ్వానించండి",
@@ -919,5 +963,12 @@
     "send": "పంపండి",
     "closeChat": "చాట్‌ను మూసివేయండి",
     "chatWithCustomerAdmin": "కస్టమర్ / అడ్మిన్‌తో చాట్ చేయండి"
+  },
+  "locationPicker": {
+    "confirmLocation": "స్థానాన్ని నిర్ధారించండి",
+    "locating": "గుర్తిస్తోంది…",
+    "panToSelect": "స్థానాన్ని ఎంచుకోవడానికి మ్యాప్‌ను జరపండి",
+    "searchPlaceholder": "ఒక స్థలాన్ని శోధించండి",
+    "useCurrentLocation": "ప్రస్తుత స్థానం"
   }
 }

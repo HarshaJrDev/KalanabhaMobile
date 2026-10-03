@@ -19,58 +19,63 @@
 // on the backend, so that was always a fabricated date.
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-    View,
-    Text,
-    StyleSheet,
-    ScrollView,
-    TouchableOpacity,
-    Animated,
-    StatusBar,
-    Platform,
-    Pressable,
-    ActivityIndicator,
-    Clipboard,
-    Linking,
-    Share,
-    Modal,
-    Image,
-    Alert,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Animated,
+  StatusBar,
+  Platform,
+  Pressable,
+  ActivityIndicator,
+  Clipboard,
+  Linking,
+  Share,
+  Modal,
+  Image,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { useShipment, useShipmentHistory, useRescheduleShipment, useCancelShipment } from '@features/shipments/hooks';
+import {
+  useShipment,
+  useShipmentHistory,
+  useRescheduleShipment,
+  useCancelShipment,
+} from '@features/shipments/hooks';
 import { usePayForShipment } from '@features/payments/hooks';
 import { DateTimeChipPicker } from '@components/DateTimeChipPicker';
 import { useLiveDriverLocation } from '@location/useLiveDriverLocation';
 import { haversineDistanceKm } from '@utils/geo';
 import { openGoogleMapsDirections } from '@utils/navigation';
 import { showToast } from '@ui/alert/toastStore';
+import { confirmDialog } from '@ui/alert/confirmStore';
 import { API_BASE_URL } from '@config/env';
 import { getToken } from '@services/storage';
 import { useAuthStore } from '@features/store/authStore';
 import { LiveTrackingMap } from '@components/LiveTrackingMap';
 import {
-    CheckCircle2,
-    Truck,
-    Package,
-    XCircle,
-    Search,
-    Bike,
-    Check,
-    Copy,
-    MapPin,
-    Home,
-    Folder,
-    Weight,
-    Users,
-    Map as MapIcon,
-    Phone,
-    MessageCircle,
-    FileText,
-    Star,
-    Calendar,
-    X,
-    type LucideIcon,
+  CheckCircle2,
+  Truck,
+  Package,
+  XCircle,
+  Search,
+  Bike,
+  Check,
+  Copy,
+  MapPin,
+  Home,
+  Folder,
+  Weight,
+  Users,
+  Map as MapIcon,
+  Phone,
+  MessageCircle,
+  FileText,
+  Star,
+  Calendar,
+  X,
+  type LucideIcon,
 } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -78,385 +83,582 @@ import FONTS from '@utils/fonts';
 import { SkeletonDetail } from '@components/ui';
 
 const makeC = (BRAND: ReturnType<typeof useAppTheme>['colors']) => ({
-    primary: BRAND.PRIMARY,
-    primaryDark: BRAND.PRIMARY_DARK,
-    primaryLight: BRAND.PRIMARY_LIGHT,
-    bg: BRAND.BACKGROUND,
-    card: BRAND.SURFACE,
-    text: BRAND.TEXT_PRIMARY,
-    textMid: BRAND.TEXT_SECONDARY,
-    textLight: BRAND.GRAY,
-    border: BRAND.BORDER,
-    success: BRAND.SUCCESS,
-    successLight: '#ECFDF5',
-    warning: BRAND.WARNING,
-    warningLight: '#FFFBEB',
-    danger: BRAND.ERROR,
-    dangerLight: '#FEF2F2',
+  primary: BRAND.PRIMARY,
+  primaryDark: BRAND.PRIMARY_DARK,
+  primaryLight: BRAND.PRIMARY_LIGHT,
+  bg: BRAND.BACKGROUND,
+  card: BRAND.SURFACE,
+  text: BRAND.TEXT_PRIMARY,
+  textMid: BRAND.TEXT_SECONDARY,
+  textLight: BRAND.GRAY,
+  border: BRAND.BORDER,
+  success: BRAND.SUCCESS,
+  successLight: '#ECFDF5',
+  warning: BRAND.WARNING,
+  warningLight: '#FFFBEB',
+  danger: BRAND.ERROR,
+  dangerLight: '#FEF2F2',
 });
 type DetailColors = ReturnType<typeof makeC>;
 
-const makeStatusConfig = (t: (key: string) => string): Record<string, { label: string; color: keyof DetailColors; icon: LucideIcon }> => ({
-    scheduled: { label: t('status.scheduled'), color: 'warning', icon: Calendar },
-    delivered: { label: t('shipmentDetails.statusDelivered'), color: 'success', icon: CheckCircle2 },
-    in_transit: { label: t('shipmentDetails.statusInTransit'), color: 'primary', icon: Truck },
-    accepted: { label: t('shipmentDetails.statusDriverAssigned'), color: 'primary', icon: Truck },
-    searching: { label: t('shipmentDetails.statusFindingPilot'), color: 'warning', icon: Search },
-    cancelled: { label: t('shipmentDetails.statusCancelled'), color: 'danger', icon: XCircle },
+const makeStatusConfig = (
+  t: (key: string) => string,
+): Record<
+  string,
+  { label: string; color: keyof DetailColors; icon: LucideIcon }
+> => ({
+  scheduled: { label: t('status.scheduled'), color: 'warning', icon: Calendar },
+  delivered: {
+    label: t('shipmentDetails.statusDelivered'),
+    color: 'success',
+    icon: CheckCircle2,
+  },
+  in_transit: {
+    label: t('shipmentDetails.statusInTransit'),
+    color: 'primary',
+    icon: Truck,
+  },
+  accepted: {
+    label: t('shipmentDetails.statusDriverAssigned'),
+    color: 'primary',
+    icon: Truck,
+  },
+  searching: {
+    label: t('shipmentDetails.statusFindingPilot'),
+    color: 'warning',
+    icon: Search,
+  },
+  cancelled: {
+    label: t('shipmentDetails.statusCancelled'),
+    color: 'danger',
+    icon: XCircle,
+  },
 });
 
 // The app's real 4-state machine — "Picked Up" and "Out for Delivery"
 // (the mockup's 5-step version) aren't real distinct backend states here,
 // so they're not shown as if they were.
-const makeTimelineSteps = (t: (key: string) => string): { status: string; label: string; icon: LucideIcon }[] => [
-    { status: 'SEARCHING', label: t('shipmentDetails.timelineOrderPlaced'), icon: Package },
-    { status: 'ACCEPTED', label: t('shipmentDetails.statusDriverAssigned'), icon: Truck },
-    { status: 'IN_TRANSIT', label: t('shipmentDetails.statusInTransit'), icon: Bike },
-    { status: 'DELIVERED', label: t('shipmentDetails.statusDelivered'), icon: CheckCircle2 },
+const makeTimelineSteps = (
+  t: (key: string) => string,
+): { status: string; label: string; icon: LucideIcon }[] => [
+  {
+    status: 'SEARCHING',
+    label: t('shipmentDetails.timelineOrderPlaced'),
+    icon: Package,
+  },
+  {
+    status: 'ACCEPTED',
+    label: t('shipmentDetails.statusDriverAssigned'),
+    icon: Truck,
+  },
+  {
+    status: 'IN_TRANSIT',
+    label: t('shipmentDetails.statusInTransit'),
+    icon: Bike,
+  },
+  {
+    status: 'DELIVERED',
+    label: t('shipmentDetails.statusDelivered'),
+    icon: CheckCircle2,
+  },
 ];
 
 type RouteParams = { id?: string };
 
-const makeFormatTimeAgo = (t: (key: string, opts?: Record<string, unknown>) => string) => (date: Date | null): string => {
+const makeFormatTimeAgo =
+  (t: (key: string, opts?: Record<string, unknown>) => string) =>
+  (date: Date | null): string => {
     if (!date) return t('shipmentDetails.justNow');
-    const seconds = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
+    const seconds = Math.max(
+      0,
+      Math.round((Date.now() - date.getTime()) / 1000),
+    );
     if (seconds < 10) return t('shipmentDetails.justNow');
     if (seconds < 60) return t('shipmentDetails.secAgo', { s: seconds });
     const minutes = Math.round(seconds / 60);
     if (minutes < 60) return t('shipmentDetails.minAgo', { m: minutes });
     return t('shipmentDetails.hourAgo', { h: Math.round(minutes / 60) });
-};
+  };
 
 const formatDateTime = (iso: string) =>
-    new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  new Date(iso).toLocaleString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 
 const ShipmentDetailsScreen = () => {
-    const { colors: BRAND } = useAppTheme();
-    const { t } = useTranslation();
-    const C = useMemo(() => makeC(BRAND), [BRAND]);
-    const styles = useMemo(() => makeStyles(C), [C]);
-    const STATUS_CONFIG = useMemo(() => makeStatusConfig(t), [t]);
-    const TIMELINE_STEPS = useMemo(() => makeTimelineSteps(t), [t]);
-    const formatTimeAgo = useMemo(() => makeFormatTimeAgo(t), [t]);
-    const navigation = useNavigation();
-    const route = useRoute<RouteProp<{ params: RouteParams }, 'params'>>();
-    const shipmentId = route?.params?.id;
+  const { colors: BRAND } = useAppTheme();
+  const { t } = useTranslation();
+  const C = useMemo(() => makeC(BRAND), [BRAND]);
+  const styles = useMemo(() => makeStyles(C), [C]);
+  const STATUS_CONFIG = useMemo(() => makeStatusConfig(t), [t]);
+  const TIMELINE_STEPS = useMemo(() => makeTimelineSteps(t), [t]);
+  const formatTimeAgo = useMemo(() => makeFormatTimeAgo(t), [t]);
+  const navigation = useNavigation();
+  const route = useRoute<RouteProp<{ params: RouteParams }, 'params'>>();
+  const shipmentId = route?.params?.id;
 
-    const { data: shipment, isLoading: shipmentLoading, error } = useShipment(shipmentId);
-    const { data: historyEntries } = useShipmentHistory(shipmentId);
-    const [copied, setCopied] = useState(false);
-    const { mutate: payForShipment, isPending: payingNow } = usePayForShipment();
-    const [podViewerOpen, setPodViewerOpen] = useState(false);
-    const { mutate: rescheduleShipment, isPending: rescheduling } = useRescheduleShipment(shipmentId ?? '');
-    const { mutate: cancelShipment, isPending: cancelling } = useCancelShipment(shipmentId ?? '');
-    const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
-    const [pendingScheduledAt, setPendingScheduledAt] = useState('');
+  const {
+    data: shipment,
+    isLoading: shipmentLoading,
+    error,
+  } = useShipment(shipmentId);
+  const { data: historyEntries } = useShipmentHistory(shipmentId);
+  const [copied, setCopied] = useState(false);
+  const { mutate: payForShipment, isPending: payingNow } = usePayForShipment();
+  const [podViewerOpen, setPodViewerOpen] = useState(false);
+  const { mutate: rescheduleShipment, isPending: rescheduling } =
+    useRescheduleShipment(shipmentId ?? '');
+  const { mutate: cancelShipment, isPending: cancelling } = useCancelShipment(
+    shipmentId ?? '',
+  );
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+  const [pendingScheduledAt, setPendingScheduledAt] = useState('');
 
-    const isDriverEnRoute = shipment?.status === 'accepted' || shipment?.status === 'in_transit';
-    // Real pickup/delivery OTPs (kalanabhaBackend d17a770, 63a33d4) — only
-    // the customer should ever see either; the driver has to ask for it,
-    // not read it off their own screen. Pickup OTP matters while the
-    // driver is still coming to collect the package (accepted, before
-    // pickup); delivery OTP matters once it's actually in transit — shown
-    // one at a time so the customer isn't asked to juggle two codes.
-    const role = useAuthStore((s) => s.user?.role);
-    const showPickupOtp = role === 'CUSTOMER' && shipment?.status === 'accepted' && !!shipment?.pickupOtp;
-    const showDeliveryOtp = role === 'CUSTOMER' && shipment?.status === 'in_transit' && !!shipment?.deliveryOtp;
-    const liveDriverLocation = useLiveDriverLocation(isDriverEnRoute ? shipmentId : null);
-    const distanceToDriverKm =
-        liveDriverLocation && shipment?.pickup?.lat != null
-            ? haversineDistanceKm(
-                { lat: shipment.pickup.lat, lng: shipment.pickup.lng },
-                { lat: liveDriverLocation.lat, lng: liveDriverLocation.lng },
-            )
-            : null;
+  const isDriverEnRoute =
+    shipment?.status === 'accepted' || shipment?.status === 'in_transit';
+  // Real pickup/delivery OTPs (kalanabhaBackend d17a770, 63a33d4) — only
+  // the customer should ever see either; the driver has to ask for it,
+  // not read it off their own screen. Pickup OTP matters while the
+  // driver is still coming to collect the package (accepted, before
+  // pickup); delivery OTP matters once it's actually in transit — shown
+  // one at a time so the customer isn't asked to juggle two codes.
+  const role = useAuthStore(s => s.user?.role);
+  const showPickupOtp =
+    role === 'CUSTOMER' &&
+    shipment?.status === 'accepted' &&
+    !!shipment?.pickupOtp;
+  const showDeliveryOtp =
+    role === 'CUSTOMER' &&
+    shipment?.status === 'in_transit' &&
+    !!shipment?.deliveryOtp;
+  const liveDriverLocation = useLiveDriverLocation(
+    isDriverEnRoute ? shipmentId : null,
+  );
+  const distanceToDriverKm =
+    liveDriverLocation && shipment?.pickup?.lat != null
+      ? haversineDistanceKm(
+          { lat: shipment.pickup.lat, lng: shipment.pickup.lng },
+          { lat: liveDriverLocation.lat, lng: liveDriverLocation.lng },
+        )
+      : null;
 
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-    const headerScale = useRef(new Animated.Value(0.95)).current;
-    const cardAnims = useRef([0, 1, 2, 3, 4].map(() => new Animated.Value(24))).current;
-    const cardFades = useRef([0, 1, 2, 3, 4].map(() => new Animated.Value(0))).current;
-    const pulseAnim = useRef(new Animated.Value(1)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const headerScale = useRef(new Animated.Value(0.95)).current;
+  const cardAnims = useRef(
+    [0, 1, 2, 3, 4].map(() => new Animated.Value(24)),
+  ).current;
+  const cardFades = useRef(
+    [0, 1, 2, 3, 4].map(() => new Animated.Value(0)),
+  ).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
-    useEffect(() => {
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(pulseAnim, { toValue: 1.15, duration: 700, useNativeDriver: true }),
-                Animated.timing(pulseAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
-            ]),
-        ).start();
-    }, [pulseAnim]);
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.15,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+  }, [pulseAnim]);
 
-    useEffect(() => {
-        if (shipment) {
-            Animated.parallel([
-                Animated.timing(fadeAnim, { toValue: 1, duration: 450, useNativeDriver: true }),
-                Animated.spring(headerScale, { toValue: 1, tension: 60, friction: 9, useNativeDriver: true }),
-                ...cardAnims.map((a, i) =>
-                    Animated.spring(a, { toValue: 0, tension: 60, friction: 9, delay: 60 + i * 60, useNativeDriver: true }),
-                ),
-                ...cardFades.map((a, i) =>
-                    Animated.timing(a, { toValue: 1, duration: 320, delay: 60 + i * 60, useNativeDriver: true }),
-                ),
-            ]).start();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [shipment?.id]);
-
-    const copyToClipboard = (text: string) => {
-        Clipboard.setString(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
-
-    if (!shipmentId || (shipmentLoading && !shipment)) {
-        return (
-            <View style={styles.loadingWrap}>
-                <StatusBar barStyle="dark-content" />
-                <SkeletonDetail rows={3} />
-            </View>
-        );
+  useEffect(() => {
+    if (shipment) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 450,
+          useNativeDriver: true,
+        }),
+        Animated.spring(headerScale, {
+          toValue: 1,
+          tension: 60,
+          friction: 9,
+          useNativeDriver: true,
+        }),
+        ...cardAnims.map((a, i) =>
+          Animated.spring(a, {
+            toValue: 0,
+            tension: 60,
+            friction: 9,
+            delay: 60 + i * 60,
+            useNativeDriver: true,
+          }),
+        ),
+        ...cardFades.map((a, i) =>
+          Animated.timing(a, {
+            toValue: 1,
+            duration: 320,
+            delay: 60 + i * 60,
+            useNativeDriver: true,
+          }),
+        ),
+      ]).start();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shipment?.id]);
 
-    if (error || !shipment) {
-        return (
-            <View style={styles.center}>
-                <XCircle color={C.danger} size={32} />
-                <Text style={styles.errorText}>{t('shipmentDetails.couldNotLoad')}</Text>
-                <TouchableOpacity style={styles.backLink} onPress={() => navigation.goBack()}>
-                    <Text style={styles.backLinkText}>{t('shipmentDetails.goBack')}</Text>
-                </TouchableOpacity>
-            </View>
-        );
-    }
+  const copyToClipboard = (text: string) => {
+    Clipboard.setString(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
-    const statusCfg = STATUS_CONFIG[shipment.status] ?? STATUS_CONFIG.searching;
-    const isHouseShifting = shipment.category === 'HOUSE_SHIFTING';
-
-    // Real history rows keyed by status — a step is "done" once its real
-    // history row exists, "active" if it's the shipment's current status.
-    const historyByStatus = new Map((historyEntries ?? []).map((h) => [h.status, h]));
-    const currentStatusUpper = shipment.status.toUpperCase();
-
-    const renderHeader = () => (
-        <Animated.View style={{ opacity: fadeAnim, transform: [{ scale: headerScale }] }}>
-            <LinearGradient colors={[C.primary, C.primaryDark]} style={styles.header} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                <View style={styles.blob1} />
-                <View style={styles.blob2} />
-
-                <View style={styles.headerTop}>
-                    <TouchableOpacity style={styles.iconBtn} activeOpacity={0.8} onPress={() => navigation.goBack()}>
-                        <Text style={styles.backArrow}>←</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>{t('shipmentDetails.title')}</Text>
-                    <TouchableOpacity
-                        style={styles.iconBtn}
-                        activeOpacity={0.8}
-                        onPress={() => {
-                            Share.share({ message: `Track my Kalanabha shipment #${shipment.trackingId}` }).catch(() =>
-                                showToast(t('shipmentDetails.unableToShare'), 'error'),
-                            );
-                        }}
-                    >
-                        <Text style={styles.shareArrow}>↗</Text>
-                    </TouchableOpacity>
-                </View>
-
-                <Pressable style={styles.idPill} onPress={() => copyToClipboard(shipment.trackingId)}>
-                    <Text style={styles.idLabel}>{t('shipmentDetails.trackingIdLabel')}</Text>
-                    <View style={styles.idRow}>
-                        <Text style={styles.idValue}>{shipment.trackingId}</Text>
-                        <View style={[styles.copyBtn, copied && styles.copyBtnDone]}>
-                            {copied ? <Check color={C.success} size={12} strokeWidth={3} /> : <Copy color="#fff" size={12} />}
-                        </View>
-                    </View>
-                </Pressable>
-
-                <View style={styles.statusRow}>
-                    <View style={styles.statusPill}>
-                        <statusCfg.icon color="#fff" size={14} />
-                        <Text style={styles.statusLabel}>{statusCfg.label}</Text>
-                    </View>
-                    <View>
-                        <Text style={styles.bookedLabel}>{t('shipmentDetails.booked')}</Text>
-                        <Text style={styles.bookedDate}>{formatDateTime(shipment.createdAt)}</Text>
-                    </View>
-                </View>
-            </LinearGradient>
-        </Animated.View>
+  if (!shipmentId || (shipmentLoading && !shipment)) {
+    return (
+      <View style={styles.loadingWrap}>
+        <StatusBar barStyle="dark-content" />
+        <SkeletonDetail rows={3} />
+      </View>
     );
+  }
 
-    // Real actions for a not-yet-dispatched future pickup — was no way to
-    // change a scheduled time short of cancelling and rebooking from
-    // scratch, and no cancel action existed on this screen at all before
-    // this (only from the shipment list). PATCH /shipments/:id/schedule +
-    // POST /shipments/:id/cancel (which now also triggers a real Razorpay
-    // refund server-side if the shipment was paid).
-    const renderScheduleActions = () => {
-        if (shipment.status !== 'scheduled') return null;
-        return (
-            <View style={styles.card}>
-                <Text style={styles.cardTitle}>{t('shipmentDetails.scheduledPickupTitle')}</Text>
-                <View style={styles.scheduleActionsRow}>
-                    <TouchableOpacity
-                        style={styles.scheduleActionBtn}
-                        activeOpacity={0.85}
-                        onPress={() => {
-                            setPendingScheduledAt(shipment.scheduledAt ?? '');
-                            setRescheduleModalOpen(true);
-                        }}
-                    >
-                        <Calendar color={C.primary} size={16} />
-                        <Text style={styles.scheduleActionBtnText}>{t('shipmentDetails.changePickupTime')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.scheduleActionBtn, styles.scheduleActionBtnDanger]}
-                        activeOpacity={0.85}
-                        disabled={cancelling}
-                        onPress={() => {
-                            Alert.alert(
-                                t('shipmentDetails.cancelPickupTitle'),
-                                t('shipmentDetails.cancelPickupConfirm'),
-                                [
-                                    { text: t('common.cancel'), style: 'cancel' },
-                                    {
-                                        text: t('shipmentDetails.cancelPickupConfirmBtn'),
-                                        style: 'destructive',
-                                        onPress: () => cancelShipment(undefined, {
-                                            onSuccess: () => showToast(t('shipmentDetails.pickupCancelled'), 'success'),
-                                            onError: () => showToast(t('shipmentDetails.pickupCancelFailed'), 'error'),
-                                        }),
-                                    },
-                                ],
-                            );
-                        }}
-                    >
-                        {cancelling ? (
-                            <ActivityIndicator color={C.danger} size="small" />
-                        ) : (
-                            <>
-                                <XCircle color={C.danger} size={16} />
-                                <Text style={[styles.scheduleActionBtnText, { color: C.danger }]}>{t('shipmentDetails.cancelPickup')}</Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
-                </View>
+  if (error || !shipment) {
+    return (
+      <View style={styles.center}>
+        <XCircle color={C.danger} size={32} />
+        <Text style={styles.errorText}>
+          {t('shipmentDetails.couldNotLoad')}
+        </Text>
+        <TouchableOpacity
+          style={styles.backLink}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backLinkText}>{t('shipmentDetails.goBack')}</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const statusCfg = STATUS_CONFIG[shipment.status] ?? STATUS_CONFIG.searching;
+  const isHouseShifting = shipment.category === 'HOUSE_SHIFTING';
+
+  // Real history rows keyed by status — a step is "done" once its real
+  // history row exists, "active" if it's the shipment's current status.
+  const historyByStatus = new Map(
+    (historyEntries ?? []).map(h => [h.status, h]),
+  );
+  const currentStatusUpper = shipment.status.toUpperCase();
+
+  const renderHeader = () => (
+    <Animated.View
+      style={{ opacity: fadeAnim, transform: [{ scale: headerScale }] }}
+    >
+      <LinearGradient
+        colors={[C.primary, C.primaryDark]}
+        style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View style={styles.blob1} />
+        <View style={styles.blob2} />
+
+        <View style={styles.headerTop}>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            activeOpacity={0.8}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.backArrow}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('shipmentDetails.title')}</Text>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            activeOpacity={0.8}
+            onPress={() => {
+              Share.share({
+                message: `Track my Kalanabha shipment #${shipment.trackingId}`,
+              }).catch(() =>
+                showToast(t('shipmentDetails.unableToShare'), 'error'),
+              );
+            }}
+          >
+            <Text style={styles.shareArrow}>↗</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Pressable
+          style={styles.idPill}
+          onPress={() => copyToClipboard(shipment.trackingId)}
+        >
+          <Text style={styles.idLabel}>
+            {t('shipmentDetails.trackingIdLabel')}
+          </Text>
+          <View style={styles.idRow}>
+            <Text style={styles.idValue}>{shipment.trackingId}</Text>
+            <View style={[styles.copyBtn, copied && styles.copyBtnDone]}>
+              {copied ? (
+                <Check color={C.success} size={12} strokeWidth={3} />
+              ) : (
+                <Copy color="#fff" size={12} />
+              )}
             </View>
-        );
-    };
+          </View>
+        </Pressable>
 
-    const renderTimeline = () => (
-        <AnimatedCard anim={cardAnims[0]} fade={cardFades[0]} cardStyle={styles.card}>
-            <Text style={styles.cardTitle}>{t('shipmentDetails.trackingTimeline')}</Text>
-            {shipment.status === 'cancelled' ? (
-                <View style={styles.cancelledBox}>
-                    <XCircle color={C.danger} size={18} />
-                    <Text style={styles.cancelledText}>{t('shipmentDetails.shipmentCancelledText')}</Text>
-                </View>
+        <View style={styles.statusRow}>
+          <View style={styles.statusPill}>
+            <statusCfg.icon color="#fff" size={14} />
+            <Text style={styles.statusLabel}>{statusCfg.label}</Text>
+          </View>
+          <View>
+            <Text style={styles.bookedLabel}>
+              {t('shipmentDetails.booked')}
+            </Text>
+            <Text style={styles.bookedDate}>
+              {formatDateTime(shipment.createdAt)}
+            </Text>
+          </View>
+        </View>
+      </LinearGradient>
+    </Animated.View>
+  );
+
+  // Real actions for a not-yet-dispatched future pickup — was no way to
+  // change a scheduled time short of cancelling and rebooking from
+  // scratch, and no cancel action existed on this screen at all before
+  // this (only from the shipment list). PATCH /shipments/:id/schedule +
+  // POST /shipments/:id/cancel (which now also triggers a real Razorpay
+  // refund server-side if the shipment was paid).
+  const renderScheduleActions = () => {
+    if (shipment.status !== 'scheduled') return null;
+    return (
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>
+          {t('shipmentDetails.scheduledPickupTitle')}
+        </Text>
+        <View style={styles.scheduleActionsRow}>
+          <TouchableOpacity
+            style={styles.scheduleActionBtn}
+            activeOpacity={0.85}
+            onPress={() => {
+              setPendingScheduledAt(shipment.scheduledAt ?? '');
+              setRescheduleModalOpen(true);
+            }}
+          >
+            <Calendar color={C.primary} size={16} />
+            <Text style={styles.scheduleActionBtnText}>
+              {t('shipmentDetails.changePickupTime')}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.scheduleActionBtn, styles.scheduleActionBtnDanger]}
+            activeOpacity={0.85}
+            disabled={cancelling}
+            onPress={async () => {
+              const confirmed = await confirmDialog({
+                title: t('shipmentDetails.cancelPickupTitle'),
+                message: t('shipmentDetails.cancelPickupConfirm'),
+                confirmText: t('shipmentDetails.cancelPickupConfirmBtn'),
+                destructive: true,
+              });
+              if (confirmed) {
+                cancelShipment(undefined, {
+                  onSuccess: () =>
+                    showToast(t('shipmentDetails.pickupCancelled'), 'success'),
+                  onError: () =>
+                    showToast(t('shipmentDetails.pickupCancelFailed'), 'error'),
+                });
+              }
+            }}
+          >
+            {cancelling ? (
+              <ActivityIndicator color={C.danger} size="small" />
             ) : (
-                <View style={styles.timeline}>
-                    {TIMELINE_STEPS.map((step, i) => {
-                        const entry = historyByStatus.get(step.status);
-                        const isDone = !!entry;
-                        const isActive = step.status === currentStatusUpper;
-                        const isLast = i === TIMELINE_STEPS.length - 1;
-                        return (
-                            <View key={step.status} style={styles.timelineRow}>
-                                <View style={styles.timelineLeft}>
-                                    {isActive ? (
-                                        <Animated.View style={[styles.tlDotActive, { transform: [{ scale: pulseAnim }] }]}>
-                                            <step.icon color="#fff" size={12} />
-                                        </Animated.View>
-                                    ) : (
-                                        <View style={[styles.tlDot, isDone && styles.tlDotDone]}>
-                                            <step.icon color={isDone ? C.primary : C.textLight} size={12} />
-                                        </View>
-                                    )}
-                                    {!isLast && <View style={[styles.tlLine, isDone && styles.tlLineDone]} />}
-                                </View>
-                                <View style={[styles.tlContent, !isLast && styles.tlContentSpaced]}>
-                                    <Text style={[styles.tlLabel, isDone && styles.tlLabelDone]}>{step.label}</Text>
-                                    {entry && <Text style={styles.tlTime}>{formatDateTime(entry.createdAt)}</Text>}
-                                    {isActive && (
-                                        <View style={styles.tlActivePill}>
-                                            <Text style={styles.tlActivePillText}>{t('shipmentDetails.currentStatus')}</Text>
-                                        </View>
-                                    )}
-                                </View>
-                            </View>
-                        );
-                    })}
-                </View>
+              <>
+                <XCircle color={C.danger} size={16} />
+                <Text
+                  style={[styles.scheduleActionBtnText, { color: C.danger }]}
+                >
+                  {t('shipmentDetails.cancelPickup')}
+                </Text>
+              </>
             )}
-        </AnimatedCard>
+          </TouchableOpacity>
+        </View>
+      </View>
     );
+  };
 
-    const renderRoute = () => (
-        <AnimatedCard anim={cardAnims[1]} fade={cardFades[1]} cardStyle={styles.card}>
-            <Text style={styles.cardTitle}>{t('shipmentDetails.route')}</Text>
-            <View style={styles.routeWrap}>
-                <View style={styles.routeNode}>
-                    <View style={[styles.routeDot, { backgroundColor: C.primary }]}>
-                        <MapPin color="#fff" size={12} />
+  const renderTimeline = () => (
+    <AnimatedCard
+      anim={cardAnims[0]}
+      fade={cardFades[0]}
+      cardStyle={styles.card}
+    >
+      <Text style={styles.cardTitle}>
+        {t('shipmentDetails.trackingTimeline')}
+      </Text>
+      {shipment.status === 'cancelled' ? (
+        <View style={styles.cancelledBox}>
+          <XCircle color={C.danger} size={18} />
+          <Text style={styles.cancelledText}>
+            {t('shipmentDetails.shipmentCancelledText')}
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.timeline}>
+          {TIMELINE_STEPS.map((step, i) => {
+            const entry = historyByStatus.get(step.status);
+            const isDone = !!entry;
+            const isActive = step.status === currentStatusUpper;
+            const isLast = i === TIMELINE_STEPS.length - 1;
+            return (
+              <View key={step.status} style={styles.timelineRow}>
+                <View style={styles.timelineLeft}>
+                  {isActive ? (
+                    <Animated.View
+                      style={[
+                        styles.tlDotActive,
+                        { transform: [{ scale: pulseAnim }] },
+                      ]}
+                    >
+                      <step.icon color="#fff" size={12} />
+                    </Animated.View>
+                  ) : (
+                    <View style={[styles.tlDot, isDone && styles.tlDotDone]}>
+                      <step.icon
+                        color={isDone ? C.primary : C.textLight}
+                        size={12}
+                      />
                     </View>
-                    <View style={styles.routeInfo}>
-                        <Text style={styles.routeRole}>{t('shipmentDetails.sender')}</Text>
-                        <Text style={styles.routeName}>{shipment.sender.name ?? '—'}</Text>
-                        <Text style={styles.routeAddr}>{shipment.sender.address}</Text>
-                        {!!shipment.sender.phone && <Text style={styles.routePhone}>{shipment.sender.phone}</Text>}
-                    </View>
+                  )}
+                  {!isLast && (
+                    <View
+                      style={[styles.tlLine, isDone && styles.tlLineDone]}
+                    />
+                  )}
                 </View>
+                <View
+                  style={[styles.tlContent, !isLast && styles.tlContentSpaced]}
+                >
+                  <Text style={[styles.tlLabel, isDone && styles.tlLabelDone]}>
+                    {step.label}
+                  </Text>
+                  {entry && (
+                    <Text style={styles.tlTime}>
+                      {formatDateTime(entry.createdAt)}
+                    </Text>
+                  )}
+                  {isActive && (
+                    <View style={styles.tlActivePill}>
+                      <Text style={styles.tlActivePillText}>
+                        {t('shipmentDetails.currentStatus')}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
+    </AnimatedCard>
+  );
 
-                <View style={styles.routeConnector}>
-                    <View style={styles.routeConnLine} />
-                    <View style={styles.routeArrowBadge}>
-                        <Truck color={C.primary} size={12} />
-                        <Text style={styles.routeArrowText}>{shipment.distanceKm} km</Text>
-                    </View>
-                    <View style={styles.routeConnLine} />
-                </View>
+  const renderRoute = () => (
+    <AnimatedCard
+      anim={cardAnims[1]}
+      fade={cardFades[1]}
+      cardStyle={styles.card}
+    >
+      <Text style={styles.cardTitle}>{t('shipmentDetails.route')}</Text>
+      <View style={styles.routeWrap}>
+        <View style={styles.routeNode}>
+          <View style={[styles.routeDot, { backgroundColor: C.primary }]}>
+            <MapPin color="#fff" size={12} />
+          </View>
+          <View style={styles.routeInfo}>
+            <Text style={styles.routeRole}>{t('shipmentDetails.sender')}</Text>
+            <Text style={styles.routeName}>{shipment.sender.name ?? '—'}</Text>
+            <Text style={styles.routeAddr}>{shipment.sender.address}</Text>
+            {!!shipment.sender.phone && (
+              <Text style={styles.routePhone}>{shipment.sender.phone}</Text>
+            )}
+          </View>
+        </View>
 
-                <View style={styles.routeNode}>
-                    <View style={[styles.routeDot, { backgroundColor: C.success }]}>
-                        <Home color="#fff" size={12} />
-                    </View>
-                    <View style={styles.routeInfo}>
-                        <Text style={[styles.routeRole, { color: C.success }]}>{t('shipmentDetails.receiver')}</Text>
-                        <Text style={styles.routeName}>{shipment.receiver.name ?? '—'}</Text>
-                        <Text style={styles.routeAddr}>{shipment.receiver.address}</Text>
-                        {!!shipment.receiver.phone && <Text style={styles.routePhone}>{shipment.receiver.phone}</Text>}
-                    </View>
-                </View>
-            </View>
-        </AnimatedCard>
-    );
+        <View style={styles.routeConnector}>
+          <View style={styles.routeConnLine} />
+          <View style={styles.routeArrowBadge}>
+            <Truck color={C.primary} size={12} />
+            <Text style={styles.routeArrowText}>{shipment.distanceKm} km</Text>
+          </View>
+          <View style={styles.routeConnLine} />
+        </View>
 
-    const renderLiveTracking = () => {
-        if (!liveDriverLocation) return null;
-        return (
-            <AnimatedCard anim={cardAnims[1]} fade={cardFades[1]} cardStyle={styles.card}>
-                <View style={styles.cardHeader}>
-                    <Text style={styles.cardTitle}>{t('shipmentDetails.liveTracking')}</Text>
-                    <View style={styles.liveBadge}>
-                        <Animated.View style={[styles.liveDot, { transform: [{ scale: pulseAnim }] }]} />
-                        <Text style={styles.liveBadgeText}>{t('shipmentDetails.live')}</Text>
-                    </View>
-                </View>
-                {/* Real map (kalanabhaMobile MapLibre integration) — every
+        <View style={styles.routeNode}>
+          <View style={[styles.routeDot, { backgroundColor: C.success }]}>
+            <Home color="#fff" size={12} />
+          </View>
+          <View style={styles.routeInfo}>
+            <Text style={[styles.routeRole, { color: C.success }]}>
+              {t('shipmentDetails.receiver')}
+            </Text>
+            <Text style={styles.routeName}>
+              {shipment.receiver.name ?? '—'}
+            </Text>
+            <Text style={styles.routeAddr}>{shipment.receiver.address}</Text>
+            {!!shipment.receiver.phone && (
+              <Text style={styles.routePhone}>{shipment.receiver.phone}</Text>
+            )}
+          </View>
+        </View>
+      </View>
+    </AnimatedCard>
+  );
+
+  const renderLiveTracking = () => {
+    if (!liveDriverLocation) return null;
+    return (
+      <AnimatedCard
+        anim={cardAnims[1]}
+        fade={cardFades[1]}
+        cardStyle={styles.card}
+      >
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>
+            {t('shipmentDetails.liveTracking')}
+          </Text>
+          <View style={styles.liveBadge}>
+            <Animated.View
+              style={[styles.liveDot, { transform: [{ scale: pulseAnim }] }]}
+            />
+            <Text style={styles.liveBadgeText}>
+              {t('shipmentDetails.live')}
+            </Text>
+          </View>
+        </View>
+        {/* Real map (kalanabhaMobile MapLibre integration) — every
                     marker is a real coordinate already flowing through
                     this screen (shipment.pickup/drop, the live-tracked
                     driver position). No Google Maps API key needed. */}
-                <View style={{ marginBottom: 12 }}>
-                    <LiveTrackingMap
-                        pickup={{ lat: shipment.pickup.lat, lng: shipment.pickup.lng }}
-                        drop={{ lat: shipment.drop.lat, lng: shipment.drop.lng }}
-                        driver={{ lat: liveDriverLocation.lat, lng: liveDriverLocation.lng }}
-                    />
-                </View>
-                <View style={styles.liveTrackingRow}>
-                    <Bike color={C.primary} size={26} />
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.liveTrackingMain}>
-                            {/* Complete Delivery no longer requires a GPS
+        <View style={{ marginBottom: 12 }}>
+          <LiveTrackingMap
+            pickup={{ lat: shipment.pickup.lat, lng: shipment.pickup.lng }}
+            drop={{ lat: shipment.drop.lat, lng: shipment.drop.lng }}
+            driver={{
+              lat: liveDriverLocation.lat,
+              lng: liveDriverLocation.lng,
+            }}
+          />
+        </View>
+        <View style={styles.liveTrackingRow}>
+          <Bike color={C.primary} size={26} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.liveTrackingMain}>
+              {/* Complete Delivery no longer requires a GPS
                                 arrival step (product decision, kalanabhaBackend
                                 81263b1) — nothing in the driver app calls
                                 POST /shipments/:id/arrive anymore, so
@@ -464,519 +666,1062 @@ const ShipmentDetailsScreen = () => {
                                 ARRIVED_AT_PICKUP/ARRIVED_AT_DROP in practice.
                                 Showing distance only, rather than an
                                 "arrived" signal that could never fire. */}
-                            {distanceToDriverKm != null
-                                ? t('shipmentDetails.driverAwayKm', { km: distanceToDriverKm.toFixed(1) })
-                                : t('shipmentDetails.driverLocationReceived')}
-                        </Text>
-                        <Text style={styles.liveTrackingSub}>{t('shipmentDetails.updatedTimeAgo', { time: formatTimeAgo(liveDriverLocation.updatedAt) })}</Text>
-                    </View>
-                </View>
-            </AnimatedCard>
-        );
-    };
-
-    // Real pickup/delivery OTP card, shown only to the customer at the
-    // relevant stage — share it with the driver in person to start/
-    // complete the trip; both codes are generated server-side on
-    // assignment (kalanabhaBackend d17a770, 63a33d4) and required back at
-    // POST /shipments/:id/start and /complete respectively.
-    const renderOtpCard = (title: string, subtitle: string, code: string, animIdx: number) => (
-        <AnimatedCard anim={cardAnims[animIdx]} fade={cardFades[animIdx]} cardStyle={styles.card}>
-            <Text style={styles.cardTitle}>{title}</Text>
-            <Text style={{ color: C.textMid, fontSize: 12, marginBottom: 10 }}>{subtitle}</Text>
-            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 12 }}>
-                {code.split('').map((digit, idx) => (
-                    <View
-                        key={idx}
-                        style={{
-                            width: 44,
-                            height: 52,
-                            borderRadius: 10,
-                            borderWidth: 1,
-                            borderColor: C.border,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                    >
-                        <Text style={{ fontSize: 22, fontWeight: '700', color: C.text }}>{digit}</Text>
-                    </View>
-                ))}
-            </View>
-        </AnimatedCard>
+              {distanceToDriverKm != null
+                ? t('shipmentDetails.driverAwayKm', {
+                    km: distanceToDriverKm.toFixed(1),
+                  })
+                : t('shipmentDetails.driverLocationReceived')}
+            </Text>
+            <Text style={styles.liveTrackingSub}>
+              {t('shipmentDetails.updatedTimeAgo', {
+                time: formatTimeAgo(liveDriverLocation.updatedAt),
+              })}
+            </Text>
+          </View>
+        </View>
+      </AnimatedCard>
     );
+  };
 
-    const renderPickupOtp = () => {
-        if (!showPickupOtp) return null;
-        return renderOtpCard(
-            t('shipmentDetails.pickupOtpTitle'),
-            t('shipmentDetails.pickupOtpSubtitle'),
-            shipment.pickupOtp!,
-            1,
-        );
-    };
+  // Real pickup/delivery OTP card, shown only to the customer at the
+  // relevant stage — share it with the driver in person to start/
+  // complete the trip; both codes are generated server-side on
+  // assignment (kalanabhaBackend d17a770, 63a33d4) and required back at
+  // POST /shipments/:id/start and /complete respectively.
+  const renderOtpCard = (
+    title: string,
+    subtitle: string,
+    code: string,
+    animIdx: number,
+  ) => (
+    <AnimatedCard
+      anim={cardAnims[animIdx]}
+      fade={cardFades[animIdx]}
+      cardStyle={styles.card}
+    >
+      <Text style={styles.cardTitle}>{title}</Text>
+      <Text style={{ color: C.textMid, fontSize: 12, marginBottom: 10 }}>
+        {subtitle}
+      </Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 12 }}>
+        {code.split('').map((digit, idx) => (
+          <View
+            key={idx}
+            style={{
+              width: 44,
+              height: 52,
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: C.border,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text style={{ fontSize: 22, fontWeight: '700', color: C.text }}>
+              {digit}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </AnimatedCard>
+  );
 
-    const renderDeliveryOtp = () => {
-        if (!showDeliveryOtp) return null;
-        return renderOtpCard(
-            t('shipmentDetails.deliveryOtpTitle'),
-            t('shipmentDetails.deliveryOtpSubtitle'),
-            shipment.deliveryOtp!,
-            1,
-        );
-    };
-
-    const renderPackage = () => {
-        const items = [
-            { icon: Folder, label: t('shipmentDetails.category'), value: shipment.package.category ?? shipment.goodsType },
-            isHouseShifting
-                ? { icon: Users, label: t('shipmentDetails.helpers'), value: `${shipment.helpersCount}` }
-                : { icon: Weight, label: t('shipmentDetails.weight'), value: `${shipment.weightKg} kg` },
-        ];
-        return (
-            <AnimatedCard anim={cardAnims[2]} fade={cardFades[2]} cardStyle={styles.card}>
-                <Text style={styles.cardTitle}>{isHouseShifting ? t('shipmentDetails.moveDetails') : t('shipmentDetails.packageDetails')}</Text>
-                <View style={styles.packageGrid}>
-                    {items.map((item) => (
-                        <View key={item.label} style={styles.packageItem}>
-                            <item.icon color={C.primary} size={18} />
-                            <Text style={styles.pkgLabel}>{item.label}</Text>
-                            <Text style={styles.pkgValue}>{item.value}</Text>
-                        </View>
-                    ))}
-                    {shipment.fragile && (
-                        <View style={styles.packageItem}>
-                            <Package color={C.warning} size={18} />
-                            <Text style={styles.pkgLabel}>{t('shipmentDetails.handling')}</Text>
-                            <Text style={[styles.pkgValue, { color: C.warning }]}>{t('shipmentDetails.fragile')}</Text>
-                        </View>
-                    )}
-                </View>
-            </AnimatedCard>
-        );
-    };
-
-    // Real fields only — Shipment stores one `price` total, no persisted
-    // itemized breakdown (courier charge/delivery/VAT/coupon aren't real
-    // concepts on this backend).
-    const renderPayment = () => (
-        <AnimatedCard anim={cardAnims[3]} fade={cardFades[3]} cardStyle={styles.card}>
-            <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>{t('shipmentDetails.paymentSummary')}</Text>
-                <View style={styles.payMethodPill}>
-                    <Text style={styles.payMethodText}>
-                        {shipment.paymentMode === 'cod' ? t('shipmentDetails.paymentCod') : shipment.paymentMode === 'prepaid' ? t('shipmentDetails.paymentUpi') : t('shipmentDetails.paymentCredit')}
-                    </Text>
-                </View>
-            </View>
-            <View style={styles.payRow}>
-                <Text style={styles.payLabel}>{t('shipmentDetails.distance')}</Text>
-                <Text style={styles.payValue}>{shipment.distanceKm} km</Text>
-            </View>
-            <View style={styles.payRow}>
-                <Text style={styles.payLabel}>{t('shipmentDetails.vehicle')}</Text>
-                <Text style={styles.payValue}>{shipment.vehicleType}</Text>
-            </View>
-            {isHouseShifting && (
-                <View style={styles.payRow}>
-                    <Text style={styles.payLabel}>{t('shipmentDetails.helpers')}</Text>
-                    <Text style={styles.payValue}>{shipment.helpersCount}</Text>
-                </View>
-            )}
-            <View style={styles.payDivider} />
-            <View style={styles.payTotalRow}>
-                <Text style={styles.payTotalLabel}>{t('shipmentDetails.total')}</Text>
-                <Text style={styles.payTotalValue}>₹{shipment.price}</Text>
-            </View>
-            {shipment.paymentMode === 'prepaid' && shipment.paymentStatus === 'PENDING' && (
-                <TouchableOpacity
-                    style={styles.payNowBtn}
-                    activeOpacity={0.85}
-                    disabled={payingNow}
-                    onPress={() => payForShipment({
-                        shipmentId: shipment.id,
-                        customerName: shipment.sender?.name,
-                        customerPhone: shipment.sender?.phone,
-                    }, {
-                        onError: () => showToast(t('shipmentDetails.paymentFailed'), 'error'),
-                        onSuccess: () => showToast(t('shipmentDetails.paymentSuccess'), 'success'),
-                    })}
-                >
-                    {payingNow ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text style={styles.payNowBtnText}>{t('shipmentDetails.payNow')}</Text>
-                    )}
-                </TouchableOpacity>
-            )}
-            <TouchableOpacity
-                style={styles.viewReceiptRow}
-                activeOpacity={0.7}
-                onPress={() => (navigation as any).navigate('Receipt', { id: shipmentId })}
-            >
-                <FileText color={C.primary} size={14} />
-                <Text style={styles.viewReceiptText}>{t('receipt.title')}</Text>
-            </TouchableOpacity>
-        </AnimatedCard>
+  const renderPickupOtp = () => {
+    if (!showPickupOtp) return null;
+    return renderOtpCard(
+      t('shipmentDetails.pickupOtpTitle'),
+      t('shipmentDetails.pickupOtpSubtitle'),
+      shipment.pickupOtp!,
+      1,
     );
+  };
 
-    const handleLiveMap = () => {
-        openGoogleMapsDirections(shipment.pickup, shipment.drop).catch(() => showToast(t('shipmentDetails.unableToOpenMaps'), 'error'));
-    };
-
-    const handleCallDriver = () => {
-        const phone = shipment.dispatch?.driverPhone;
-        if (!phone) {
-            showToast(t('shipmentDetails.noDriverAssignedYet'), 'info');
-            return;
-        }
-        Linking.openURL(`tel:${phone}`).catch(() => showToast(t('shipmentDetails.unableToOpenDialer'), 'error'));
-    };
-
-    const handleChatSupport = () => {
-        (navigation as any).navigate('ShipmentChat', { shipmentId });
-    };
-
-    // Real now (kalanabhaBackend 03b5839, GET /shipments/:id/pod) — still
-    // honest when there genuinely isn't one: podUploadedAt is only set
-    // once a driver actually uploads a photo on completing delivery.
-    const handleDownloadPod = () => {
-        if (!shipment.podUploadedAt) {
-            showToast(t('shipmentDetails.noPodUploadedYet'), 'info');
-            return;
-        }
-        setPodViewerOpen(true);
-    };
-
-    const nextAction = (() => {
-        if (shipment.status === 'scheduled') {
-            return {
-                title: t('shipmentDetails.nextPickupScheduledTitle'),
-                body: shipment.scheduledAt
-                    ? t('shipmentDetails.nextPickupScheduledBodyWithDate', { date: formatDateTime(shipment.scheduledAt) })
-                    : t('shipmentDetails.nextPickupScheduledBody'),
-            };
-        }
-        if (shipment.status === 'searching') {
-            return { title: t('shipmentDetails.nextFindingDriverTitle'), body: t('shipmentDetails.nextFindingDriverBody') };
-        }
-        if (shipment.status === 'accepted' && shipment.pickupOtp) {
-            return { title: t('shipmentDetails.nextPickupOtpTitle'), body: t('shipmentDetails.nextPickupOtpBody') };
-        }
-        if (shipment.status === 'in_transit' && shipment.deliveryOtp) {
-            return { title: t('shipmentDetails.nextDeliveryOtpTitle'), body: t('shipmentDetails.nextDeliveryOtpBody') };
-        }
-        if (shipment.status === 'delivered') {
-            return {
-                title: t('shipmentDetails.nextDeliveredTitle'),
-                body: shipment.podUploadedAt ? t('shipmentDetails.nextDeliveredPodBody') : t('shipmentDetails.nextDeliveredBody'),
-            };
-        }
-        if (shipment.status === 'cancelled') {
-            return { title: t('shipmentDetails.nextCancelledTitle'), body: t('shipmentDetails.nextCancelledBody') };
-        }
-        return null;
-    })();
-
-    const renderNextAction = () => {
-        if (!nextAction) return null;
-        return (
-            <View style={styles.nextActionCard}>
-                <View style={styles.nextActionIcon}>
-                    <Truck color={C.primary} size={18} />
-                </View>
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.nextActionTitle}>{nextAction.title}</Text>
-                    <Text style={styles.nextActionText}>{nextAction.body}</Text>
-                </View>
-            </View>
-        );
-    };
-
-    const renderActions = () => (
-        <AnimatedCard anim={cardAnims[4]} fade={cardFades[4]} noPad cardStyle={styles.card}>
-            <View style={styles.actionsGrid}>
-                {[
-                    shipment.status === 'delivered'
-                        ? { icon: Star, label: t('shipmentDetails.rateDelivery'), color: [C.primary, C.primaryDark] as const, onPress: () => (navigation as any).navigate('Rating', { shipmentId }) }
-                        : { icon: MapIcon, label: t('shipmentDetails.liveMap'), color: [C.primary, '#6366F1'] as const, onPress: handleLiveMap },
-                    { icon: Phone, label: t('shipmentDetails.callDriver'), color: ['#10B981', '#059669'] as const, onPress: handleCallDriver },
-                    { icon: MessageCircle, label: t('shipmentDetails.chatSupport'), color: ['#F59E0B', '#D97706'] as const, onPress: handleChatSupport },
-                    { icon: FileText, label: t('shipmentDetails.viewPod'), color: ['#EF4444', '#DC2626'] as const, onPress: handleDownloadPod },
-                ].map((btn) => (
-                    <TouchableOpacity key={btn.label} style={styles.actionBtn} activeOpacity={0.85} onPress={btn.onPress}>
-                        <LinearGradient colors={[...btn.color]} style={styles.actionBtnGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                            <btn.icon color="#fff" size={20} />
-                        </LinearGradient>
-                        <Text style={styles.actionBtnLabel}>{btn.label}</Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-        </AnimatedCard>
+  const renderDeliveryOtp = () => {
+    if (!showDeliveryOtp) return null;
+    return renderOtpCard(
+      t('shipmentDetails.deliveryOtpTitle'),
+      t('shipmentDetails.deliveryOtpSubtitle'),
+      shipment.deliveryOtp!,
+      1,
     );
+  };
 
+  const renderPackage = () => {
+    const items = [
+      {
+        icon: Folder,
+        label: t('shipmentDetails.category'),
+        value: shipment.package.category ?? shipment.goodsType,
+      },
+      isHouseShifting
+        ? {
+            icon: Users,
+            label: t('shipmentDetails.helpers'),
+            value: `${shipment.helpersCount}`,
+          }
+        : {
+            icon: Weight,
+            label: t('shipmentDetails.weight'),
+            value: `${shipment.weightKg} kg`,
+          },
+    ];
     return (
-        <View style={styles.root}>
-            <StatusBar barStyle="light-content" backgroundColor={C.primaryDark} />
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-                {renderHeader()}
-                <View style={styles.body}>
-                    {renderScheduleActions()}
-                    {renderNextAction()}
-                    {renderTimeline()}
-                    {renderRoute()}
-                    {renderLiveTracking()}
-                    {renderPickupOtp()}
-                    {renderDeliveryOtp()}
-                    {renderPackage()}
-                    {renderPayment()}
-                    {renderActions()}
-                </View>
-            </ScrollView>
+      <AnimatedCard
+        anim={cardAnims[2]}
+        fade={cardFades[2]}
+        cardStyle={styles.card}
+      >
+        <Text style={styles.cardTitle}>
+          {isHouseShifting
+            ? t('shipmentDetails.moveDetails')
+            : t('shipmentDetails.packageDetails')}
+        </Text>
+        <View style={styles.packageGrid}>
+          {items.map(item => (
+            <View key={item.label} style={styles.packageItem}>
+              <item.icon color={C.primary} size={18} />
+              <Text style={styles.pkgLabel}>{item.label}</Text>
+              <Text style={styles.pkgValue}>{item.value}</Text>
+            </View>
+          ))}
+          {shipment.fragile && (
+            <View style={styles.packageItem}>
+              <Package color={C.warning} size={18} />
+              <Text style={styles.pkgLabel}>
+                {t('shipmentDetails.handling')}
+              </Text>
+              <Text style={[styles.pkgValue, { color: C.warning }]}>
+                {t('shipmentDetails.fragile')}
+              </Text>
+            </View>
+          )}
+        </View>
+      </AnimatedCard>
+    );
+  };
 
-            {/* Real photo, fetched through the same JWT auth every other
+  // Real fields only — Shipment stores one `price` total, no persisted
+  // itemized breakdown (courier charge/delivery/VAT/coupon aren't real
+  // concepts on this backend).
+  const renderPayment = () => (
+    <AnimatedCard
+      anim={cardAnims[3]}
+      fade={cardFades[3]}
+      cardStyle={styles.card}
+    >
+      <View style={styles.cardHeader}>
+        <Text style={styles.cardTitle}>
+          {t('shipmentDetails.paymentSummary')}
+        </Text>
+        <View style={styles.payMethodPill}>
+          <Text style={styles.payMethodText}>
+            {shipment.paymentMode === 'cod'
+              ? t('shipmentDetails.paymentCod')
+              : shipment.paymentMode === 'prepaid'
+              ? t('shipmentDetails.paymentUpi')
+              : t('shipmentDetails.paymentCredit')}
+          </Text>
+        </View>
+      </View>
+      <View style={styles.payRow}>
+        <Text style={styles.payLabel}>{t('shipmentDetails.distance')}</Text>
+        <Text style={styles.payValue}>{shipment.distanceKm} km</Text>
+      </View>
+      <View style={styles.payRow}>
+        <Text style={styles.payLabel}>{t('shipmentDetails.vehicle')}</Text>
+        <Text style={styles.payValue}>{shipment.vehicleType}</Text>
+      </View>
+      {isHouseShifting && (
+        <View style={styles.payRow}>
+          <Text style={styles.payLabel}>{t('shipmentDetails.helpers')}</Text>
+          <Text style={styles.payValue}>{shipment.helpersCount}</Text>
+        </View>
+      )}
+      <View style={styles.payDivider} />
+      <View style={styles.payTotalRow}>
+        <Text style={styles.payTotalLabel}>{t('shipmentDetails.total')}</Text>
+        <Text style={styles.payTotalValue}>₹{shipment.price}</Text>
+      </View>
+      {shipment.paymentMode === 'prepaid' &&
+        shipment.paymentStatus === 'PENDING' && (
+          <TouchableOpacity
+            style={styles.payNowBtn}
+            activeOpacity={0.85}
+            disabled={payingNow}
+            onPress={() =>
+              payForShipment(
+                {
+                  shipmentId: shipment.id,
+                  customerName: shipment.sender?.name,
+                  customerPhone: shipment.sender?.phone,
+                },
+                {
+                  onError: () =>
+                    showToast(t('shipmentDetails.paymentFailed'), 'error'),
+                  onSuccess: () =>
+                    showToast(t('shipmentDetails.paymentSuccess'), 'success'),
+                },
+              )
+            }
+          >
+            {payingNow ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.payNowBtnText}>
+                {t('shipmentDetails.payNow')}
+              </Text>
+            )}
+          </TouchableOpacity>
+        )}
+      <TouchableOpacity
+        style={styles.viewReceiptRow}
+        activeOpacity={0.7}
+        onPress={() =>
+          (navigation as any).navigate('Receipt', { id: shipmentId })
+        }
+      >
+        <FileText color={C.primary} size={14} />
+        <Text style={styles.viewReceiptText}>{t('receipt.title')}</Text>
+      </TouchableOpacity>
+    </AnimatedCard>
+  );
+
+  const handleLiveMap = () => {
+    openGoogleMapsDirections(shipment.pickup, shipment.drop).catch(() =>
+      showToast(t('shipmentDetails.unableToOpenMaps'), 'error'),
+    );
+  };
+
+  const handleCallDriver = () => {
+    const phone = shipment.dispatch?.driverPhone;
+    if (!phone) {
+      showToast(t('shipmentDetails.noDriverAssignedYet'), 'info');
+      return;
+    }
+    Linking.openURL(`tel:${phone}`).catch(() =>
+      showToast(t('shipmentDetails.unableToOpenDialer'), 'error'),
+    );
+  };
+
+  const handleChatSupport = () => {
+    (navigation as any).navigate('ShipmentChat', { shipmentId });
+  };
+
+  // Real now (kalanabhaBackend 03b5839, GET /shipments/:id/pod) — still
+  // honest when there genuinely isn't one: podUploadedAt is only set
+  // once a driver actually uploads a photo on completing delivery.
+  const handleDownloadPod = () => {
+    if (!shipment.podUploadedAt) {
+      showToast(t('shipmentDetails.noPodUploadedYet'), 'info');
+      return;
+    }
+    setPodViewerOpen(true);
+  };
+
+  const nextAction = (() => {
+    if (shipment.status === 'scheduled') {
+      return {
+        title: t('shipmentDetails.nextPickupScheduledTitle'),
+        body: shipment.scheduledAt
+          ? t('shipmentDetails.nextPickupScheduledBodyWithDate', {
+              date: formatDateTime(shipment.scheduledAt),
+            })
+          : t('shipmentDetails.nextPickupScheduledBody'),
+      };
+    }
+    if (shipment.status === 'searching') {
+      return {
+        title: t('shipmentDetails.nextFindingDriverTitle'),
+        body: t('shipmentDetails.nextFindingDriverBody'),
+      };
+    }
+    if (shipment.status === 'accepted' && shipment.pickupOtp) {
+      return {
+        title: t('shipmentDetails.nextPickupOtpTitle'),
+        body: t('shipmentDetails.nextPickupOtpBody'),
+      };
+    }
+    if (shipment.status === 'in_transit' && shipment.deliveryOtp) {
+      return {
+        title: t('shipmentDetails.nextDeliveryOtpTitle'),
+        body: t('shipmentDetails.nextDeliveryOtpBody'),
+      };
+    }
+    if (shipment.status === 'delivered') {
+      return {
+        title: t('shipmentDetails.nextDeliveredTitle'),
+        body: shipment.podUploadedAt
+          ? t('shipmentDetails.nextDeliveredPodBody')
+          : t('shipmentDetails.nextDeliveredBody'),
+      };
+    }
+    if (shipment.status === 'cancelled') {
+      return {
+        title: t('shipmentDetails.nextCancelledTitle'),
+        body: t('shipmentDetails.nextCancelledBody'),
+      };
+    }
+    return null;
+  })();
+
+  const renderNextAction = () => {
+    if (!nextAction) return null;
+    return (
+      <View style={styles.nextActionCard}>
+        <View style={styles.nextActionIcon}>
+          <Truck color={C.primary} size={18} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.nextActionTitle}>{nextAction.title}</Text>
+          <Text style={styles.nextActionText}>{nextAction.body}</Text>
+        </View>
+      </View>
+    );
+  };
+
+  const renderActions = () => (
+    <AnimatedCard
+      anim={cardAnims[4]}
+      fade={cardFades[4]}
+      noPad
+      cardStyle={styles.card}
+    >
+      <View style={styles.actionsGrid}>
+        {[
+          shipment.status === 'delivered'
+            ? {
+                icon: Star,
+                label: t('shipmentDetails.rateDelivery'),
+                color: [C.primary, C.primaryDark] as const,
+                onPress: () =>
+                  (navigation as any).navigate('Rating', { shipmentId }),
+              }
+            : {
+                icon: MapIcon,
+                label: t('shipmentDetails.liveMap'),
+                color: [C.primary, '#6366F1'] as const,
+                onPress: handleLiveMap,
+              },
+          {
+            icon: Phone,
+            label: t('shipmentDetails.callDriver'),
+            color: ['#10B981', '#059669'] as const,
+            onPress: handleCallDriver,
+          },
+          {
+            icon: MessageCircle,
+            label: t('shipmentDetails.chatSupport'),
+            color: ['#F59E0B', '#D97706'] as const,
+            onPress: handleChatSupport,
+          },
+          {
+            icon: FileText,
+            label: t('shipmentDetails.viewPod'),
+            color: ['#EF4444', '#DC2626'] as const,
+            onPress: handleDownloadPod,
+          },
+        ].map(btn => (
+          <TouchableOpacity
+            key={btn.label}
+            style={styles.actionBtn}
+            activeOpacity={0.85}
+            onPress={btn.onPress}
+          >
+            <LinearGradient
+              colors={[...btn.color]}
+              style={styles.actionBtnGrad}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <btn.icon color="#fff" size={20} />
+            </LinearGradient>
+            <Text style={styles.actionBtnLabel}>{btn.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </AnimatedCard>
+  );
+
+  return (
+    <View style={styles.root}>
+      <StatusBar barStyle="light-content" backgroundColor={C.primaryDark} />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {renderHeader()}
+        <View style={styles.body}>
+          {renderScheduleActions()}
+          {renderNextAction()}
+          {renderTimeline()}
+          {renderRoute()}
+          {renderLiveTracking()}
+          {renderPickupOtp()}
+          {renderDeliveryOtp()}
+          {renderPackage()}
+          {renderPayment()}
+          {renderActions()}
+        </View>
+      </ScrollView>
+
+      {/* Real photo, fetched through the same JWT auth every other
                 API call uses (GET /shipments/:id/pod is not a plain
                 static-file URL) — RN's Image source accepts a headers
                 object for exactly this. */}
-            <Modal visible={podViewerOpen} transparent animationType="fade" onRequestClose={() => setPodViewerOpen(false)}>
-                <View style={styles.podOverlay}>
-                    <Pressable style={styles.podCloseBtn} onPress={() => setPodViewerOpen(false)} hitSlop={12}>
-                        <X color="#fff" size={22} />
-                    </Pressable>
-                    {shipmentId && (
-                        <Image
-                            source={{
-                                uri: `${API_BASE_URL}/shipments/${shipmentId}/pod`,
-                                headers: { Authorization: `Bearer ${getToken() ?? ''}` },
-                            }}
-                            style={styles.podImage}
-                            resizeMode="contain"
-                        />
-                    )}
-                </View>
-            </Modal>
-
-            <Modal visible={rescheduleModalOpen} animationType="slide" onRequestClose={() => setRescheduleModalOpen(false)}>
-                <View style={styles.rescheduleModalContainer}>
-                    <View style={styles.rescheduleModalHeader}>
-                        <Text style={styles.cardTitle}>{t('shipmentDetails.changePickupTime')}</Text>
-                        <TouchableOpacity onPress={() => setRescheduleModalOpen(false)}>
-                            <Text style={{ color: C.primary, fontFamily: FONTS.BOLD_PRIMARY }}>{t('common.close')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <ScrollView contentContainerStyle={{ padding: 16 }}>
-                        <DateTimeChipPicker
-                            colors={{
-                                primary: C.primary, primaryLight: C.primaryLight, text: C.text,
-                                textSecondary: C.textMid, border: C.border, surface: C.card,
-                            }}
-                            value={pendingScheduledAt}
-                            onChange={setPendingScheduledAt}
-                            t={t}
-                        />
-                        <TouchableOpacity
-                            style={[styles.scheduleActionBtn, styles.scheduleActionBtnPrimary]}
-                            activeOpacity={0.85}
-                            disabled={!pendingScheduledAt || rescheduling}
-                            onPress={() => rescheduleShipment(pendingScheduledAt, {
-                                onSuccess: () => {
-                                    setRescheduleModalOpen(false);
-                                    showToast(t('shipmentDetails.pickupTimeUpdated'), 'success');
-                                },
-                                onError: () => showToast(t('shipmentDetails.pickupTimeUpdateFailed'), 'error'),
-                            })}
-                        >
-                            {rescheduling ? (
-                                <ActivityIndicator color="#fff" size="small" />
-                            ) : (
-                                <Text style={[styles.scheduleActionBtnText, { color: '#fff' }]}>{t('shipmentDetails.confirmNewTime')}</Text>
-                            )}
-                        </TouchableOpacity>
-                    </ScrollView>
-                </View>
-            </Modal>
+      <Modal
+        visible={podViewerOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPodViewerOpen(false)}
+      >
+        <View style={styles.podOverlay}>
+          <Pressable
+            style={styles.podCloseBtn}
+            onPress={() => setPodViewerOpen(false)}
+            hitSlop={12}
+          >
+            <X color="#fff" size={22} />
+          </Pressable>
+          {shipmentId && (
+            <Image
+              source={{
+                uri: `${API_BASE_URL}/shipments/${shipmentId}/pod`,
+                headers: { Authorization: `Bearer ${getToken() ?? ''}` },
+              }}
+              style={styles.podImage}
+              resizeMode="contain"
+            />
+          )}
         </View>
-    );
+      </Modal>
+
+      <Modal
+        visible={rescheduleModalOpen}
+        animationType="slide"
+        onRequestClose={() => setRescheduleModalOpen(false)}
+      >
+        <View style={styles.rescheduleModalContainer}>
+          <View style={styles.rescheduleModalHeader}>
+            <Text style={styles.cardTitle}>
+              {t('shipmentDetails.changePickupTime')}
+            </Text>
+            <TouchableOpacity onPress={() => setRescheduleModalOpen(false)}>
+              <Text
+                style={{ color: C.primary, fontFamily: FONTS.BOLD_PRIMARY }}
+              >
+                {t('common.close')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView contentContainerStyle={{ padding: 16 }}>
+            <DateTimeChipPicker
+              colors={{
+                primary: C.primary,
+                primaryLight: C.primaryLight,
+                text: C.text,
+                textSecondary: C.textMid,
+                border: C.border,
+                surface: C.card,
+              }}
+              value={pendingScheduledAt}
+              onChange={setPendingScheduledAt}
+              t={t}
+            />
+            <TouchableOpacity
+              style={[
+                styles.scheduleActionBtn,
+                styles.scheduleActionBtnPrimary,
+              ]}
+              activeOpacity={0.85}
+              disabled={!pendingScheduledAt || rescheduling}
+              onPress={() =>
+                rescheduleShipment(pendingScheduledAt, {
+                  onSuccess: () => {
+                    setRescheduleModalOpen(false);
+                    showToast(
+                      t('shipmentDetails.pickupTimeUpdated'),
+                      'success',
+                    );
+                  },
+                  onError: () =>
+                    showToast(
+                      t('shipmentDetails.pickupTimeUpdateFailed'),
+                      'error',
+                    ),
+                })
+              }
+            >
+              {rescheduling ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={[styles.scheduleActionBtnText, { color: '#fff' }]}>
+                  {t('shipmentDetails.confirmNewTime')}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </Modal>
+    </View>
+  );
 };
 
-const AnimatedCard = ({ children, anim, fade, noPad, cardStyle }: {
-    children: React.ReactNode;
-    anim: Animated.Value;
-    fade: Animated.Value;
-    noPad?: boolean;
-    cardStyle: ReturnType<typeof makeStyles>['card'];
+const AnimatedCard = ({
+  children,
+  anim,
+  fade,
+  noPad,
+  cardStyle,
+}: {
+  children: React.ReactNode;
+  anim: Animated.Value;
+  fade: Animated.Value;
+  noPad?: boolean;
+  cardStyle: ReturnType<typeof makeStyles>['card'];
 }) => (
-    <Animated.View style={[cardStyle, noPad && styles_noPad, { opacity: fade, transform: [{ translateY: anim }] }]}>
-        {children}
-    </Animated.View>
+  <Animated.View
+    style={[
+      cardStyle,
+      noPad && styles_noPad,
+      { opacity: fade, transform: [{ translateY: anim }] },
+    ]}
+  >
+    {children}
+  </Animated.View>
 );
 const styles_noPad = { padding: 0, overflow: 'hidden' as const };
 
 export default ShipmentDetailsScreen;
 
-const makeStyles = (C: DetailColors) => StyleSheet.create({
+const makeStyles = (C: DetailColors) =>
+  StyleSheet.create({
     root: { flex: 1, backgroundColor: C.bg },
     scrollContent: { paddingBottom: 40 },
     loadingWrap: { flex: 1 },
-    loadingGrad: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14 },
-    loadingText: { color: '#fff', fontSize: 15, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
-    center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: C.bg, padding: 24 },
-    errorText: { fontSize: 15, fontFamily: FONTS.SEMI_BOLD_PRIMARY, color: C.text },
-    backLink: { marginTop: 6, paddingVertical: 8, paddingHorizontal: 16, backgroundColor: C.primary, borderRadius: 10 },
+    loadingGrad: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 14,
+    },
+    loadingText: {
+      color: '#fff',
+      fontSize: 15,
+      fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+    },
+    center: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
+      backgroundColor: C.bg,
+      padding: 24,
+    },
+    errorText: {
+      fontSize: 15,
+      fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+      color: C.text,
+    },
+    backLink: {
+      marginTop: 6,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      backgroundColor: C.primary,
+      borderRadius: 10,
+    },
     backLinkText: { color: '#fff', fontFamily: FONTS.BOLD_PRIMARY },
 
     header: {
-        paddingTop: Platform.OS === 'ios' ? 58 : 38,
-        paddingHorizontal: 20,
-        paddingBottom: 26,
-        borderBottomLeftRadius: 28,
-        borderBottomRightRadius: 28,
-        overflow: 'hidden',
+      paddingTop: Platform.OS === 'ios' ? 58 : 38,
+      paddingHorizontal: 20,
+      paddingBottom: 26,
+      borderBottomLeftRadius: 28,
+      borderBottomRightRadius: 28,
+      overflow: 'hidden',
     },
-    blob1: { position: 'absolute', top: -50, right: -40, width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(255,255,255,0.05)' },
-    blob2: { position: 'absolute', bottom: -30, left: -30, width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(255,255,255,0.04)' },
+    blob1: {
+      position: 'absolute',
+      top: -50,
+      right: -40,
+      width: 200,
+      height: 200,
+      borderRadius: 100,
+      backgroundColor: 'rgba(255,255,255,0.05)',
+    },
+    blob2: {
+      position: 'absolute',
+      bottom: -30,
+      left: -30,
+      width: 140,
+      height: 140,
+      borderRadius: 70,
+      backgroundColor: 'rgba(255,255,255,0.04)',
+    },
 
-    headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
-    iconBtn: { width: 38, height: 38, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+    headerTop: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 20,
+    },
+    iconBtn: {
+      width: 38,
+      height: 38,
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.2)',
+    },
     backArrow: { color: '#fff', fontSize: 18, fontFamily: FONTS.BOLD_PRIMARY },
     shareArrow: { color: '#fff', fontSize: 18 },
-    headerTitle: { color: '#fff', fontSize: 17, fontFamily: FONTS.BOLD_PRIMARY, letterSpacing: 0.3 },
+    headerTitle: {
+      color: '#fff',
+      fontSize: 17,
+      fontFamily: FONTS.BOLD_PRIMARY,
+      letterSpacing: 0.3,
+    },
 
-    idPill: { backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
-    idLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 10, fontFamily: FONTS.BOLD_PRIMARY, letterSpacing: 1, marginBottom: 4 },
-    idRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    idValue: { color: '#fff', fontSize: 15, fontFamily: FONTS.BOLD_PRIMARY, letterSpacing: 0.3 },
-    copyBtn: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
+    idPill: {
+      backgroundColor: 'rgba(255,255,255,0.12)',
+      borderRadius: 14,
+      padding: 14,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.2)',
+    },
+    idLabel: {
+      color: 'rgba(255,255,255,0.65)',
+      fontSize: 10,
+      fontFamily: FONTS.BOLD_PRIMARY,
+      letterSpacing: 1,
+      marginBottom: 4,
+    },
+    idRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    idValue: {
+      color: '#fff',
+      fontSize: 15,
+      fontFamily: FONTS.BOLD_PRIMARY,
+      letterSpacing: 0.3,
+    },
+    copyBtn: {
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      borderRadius: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+    },
     copyBtnDone: { backgroundColor: '#fff' },
 
-    statusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    statusPill: { flexDirection: 'row', alignItems: 'center', gap: 7, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 7, backgroundColor: 'rgba(255,255,255,0.18)' },
-    statusLabel: { color: '#fff', fontSize: 13, fontFamily: FONTS.BOLD_PRIMARY },
-    bookedLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontFamily: FONTS.SEMI_BOLD_PRIMARY, textAlign: 'right' },
-    bookedDate: { color: '#fff', fontSize: 12, fontFamily: FONTS.BOLD_PRIMARY, textAlign: 'right', marginTop: 2 },
+    statusRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    statusPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 7,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      backgroundColor: 'rgba(255,255,255,0.18)',
+    },
+    statusLabel: {
+      color: '#fff',
+      fontSize: 13,
+      fontFamily: FONTS.BOLD_PRIMARY,
+    },
+    bookedLabel: {
+      color: 'rgba(255,255,255,0.6)',
+      fontSize: 10,
+      fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+      textAlign: 'right',
+    },
+    bookedDate: {
+      color: '#fff',
+      fontSize: 12,
+      fontFamily: FONTS.BOLD_PRIMARY,
+      textAlign: 'right',
+      marginTop: 2,
+    },
 
     body: { padding: 16, gap: 14 },
     card: {
-        backgroundColor: C.card, borderRadius: 20, padding: 18,
-        shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 14, elevation: 3,
+      backgroundColor: C.card,
+      borderRadius: 20,
+      padding: 18,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.06,
+      shadowRadius: 14,
+      elevation: 3,
     },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-    cardTitle: { fontSize: 15, fontFamily: FONTS.BOLD_PRIMARY, color: C.text, marginBottom: 14, letterSpacing: 0.2 },
+    cardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 14,
+    },
+    cardTitle: {
+      fontSize: 15,
+      fontFamily: FONTS.BOLD_PRIMARY,
+      color: C.text,
+      marginBottom: 14,
+      letterSpacing: 0.2,
+    },
     nextActionCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        backgroundColor: C.primaryLight,
-        borderRadius: 18,
-        padding: 16,
-        borderWidth: 1,
-        borderColor: C.border,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: C.primaryLight,
+      borderRadius: 18,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: C.border,
     },
     nextActionIcon: {
-        width: 42,
-        height: 42,
-        borderRadius: 12,
-        backgroundColor: '#fff',
-        alignItems: 'center',
-        justifyContent: 'center',
+      width: 42,
+      height: 42,
+      borderRadius: 12,
+      backgroundColor: '#fff',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
-    nextActionTitle: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: C.text },
-    nextActionText: { fontSize: 12, fontFamily: FONTS.PRIMARY, color: C.textMid, lineHeight: 17, marginTop: 3 },
+    nextActionTitle: {
+      fontSize: 14,
+      fontFamily: FONTS.BOLD_PRIMARY,
+      color: C.text,
+    },
+    nextActionText: {
+      fontSize: 12,
+      fontFamily: FONTS.PRIMARY,
+      color: C.textMid,
+      lineHeight: 17,
+      marginTop: 3,
+    },
 
-    cancelledBox: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: C.dangerLight, borderRadius: 14, padding: 14 },
-    cancelledText: { flex: 1, fontSize: 13, color: C.danger, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
+    cancelledBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      backgroundColor: C.dangerLight,
+      borderRadius: 14,
+      padding: 14,
+    },
+    cancelledText: {
+      flex: 1,
+      fontSize: 13,
+      color: C.danger,
+      fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+    },
 
-    liveBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.successLight, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 10 },
-    liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: C.success },
-    liveBadgeText: { fontSize: 10, fontFamily: FONTS.BOLD_PRIMARY, color: C.success, letterSpacing: 0.5 },
+    liveBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      backgroundColor: C.successLight,
+      paddingHorizontal: 9,
+      paddingVertical: 4,
+      borderRadius: 10,
+    },
+    liveDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 4,
+      backgroundColor: C.success,
+    },
+    liveBadgeText: {
+      fontSize: 10,
+      fontFamily: FONTS.BOLD_PRIMARY,
+      color: C.success,
+      letterSpacing: 0.5,
+    },
     liveTrackingRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    liveTrackingMain: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: C.text },
+    liveTrackingMain: {
+      fontSize: 14,
+      fontFamily: FONTS.BOLD_PRIMARY,
+      color: C.text,
+    },
     liveTrackingSub: { fontSize: 12, color: C.textMid, marginTop: 2 },
 
     timeline: { paddingLeft: 4 },
     timelineRow: { flexDirection: 'row' },
     timelineLeft: { alignItems: 'center', width: 36, marginRight: 12 },
-    tlDot: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: C.border },
+    tlDot: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: '#F3F4F6',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1.5,
+      borderColor: C.border,
+    },
     tlDotDone: { backgroundColor: C.primaryLight, borderColor: C.primary },
     tlDotActive: {
-        width: 36, height: 36, borderRadius: 18, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center',
-        shadowColor: C.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 6,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: C.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: C.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.4,
+      shadowRadius: 8,
+      elevation: 6,
     },
-    tlLine: { width: 2, flex: 1, backgroundColor: C.border, marginVertical: 3, minHeight: 22 },
+    tlLine: {
+      width: 2,
+      flex: 1,
+      backgroundColor: C.border,
+      marginVertical: 3,
+      minHeight: 22,
+    },
     tlLineDone: { backgroundColor: C.primary },
     tlContent: { flex: 1, paddingTop: 6 },
     tlContentSpaced: { marginBottom: 18 },
-    tlLabel: { fontSize: 13, color: C.textLight, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
+    tlLabel: {
+      fontSize: 13,
+      color: C.textLight,
+      fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+    },
     tlLabelDone: { color: C.text, fontFamily: FONTS.BOLD_PRIMARY },
     tlTime: { fontSize: 11, color: C.textMid, marginTop: 2 },
-    tlActivePill: { marginTop: 5, alignSelf: 'flex-start', backgroundColor: C.primaryLight, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-    tlActivePillText: { color: C.primary, fontSize: 10, fontFamily: FONTS.BOLD_PRIMARY },
+    tlActivePill: {
+      marginTop: 5,
+      alignSelf: 'flex-start',
+      backgroundColor: C.primaryLight,
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+    },
+    tlActivePillText: {
+      color: C.primary,
+      fontSize: 10,
+      fontFamily: FONTS.BOLD_PRIMARY,
+    },
 
     routeWrap: { gap: 4 },
     routeNode: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-    routeDot: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
+    routeDot: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 2,
+    },
     routeInfo: { flex: 1 },
-    routeRole: { fontSize: 10, fontFamily: FONTS.BOLD_PRIMARY, color: C.primary, letterSpacing: 1, marginBottom: 2 },
+    routeRole: {
+      fontSize: 10,
+      fontFamily: FONTS.BOLD_PRIMARY,
+      color: C.primary,
+      letterSpacing: 1,
+      marginBottom: 2,
+    },
     routeName: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: C.text },
     routeAddr: { fontSize: 12, color: C.textMid, marginTop: 2, lineHeight: 17 },
-    routePhone: { fontSize: 12, color: C.primary, marginTop: 3, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
-    routeConnector: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingLeft: 16 },
+    routePhone: {
+      fontSize: 12,
+      color: C.primary,
+      marginTop: 3,
+      fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+    },
+    routeConnector: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 10,
+      paddingLeft: 16,
+    },
     routeConnLine: { flex: 1, height: 1.5, backgroundColor: C.border },
     routeArrowBadge: {
-        flexDirection: 'row', alignItems: 'center', gap: 5,
-        backgroundColor: C.primaryLight, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, marginHorizontal: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      backgroundColor: C.primaryLight,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 10,
+      marginHorizontal: 10,
     },
-    routeArrowText: { color: C.primary, fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY },
+    routeArrowText: {
+      color: C.primary,
+      fontSize: 11,
+      fontFamily: FONTS.BOLD_PRIMARY,
+    },
 
     packageGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-    packageItem: { width: '47%', backgroundColor: C.bg, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: C.border, gap: 4 },
-    pkgLabel: { fontSize: 10, color: C.textLight, fontFamily: FONTS.BOLD_PRIMARY, letterSpacing: 0.5, textTransform: 'uppercase' },
-    pkgValue: { fontSize: 14, color: C.text, fontFamily: FONTS.BOLD_PRIMARY, textTransform: 'capitalize' },
-
-    payRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 9 },
-    payLabel: { fontSize: 13, color: C.textMid, fontFamily: FONTS.MEDIUM_PRIMARY },
-    payValue: { fontSize: 13, color: C.text, fontFamily: FONTS.SEMI_BOLD_PRIMARY, textTransform: 'capitalize' },
-    payDivider: { height: 1.5, backgroundColor: C.border, marginVertical: 6 },
-    payTotalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 },
-    payTotalLabel: { fontSize: 15, color: C.text, fontFamily: FONTS.BOLD_PRIMARY },
-    payTotalValue: { fontSize: 18, color: C.primary, fontFamily: FONTS.BOLD_PRIMARY },
-    payNowBtn: {
-        marginTop: 14, backgroundColor: C.primary, borderRadius: 12,
-        paddingVertical: 12, alignItems: 'center', justifyContent: 'center',
+    packageItem: {
+      width: '47%',
+      backgroundColor: C.bg,
+      borderRadius: 14,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: C.border,
+      gap: 4,
     },
-    payNowBtnText: { color: '#fff', fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY },
-    viewReceiptRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14, alignSelf: 'center' },
-    viewReceiptText: { fontSize: 13, color: C.primary, fontFamily: FONTS.BOLD_PRIMARY },
+    pkgLabel: {
+      fontSize: 10,
+      color: C.textLight,
+      fontFamily: FONTS.BOLD_PRIMARY,
+      letterSpacing: 0.5,
+      textTransform: 'uppercase',
+    },
+    pkgValue: {
+      fontSize: 14,
+      color: C.text,
+      fontFamily: FONTS.BOLD_PRIMARY,
+      textTransform: 'capitalize',
+    },
+
+    payRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 9,
+    },
+    payLabel: {
+      fontSize: 13,
+      color: C.textMid,
+      fontFamily: FONTS.MEDIUM_PRIMARY,
+    },
+    payValue: {
+      fontSize: 13,
+      color: C.text,
+      fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+      textTransform: 'capitalize',
+    },
+    payDivider: { height: 1.5, backgroundColor: C.border, marginVertical: 6 },
+    payTotalRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingTop: 4,
+    },
+    payTotalLabel: {
+      fontSize: 15,
+      color: C.text,
+      fontFamily: FONTS.BOLD_PRIMARY,
+    },
+    payTotalValue: {
+      fontSize: 18,
+      color: C.primary,
+      fontFamily: FONTS.BOLD_PRIMARY,
+    },
+    payNowBtn: {
+      marginTop: 14,
+      backgroundColor: C.primary,
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    payNowBtnText: {
+      color: '#fff',
+      fontSize: 14,
+      fontFamily: FONTS.BOLD_PRIMARY,
+    },
+    viewReceiptRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginTop: 14,
+      alignSelf: 'center',
+    },
+    viewReceiptText: {
+      fontSize: 13,
+      color: C.primary,
+      fontFamily: FONTS.BOLD_PRIMARY,
+    },
 
     scheduleActionsRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
     scheduleActionBtn: {
-        flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-        borderWidth: 1.5, borderColor: C.primary, borderRadius: 12,
-        paddingVertical: 12,
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      borderWidth: 1.5,
+      borderColor: C.primary,
+      borderRadius: 12,
+      paddingVertical: 12,
     },
     scheduleActionBtnDanger: { borderColor: C.danger },
-    scheduleActionBtnPrimary: { backgroundColor: C.primary, borderColor: C.primary, marginTop: 16 },
-    scheduleActionBtnText: { fontSize: 13, color: C.primary, fontFamily: FONTS.BOLD_PRIMARY },
+    scheduleActionBtnPrimary: {
+      backgroundColor: C.primary,
+      borderColor: C.primary,
+      marginTop: 16,
+    },
+    scheduleActionBtnText: {
+      fontSize: 13,
+      color: C.primary,
+      fontFamily: FONTS.BOLD_PRIMARY,
+    },
     rescheduleModalContainer: { flex: 1, backgroundColor: C.bg },
     rescheduleModalHeader: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        padding: 16, borderBottomWidth: 1, borderBottomColor: C.border,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: C.border,
     },
-    payMethodPill: { backgroundColor: C.primaryLight, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
-    payMethodText: { color: C.primary, fontSize: 11, fontFamily: FONTS.BOLD_PRIMARY },
+    payMethodPill: {
+      backgroundColor: C.primaryLight,
+      borderRadius: 10,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+    },
+    payMethodText: {
+      color: C.primary,
+      fontSize: 11,
+      fontFamily: FONTS.BOLD_PRIMARY,
+    },
 
     actionsGrid: { flexDirection: 'row', padding: 16, gap: 10 },
     actionBtn: { flex: 1, alignItems: 'center', gap: 8 },
     actionBtnGrad: {
-        width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
-        shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4,
+      width: 52,
+      height: 52,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 4,
     },
-    actionBtnLabel: { fontSize: 10, color: C.textMid, fontFamily: FONTS.BOLD_PRIMARY, textAlign: 'center' },
+    actionBtnLabel: {
+      fontSize: 10,
+      color: C.textMid,
+      fontFamily: FONTS.BOLD_PRIMARY,
+      textAlign: 'center',
+    },
 
-    podOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center' },
+    podOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.92)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     podImage: { width: '100%', height: '80%' },
     podCloseBtn: {
-        position: 'absolute', top: Platform.OS === 'ios' ? 56 : 24, right: 20, zIndex: 1,
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center',
+      position: 'absolute',
+      top: Platform.OS === 'ios' ? 56 : 24,
+      right: 20,
+      zIndex: 1,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
-});
+  });

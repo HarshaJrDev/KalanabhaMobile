@@ -1,16 +1,24 @@
 // SettingsScreen.tsx — Driver
 //
-// Minimal real settings screen (replacing the Profile menu's "Settings"
-// no-op): notification permission status (backed by the same
+// Real settings screen (replacing the Profile menu's "Settings" no-op):
+// notification permission status (backed by the same
 // @react-native-firebase/messaging used by utils/fcm.ts's registerFCMToken),
-// app version (from package.json — no native DeviceInfo dependency in this
-// project), and logout. No new backend endpoints — everything here is
-// either on-device or reuses the existing POST /auth/logout flow.
-import React, { useCallback, useEffect, useState } from 'react';
+// language, offline maps, legal, delete-account request, app version, and
+// logout. No new backend endpoints — everything here is either on-device
+// or reuses existing flows.
+//
+// Re-themed (was hardcoded light-mode hex colors, doesn't repaint in dark
+// mode) and grouped into sections, matching the customer SettingsScreen's
+// layout exactly — was the one piece of driver/customer parity still
+// missing after that screen's own redesign. Added Offline Maps here too
+// (previously customer-only, despite a driver relying on the live-
+// tracking map just as much, arguably more, mid-trip).
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Switch } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getApp } from '@react-native-firebase/app';
 import { getMessaging, hasPermission, AuthorizationStatus } from '@react-native-firebase/messaging';
-import { ChevronLeft, ChevronRight, Globe, LogOut } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Bell, Globe, Map, Gift, Info, ShieldCheck, FileText, UserX, LogOut } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useLogout } from '@hooks/useLogout';
 import { useMe } from '@hooks/useMe';
@@ -19,21 +27,24 @@ import { registerFCMToken } from '@utils/cm';
 import { useAppTheme } from '@theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { confirmDialog } from '@ui/alert/confirmStore';
+import { getOfflineMapsEnabled, setOfflineMapsEnabled } from '@services/storage';
 import { LanguagePickerModal } from '@components/LanguagePickerModal';
 import { LANGUAGE_LABELS, type SupportedLanguage } from '../../i18n';
-import FONTS from '@utils/fonts';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version: appVersion } = require('../../../package.json');
 
 const SettingsScreen = () => {
     const navigation = useNavigation();
     const { t, i18n } = useTranslation();
-    const { colors } = useAppTheme();
+    const { colors, fonts } = useAppTheme();
     const logoutMutation = useLogout();
     const { data: me } = useMe();
     const { mutate: updatePrefs } = useUpdateNotificationPreferences();
     const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
+    const [offlineMaps, setOfflineMaps] = useState(() => getOfflineMapsEnabled());
     const [langVisible, setLangVisible] = useState(false);
+    const insets = useSafeAreaInsets();
+    const styles = useMemo(() => makeStyles(colors, fonts, insets), [colors, fonts, insets]);
 
     // Modular API — the namespaced `messaging()` call style is deprecated
     // as of RNFirebase v22 and logs a console warning on every use.
@@ -70,6 +81,11 @@ const SettingsScreen = () => {
         [refreshPermission, t],
     );
 
+    const onToggleOfflineMaps = useCallback((value: boolean) => {
+        setOfflineMaps(value);
+        setOfflineMapsEnabled(value);
+    }, []);
+
     const logout = useCallback(async () => {
         const confirmed = await confirmDialog({
             title: t('common.logout'),
@@ -100,72 +116,103 @@ const SettingsScreen = () => {
         <View style={styles.container}>
             <View style={styles.header}>
                 <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-                    <ChevronLeft color="#111" size={24} />
+                    <ChevronLeft color={colors.TEXT_PRIMARY} size={24} />
                 </Pressable>
                 <Text style={styles.headerTitle}>{t('settings.title')}</Text>
                 <View style={{ width: 24 }} />
             </View>
 
+            <Text style={styles.sectionLabel}>{t('settings.notificationsSection')}</Text>
             <View style={styles.row}>
-                <Text style={styles.rowLabel}>{t('settings.pushNotifications')}</Text>
+                <View style={styles.rowLeft}>
+                    <Bell size={17} color={colors.TEXT_SECONDARY} />
+                    <Text style={styles.rowLabel}>{t('settings.pushNotifications')}</Text>
+                </View>
                 <Switch
                     value={!!notificationsEnabled}
                     onValueChange={onToggleNotifications}
                     disabled={notificationsEnabled === null}
                 />
             </View>
-
             <View style={styles.row}>
-                <Text style={styles.rowLabel}>{t('settings.notifyOrderUpdates')}</Text>
+                <Text style={styles.rowLabelIndented}>{t('settings.notifyOrderUpdates')}</Text>
                 <Switch
                     value={me?.notifyOrderUpdates ?? true}
                     onValueChange={(v) => updatePrefs({ notifyOrderUpdates: v })}
                 />
             </View>
             <View style={styles.row}>
-                <Text style={styles.rowLabel}>{t('settings.notifyPromotions')}</Text>
+                <Text style={styles.rowLabelIndented}>{t('settings.notifyPromotions')}</Text>
                 <Switch
                     value={me?.notifyPromotions ?? true}
                     onValueChange={(v) => updatePrefs({ notifyPromotions: v })}
                 />
             </View>
             <View style={styles.row}>
-                <Text style={styles.rowLabel}>{t('settings.notifyReminders')}</Text>
+                <Text style={styles.rowLabelIndented}>{t('settings.notifyReminders')}</Text>
                 <Switch
                     value={me?.notifyReminders ?? true}
                     onValueChange={(v) => updatePrefs({ notifyReminders: v })}
                 />
             </View>
 
+            <Text style={styles.sectionLabel}>{t('settings.preferencesSection')}</Text>
             <Pressable style={styles.row} onPress={() => setLangVisible(true)}>
-                <Text style={styles.rowLabel}>{t('profile.language')}</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={styles.rowLeft}>
+                    <Globe size={17} color={colors.TEXT_SECONDARY} />
+                    <Text style={styles.rowLabel}>{t('profile.language')}</Text>
+                </View>
+                <View style={styles.rowRight}>
                     <Text style={styles.rowValue}>{LANGUAGE_LABELS[i18n.language as SupportedLanguage] ?? LANGUAGE_LABELS.en}</Text>
                     <ChevronRight size={16} color={colors.GRAY} />
                 </View>
             </Pressable>
+            <View style={styles.row}>
+                <View style={styles.rowLeft}>
+                    <Map size={17} color={colors.TEXT_SECONDARY} />
+                    <View>
+                        <Text style={styles.rowLabel}>{t('settings.offlineMaps')}</Text>
+                        <Text style={styles.rowHint}>{t('settings.offlineMapsHint')}</Text>
+                    </View>
+                </View>
+                <Switch value={offlineMaps} onValueChange={onToggleOfflineMaps} />
+            </View>
 
+            <Text style={styles.sectionLabel}>{t('settings.legalSection')}</Text>
             <Pressable
                 style={styles.row}
                 onPress={() => (navigation as any).navigate('WebView', { url: 'https://kalanabhalogistics.com/privacy', title: t('settings.privacyPolicy') })}
             >
-                <Text style={styles.rowLabel}>{t('settings.privacyPolicy')}</Text>
+                <View style={styles.rowLeft}>
+                    <ShieldCheck size={17} color={colors.TEXT_SECONDARY} />
+                    <Text style={styles.rowLabel}>{t('settings.privacyPolicy')}</Text>
+                </View>
                 <ChevronRight size={16} color={colors.GRAY} />
             </Pressable>
             <Pressable
                 style={styles.row}
                 onPress={() => (navigation as any).navigate('WebView', { url: 'https://kalanabhalogistics.com/terms', title: t('settings.termsOfService') })}
             >
-                <Text style={styles.rowLabel}>{t('settings.termsOfService')}</Text>
+                <View style={styles.rowLeft}>
+                    <FileText size={17} color={colors.TEXT_SECONDARY} />
+                    <Text style={styles.rowLabel}>{t('settings.termsOfService')}</Text>
+                </View>
                 <ChevronRight size={16} color={colors.GRAY} />
             </Pressable>
             <Pressable style={styles.row} onPress={requestDeleteAccount}>
-                <Text style={[styles.rowLabel, { color: colors.ERROR }]}>{t('settings.deleteAccount')}</Text>
+                <View style={styles.rowLeft}>
+                    <UserX size={17} color={colors.ERROR} />
+                    <Text style={[styles.rowLabel, { color: colors.ERROR }]}>{t('settings.deleteAccount')}</Text>
+                </View>
                 <ChevronRight size={16} color={colors.GRAY} />
             </Pressable>
 
+            <Text style={styles.sectionLabel}>{t('settings.aboutSection')}</Text>
             <View style={styles.row}>
-                <Text style={styles.rowLabel}>{t('settings.appVersion')}</Text>
+                <View style={styles.rowLeft}>
+                    <Info size={17} color={colors.TEXT_SECONDARY} />
+                    <Text style={styles.rowLabel}>{t('settings.appVersion')}</Text>
+                </View>
                 <Text style={styles.rowValue}>{appVersion}</Text>
             </View>
 
@@ -181,39 +228,55 @@ const SettingsScreen = () => {
 
 export default SettingsScreen;
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F7F7F7' },
+const makeStyles = (
+    colors: ReturnType<typeof useAppTheme>['colors'],
+    fonts: ReturnType<typeof useAppTheme>['fonts'],
+    insets: { top: number },
+) => StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.BACKGROUND },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 16,
-        backgroundColor: '#FFF',
+        paddingHorizontal: 16,
+        paddingTop: insets.top + 16,
+        paddingBottom: 16,
+        backgroundColor: colors.SURFACE,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#EEE',
+        borderBottomColor: colors.BORDER,
     },
-    headerTitle: { fontSize: 16, fontFamily: FONTS.BOLD_PRIMARY },
+    headerTitle: { fontSize: 16, fontFamily: fonts.BOLD_PRIMARY, color: colors.TEXT_PRIMARY },
+    sectionLabel: {
+        fontSize: 11.5, fontFamily: fonts.BOLD_PRIMARY, color: colors.TEXT_SECONDARY,
+        textTransform: 'uppercase', letterSpacing: 0.4,
+        paddingHorizontal: 16, marginTop: 20, marginBottom: 6,
+    },
     row: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#FFF',
+        backgroundColor: colors.SURFACE,
         paddingHorizontal: 16,
-        paddingVertical: 16,
+        paddingVertical: 14,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#EEE',
+        borderBottomColor: colors.BORDER,
     },
-    rowLabel: { fontSize: 15, fontFamily: FONTS.MEDIUM_PRIMARY, color: '#1F2937' },
-    rowValue: { fontSize: 15, fontFamily: FONTS.PRIMARY, color: '#666' },
+    rowLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flexShrink: 1 },
+    rowRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    rowLabel: { fontSize: 14.5, fontFamily: fonts.MEDIUM_PRIMARY, color: colors.TEXT_PRIMARY },
+    rowLabelIndented: { fontSize: 13.5, fontFamily: fonts.PRIMARY, color: colors.TEXT_SECONDARY, marginLeft: 29 },
+    rowHint: { fontSize: 11, fontFamily: fonts.PRIMARY, color: colors.TEXT_SECONDARY, marginTop: 1, maxWidth: 220 },
+    rowValue: { fontSize: 13.5, fontFamily: fonts.PRIMARY, color: colors.TEXT_SECONDARY },
     logout: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
         margin: 16,
-        backgroundColor: '#FF3B30',
+        marginTop: 28,
+        backgroundColor: colors.ERROR,
         padding: 14,
         borderRadius: 12,
     },
-    logoutText: { color: '#FFF', fontFamily: FONTS.BOLD_PRIMARY },
+    logoutText: { color: '#FFF', fontFamily: fonts.BOLD_PRIMARY, fontSize: 14 },
 });
