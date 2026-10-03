@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,6 @@ import {
   Platform,
   FlatList,
   Pressable,
-  Dimensions,
   TextInput,
   Modal,
 } from 'react-native';
@@ -19,30 +18,23 @@ import { EmptyState } from '@components/EmptyState';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useMyShipments, useCancelShipment } from '@features/shipments/hooks';
-import { getPodPdfBase64 } from '@features/shipments/api/shipments.api';
+import { useMyShipments, useCancelShipment, useShipmentPodPdf } from '@features/shipments/hooks';
 import Share from 'react-native-share';
 import { normalizeError } from '@utils/error';
 import type { Shipment as MyShipment } from '@shipment/types';
 import Animated, {
   FadeInDown,
-  FadeInUp,
-  ZoomIn,
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
-  interpolate,
-  Extrapolate,
 } from 'react-native-reanimated';
 import {
-  MapPin,
   Truck,
   Clock,
   AlertCircle,
   CheckCircle2,
   Package,
-  User,
   Phone,
   Zap,
   List,
@@ -58,7 +50,6 @@ import {
   Calendar,
   Check,
   Hourglass,
-  Weight,
   Search,
   SlidersHorizontal,
   Copy,
@@ -74,13 +65,6 @@ import FONTS from '@utils/fonts';
 import { useAppTheme } from '@theme/ThemeContext';
 import { showToast } from '@ui/alert/toastStore';
 import { useTabBarContentPadding } from '../navigation/useTabBarStyle';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-
-
-
-
 
 const makeC = (BRAND: ReturnType<typeof useAppTheme>['colors']) => ({
   primary: BRAND.PRIMARY,
@@ -244,22 +228,22 @@ const ShipmentScreen = () => {
   useEffect(() => {
     headerScale.value = withSpring(1, { damping: 12, mass: 1 });
     fadeOpacity.value = withTiming(1, { duration: 600 });
-  }, []);
+  }, [fadeOpacity, headerScale]);
 
   
-  const animateList = () => {
+  const animateList = useCallback(() => {
     listSlide.value = 20;
     listFade.value = 0;
     listSlide.value = withSpring(0, { damping: 10, mass: 1 });
     listFade.value = withTiming(1, { duration: 400 });
-  };
+  }, [listFade, listSlide]);
 
   
   useEffect(() => {
     if (!loading) {
       animateList();
     }
-  }, [loading, shipments]);
+  }, [animateList, loading, shipments]);
 
   
   const handleTabChange = (key: string) => {
@@ -535,6 +519,7 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const [downloadingPod, setDownloadingPod] = useState(false);
+  const { mutateAsync: downloadPodPdf } = useShipmentPodPdf();
   const cfg = STATUS[item.status] || STATUS.pending;
   const VehicleIcon = VEHICLE_ICONS[item.vehicleType] || Truck;
   const CategoryIcon = CATEGORY_ICONS[item.package?.category] || Package;
@@ -816,7 +801,7 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({
                   onPress={async () => {
                     setDownloadingPod(true);
                     try {
-                      const base64 = await getPodPdfBase64(item.id);
+                      const base64 = await downloadPodPdf(item.id);
                       await Share.open({
                         url: `data:application/pdf;base64,${base64}`,
                         type: 'application/pdf',

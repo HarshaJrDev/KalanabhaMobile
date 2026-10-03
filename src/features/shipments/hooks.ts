@@ -119,14 +119,32 @@ export const useQuoteShipment = () => {
     });
 };
 
+type CreateShipmentMutationVariables =
+    | CreateShipmentPayload
+    | {
+        payload: CreateShipmentPayload;
+        idempotencyKey?: string;
+    };
+
 export const useCreateShipment = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (payload: CreateShipmentPayload) => shipmentsApi.createShipment(payload),
+        mutationFn: (variables: CreateShipmentMutationVariables) => {
+            if ('payload' in variables) {
+                return shipmentsApi.createShipment(variables.payload, variables.idempotencyKey);
+            }
+            return shipmentsApi.createShipment(variables);
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: shipmentKeys.mine() });
             queryClient.invalidateQueries({ queryKey: shipmentKeys.history() });
         },
+    });
+};
+
+export const useShipmentPodPdf = () => {
+    return useMutation({
+        mutationFn: (shipmentId: string) => shipmentsApi.getPodPdfBase64(shipmentId),
     });
 };
 

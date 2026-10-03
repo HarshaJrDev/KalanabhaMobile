@@ -19,7 +19,6 @@ import {
   Switch,
   Modal,
   ActivityIndicator,
-  Pressable,
   Image,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
@@ -30,14 +29,12 @@ import {
   Phone,
   MapPin,
   Mail,
-  Package as PackageIcon,
   Weight,
   Ruler,
   AlertTriangle,
   FileText,
   Truck,
   CheckCircle,
-  Edit3,
   ArrowRight,
   ArrowLeft,
   Navigation,
@@ -79,8 +76,7 @@ import {
   type KnownCoords,
 } from '@location/useFareEstimate';
 import { forwardGeocode } from '@services/location';
-import { createShipment } from '@features/shipments/api/shipments.api';
-import { useMyShipmentHistory } from '@features/shipments/hooks';
+import { useCreateShipment, useMyShipmentHistory } from '@features/shipments/hooks';
 import {
   useValidatePromoCode,
   useActivePromoCodes,
@@ -113,13 +109,6 @@ const makeOrderColors = (BRAND: ReturnType<typeof useAppTheme>['colors']) => ({
 type OrderColors = ReturnType<typeof makeOrderColors>;
 
 const RADIUS = { sm: 8, md: 12, lg: 16, xl: 22, full: 999 };
-
-const isSend = Send;
-const isPackage = Package;
-const isCircleCheck = CircleCheck;
-const isUser = User;
-
-
 
 type SenderForm = {
   name: string;
@@ -1770,7 +1759,7 @@ const StepOrderDetails = ({
       onChange('vehicleType', activeVehicleConfigs[0].name.toLowerCase());
     }
     
-  }, [activeVehicleConfigs]);
+  }, [activeVehicleConfigs, data.vehicleType, onChange]);
   const [stopDraftPlace, setStopDraftPlace] = useState<ServiceArea | null>(
     null,
   );
@@ -2870,7 +2859,7 @@ const SuccessModal = ({
         }),
       ]).start();
     }
-  }, [visible]);
+  }, [fadeAnim, scaleAnim, visible]);
 
   return (
     <Modal visible={visible} transparent animationType="fade">
@@ -3237,6 +3226,7 @@ const NewOrder = () => {
   const submitIdempotencyKeyRef = useRef<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const { mutateAsync: payForShipment } = usePayForShipment();
+  const { mutateAsync: createShipment } = useCreateShipment();
 
   const slideAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -3317,7 +3307,7 @@ const NewOrder = () => {
       }
     }
     
-  }, [activeAreas.length]);
+  }, [activeAreas, dropPlace, pickupPlace, prefill?.drop, prefill?.pickup]);
 
   
   
@@ -3524,8 +3514,8 @@ const NewOrder = () => {
 
       const isHouseShifting = category === 'HOUSE_SHIFTING';
 
-      const shipment = await createShipment(
-        {
+      const shipment = await createShipment({
+        payload: {
           
           
           
@@ -3584,7 +3574,7 @@ const NewOrder = () => {
               : undefined,
         },
         idempotencyKey,
-      );
+      });
 
       submitIdempotencyKeyRef.current = null;
       setTrackingId(shipment.trackingId);
@@ -3627,6 +3617,7 @@ const NewOrder = () => {
     fareEstimate,
     category,
     t,
+    createShipment,
     payForShipment,
   ]);
 

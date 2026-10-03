@@ -11,6 +11,11 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSearchingShipments, useMyShipmentsAsDriver, useAcceptShipment, useCompleteShipmentStop } from '@features/shipments/hooks';
+import {
+    toLogisticsItem,
+    useDriverShipmentActions,
+    type LogisticsItem,
+} from '@features/shipments/logistics';
 import Animated, {
     FadeIn,
     SlideInDown,
@@ -20,7 +25,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
 import { DriverHeader } from '@components/DriverHeader';
-import { LogisticsCardList, LogisticsItem, useDriverActions } from '@components/LogisticsCardList';
+import { LogisticsCardList } from '@components/LogisticsCardList';
 import {
     AlertCircle,
     RefreshCw,
@@ -69,28 +74,6 @@ interface HomeScreenProps { }
 
 
 
-const makeToLogisticsItem = (t: (key: string) => string) => (s: import('@shipment/types').Shipment): LogisticsItem => ({
-    id: s.id,
-    trackingId: s.trackingId,
-    goodsType: s.goodsType,
-    weightKg: s.weightKg,
-    pickup: s.pickup,
-    drop: s.drop,
-    price: s.price,
-    distanceKm: s.distanceKm,
-    status: s.status,
-    createdAt: s.createdAt,
-    driverName: s.dispatch?.driverName,
-    driverRating: s.dispatch?.driverRating,
-    driverId: s.dispatch?.driverId ?? '',
-    driverPhone: s.dispatch?.driverPhone,
-    customerName: s.sender?.name ?? t('driverHome.customerFallback'),
-    customerPhone: s.sender?.phone,
-    category: s.category,
-    helpersCount: s.helpersCount,
-    deliveryInstructions: s.deliveryInstructions,
-});
-
 const HomeScreen: React.FC<HomeScreenProps> = () => {
     
     const navigation = useNavigation();
@@ -112,7 +95,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
         () => myShipments?.find((s) => s.status === 'accepted' || s.status === 'in_transit'),
         [myShipments],
     );
-    const driverActions = useDriverActions();
+    const driverActions = useDriverShipmentActions();
     
     
     
@@ -123,7 +106,10 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     );
 
     const shipments = useMemo<LogisticsItem[]>(
-        () => (searchingShipments ?? []).map(makeToLogisticsItem(t)),
+        () => (searchingShipments ?? []).map((shipment) => toLogisticsItem(
+            shipment,
+            t('driverHome.customerFallback'),
+        )),
         [searchingShipments, t],
     );
     const error = shipmentsError ? shipmentsError.message : null;
@@ -175,7 +161,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
             ensureServiceAreaTilesCached(active);
         }
         
-    }, [driverServiceAreas?.length]);
+    }, [driverServiceAreas]);
 
     
     
@@ -259,7 +245,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
         contentOpacity.value = withSpring(1, { damping: 10, mass: 1 });
         
         
-    }, []);
+    }, [contentOpacity, headerScale]);
 
 
 

@@ -13,7 +13,7 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, StatusBar } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { X, Headphones, CheckCircle2, MapPin, Star, Receipt, ArrowRight } from 'lucide-react-native';
-import { useShipment } from '@features/shipments/hooks';
+import { useShipment, useShipmentPodPdf } from '@features/shipments/hooks';
 import { useShipmentRating, useSubmitRating } from '@features/ratings/hooks';
 import { RATING_TAGS, type RatingTag } from '@features/ratings/types';
 import { useAppTheme } from '@theme/ThemeContext';
@@ -21,7 +21,6 @@ import { showToast } from '@ui/alert/toastStore';
 import { useTranslation } from 'react-i18next';
 import AppButton from '../../components/ui/AppButton';
 import { SkeletonDetail } from '@components/ui';
-import { getPodPdfBase64 } from '@features/shipments/api/shipments.api';
 import Share from 'react-native-share';
 import { normalizeError } from '@utils/error';
 
@@ -41,6 +40,7 @@ const RatingScreen = () => {
     const shipmentId: string | undefined = route.params?.shipmentId;
 
     const { data: shipment, isLoading } = useShipment(shipmentId);
+    const { mutateAsync: downloadPodPdf } = useShipmentPodPdf();
     const { data: existingRating } = useShipmentRating(shipmentId);
     const { mutate: submitRating, isPending } = useSubmitRating(shipmentId ?? '');
 
@@ -248,7 +248,7 @@ const RatingScreen = () => {
                             if (!shipmentId) return;
                             setDownloadingInvoice(true);
                             try {
-                                const base64 = await getPodPdfBase64(shipmentId);
+                                const base64 = await downloadPodPdf(shipmentId);
                                 await Share.open({
                                     url: `data:application/pdf;base64,${base64}`,
                                     type: 'application/pdf',

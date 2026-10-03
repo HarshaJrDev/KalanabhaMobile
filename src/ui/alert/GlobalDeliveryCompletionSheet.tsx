@@ -18,12 +18,7 @@ import { Modal, View, Text, StyleSheet, TextInput, Pressable, ActivityIndicator 
 import { CheckCircle2, Circle, X } from 'lucide-react-native';
 import { launchCamera } from 'react-native-image-picker';
 import { useAppTheme } from '@theme/ThemeContext';
-import {
-    verifyDeliveryOtp,
-    uploadShipmentPod,
-    saveDeliverySignature,
-    completeDelivery,
-} from '@features/shipments/api/shipments.api';
+import { useShipmentDeliveryCompletionActions } from '@features/shipments/logistics';
 import { SignaturePad, SignatureClearButton, type Point } from '@components/SignaturePad';
 import { showToast } from './toastStore';
 import { useDeliveryCompletionStore } from './deliveryCompletionStore';
@@ -39,6 +34,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
     const open = useDeliveryCompletionStore((s) => s.open);
     const shipmentId = useDeliveryCompletionStore((s) => s.shipmentId);
     const resolve = useDeliveryCompletionStore((s) => s.resolve);
+    const deliveryActions = useShipmentDeliveryCompletionActions();
 
     const [otp, setOtp] = useState('');
     const [otpVerified, setOtpVerified] = useState(false);
@@ -90,7 +86,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
         setVerifyingOtp(true);
         setOtpError(null);
         try {
-            await verifyDeliveryOtp(shipmentId, otp);
+            await deliveryActions.verifyOtp(shipmentId, otp);
             setOtpVerified(true);
         } catch (err) {
             setOtpError(normalizeError(err) || t('deliveryCompletion.incorrectOtp'));
@@ -130,7 +126,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
             }
             setUploadingPhoto(true);
             try {
-                await uploadShipmentPod(shipmentId, asset.uri, asset.fileName ?? 'proof-of-delivery.jpg', asset.type ?? 'image/jpeg');
+                await deliveryActions.uploadPod(shipmentId, asset.uri, asset.fileName ?? 'proof-of-delivery.jpg', asset.type ?? 'image/jpeg');
                 setPhotoUploaded(true);
             } catch (err) {
                 showToast(normalizeError(err) || t('deliveryCompletion.photoUploadFailed'), 'error');
@@ -149,7 +145,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
         }
         setSavingSignature(true);
         try {
-            await saveDeliverySignature(shipmentId, current);
+            await deliveryActions.saveSignature(shipmentId, current);
             setSignatureCaptured(true);
         } catch (err) {
             showToast(normalizeError(err) || t('deliveryCompletion.couldNotSaveSignature'), 'error');
@@ -164,7 +160,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
         if (!shipmentId || !canComplete) return;
         setCompleting(true);
         try {
-            await completeDelivery(shipmentId, otp, packageCondition, deliveryNote.trim() || undefined);
+            await deliveryActions.complete(shipmentId, otp, packageCondition, deliveryNote.trim() || undefined);
             showToast(t('deliveryCompletion.deliveryCompleted'), 'success');
             close(true);
         } catch (err) {
@@ -199,8 +195,8 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
                                     <TextInput
                                         style={styles.otpInput}
                                         value={otp}
-                                        onChangeText={(t) => {
-                                            setOtp(t.replace(/[^0-9]/g, '').slice(0, 4));
+                                        onChangeText={(text) => {
+                                            setOtp(text.replace(/[^0-9]/g, '').slice(0, 4));
                                             setOtpError(null);
                                         }}
                                         keyboardType="number-pad"

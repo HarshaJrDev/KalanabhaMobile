@@ -34,73 +34,18 @@ import {
 import { ScrollView, TextInput } from 'react-native-gesture-handler';
 import { useAuthStore } from '@features/store/authStore';
 import {
-    acceptShipment as acceptShipmentRequest,
-    cancelShipment as cancelShipmentRequest,
-    driverCancelShipment as driverCancelShipmentRequest,
-    failDeliveryShipment,
-    startDelivery as startDeliveryRequest,
-    uploadPickupProof,
-    arriveAtShipment,
-} from '@features/shipments/api/shipments.api';
-import { launchCamera } from 'react-native-image-picker';
-import Geolocation from 'react-native-geolocation-service';
-import { ensureCameraPermission } from '@utils/cameraPermission';
-import { ensureLocationPermission } from '@utils/locationPermission';
+    useDriverShipmentActions,
+    useUserRole,
+    type LogisticsItem,
+} from '@features/shipments/logistics';
 import { useChatMessages, useChatSocket, useSendMessage } from '@features/chat/hooks';
-import { normalizeError } from '@utils/error';
 import { useTabBarContentPadding } from '../screens/navigation/useTabBarStyle';
 import { showToast } from '@ui/alert/toastStore';
-import { confirmDialog } from '@ui/alert/confirmStore';
 import { WEBSITE_URL } from '@config/env';
-import { requestCompleteDelivery } from '@ui/alert/deliveryCompletionStore';
-import { requestOtp } from '@ui/alert/deliveryOtpStore';
 import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 
 type LogisticsStatus = 'scheduled' | 'searching' | 'accepted' | 'in_transit' | 'delivered' | 'cancelled' | 'failed';
-type UserRole = 'customer' | 'driver';
-
-interface Location {
-    address: string;
-    lat: number;
-    lng: number;
-}
-
-export interface LogisticsItem {
-    id: string;
-    trackingId: string;
-    goodsType: string;
-    weightKg?: number;
-    pickup: Location;
-    drop: Location;
-    price: number;
-    distanceKm: number;
-    status: LogisticsStatus;
-    createdAt: string;
-    driverName?: string;
-    driverRating?: number;
-    driverId: string;
-    driverPhone?: string;
-    etaMinutes?: number;
-    expiresAt?: string;
-    customerName?: string;
-    customerPhone?: string;
-    
-    category?: string;
-    helpersCount?: number;
-    
-    
-    arrivalState?: 'NONE' | 'EN_ROUTE_TO_PICKUP' | 'ARRIVED_AT_PICKUP' | 'EN_ROUTE_TO_DROP' | 'ARRIVED_AT_DROP';
-    
-    deliveryInstructions?: string | null;
-}
-
-
-
-const useUserRole = (): UserRole => {
-    const role = useAuthStore((s) => s.user?.role);
-    return role === 'DRIVER' ? 'driver' : 'customer';
-};
 
 
 
@@ -137,179 +82,6 @@ const ActionButton: React.FC<{
 
 
 
-const useCustomerActions = () => {
-    const { t } = useTranslation();
-    const onCancel = useCallback(async (id: string) => {
-        try {
-            await cancelShipmentRequest(id);
-            showToast(t('logisticsCard.orderCancelled'), 'success');
-        } catch (err) {
-            showToast(normalizeError(err), 'error');
-        }
-    }, [t]);
-
-    return { onCancel };
-};
-
-
-
-
-
-
-
-
-
-export const useDriverActions = () => {
-    const { t } = useTranslation();
-    const onAccept = useCallback(async (id: string) => {
-        try {
-            await acceptShipmentRequest(id);
-            showToast(t('logisticsCard.orderAccepted'), 'success');
-        } catch (err) {
-            showToast(normalizeError(err) || t('logisticsCard.orderAlreadyTaken'), 'error');
-        }
-    }, [t]);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    const onArrive = useCallback((id: string, coords?: { latitude: number; longitude: number }) => {
-        const submit = (latitude: number, longitude: number) => {
-            arriveAtShipment(id, latitude, longitude)
-                .then(() => showToast(t('logisticsCard.arrivalRecorded'), 'success'))
-                .catch((err) => showToast(normalizeError(err) || t('logisticsCard.couldNotRecordArrival'), 'error'));
-        };
-
-        if (coords) {
-            submit(coords.latitude, coords.longitude);
-            return;
-        }
-
-        (async () => {
-            const granted = await ensureLocationPermission();
-            if (!granted) {
-                showToast(t('logisticsCard.couldNotGetLocation'), 'error');
-                return;
-            }
-            Geolocation.getCurrentPosition(
-                (position) => submit(position.coords.latitude, position.coords.longitude),
-                () => showToast(t('logisticsCard.couldNotGetLocation'), 'error'),
-                { enableHighAccuracy: true, timeout: 15000 },
-            );
-        })();
-    }, [t]);
-
-    
-    
-    
-    
-    
-    
-    const onStartDelivery = useCallback((id: string) => {
-        (async () => {
-            const otp = await requestOtp('pickup');
-            if (!otp) return;
-
-            
-            
-            
-            
-            const hasCameraPermission = await ensureCameraPermission();
-            if (!hasCameraPermission) {
-                showToast(t('logisticsCard.cameraPermissionPickup'), 'error');
-                return;
-            }
-
-            launchCamera({ mediaType: 'photo', quality: 0.8, saveToPhotos: false }, async (response) => {
-                if (response.didCancel) return;
-                const asset = response.assets?.[0];
-                if (response.errorCode || !asset?.uri) {
-                    
-                    
-                    
-                    if (__DEV__) console.warn('[onStartDelivery] camera error', response.errorCode, response.errorMessage);
-                    showToast(
-                        response.errorCode ? t('logisticsCard.couldNotCapturePhoto', { reason: response.errorMessage ?? response.errorCode }) : t('logisticsCard.couldNotCapturePhotoRetry'),
-                        'error',
-                    );
-                    return;
-                }
-
-                try {
-                    await uploadPickupProof(id, asset.uri, asset.fileName ?? 'pickup-proof.jpg', asset.type ?? 'image/jpeg');
-                } catch (err) {
-                    showToast(normalizeError(err) || t('logisticsCard.pickupProofUploadFailed'), 'error');
-                    return;
-                }
-
-                try {
-                    await startDeliveryRequest(id, otp);
-                    showToast(t('logisticsCard.deliveryInProgress'), 'success');
-                } catch (err) {
-                    showToast(normalizeError(err) || t('logisticsCard.incorrectOtpOrFailed'), 'error');
-                }
-            });
-        })();
-    }, [t]);
-
-    
-    
-    
-    
-    
-    const onCompleteDelivery = useCallback((id: string) => {
-        requestCompleteDelivery(id).then((completed) => {
-            if (completed) showToast(t('logisticsCard.deliveryCompleted'), 'success');
-        });
-    }, [t]);
-
-    
-    
-    
-    
-    
-    
-    
-    const onDriverCancel = useCallback(async (id: string) => {
-        const confirmed = await confirmDialog({
-            title: t('logisticsCard.driverCancelTitle'),
-            message: t('logisticsCard.driverCancelConfirm'),
-            confirmText: t('logisticsCard.driverCancelConfirmBtn'),
-            destructive: true,
-        });
-        if (!confirmed) return;
-
-        try {
-            await driverCancelShipmentRequest(id);
-            showToast(t('logisticsCard.driverCancelled'), 'success');
-        } catch (err) {
-            showToast(normalizeError(err), 'error');
-        }
-    }, [t]);
-
-    
-    
-    
-    
-    const onFailDelivery = useCallback(async (id: string, reason: 'CUSTOMER_UNREACHABLE' | 'WRONG_ADDRESS' | 'REFUSED' | 'OTHER', note?: string) => {
-        try {
-            await failDeliveryShipment(id, reason, note);
-            showToast(t('logisticsCard.deliveryFailedRecorded'), 'info');
-        } catch (err) {
-            showToast(normalizeError(err), 'error');
-        }
-    }, [t]);
-
-    return { onAccept, onArrive, onStartDelivery, onCompleteDelivery, onDriverCancel, onFailDelivery };
-};
-
 const getStatusColor = (status: LogisticsStatus): string => {
     const colors: Record<LogisticsStatus, string> = {
         scheduled: '#8B5CF6',
@@ -340,9 +112,8 @@ const LogisticsCard: React.FC<{
     item: LogisticsItem;
     index: number;
     isDriver: boolean;
-    customerActions: ReturnType<typeof useCustomerActions>;
-    driverActions: ReturnType<typeof useDriverActions>;
-}> = memo(({ item, index, isDriver, customerActions: _customerActions, driverActions }) => {
+    driverActions: ReturnType<typeof useDriverShipmentActions>;
+}> = memo(({ item, index, isDriver, driverActions }) => {
     const { t } = useTranslation();
     const getStatusLabel = useMemo(() => makeStatusLabel(t), [t]);
     const statusColor = useMemo(() => getStatusColor(item.status), [item.status]);
@@ -628,8 +399,7 @@ export const LogisticsCardList: React.FC<{ data: LogisticsItem[]; refreshControl
         scrollEnabled = true,
     }) => {
         const isDriver = useUserRole() === 'driver';
-        const customerActions = useCustomerActions();
-        const driverActions = useDriverActions();
+        const driverActions = useDriverShipmentActions();
 
         const renderItem = useCallback(
 
@@ -639,11 +409,10 @@ export const LogisticsCardList: React.FC<{ data: LogisticsItem[]; refreshControl
                     item={item}
                     index={index}
                     isDriver={isDriver}
-                    customerActions={customerActions}
                     driverActions={driverActions}
                 />
             ),
-            [isDriver, customerActions, driverActions]
+            [isDriver, driverActions]
         );
 
         
@@ -661,7 +430,6 @@ export const LogisticsCardList: React.FC<{ data: LogisticsItem[]; refreshControl
                             item={item}
                             index={index}
                             isDriver={isDriver}
-                            customerActions={customerActions}
                             driverActions={driverActions}
                         />
                     ))}

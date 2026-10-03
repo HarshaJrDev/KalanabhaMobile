@@ -1,4 +1,5 @@
-import { QueryClient } from '@tanstack/react-query';
+import { AppState, Platform } from 'react-native';
+import { focusManager, QueryClient } from '@tanstack/react-query';
 import { ApiError } from './types';
 
 
@@ -29,3 +30,13 @@ export const queryClient = new QueryClient({
         },
     },
 });
+
+export const initQueryFocusMonitoring = () => {
+    if (Platform.OS === 'web') return undefined;
+
+    const subscription = AppState.addEventListener('change', (status) => {
+        focusManager.setFocused(status === 'active');
+    });
+
+    return () => subscription.remove();
+};

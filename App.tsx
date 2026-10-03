@@ -13,7 +13,7 @@ initSentry();
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from './src/api/queryClient';
+import { queryClient, initQueryFocusMonitoring } from './src/api/queryClient';
 import { initNetworkMonitoring } from './src/api/network';
 import { GlobalToast } from '@ui/alert/GlobalToast';
 import { GlobalDeliveryOtpModal } from '@ui/alert/GlobalDeliveryOtpModal';
@@ -81,6 +81,14 @@ const App = () => {
   const resolvingSession = isAuthenticated && !role;
   useEffect(() => {
     const unsubscribe = initNetworkMonitoring();
+    return unsubscribe;
+  }, []);
+  // react-query's default web `focus` refetch does nothing in React
+  // Native — this wires AppState into focusManager so coming back to the
+  // foreground actually refetches stale queries, same pattern as
+  // initNetworkMonitoring above.
+  useEffect(() => {
+    const unsubscribe = initQueryFocusMonitoring();
     return unsubscribe;
   }, []);
   useEffect(() => {
