@@ -10,10 +10,10 @@ export const trackingKeys = {
     location: (shipmentId: string) => ['tracking', shipmentId, 'location'] as const,
 };
 
-// Screen -> hook -> tracking.api -> GET /shipments/:id/location -> cache -> UI.
-// Seeds the map with the last-known position; useTrackingSocket below keeps
-// it live from then on (matches the old Firestore onSnapshot on the
-// driver's user doc that ShipmentDetailsScreen used).
+
+
+
+
 export const useShipmentLocation = (shipmentId: string | undefined) => {
     const { isAuthenticated } = useAuthState();
     return useQuery({
@@ -24,7 +24,7 @@ export const useShipmentLocation = (shipmentId: string | undefined) => {
 };
 
 // Joins the shipment's tracking room (TrackingGateway) and pushes each
-// incoming ping straight into the query cache.
+
 export const useTrackingSocket = (shipmentId: string | undefined) => {
     const queryClient = useQueryClient();
     const socketRef = useRef<Socket | null>(null);
@@ -49,7 +49,7 @@ export const useTrackingSocket = (shipmentId: string | undefined) => {
     }, [shipmentId, queryClient]);
 };
 
-// Driver app: called on an interval while a delivery is ACCEPTED/IN_TRANSIT.
+
 export const usePingLocation = () => {
     return useMutation({
         mutationFn: ({ lat, lng }: { lat: number; lng: number }) => trackingApi.pingLocation(lat, lng),

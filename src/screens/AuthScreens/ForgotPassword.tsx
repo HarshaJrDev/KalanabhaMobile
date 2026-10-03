@@ -1,18 +1,18 @@
-// ForgotPassword.tsx
-//
-// Real screen replacing Login.tsx's "Forgot Password?" link, which
-// navigated to a screen that was never registered (silent no-op tap for
-// customers — drivers already had a real "contact admin" alert instead).
-//
-// Two-step, single screen: request a 6-digit code (POST
-// /auth/forgot-password), then enter it with a new password (POST
-// /auth/reset-password). No deep-linking/email-open infra exists in this
-// app, so the code is entered manually rather than via an emailed link —
-// same pattern as most apps' SMS/email OTP flows. In this dev environment
-// the "email" is actually logged server-side (ConsoleEmailAdapter — no
-// real SMTP/email-API credentials configured yet), so the delivered code
-// isn't visible on-device; production needs a real email adapter behind
-// the same backend contract before this reaches real users.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React, { useMemo, useState } from 'react';
 import {
     View,
@@ -167,8 +167,8 @@ const ForgotPasswordScreen = () => {
 
 export default ForgotPasswordScreen;
 
-// Computed from useAppTheme() so this screen repaints correctly in dark
-// mode instead of staying pinned to the light palette baked at import.
+
+
 const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: ReturnType<typeof useAppTheme>['fonts']) => StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.BACKGROUND },
     scrollContent: { padding: S(24), paddingTop: H(60), gap: H(16) },

@@ -58,8 +58,8 @@ const trucks = [
 const CARD_WIDTH = width * 0.8;
 const SPACING = (width - CARD_WIDTH) / 2;
 
-const AUTO_SCROLL_INTERVAL = 3000; // ms
-const RESUME_DELAY = 4000; // ms after user swipe
+const AUTO_SCROLL_INTERVAL = 3000; 
+const RESUME_DELAY = 4000; 
 
 const TruckSelector = ({ onSelect }: { onSelect?: (truck: any) => void }) => {
     const scrollX = useRef(new Animated.Value(0)).current;
@@ -69,7 +69,7 @@ const TruckSelector = ({ onSelect }: { onSelect?: (truck: any) => void }) => {
     const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [isAutoScrolling, setIsAutoScrolling] = useState(true);
 
-    // 🕒 Auto-slide function
+    
     const startAutoSlide = () => {
         stopAutoSlide();
         setIsAutoScrolling(true);
@@ -90,19 +90,19 @@ const TruckSelector = ({ onSelect }: { onSelect?: (truck: any) => void }) => {
         if (autoSlideTimer.current) clearInterval(autoSlideTimer.current);
     };
 
-    // Start auto-slide initially
+    
     useEffect(() => {
         startAutoSlide();
         return stopAutoSlide;
     }, []);
 
-    // Pause when user scrolls manually
+    
     const handleScrollBegin = () => {
         stopAutoSlide();
         if (resumeTimer.current) clearTimeout(resumeTimer.current);
     };
 
-    // Resume after delay
+    
     const handleScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
         const offsetX = e.nativeEvent.contentOffset.x;
         const newIndex = Math.round(offsetX / CARD_WIDTH);
@@ -187,11 +187,7 @@ const TruckSelector = ({ onSelect }: { onSelect?: (truck: any) => void }) => {
                 })}
             </Animated.ScrollView>
 
-            {/* <Button
-                title="Continue"
-                onPress={() => onSelect?.(trucks[currentIndex])}
-                style={{ marginTop: H(20) }}
-            /> */}
+            {}
         </View>
     );
 };

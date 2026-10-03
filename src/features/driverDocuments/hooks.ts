@@ -6,8 +6,8 @@ export const driverDocumentKeys = {
     mine: ['driver-documents', 'mine'] as const,
 };
 
-// Screen -> hook -> driverDocuments.api -> GET /files/driver-documents/mine
-// -> cache -> UI.
+
+
 export const useMyDriverDocuments = () => {
     return useQuery({
         queryKey: driverDocumentKeys.mine,

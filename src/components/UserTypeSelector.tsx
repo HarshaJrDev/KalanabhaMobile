@@ -76,7 +76,7 @@ const UserTypeSelector: FC<Props> = ({ value, onChange }) => {
 
     return (
         <>
-            {/* Trigger */}
+            {}
             <Pressable onPress={open} style={styles.trigger}>
                 <Text style={styles.triggerLabel}>{t('userTypeSelector.accountType')}</Text>
 
@@ -86,7 +86,7 @@ const UserTypeSelector: FC<Props> = ({ value, onChange }) => {
                 </View>
             </Pressable>
 
-            {/* Modal */}
+            {}
             <Modal
 
                 visible={visible}

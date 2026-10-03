@@ -5,11 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@theme/ThemeContext';
 import { hapticTap, hapticWarning } from '@utils/haptics';
 
-// Mounted once at the app root (App.tsx), same pattern as GlobalToast and
-// GlobalDeliveryOtpModal — every destructive/confirm action (logout,
-// delete address, cancel shipment) calls confirmDialog({...}) from a
-// plain callback and awaits the answer, instead of each screen reaching
-// for the OS's own unthemed Alert.alert.
+
+
+
+
+
 export const GlobalConfirmDialog: React.FC = () => {
   const open = useConfirmStore(s => s.open);
   const title = useConfirmStore(s => s.title);

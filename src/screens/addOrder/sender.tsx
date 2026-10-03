@@ -14,7 +14,7 @@ import { ChevronDown } from 'lucide-react-native';
 import Button from '@components/Button';
 
 interface SenderProps {
-    onNext?: () => void; // ✅ add this prop
+    onNext?: () => void; 
 }
 
 const Sender: React.FC<SenderProps> = ({ onNext }) => {
@@ -24,7 +24,7 @@ const Sender: React.FC<SenderProps> = ({ onNext }) => {
 
     return (
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-            {/* 🧍 Sender Details */}
+            {}
             <Text style={styles.sectionTitle}>Sender Details</Text>
 
             <CustomLabel label="Full Name" />
@@ -53,7 +53,7 @@ const Sender: React.FC<SenderProps> = ({ onNext }) => {
                 </>
             )}
 
-            {/* 📍 Pickup Address */}
+            {}
             <Text style={styles.sectionTitle}>Pickup Address</Text>
 
             <CustomLabel label="Address Line 1" />
@@ -79,7 +79,7 @@ const Sender: React.FC<SenderProps> = ({ onNext }) => {
                 <ChevronDown size={18} color="#333" />
             </TouchableOpacity>
 
-            {/* 📦 Package Details */}
+            {}
             <Text style={styles.sectionTitle}>Package Details</Text>
 
             <CustomLabel label="Package Type" />
@@ -94,7 +94,7 @@ const Sender: React.FC<SenderProps> = ({ onNext }) => {
             <CustomLabel label="Remarks (optional)" />
             <CustomInput placeholder="Any special instructions" multiline />
 
-            {/* ✅ Submit Button */}
+            {}
             <Button title="Save Sender Details" onPress={onNext ?? (() => {})} />
         </ScrollView>
     );

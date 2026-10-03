@@ -1,22 +1,22 @@
-// CheckRate.tsx
-//
-// Was a fully unbound form: pickup/destination CustomInputs had no
-// value/onChangeText, "Shipment Type" offered fake Air/Sea/Road categories
-// that don't map to any real backend vehicle type, and "Check" always
-// opened ShipmentResultModal with a hardcoded Bangalore->Delhi/3-truck-price
-// result regardless of what (if anything) was typed.
-//
-// Rebuilt to reuse the exact same real pieces addOrders.tsx already uses:
-// useAutoAddress (current-location convenience) and useFareEstimate (typed
-// address -> geocode -> POST /shipments/quote, the same PricingService the
-// real booking flow prices through). Vehicle types were still a hardcoded
-// static array here (bike/van/truck with made-up "Up to 20 kg" copy) even
-// after addOrders.tsx and Home.tsx both moved to the real, admin-managed
-// GET /settings/vehicle-configs — fixed to read the same live data, with
-// each type's real illustration (VehicleVisual, falling back to an icon
-// until an admin sets an image) instead of a fixed Lucide glyph. "Check
-// Rate" is quote-only — it does not create a shipment; a real quote hands
-// off into the existing addOrders flow.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import COLOR from '@utils/color';
@@ -63,8 +63,8 @@ const CheckRate = () => {
             : active;
     }, [vehicleConfigsData, category]);
 
-    // Default to the first real active type once configs load, rather
-    // than a hardcoded 'bike' that might not even exist/be active.
+    
+    
     useEffect(() => {
         if (activeVehicleConfigs.length === 0) return;
         const stillAvailable = activeVehicleConfigs.some((v) => v.name.toLowerCase() === vehicleType);
@@ -78,8 +78,8 @@ const CheckRate = () => {
     const selectedVehicle = activeVehicleConfigs.find((v) => v.name.toLowerCase() === vehicleType);
 
     // Quote-only — 'standard' is a stand-in serviceType since this screen
-    // doesn't ask for one; addOrders.tsx's own step lets the user actually
-    // pick express/same-day before booking.
+    
+    
     const fareEstimate = useFareEstimate(
         pickup,
         drop,
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     },
     formWrapper: {
         flex: 1,
-        marginTop: -S(30), // overlap effect
+        marginTop: -S(30), 
     },
     formContent: {
         paddingHorizontal: S(15),

@@ -1,8 +1,8 @@
-// useRecentPins.ts — MMKV-persisted "recently pinned" locations for
-// LocationPinPicker, mirroring useLocationSearch.ts's recordRecentServiceArea
-// pattern but for free lat/lng/address points (not ServiceArea ids) — the
-// map-pin picker resolves to an arbitrary coordinate, not one of the
-// curated ServiceArea rows that pattern was built around.
+
+
+
+
+
 import { useCallback, useMemo, useState } from 'react';
 import { storage } from '@services/storage';
 
@@ -28,7 +28,7 @@ const writeRecentPins = (pins: RecentPin[]) => {
     try {
         storage.set(RECENT_PINS_KEY, JSON.stringify(pins.slice(0, MAX_RECENT_PINS)));
     } catch {
-        // Non-critical — recents are a convenience, not load-bearing.
+        
     }
 };
 

@@ -1,27 +1,27 @@
-// ProfileScreen.tsx — Driver
-//
-// Backed by GET /users/me (useMe) for the driver's real name/rating/
-// delivery count, and the same real POST /auth/logout flow (useLogout)
-// the customer Profile screen uses.
-//
-// `walletBalance` had no backing field on the backend (User model has no
-// wallet concept) — stays removed rather than kept as fabricated data.
-// The header avatar used to be a random stranger's photo from
-// pravatar.cc — replaced with a real initials avatar (same pattern the
-// incoming-request card on the Home screen already uses for a sender's
-// initials), since there is no real driver photo anywhere on the backend.
-//
-// Trips/Documents/Payments/Support/Settings menu items: "Your Trips"
-// opens a real screen (TripsScreen.tsx, GET /shipments/driver/mine).
-// "My Documents" is new here — the upload screen already existed
-// (DriverDocumentsScreen.tsx, real backend-backed KYC flow) but wasn't
-// reachable from Profile, only from a Home-screen card; its real
-// verified/pending state (useAuthStore) now shows as this row's
-// subtitle. "Payments" stays an honest "Coming soon" toast — there's no
-// Payment/payout model on the backend at all, nothing real to show.
-// Support opens the device's mail client (no backend needed). Settings
-// is a real screen (notification permission, app version, logout) — see
-// SettingsScreen.tsx.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React, { useCallback, useMemo } from 'react';
 import {
     View,
@@ -64,9 +64,9 @@ const useProfileActions = (t: (key: string) => string) => {
     const navigation = useNavigation();
     const logoutMutation = useLogout();
 
-    // Real ticket system now (kalanabhaBackend SupportController, already
-    // used by the admin panel) instead of only a mailto: link — a raised
-    // ticket gets a real reply thread here.
+    
+    
+    
     const goSupport = useCallback(() => {
         navigation.navigate('SupportTickets' as never);
     }, [navigation]);

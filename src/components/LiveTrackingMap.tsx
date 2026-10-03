@@ -1,23 +1,23 @@
-// LiveTrackingMap.tsx
-//
-// Real map view — this app had NO map library at all before this (only
-// "Open directions in Maps", which hands off to the external Google Maps
-// app). Uses MapLibre (genuinely open-source, no Google Maps API key —
-// react-native-maps was considered but its Android implementation is a
-// thin wrapper around the Google Maps SDK and requires a billing-enabled
-// Google Cloud API key even for basic display, which this app doesn't
-// have) with OpenFreeMap's free, no-signup hosted style
-// (https://openfreemap.org — real OpenStreetMap data, no API key, no
-// usage cap for reasonable app traffic).
-//
-// Every marker plotted here is a real coordinate already flowing through
-// this app: pickup/drop from the real Shipment row, driver position from
-// the real WebSocket-backed useLiveDriverLocation. Nothing fabricated.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Map, Camera, Marker, type LngLat } from '@maplibre/maplibre-react-native';
 
-// No API key required — OpenFreeMap serves this style publicly and free.
+
 const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
 
 export interface MapPoint {
@@ -30,16 +30,16 @@ interface LiveTrackingMapProps {
     drop?: MapPoint | null;
     driver?: MapPoint | null;
     height?: number;
-    // Extra Source/Layer elements (e.g. TurnByTurnNav's route line) —
-    // MapLibre requires these to be direct children of <Map>, so a
-    // sibling component can't add its own layer to this map from outside.
+    
+    
+    
     children?: React.ReactNode;
 }
 
 export const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({ pickup, drop, driver, height = 220, children }) => {
-    // Center on whichever real point is most relevant right now — the
-    // moving driver if we have one, otherwise the pickup point, otherwise
-    // the drop point. Never a fabricated default city/coordinate.
+    
+    
+    
     const center = useMemo<LngLat | null>(() => {
         const point = driver ?? pickup ?? drop;
         return point ? [point.lng, point.lat] : null;

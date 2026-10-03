@@ -1,4 +1,4 @@
-// components/InfoRow.tsx
+
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { CopyIcon, Package2 } from 'lucide-react-native';

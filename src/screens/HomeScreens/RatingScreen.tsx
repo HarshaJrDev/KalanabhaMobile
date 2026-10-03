@@ -1,14 +1,14 @@
-// RatingScreen.tsx — Customer
-//
-// Post-delivery rating: stars + "what went great" tags + a note, all real
-// (POST /shipments/:id/rating — a genuine new backend model, verified live
-// against the running server: submitting recomputes the driver's real
-// average rating). The reference mockup also had a tip-to-UPI flow and a
-// GST invoice download — neither is built here. There's no payment-gateway
-// integration in this app yet to move real money through, and no invoice/
-// PDF generation backend either; faking either would mean pretending
-// money moved or a real tax document was produced when neither happened.
-// Both sections below say "coming soon" instead.
+
+
+
+
+
+
+
+
+
+
+
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, StatusBar } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -82,7 +82,7 @@ const RatingScreen = () => {
         );
     }
 
-    // Already rated — nothing more to do here.
+    
     if (existingRating) {
         return (
             <View style={styles.root}>
@@ -102,7 +102,7 @@ const RatingScreen = () => {
         <View style={styles.root}>
             <StatusBar barStyle="dark-content" backgroundColor={colors.BACKGROUND} />
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-                {/* Top bar */}
+                {}
                 <View style={styles.topBar}>
                     <Pressable onPress={() => navigation.goBack()} hitSlop={10}>
                         <X size={20} color={colors.TEXT_SECONDARY} />
@@ -115,7 +115,7 @@ const RatingScreen = () => {
                     </Pressable>
                 </View>
 
-                {/* Delivered banner */}
+                {}
                 <View style={styles.deliveredBanner}>
                     <View style={styles.deliveredIconWrap}>
                         <CheckCircle2 size={20} color="#fff" />
@@ -126,7 +126,7 @@ const RatingScreen = () => {
                     </View>
                 </View>
 
-                {/* Driver card */}
+                {}
                 <View style={styles.driverCard}>
                     <View style={styles.driverAvatar}>
                         <Text style={styles.driverInitials}>
@@ -173,7 +173,7 @@ const RatingScreen = () => {
                     </View>
                 )}
 
-                {/* Tags */}
+                {}
                 <View style={styles.tagsHeaderRow}>
                     <Text style={styles.tagsTitle}>{t('rating.whatWentGreat')}</Text>
                     <Text style={styles.tagsHint}>{t('rating.selectAllThatApply')}</Text>
@@ -193,7 +193,7 @@ const RatingScreen = () => {
                     })}
                 </View>
 
-                {/* Tip — not built (no payment gateway to move real money through) */}
+                {}
                 <View style={styles.comingSoonCard}>
                     <Text style={styles.comingSoonTitle}>{t('rating.sendTipTo', { name: driverName.split(' ')[0] })}</Text>
                     <Text style={styles.comingSoonText}>
@@ -201,7 +201,7 @@ const RatingScreen = () => {
                     </Text>
                 </View>
 
-                {/* Note */}
+                {}
                 <Text style={styles.tagsTitle}>{t('rating.leaveNote', { name: driverName.split(' ')[0] })}</Text>
                 <TextInput
                     style={styles.noteInput}
@@ -214,7 +214,7 @@ const RatingScreen = () => {
                     maxLength={500}
                 />
 
-                {/* Fare + invoice */}
+                {}
                 <View style={styles.fareCard}>
                     <View style={styles.fareRow}>
                         <Text style={styles.fareLabel}>{t('rating.totalFarePaid')}</Text>

@@ -1,11 +1,11 @@
-// FuelStationsScreen.tsx — Driver
-//
-// Two real backend features wired together: GET /maps/fuel-stations (free
-// OpenStreetMap/Overpass POI data — no Google Places key anywhere in this
-// project) finds nearby petrol bunks from the driver's current location;
-// tapping "Log fill-up" on one submits a real POST /fuel-expenses so admin
-// can see where/how much this driver spends on fuel (GET /fuel-expenses
-// + the per-driver summary, both admin-only).
+
+
+
+
+
+
+
+
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
@@ -158,9 +158,9 @@ const FuelStationsScreen = () => {
 
 export default FuelStationsScreen;
 
-// Inline form rather than a separate screen — logging a fill-up is a
-// quick, 2-field action (amount + optional litres), not a whole new
-// navigation stack entry.
+
+
+
 const LogFuelForm = ({
   station,
   onDone,

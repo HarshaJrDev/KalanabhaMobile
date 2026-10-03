@@ -1,5 +1,5 @@
-// Mirrors backend/src/utils/geo.util.ts — kept in sync manually since the
-// mobile app and backend are separate deployables.
+
+
 const EARTH_RADIUS_KM = 6371;
 
 export interface LatLng {

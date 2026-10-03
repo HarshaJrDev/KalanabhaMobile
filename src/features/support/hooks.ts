@@ -23,7 +23,7 @@ export const useTicket = (id: string | undefined) => {
         queryFn: () => supportApi.getTicket(id!),
         enabled: !!id,
         // A ticket's own thread can get a reply from support at any time —
-        // same lightweight poll ShipmentChatScreen uses while open.
+        
         refetchInterval: 8000,
     });
 };

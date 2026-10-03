@@ -8,10 +8,10 @@ const { withSentryConfig } = require('@sentry/react-native/metro');
 const defaultConfig = getDefaultConfig(__dirname);
 
 const customConfig = {
-  // keep empty unless you need overrides
+  
 };
 
 const mergedConfig = mergeConfig(defaultConfig, customConfig);
 
-// ✅ wrap AFTER merge
+
 module.exports = withSentryConfig(wrapWithReanimatedMetroConfig(mergedConfig));

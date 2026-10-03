@@ -1,9 +1,9 @@
-// TicketDetailScreen.tsx — Customer & Driver
-//
-// GET /support/tickets/:id + POST /support/tickets/:id/messages
-// (kalanabhaBackend SupportController) — the real message thread between
-// the ticket raiser and support staff, previously visible only from the
-// admin panel's SupportTicketsPage.
+
+
+
+
+
+
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { SkeletonDetail } from '@components/ui';

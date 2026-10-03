@@ -17,26 +17,26 @@ interface Account {
     description: string;
 }
 
-// Re-themed to Kalanabha's light brand surface (was a dark navy/purple
-// gradient screen). No entrance/press animations — plain state-driven
-// styling — and the same navigation.navigate('Login', { isDriver }) call
-// underneath, untouched.
+
+
+
+
 const makeAccounts = (t: (key: string) => string): Account[] => [
     { type: 'Customer', label: t('selectAccount.customerLabel'), description: t('selectAccount.customerDesc') },
     { type: 'Driver', label: t('selectAccount.driverLabel'), description: t('selectAccount.driverDesc') },
 ];
 
-// User-supplied K-mascot illustrations (real transparent PNGs, same
-// brand-art family as the onboarding slides) — one full-color image per
-// role, shown as-is rather than tinted, since these already carry the
-// brand's own color palette.
+
+
+
+
 const ACCOUNT_IMAGES = {
     Customer: require('../../../assets/images/home/ImaCustomer.png'),
     Driver: require('../../../assets/images/home/ImaDriver.png'),
 } as const;
 
-// Small supplementary role glyph shown next to the title — separate from
-// the big bleed illustration, matching the brand mockup's own layout.
+
+
 const ROLE_ICONS = { Customer: User, Driver: Truck } as const;
 
 type Styles = ReturnType<typeof makeStyles>;
@@ -60,10 +60,7 @@ const AccountCard = memo(({ item, selected, onPress, styles, roleIconColor }: Ca
             accessibilityLabel={`${item.label} account`}
             style={[styles.card, selected && styles.cardSelected]}
         >
-            {/* Full-bleed illustration, not a small boxed icon — the
-                brand's own K-mascot art scaled up and clipped by the
-                card's rounded left edge, matching the reference
-                mockup's layout. */}
+            {}
             <View style={styles.bleedWrap}>
                 <Image source={ACCOUNT_IMAGES[item.type]} resizeMode="contain" style={styles.bleedImage} />
             </View>
@@ -76,10 +73,7 @@ const AccountCard = memo(({ item, selected, onPress, styles, roleIconColor }: Ca
                 <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>
             </View>
 
-            {/* The whole card is already the tap target — this ring stays
-                visible on both cards (so the pair reads as a real choice,
-                per the reference); its dot just shows/hides on selection,
-                no animation. */}
+            {}
             <View style={[styles.radioRing, selected && styles.radioRingSelected]}>
                 {selected && <View style={styles.radioDot} />}
             </View>
@@ -105,8 +99,7 @@ const SelectAccount = () => {
     return (
         <View style={styles.root}>
             <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.BACKGROUND} />
-            {/* Decorative brand watermark, matching the reference mockup's
-                top-right corner accent — purely visual, no touch target. */}
+            {}
             <View style={styles.decorWatermark} pointerEvents="none" />
 
             <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -160,8 +153,8 @@ const SelectAccount = () => {
 
 export default SelectAccount;
 
-// Computed from useAppTheme() so this screen (and the AccountCard it feeds
-// styles to) repaints correctly in dark mode.
+
+
 const makeStyles = (
     colors: ReturnType<typeof useAppTheme>['colors'],
     fonts: ReturnType<typeof useAppTheme>['fonts'],
@@ -238,11 +231,11 @@ const makeStyles = (
         backgroundColor: colors.PRIMARY_LIGHT,
     },
 
-    // Full-bleed illustration column — clipped by the card's own rounded
-    // corner rather than boxed in a small icon chip, matching the
-    // reference mockup. The image is deliberately larger than its wrap
-    // and centered, so it bleeds/crops at the edges instead of shrinking
-    // to fit with visible padding.
+    
+    
+    
+    
+    
     bleedWrap: {
         width: 128,
         backgroundColor: colors.BACKGROUND,
@@ -263,8 +256,8 @@ const makeStyles = (
     title: { fontFamily: fonts.SEMI_BOLD_PRIMARY, fontSize: fontSize.xl, color: colors.TEXT_PRIMARY },
     desc: { fontFamily: fonts.MEDIUM_PRIMARY, fontSize: fontSize.sm, color: colors.TEXT_SECONDARY, lineHeight: 17 },
 
-    // Ring stays visible on both cards, unselected or not (reads as a real
-    // pair of choices, like the reference) — only its fill pops in/out.
+    
+    
     radioRing: {
         position: 'absolute',
         top: spacing.md,

@@ -13,12 +13,12 @@ interface ConfirmStore extends ConfirmOptions {
     resolve: ((confirmed: boolean) => void) | null;
 }
 
-// Same singleton pattern as deliveryOtpStore/deliveryCompletionStore —
-// every destructive/confirm dialog in the app (logout, delete address,
-// cancel shipment, etc.) was previously a one-off `Alert.alert` per
-// screen, with the OS's own default styling instead of this app's own
-// (and inconsistent copy/button ordering screen to screen). This gives
-// every screen one real, themed confirm dialog instead.
+
+
+
+
+
+
 export const useConfirmStore = create<ConfirmStore>(() => ({
     open: false,
     title: '',

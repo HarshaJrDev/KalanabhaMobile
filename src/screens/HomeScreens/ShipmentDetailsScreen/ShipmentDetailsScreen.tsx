@@ -1,22 +1,22 @@
-// ShipmentDetailsScreen.tsx — customer
-//
-// Was falling back to a hardcoded DEMO object for two whole sections
-// *even when a real shipment had loaded* — the real Shipment type has no
-// `.payment` (courierCharge/delivery/vat/coupon) or `.timeline` field at
-// all, so `data?.payment || DEMO.payment` and `data?.timeline ||
-// DEMO.timeline` were always the fake fallback for every real shipment,
-// not just a no-id preview state. Payment Summary now shows only real
-// fields (distance, vehicle, helpers if House Shifting, the real total
-// price) instead of an invented VAT/delivery/coupon breakdown the backend
-// has no concept of (Shipment only ever stores one `price` total). The
-// Tracking Timeline now reads GET /shipments/:id/history (real status
-// transitions with real timestamps) instead of a static
-// 'placed'/'picked-up'/'in-transit' guess — mapped to this app's real
-// 4-state machine (searching/accepted/in_transit/delivered), not the
-// mockup's 5 invented steps ("Picked Up" and "Out for Delivery" don't
-// exist as distinct backend states here). The header's "Estimated
-// Delivery" line is gone too — Shipment.etaMinutes is never set anywhere
-// on the backend, so that was always a fabricated date.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
@@ -139,9 +139,9 @@ const makeStatusConfig = (
   },
 });
 
-// The app's real 4-state machine — "Picked Up" and "Out for Delivery"
-// (the mockup's 5-step version) aren't real distinct backend states here,
-// so they're not shown as if they were.
+
+
+
 const makeTimelineSteps = (
   t: (key: string) => string,
 ): { status: string; label: string; icon: LucideIcon }[] => [
@@ -232,12 +232,12 @@ const ShipmentDetailsScreen = () => {
 
   const isDriverEnRoute =
     shipment?.status === 'accepted' || shipment?.status === 'in_transit';
-  // Real pickup/delivery OTPs (kalanabhaBackend d17a770, 63a33d4) — only
-  // the customer should ever see either; the driver has to ask for it,
-  // not read it off their own screen. Pickup OTP matters while the
-  // driver is still coming to collect the package (accepted, before
-  // pickup); delivery OTP matters once it's actually in transit — shown
-  // one at a time so the customer isn't asked to juggle two codes.
+  
+  
+  
+  
+  
+  
   const role = useAuthStore(s => s.user?.role);
   const showPickupOtp =
     role === 'CUSTOMER' &&
@@ -250,10 +250,10 @@ const ShipmentDetailsScreen = () => {
   const liveDriverLocation = useLiveDriverLocation(
     isDriverEnRoute ? shipmentId : null,
   );
-  // The driver's actual next real destination — pickup while still
-  // 'accepted' (hasn't collected the package yet), drop once 'in_transit'.
-  // Previously this always measured against pickup, which was simply
-  // wrong once the trip moved to in_transit.
+  
+  
+  
+  
   const trackingTarget =
     shipment?.status === 'in_transit'
       ? shipment?.drop
@@ -265,10 +265,10 @@ const ShipmentDetailsScreen = () => {
           { lat: liveDriverLocation.lat, lng: liveDriverLocation.lng },
         )
       : null;
-  // Real driving-route ETA (OSRM, same source as the driver's own
-  // turn-by-turn nav) — not a fabricated speed-based guess. Falls back to
-  // the plain distance text below if the public OSRM instance is slow/
-  // unreachable (route stays null, no crash, no fake number shown).
+  
+  
+  
+  
   const { route: etaRoute } = useTurnByTurnRoute(
     liveDriverLocation
       ? { lat: liveDriverLocation.lat, lng: liveDriverLocation.lng }
@@ -340,7 +340,7 @@ const ShipmentDetailsScreen = () => {
         ),
       ]).start();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [shipment?.id]);
 
   const copyToClipboard = (text: string) => {
@@ -378,8 +378,8 @@ const ShipmentDetailsScreen = () => {
   const statusCfg = STATUS_CONFIG[shipment.status] ?? STATUS_CONFIG.searching;
   const isHouseShifting = shipment.category === 'HOUSE_SHIFTING';
 
-  // Real history rows keyed by status — a step is "done" once its real
-  // history row exists, "active" if it's the shipment's current status.
+  
+  
   const historyByStatus = new Map(
     (historyEntries ?? []).map(h => [h.status, h]),
   );
@@ -459,12 +459,12 @@ const ShipmentDetailsScreen = () => {
     </Animated.View>
   );
 
-  // Real actions for a not-yet-dispatched future pickup — was no way to
-  // change a scheduled time short of cancelling and rebooking from
-  // scratch, and no cancel action existed on this screen at all before
-  // this (only from the shipment list). PATCH /shipments/:id/schedule +
-  // POST /shipments/:id/cancel (which now also triggers a real Razorpay
-  // refund server-side if the shipment was paid).
+  
+  
+  
+  
+  
+  
   const renderScheduleActions = () => {
     if (shipment.status !== 'scheduled') return null;
     return (
@@ -674,10 +674,7 @@ const ShipmentDetailsScreen = () => {
             </Text>
           </View>
         </View>
-        {/* Real map (kalanabhaMobile MapLibre integration) — every
-                    marker is a real coordinate already flowing through
-                    this screen (shipment.pickup/drop, the live-tracked
-                    driver position). No Google Maps API key needed. */}
+        {}
         <View style={{ marginBottom: 12 }}>
           <LiveTrackingMap
             pickup={{ lat: shipment.pickup.lat, lng: shipment.pickup.lng }}
@@ -692,14 +689,7 @@ const ShipmentDetailsScreen = () => {
           <Bike color={C.primary} size={26} />
           <View style={{ flex: 1 }}>
             <Text style={styles.liveTrackingMain}>
-              {/* Complete Delivery no longer requires a GPS
-                                arrival step (product decision, kalanabhaBackend
-                                81263b1) — nothing in the driver app calls
-                                POST /shipments/:id/arrive anymore, so
-                                arrivalState never actually reaches
-                                ARRIVED_AT_PICKUP/ARRIVED_AT_DROP in practice.
-                                Showing distance only, rather than an
-                                "arrived" signal that could never fire. */}
+              {}
               {etaMinutes != null
                 ? t('shipmentDetails.driverEtaMinutes', { minutes: etaMinutes })
                 : distanceToDriverKm != null
@@ -719,11 +709,11 @@ const ShipmentDetailsScreen = () => {
     );
   };
 
-  // Real pickup/delivery OTP card, shown only to the customer at the
-  // relevant stage — share it with the driver in person to start/
-  // complete the trip; both codes are generated server-side on
-  // assignment (kalanabhaBackend d17a770, 63a33d4) and required back at
-  // POST /shipments/:id/start and /complete respectively.
+  
+  
+  
+  
+  
   const renderOtpCard = (
     title: string,
     subtitle: string,
@@ -836,11 +826,11 @@ const ShipmentDetailsScreen = () => {
     );
   };
 
-  // Only relevant once the delivery has actually happened (or didn't) —
-  // filing a claim on a still-in-flight shipment makes no sense yet.
-  // Hidden entirely when insuranceRequested is false, or when the real
-  // premium charged was 0 (InsuranceClaimsService rejects filing against
-  // a shipment with no real premium pool behind it either way).
+  
+  
+  
+  
+  
   const renderInsuranceClaim = () => {
     if (!shipment.insuranceRequested || shipment.status !== 'delivered') return null;
 
@@ -883,9 +873,9 @@ const ShipmentDetailsScreen = () => {
     );
   };
 
-  // Real fields only — Shipment stores one `price` total, no persisted
-  // itemized breakdown (courier charge/delivery/VAT/coupon aren't real
-  // concepts on this backend).
+  
+  
+  
   const renderPayment = () => (
     <AnimatedCard
       anim={cardAnims[3]}
@@ -990,9 +980,9 @@ const ShipmentDetailsScreen = () => {
     (navigation as any).navigate('ShipmentChat', { shipmentId });
   };
 
-  // Real now (kalanabhaBackend 03b5839, GET /shipments/:id/pod) — still
-  // honest when there genuinely isn't one: podUploadedAt is only set
-  // once a driver actually uploads a photo on completing delivery.
+  
+  
+  
   const handleDownloadPod = () => {
     if (!shipment.podUploadedAt) {
       showToast(t('shipmentDetails.noPodUploadedYet'), 'info');
@@ -1148,10 +1138,7 @@ const ShipmentDetailsScreen = () => {
         </View>
       </ScrollView>
 
-      {/* Real photo, fetched through the same JWT auth every other
-                API call uses (GET /shipments/:id/pod is not a plain
-                static-file URL) — RN's Image source accepts a headers
-                object for exactly this. */}
+      {}
       <Modal
         visible={podViewerOpen}
         transparent

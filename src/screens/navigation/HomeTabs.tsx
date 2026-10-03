@@ -25,12 +25,12 @@ import { useMyShipments } from '@features/shipments/hooks';
 import { useTabBarStyle } from './useTabBarStyle';
 import FONTS from '@utils/fonts';
 
-// This tab navigator's own route names — previously typed against the
-// root Stack's RootStackParamList, which only happened to type-check
-// because it coincidentally also had a `Home` key; that stopped being
-// true once the inner tab was renamed to `HomeTab` to resolve a
-// duplicate-screen-name warning (the root Stack's own screen is also
-// called "Home", one level up, wrapping this whole tab navigator).
+
+
+
+
+
+
 type HomeTabParamList = {
     HomeTab: undefined;
     Orders: undefined;
@@ -41,11 +41,10 @@ type HomeTabParamList = {
 
 const Tab = createBottomTabNavigator<HomeTabParamList>();
 
-/* ----------------------------- TAB CONFIG ----------------------------- */
-// "AddOrder" gets special center-FAB treatment below rather than sitting
-// in the row like the other four — it's the app's one primary action
-// (start a booking), so it's visually raised instead of competing with
-// Home/Orders/Notification/Profile for the same tab-button styling.
+
+
+
+
 const TAB_ICONS: Record<string, LucideIcon> = {
     HomeTab: HomeIcon,
     Orders: Box,
@@ -54,12 +53,11 @@ const TAB_ICONS: Record<string, LucideIcon> = {
     Profile: User,
 };
 
-/* ----------------------------- TAB BUTTON ----------------------------- */
-// Icon + label share one focus progress value: the label fades/widens in
-// and the icon lifts slightly, all driven by one spring rather than a
-// plain scale/translateY-only animation — reads as one cohesive
-// transition instead of an icon twitch. `dot` is a real signal (unread
-// notifications, an active shipment) — never shown without one.
+
+
+
+
+
 const TabButton = memo(
     ({
         focused,
@@ -111,11 +109,10 @@ const TabButton = memo(
     },
 );
 
-/* ----------------------------- CENTER FAB ----------------------------- */
-// Raised above the bar with a soft glow halo behind it, not squeezed
-// into the same row height as the other four — the one action every
-// customer needs fastest (book a delivery) gets the most visually
-// prominent spot instead of being just another icon in the row.
+
+
+
+
 const CenterButton = memo(({ onPress, color }: { onPress: () => void; color: string }) => {
     const press = useSharedValue(1);
     const style = useAnimatedStyle(() => ({ transform: [{ scale: press.value }] }));
@@ -135,12 +132,11 @@ const CenterButton = memo(({ onPress, color }: { onPress: () => void; color: str
     );
 });
 
-/* ----------------------------- CUSTOM BAR ----------------------------- */
-// A fully custom tabBar (not the default renderer) so the bar can be a
-// floating rounded pill with a raised center action — while still
-// reusing useTabBarStyle's exact height/inset math, so screens' existing
-// useTabBarContentPadding() reservation stays correct and doesn't drift
-// out of sync the way the driver tab bar once did.
+
+
+
+
+
 const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
     const { colors } = useAppTheme();
     const { t } = useTranslation();
@@ -154,10 +150,10 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
         Profile: t('tabs.profile'),
     };
 
-    // Real signals only: an unread-notification count already backs the
-    // Home header's bell badge, and "has an active shipment right now"
-    // already backs Home's hero card — reused here, not invented for
-    // this bar.
+    
+    
+    
+    
     const { data: unreadCount } = useUnreadNotificationCount();
     const { data: myShipments } = useMyShipments();
     const hasUnread = (unreadCount ?? 0) > 0;
@@ -201,12 +197,11 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
     );
 };
 
-// A stable module-level function reference — an inline arrow here would
-// be redefined every render, forcing React Navigation to remount the
-// entire tab bar subtree instead of just updating it.
+
+
+
 const renderCustomTabBar = (props: BottomTabBarProps) => <CustomTabBar {...props} />;
 
-/* ----------------------------- MAIN NAV ----------------------------- */
 
 const HomeTabs: React.FC = () => {
     return (

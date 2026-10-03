@@ -19,10 +19,10 @@ const row = (label: string, value: string, valueColor?: string) => `
         <td style="padding:9px 0;color:${valueColor ?? '#0B0B0D'};font-size:13px;font-weight:600;text-align:right;">${value}</td>
     </tr>`;
 
-// Renders the same fields ReceiptScreen already shows, as a standalone
-// branded HTML document — react-native-html-to-pdf converts this to a
-// real file the user can save/share, instead of the previous plain-text
-// share sheet (which produced no file at all).
+
+
+
+
 export const buildReceiptHtml = (shipment: Shipment): string => {
     const paymentModeLabel = PAYMENT_MODE_LABEL[shipment.paymentMode] ?? shipment.paymentMode;
     const paymentStatusColor = PAYMENT_STATUS_COLOR[shipment.paymentStatus] ?? '#6B7280';

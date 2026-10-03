@@ -1,15 +1,3 @@
-/**
- * Login.tsx  ─  Modified
- *
- * Changes vs original:
- *  1. Shows driver-specific UI when isDriver === true
- *  2. Registers FCM token on successful login (customer or driver)
- *  3. Pulls driver's pre-created credentials hint from Firestore
- *     (admin creates the account; driver enters their email/password)
- *  4. Visual polish: animated gradient header, smoother card entrance
- *  5. "Forgot credentials? Contact admin" message for drivers
- *     (since drivers can't reset password themselves — admin manages it)
- */
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
@@ -47,11 +35,11 @@ import { apiClient } from '@api/client';
 import { RootStackParamList } from '../navigation/types';
 import FONTS from '@utils/fonts';
 
-// ─── FCM token registration (backend, not Firestore) ──────────────────────────
-// Mirrors utils/cm.ts::registerFCMToken — PATCH /users/me/fcm-token.
-// Modular API — the namespaced `messaging()` call style is deprecated as of
-// RNFirebase v22 and logs a console warning on every use.
-// See https://rnfirebase.io/migrating-to-v22.
+
+
+
+
+
 const saveFCMToken = async () => {
     try {
         const messaging = getMessaging(getApp());
@@ -64,11 +52,11 @@ const saveFCMToken = async () => {
         if (!token) return;
         await apiClient.patch('/users/me/fcm-token', { fcmToken: token });
     } catch (e) {
-        // Non-critical — silently ignore
+        
     }
 };
 
-// ─── Social login options (customer only) ────────────────────────────────────
+
 const SOCIAL_LOGINS = [
     {
         name: 'Google',
@@ -80,16 +68,16 @@ const SOCIAL_LOGINS = [
     },
 ];
 
-// Dev-only convenience — pre-fills the seeded backend test accounts
-// (kalanabhaBackend/prisma/seeders/index.ts) so login doesn't need to be
-// typed by hand on every reload while developing. Never active in a
-// release build.
+
+
+
+
 const DEV_CREDENTIALS = {
     customer: { email: 'harsha.customer@kalanabha.com', password: 'Kalanabha@123' },
     driver: { email: 'driver@kalanabha.test', password: 'Driver@123' },
 } as const;
 
-// ─── Component ───────────────────────────────────────────────────────────────
+
 const Login = () => {
     const { colors, fonts, isDark } = useAppTheme();
     const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
@@ -117,8 +105,8 @@ const Login = () => {
     // Real OTP-based login (customer only — drivers keep admin-issued
     // password credentials, same reasoning "Forgot credentials? Contact
     // admin" already applies for them). 'password' is the existing,
-    // default flow; 'otp' swaps the password field for an email-a-code
-    // flow, delivered by the same POST /auth/login-otp/* endpoints.
+    
+    
     const [loginMode, setLoginMode] = useState<'password' | 'otp'>('password');
     const [otpStep, setOtpStep] = useState<'request' | 'verify'>('request');
     const [otpCode, setOtpCode] = useState('');
@@ -152,7 +140,7 @@ const Login = () => {
         );
     }, [email, otpCode, verifyOtp, t]);
 
-    // Entrance animation
+    
     useEffect(() => {
         Animated.parallel([
             Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
@@ -162,7 +150,7 @@ const Login = () => {
         ]).start();
     }, []);
 
-    // ── Login handler ──────────────────────────────────────────────────────────
+    
     const handleLogin = useCallback(() => {
         setError(null);
 
@@ -177,20 +165,20 @@ const Login = () => {
             { email: email.trim().toLowerCase(), password: password.trim() },
             {
                 onSuccess: () => {
-                    // Navigation itself is handled declaratively by App.tsx
-                    // once the role lands in the auth store — see the
-                    // `showAppFlow`/`initialRouteName` comment there for why
-                    // this screen must NOT call navigation.reset() itself
-                    // (doing so used to race the auth-flow -> app-flow
-                    // screen-set swap and always lose to "Home").
+                    
+                    
+                    
+                    
+                    
+                    
                     saveFCMToken();
                 },
 
                 onError: (err) => {
-                    // ApiError.message already carries the backend's message
-                    // (AuthService throws "Invalid credentials" for both a
-                    // wrong email and a wrong password, matching the backend
-                    // deliberately not distinguishing the two).
+                    
+                    
+                    
+                    
                     setError(err.message);
                 },
 
@@ -199,7 +187,7 @@ const Login = () => {
         );
     }, [email, password, mutate, t]);
 
-    // ─── Render ──────────────────────────────────────────────────────────────
+    
     return (
         <KeyboardAvoidingView
             style={styles.container}
@@ -212,14 +200,14 @@ const Login = () => {
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                {/* ── Hero header ── */}
+                {}
                 <LinearGradient
                     colors={isDriver ? ['#1e293b', '#0f172a'] : [colors.PRIMARY, colors.PRIMARY_DARK]}
                     style={styles.header}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                 >
-                    {/* Decorative circles */}
+                    {}
                     <View style={styles.decorCircle1} />
                     <View style={styles.decorCircle2} />
 
@@ -239,7 +227,7 @@ const Login = () => {
                     </Animated.View>
                 </LinearGradient>
 
-                {/* ── Card ── */}
+                {}
                 <Animated.View
                     style={[
                         styles.card,
@@ -255,7 +243,7 @@ const Login = () => {
                             : t('login.subtitle')}
                     </Text>
 
-                    {/* Driver info banner */}
+                    {}
                     {isDriver && (
                         <View style={styles.driverBanner}>
                             <Text style={styles.driverBannerIcon}>ℹ️</Text>
@@ -266,7 +254,7 @@ const Login = () => {
                         </View>
                     )}
 
-                    {/* Fields */}
+                    {}
                     <InputField
                         label={t('login.email')}
                         placeholder={isDriver ? 'your-email@kalanabha.com' : t('login.emailPlaceholder')}
@@ -295,8 +283,7 @@ const Login = () => {
                         />
                     ) : null}
 
-                    {/* Customer-only OTP/password toggle — drivers keep
-                        admin-issued password credentials. */}
+                    {}
                     {!isDriver && (
                         <TouchableOpacity
                             onPress={() => {
@@ -313,7 +300,7 @@ const Login = () => {
                         </TouchableOpacity>
                     )}
 
-                    {/* Error */}
+                    {}
                     {error ? (
                         <View style={styles.errorBox}>
                             <AlertTriangle color="#DC2626" size={RF(13)} />
@@ -321,7 +308,7 @@ const Login = () => {
                         </View>
                     ) : null}
 
-                    {/* Remember me + Forgot — password mode only */}
+                    {}
                     {loginMode === 'password' && (
                     <View style={styles.row}>
                         <TouchableOpacity
@@ -336,7 +323,7 @@ const Login = () => {
                         </TouchableOpacity>
 
                         {isDriver ? (
-                            // Drivers contact admin for password reset
+                            
                             <TouchableOpacity
                                 onPress={() =>
                                     Alert.alert(
@@ -356,7 +343,7 @@ const Login = () => {
                     </View>
                     )}
 
-                    {/* Login button */}
+                    {}
                     <View style={styles.loginBtnWrapper}>
                         {loginMode === 'password' ? (
                             <AppButton
@@ -385,26 +372,10 @@ const Login = () => {
                         )}
                     </View>
 
-                    {/* Social logins (customer only) */}
-                    {/* {!isDriver && (
-                        <>
-                            <View style={styles.dividerRow}>
-                                <View style={styles.divider} />
-                                <Text style={styles.dividerText}>or continue with</Text>
-                                <View style={styles.divider} />
-                            </View>
-                            <View style={styles.socialContainer}>
-                                {SOCIAL_LOGINS.map(social => (
-                                    <TouchableOpacity key={social.name} style={styles.socialButton}>
-                                        <Image source={{ uri: social.logo }} style={styles.socialLogo} />
-                                        <Text style={styles.socialText}>{social.name}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </>
-                    )} */}
+                    {}
+                    {}
 
-                    {/* Driver help footer inside card */}
+                    {}
                     {isDriver && (
                         <View style={styles.driverHelpRow}>
                             <Text style={styles.driverHelpText}>
@@ -415,7 +386,7 @@ const Login = () => {
                     )}
                 </Animated.View>
 
-                {/* Sign up link (customer only) */}
+                {}
                 <Animated.View style={{ opacity: fadeAnim }}>
                     {!isDriver && (
                         <Text style={styles.footerText}>
@@ -438,9 +409,9 @@ const Login = () => {
 
 export default Login;
 
-// ── Styles ────────────────────────g ────────────────────────────────────────────
-// Computed from useAppTheme() so this screen repaints correctly in dark
-// mode instead of staying pinned to the light palette baked at import.
+
+
+
 const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: ReturnType<typeof useAppTheme>['fonts']) => StyleSheet.create({
     container: {
         flex: 1,
@@ -451,7 +422,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
         paddingBottom: H(30),
     },
 
-    // Header
+    
     header: {
         paddingTop: H(64),
         paddingBottom: H(44),
@@ -513,7 +484,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
         letterSpacing: 0.5,
     },
 
-    // Card
+    
     card: {
         backgroundColor: colors.SURFACE,
         marginHorizontal: S(20),
@@ -539,7 +510,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
         lineHeight: RF(18),
     },
 
-    // Driver banner
+    
     driverBanner: {
         flexDirection: 'row',
         alignItems: 'flex-start',
@@ -560,7 +531,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
         fontFamily: fonts.PRIMARY,
     },
 
-    // Remember / Forgot
+    
     row: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -601,7 +572,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
         fontFamily: fonts.MEDIUM_PRIMARY,
     },
 
-    // Error
+    
     errorBox: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -619,10 +590,10 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
         fontFamily: fonts.PRIMARY,
     },
 
-    // Login button
+    
     loginBtnWrapper: { marginTop: H(18) },
 
-    // Divider
+    
     dividerRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -636,7 +607,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
         fontFamily: fonts.PRIMARY,
     },
 
-    // Social buttons
+    
     socialContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -661,7 +632,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
         fontFamily: fonts.MEDIUM_PRIMARY,
     },
 
-    // Driver help footer
+    
     driverHelpRow: {
         marginTop: H(20),
         padding: S(12),
@@ -682,7 +653,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
         color: '#D97706',
     },
 
-    // Footer
+    
     footerText: {
         textAlign: 'center',
         color: colors.TEXT_SECONDARY,

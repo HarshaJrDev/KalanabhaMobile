@@ -3,16 +3,9 @@ import { Image, ImageProps, ActivityIndicator, View, StyleSheet } from 'react-na
 import { useAppTheme } from '@theme/ThemeContext';
 
 export interface AppImageProps extends ImageProps {
-    /** Shows a small centered spinner over the image area while it loads. Off by default — existing screens render Image with no loader today. */
-    showLoader?: boolean;
+        showLoader?: boolean;
 }
 
-/**
- * Thin wrapper around RN's Image. Existing screens set `resizeMode`
- * per-usage (mixes of "contain"/"cover") — this doesn't force one, it just
- * gives future screens one import for the common "network image with a
- * loading spinner" case instead of each screen re-implementing it.
- */
 const AppImage: FC<AppImageProps> = ({ showLoader, style, onLoadStart, onLoadEnd, ...rest }) => {
     const { colors } = useAppTheme();
     const [loading, setLoading] = useState(false);

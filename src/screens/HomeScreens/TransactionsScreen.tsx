@@ -1,11 +1,11 @@
-// TransactionsScreen.tsx — Customer
-//
-// Real screen replacing Profile.tsx's "Transactions History" menu item,
-// which navigated to a screen that was never registered (silent no-op
-// tap). There's no separate Payment/Invoice model on the backend — each
-// shipment's own `price`/`paymentMode` IS the transaction record, so this
-// lists real shipment history (GET /shipments/mine/history) rather than
-// fabricating a payments ledger that doesn't exist server-side.
+
+
+
+
+
+
+
+
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -79,10 +79,7 @@ const TransactionRow = ({ shipment }: { shipment: Shipment }) => {
         <Text style={[styles.status, { color: statusColor[shipment.status] }]}>
           {STATUS_LABEL[shipment.status]}
         </Text>
-        {/* Real "repeat order" — reuses the same prefill mechanism
-                    CheckRate.tsx already feeds into addOrders.tsx, just
-                    sourced from a past order's route/vehicle instead of a
-                    fresh fare estimate. */}
+        {}
         <Pressable
           style={styles.reorderBtn}
           onPress={e => {
@@ -143,8 +140,8 @@ const TransactionsScreen = () => {
 
 export default TransactionsScreen;
 
-// Computed from useAppTheme() so this screen repaints correctly in dark
-// mode instead of staying pinned to the light palette baked at import.
+
+
 const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.BACKGROUND },

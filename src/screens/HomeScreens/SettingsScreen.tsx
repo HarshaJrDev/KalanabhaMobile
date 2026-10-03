@@ -1,20 +1,20 @@
-// SettingsScreen.tsx — Customer
-//
-// Real screen replacing Profile.tsx's "Settings" menu item, which
-// navigated to a screen that was never registered (silent no-op tap).
-// Mirrors Driver/SettingsScreen.tsx: notification permission status (same
-// @react-native-firebase/messaging used by utils/fcm.ts's
-// registerFCMToken), app version, and logout — no new backend endpoints,
-// everything here is either on-device or the existing POST /auth/logout flow.
-//
-// Re-themed (was hardcoded light-mode hex colors, doesn't repaint in dark
-// mode) and grouped into sections rather than one flat list, with two
-// real additions: Offline Maps (controls offlineMapCache.ts's background
-// tile downloads — a real toggle, not a stub, previously always-on with
-// no way to turn it off) and a Language shortcut (previously only
-// reachable from Profile, not Settings, despite being a settings-shaped
-// preference). Logout and the "can't disable push from in-app" notice now
-// go through the central confirmDialog instead of the OS's own Alert.alert.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Switch } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,7 +32,7 @@ import { confirmDialog } from '@ui/alert/confirmStore';
 import { getOfflineMapsEnabled, setOfflineMapsEnabled } from '@services/storage';
 import { LanguagePickerModal } from '@components/LanguagePickerModal';
 import { LANGUAGE_LABELS, type SupportedLanguage } from '../../i18n';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+
 const { version: appVersion } = require('../../../package.json');
 
 const SettingsScreen = () => {
@@ -92,10 +92,10 @@ const SettingsScreen = () => {
         if (confirmed) logoutMutation.mutate();
     }, [logoutMutation, t]);
 
-    // There's no self-service account-deletion endpoint on the backend —
-    // rather than fake it (a toast saying "deleted" that did nothing, or
-    // a dead mailto: link), this raises a real support ticket the admin
-    // queue already handles, same system Help Center uses.
+    
+    
+    
+    
     const requestDeleteAccount = useCallback(async () => {
         const confirmed = await confirmDialog({
             title: t('settings.deleteAccountTitle'),
@@ -135,9 +135,7 @@ const SettingsScreen = () => {
                 />
             </View>
 
-            {/* Real per-category push mute (PATCH /users/me/notification-preferences)
-                — the switch above is the OS-level on/off; these three are
-                which kinds of pushes actually reach the device once it's on. */}
+            {}
             <View style={styles.row}>
                 <Text style={styles.rowLabelIndented}>{t('settings.notifyOrderUpdates')}</Text>
                 <Switch

@@ -1,4 +1,4 @@
-// NotificationCard.tsx
+
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Bell, CheckCircle, AlertTriangle, Info } from 'lucide-react-native';

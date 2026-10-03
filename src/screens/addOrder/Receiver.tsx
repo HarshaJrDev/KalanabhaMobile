@@ -14,7 +14,7 @@ import { ChevronDown } from 'lucide-react-native';
 import Button from '@components/Button';
 
 interface ReciverProps {
-    onNext?: () => void; // ✅ add this prop
+    onNext?: () => void; 
 }
 
 const Reciver: React.FC<ReciverProps> = ({ onNext }) => {
@@ -24,7 +24,7 @@ const Reciver: React.FC<ReciverProps> = ({ onNext }) => {
 
     return (
         <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-            {/* 🧍 Sender Details */}
+            {}
             <Text style={styles.sectionTitle}>Reciver Details</Text>
 
             <CustomLabel label="Full Name" />
@@ -53,7 +53,7 @@ const Reciver: React.FC<ReciverProps> = ({ onNext }) => {
                 </>
             )}
 
-            {/* 📍 Pickup Address */}
+            {}
             <Text style={styles.sectionTitle}>Pickup Address</Text>
 
             <CustomLabel label="Address Line 1" />
@@ -79,7 +79,7 @@ const Reciver: React.FC<ReciverProps> = ({ onNext }) => {
                 <ChevronDown size={18} color="#333" />
             </TouchableOpacity>
 
-            {/* 📦 Package Details */}
+            {}
             <Text style={styles.sectionTitle}>Package Details</Text>
 
             <CustomLabel label="Package Type" />
@@ -94,7 +94,7 @@ const Reciver: React.FC<ReciverProps> = ({ onNext }) => {
             <CustomLabel label="Remarks (optional)" />
             <CustomInput placeholder="Any special instructions" multiline />
 
-            {/* ✅ Submit Button */}
+            {}
             <Button title="Save Reciver Details" onPress={onNext ?? (() => {})} />
         </ScrollView>
     );

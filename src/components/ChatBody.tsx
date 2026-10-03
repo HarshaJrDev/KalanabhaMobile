@@ -89,7 +89,7 @@ const ChatBody: React.FC<ChatBodyProps> = ({
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={80}
         >
-            {/* 🧠 HEADER */}
+            {}
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
                     <Image source={{ uri: image }} style={styles.avatar} />
@@ -100,7 +100,7 @@ const ChatBody: React.FC<ChatBodyProps> = ({
                 </TouchableOpacity>
             </View>
 
-            {/* 💬 MESSAGES */}
+            {}
             <FlatList
                 ref={flatListRef}
                 data={chatMessages}
@@ -110,7 +110,7 @@ const ChatBody: React.FC<ChatBodyProps> = ({
                 contentContainerStyle={styles.chatContainer}
             />
 
-            {/* ✏️ INPUT AREA */}
+            {}
             <View style={styles.inputArea}>
                 <View style={styles.inputBox}>
                     <TextInput

@@ -1,10 +1,10 @@
-// Skeleton.tsx — the one shimmer/glow loading primitive every screen
-// should use instead of a bare ActivityIndicator or a one-off hand-rolled
-// pulse (see the old HomeSkeleton.tsx, now superseded by this + the
-// composed templates below). A `Bone` is a single placeholder shape; a
-// moving gradient sweeps across every bone on screen in lockstep, driven
-// by one shared reanimated value so the effect reads as one glow passing
-// over the layout rather than N independent blinking boxes.
+
+
+
+
+
+
+
 import React, { useEffect } from 'react';
 import { View, StyleSheet, type DimensionValue, type ViewStyle } from 'react-native';
 import Animated, {
@@ -19,7 +19,6 @@ import { useAppTheme } from '@theme/ThemeContext';
 
 const SWEEP_WIDTH = 140;
 
-/** One placeholder shape — a box, line, or circle, shimmering in place. */
 export const Bone: React.FC<{
     width?: DimensionValue;
     height?: number;
@@ -72,21 +71,19 @@ export const Bone: React.FC<{
     );
 };
 
-/** A row of bones laid out horizontally — avatar + lines, stat tiles, etc. */
 export const BoneRow: React.FC<{ children: React.ReactNode; gap?: number; style?: ViewStyle }> = ({
     children,
     gap = 12,
     style,
 }) => <View style={[{ flexDirection: 'row', gap }, style]}>{children}</View>;
 
-// ---------------------------------------------------------------------
-// Composed screen-level templates. Every Driver/Customer screen's loading
-// state should render one of these (pick by layout shape) instead of an
-// ActivityIndicator — four variants cover every screen in the app, from
-// the Explore audit of src/screens/Driver/** and src/screens/HomeScreens/**.
-// ---------------------------------------------------------------------
 
-/** One card in a FlatList of rows — shipments, tickets, trips, addresses. */
+
+
+
+
+
+
 export const SkeletonListRow: React.FC<{ style?: ViewStyle }> = ({ style }) => {
     const { colors } = useAppTheme();
     return (
@@ -101,7 +98,6 @@ export const SkeletonListRow: React.FC<{ style?: ViewStyle }> = ({ style }) => {
     );
 };
 
-/** A FlatList's worth of loading rows — drop in wherever `isLoading` gates a list. */
 export const SkeletonList: React.FC<{ count?: number }> = ({ count = 6 }) => (
     <View style={{ gap: 12, padding: 16 }}>
         {Array.from({ length: count }).map((_, i) => (
@@ -110,7 +106,6 @@ export const SkeletonList: React.FC<{ count?: number }> = ({ count = 6 }) => (
     </View>
 );
 
-/** Hero + quick-action cards + a couple of summary cards — Home/dashboard screens. */
 export const SkeletonDashboard: React.FC = () => (
     <View style={{ padding: 20, gap: 16 }}>
         <Bone height={140} radius={22} />
@@ -125,7 +120,6 @@ export const SkeletonDashboard: React.FC = () => (
     </View>
 );
 
-/** Three or four stat tiles in a row — Earnings, analytics-style screens. */
 export const SkeletonStatTiles: React.FC<{ count?: number }> = ({ count = 3 }) => {
     const { colors } = useAppTheme();
     return (
@@ -143,8 +137,6 @@ export const SkeletonStatTiles: React.FC<{ count?: number }> = ({ count = 3 }) =
     );
 };
 
-/** Header card (map/photo + a couple of status lines) above a thread of
- * message/detail rows — chat, ticket detail, shipment detail. */
 export const SkeletonDetail: React.FC<{ rows?: number }> = ({ rows = 4 }) => (
     <View style={{ padding: 16, gap: 16 }}>
         <Bone height={160} radius={18} />

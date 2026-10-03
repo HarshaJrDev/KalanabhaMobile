@@ -6,8 +6,8 @@ import { setRefreshToken, setToken, type StoredUser } from '@services/storage';
 import { ApiError } from '@api/types';
 import { meQueryKey } from './useMe';
 
-// Screen -> useRequestLoginOtp -> auth.api -> POST /auth/login-otp/request
-// -> a real email is sent (no SMS provider exists in this app).
+
+
 export const useRequestLoginOtp = () =>
     useMutation<void, ApiError, string>({
         mutationFn: (email: string) => requestLoginOtp(email),
@@ -22,8 +22,8 @@ const verifyAndFetchProfile = async (email: string, code: string): Promise<Store
     return getMe();
 };
 
-// Same hydration pattern as useLogin — a real password-free sign-in path,
-// not a password-reset flow repurposed.
+
+
 export const useVerifyLoginOtp = () => {
     const setUser = useAuthStore((s) => s.setUser);
     const queryClient = useQueryClient();

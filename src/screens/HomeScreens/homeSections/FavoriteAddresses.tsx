@@ -1,7 +1,7 @@
-// Real per-customer saved addresses (GET /users/me/saved-addresses),
-// each anchored to a real ServiceArea. Sibling to PopularPickupPoints —
-// same horizontal-chip pattern — but these are the customer's own
-// bookmarked places (see src/features/savedAddresses).
+
+
+
+
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { Bookmark } from 'lucide-react-native';

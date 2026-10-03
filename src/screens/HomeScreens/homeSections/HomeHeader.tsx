@@ -1,12 +1,12 @@
-// HomeHeader — greeting, real device location (reverse-geocoded, not a
-// hardcoded "Hyderabad, TS"), search, notifications, profile entry.
-//
-// Location was previously a static "Hyderabad, TS" pill that did nothing
-// on tap — in a logistics app "where am I" is the first question a
-// customer needs answered, so this now actually calls the device GPS
-// (useAutoAddress, the same hook CheckRate.tsx already uses) and shows a
-// real address, with its own loading/retry state independent of the rest
-// of the screen — a GPS failure here shouldn't block booking.
+
+
+
+
+
+
+
+
+
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, TextInput, Platform, Animated, Image, Dimensions } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
@@ -30,18 +30,18 @@ interface Props {
     onOpenInbox: () => void;
     onOpenNotifications: () => void;
     onOpenQrScan: () => void;
-    // Real, admin-managed service areas (same list booking already
-    // searches) — passed down so the location pill can open the same
-    // real PlacePicker instead of only re-running the GPS fetch.
+    
+    
+    
     areas: ServiceArea[];
     colors: HomeColors;
     fonts: HomeFonts;
-    // Plain React Native Animated.Value refs from Home.tsx (not
-    // Reanimated shared values) — this file's <Animated.View> must stay
-    // the classic 'react-native' import to match, or interpolate() output
-    // fails to resolve (was crashing with "Transform with key of 'rotate'
-    // must be a string" when this imported Animated from
-    // 'react-native-reanimated' instead).
+    
+    
+    
+    
+    
+    
     fadeAnim: Animated.Value;
     headerScale: Animated.Value;
     bellShake: Animated.Value;
@@ -58,19 +58,19 @@ const HomeHeader: React.FC<Props> = ({
     const [address, setAddress] = useState<string | null>(null);
     const [locating, setLocating] = useState(true);
     const [locationFailed, setLocationFailed] = useState(false);
-    // A real manual pick (via the picker below) always wins over the GPS
-    // free-text address — set once the customer actually searches/picks/
-    // favorites a real serviceable locality instead of just accepting
-    // whatever the device's reverse-geocode returned.
+    
+    
+    
+    
     const [selectedArea, setSelectedArea] = useState<ServiceArea | null>(null);
 
     const fetchLocation = React.useCallback(() => {
         setLocating(true);
         setLocationFailed(false);
         const timeout = setTimeout(() => {
-            // useAutoAddress has no failure callback wired to the caller —
-            // if nothing comes back in a reasonable window, show a real
-            // retry affordance rather than spinning forever.
+            
+            
+            
             setLocating((current) => {
                 if (current) setLocationFailed(true);
                 return false;
@@ -85,7 +85,7 @@ const HomeHeader: React.FC<Props> = ({
 
     useEffect(() => {
         fetchLocation();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        
     }, []);
 
     const getGreeting = () => {

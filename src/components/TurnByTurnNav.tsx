@@ -1,17 +1,17 @@
-// TurnByTurnNav.tsx — Driver
-//
-// Real in-app turn-by-turn, drawn on the existing MapLibre live map using
-// the free OSRM routing API (src/features/navigation/osrm.ts) — no
-// billing-enabled API key, consistent with this app's existing
-// MapLibre/OpenFreeMap/Nominatim choices. Complements (doesn't replace)
-// the existing "Open in Maps" external deep link — that stays as a
-// fallback for drivers who prefer Google/Apple Maps.
-//
-// Split in two because MapLibre requires Source/Layer to be direct
-// children of <Map> — TurnByTurnRouteLine goes inside LiveTrackingMap's
-// children slot, TurnByTurnBanner overlays outside it. Both read from the
-// same useTurnByTurnRoute(origin, destination) call so they never
-// disagree about the current route.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { GeoJSONSource, Layer } from '@maplibre/maplibre-react-native';

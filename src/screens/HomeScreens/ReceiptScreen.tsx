@@ -1,14 +1,14 @@
-// ReceiptScreen.tsx
-//
-// A real, structured payment receipt for a shipment — every field here is
-// data the backend already returns (price, promo discount, payment
-// status/mode, tracking id, dates). "Download" generates an actual PDF
-// file (react-native-html-to-pdf, rendering receiptTemplate.ts's branded
-// HTML) and opens the native share sheet on it via react-native-share —
-// from there the user can save it to Files/Drive/etc, which is the
-// mobile-native equivalent of a browser's download. Previously this
-// screen only had a plain-text OS share (no file at all), which is what
-// customers were reporting as "the receipt doesn't download."
+
+
+
+
+
+
+
+
+
+
+
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { SkeletonDetail } from '@components/ui';

@@ -17,7 +17,7 @@ export interface TabItem {
     key: string;
     label: string;
     icon?: LucideIcon;
-    route?: string; // optional route name for navigation
+    route?: string; 
 }
 
 interface StatusTabsProps {

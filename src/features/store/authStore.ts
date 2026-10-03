@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { storage, type StoredUser } from '@services/storage';
 
-// Mirrors the shape GET /users/me returns (kalanabhaBackend UserEntity).
+
 export type AuthUser = StoredUser;
 
 interface AuthState {

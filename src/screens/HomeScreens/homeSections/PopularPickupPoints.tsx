@@ -1,11 +1,11 @@
-// PopularPickupPoints — real, admin-managed service areas (GET
-// /settings/service-areas), not a fabricated "saved addresses" feature.
-// This app has no per-customer saved-address model on the backend, so
-// rather than inventing a fake "Home/Work" chip set, this surfaces the
-// real localities Kalanabha actually services — tapping one jumps
-// straight into the booking flow with that pickup pre-selected, which is
-// the same real, useful shortcut a saved-address feature would offer,
-// just built from data that's actually there.
+
+
+
+
+
+
+
+
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { MapPin } from 'lucide-react-native';

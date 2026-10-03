@@ -9,11 +9,11 @@ import {
 } from '@components/ui';
 import { EmptyState, type EmptyStateVariant } from '@components/EmptyState';
 
-// 150ms fade on every branch swap here (skeleton -> content, content ->
-// empty, etc.) — each conditional branch below is a fresh mount, so
-// Reanimated's `entering` fires automatically each time React swaps one
-// out for another, turning what was an instant hard cut into a soft
-// crossfade with zero per-screen wiring.
+
+
+
+
+
 const CROSSFADE = FadeIn.duration(150);
 
 interface AsyncStateProps {
@@ -23,23 +23,11 @@ interface AsyncStateProps {
   onRetry?: () => void;
   emptyTitle?: string;
   emptyMessage?: string;
-  /** Which illustration glyph the empty state shows — defaults to a
-   * generic inbox, the safest fallback when a screen doesn't specify
-   * one more specific to its content. */
-  emptyVariant?: EmptyStateVariant;
-  /** Shape of the loading skeleton — defaults to a list of rows, the
-   * most common case across the screens using this component. */
-  skeleton?: 'list' | 'detail' | 'stats';
+    emptyVariant?: EmptyStateVariant;
+    skeleton?: 'list' | 'detail' | 'stats';
   children: React.ReactNode;
 }
 
-/**
- * Single reusable loading / offline / error / empty pattern, so screens
- * don't each hand-roll their own ActivityIndicator/error box. Renders
- * `children` once none of those states apply.
- *
- * Usage: `<AsyncState isLoading={...} error={...} isEmpty={!data?.length} onRetry={refetch}>...</AsyncState>`
- */
 export const AsyncState: React.FC<AsyncStateProps> = ({
   isLoading,
   error,

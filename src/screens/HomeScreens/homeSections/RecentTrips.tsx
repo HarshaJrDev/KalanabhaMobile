@@ -1,16 +1,16 @@
-// RecentTrips — real delivered/cancelled history (GET /shipments/mine/
-// history), most recent first. "Book Again" reuses addOrders.tsx's
-// existing prefill contract (the same one CheckRate.tsx and the vehicle
-// swiper already use) with this trip's real pickup/drop text and vehicle
-// type — addOrders.tsx's own service-area matching then either finds the
-// matching locality automatically or leaves it for the customer to pick,
-// same as any other prefilled hand-off. No fabricated "frequency" or
-// "favorite route" scoring — just the real last few trips, newest first.
-//
-// Each card's thumbnail is that trip's own real vehicle photo (matched by
-// name against the same admin-managed VehicleConfig list every other
-// vehicle picker already reads) — not a generic stock photo, the actual
-// picture an admin set for that vehicle type.
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { RotateCcw, ChevronRight } from 'lucide-react-native';

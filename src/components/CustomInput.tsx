@@ -1,8 +1,8 @@
-// Backward-compat shim — this file's implementation was extracted into
-// src/components/ui/AppTextInput.tsx (variant="card", matching this file's
-// original visuals exactly) so input styling has one source of truth.
-// Existing imports of `@components/CustomInput` keep working unchanged;
-// new code should import AppTextInput from `@components/ui` directly.
+
+
+
+
+
 import React from 'react';
 import type { TextInputProps } from 'react-native';
 import type { LucideIcon } from 'lucide-react-native';

@@ -1,4 +1,4 @@
-// ShipmentCard.tsx
+
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Truck, Box, CheckCircle, Loader, MoreVertical } from 'lucide-react-native';
@@ -40,7 +40,7 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({
 
     return (
         <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
-            {/* Top Row: Icon + Label + Options */}
+            {}
             <View style={styles.topRow}>
                 <View style={styles.row}>
                     <IconComponent color={COLOR.PRIMARY} width={24} height={24} />
@@ -53,7 +53,7 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({
                 )}
             </View>
 
-            {/* Addresses */}
+            {}
             <View style={styles.addressContainer}>
                 <View style={styles.addressColumn}>
                     <Text style={styles.addressLabel}>From</Text>
@@ -65,7 +65,7 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({
                 </View>
             </View>
 
-            {/* Status & Date */}
+            {}
             <View style={styles.bottomRow}>
                 <View style={styles.statusContainer}>
                     {status === 'Delivered' ? (

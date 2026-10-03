@@ -15,8 +15,8 @@ import { AsyncState } from '@components/AsyncState';
 import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 
-// Screen -> useOrderSearch -> shipments.api -> GET /shipments/mine ->
-// client filter by trackingId/shipmentId -> UI.
+
+
 const SearchScreen = () => {
   const navigation = useNavigation();
   const { t } = useTranslation();

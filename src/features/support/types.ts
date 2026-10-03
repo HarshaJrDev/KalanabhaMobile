@@ -1,13 +1,13 @@
-// One-to-one with kalanabhaBackend/src/modules/support (SupportController,
-// prisma SupportTicket/SupportTicketMessage models) — a fully real,
-// already-built ticket system that neither app had any UI for at all
-// before this. "Help Center" was just a mailto: link.
+
+
+
+
 export type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
 export type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH';
 
-// Real categories a ticket can be raised under — kept in sync with the
-// backend's `category: string` free-text field (no enum there), scoped to
-// what this app's own flows can actually generate a complaint about.
+
+
+
 export const TICKET_CATEGORIES = ['Delivery Issue', 'Payment', 'Driver Behaviour', 'App Bug', 'Other'] as const;
 export type TicketCategory = (typeof TICKET_CATEGORIES)[number];
 
@@ -42,7 +42,7 @@ export interface SupportTicket {
     resolutionNote: string | null;
     createdAt: string;
     updatedAt: string;
-    // Only present on GET /support/tickets/:id, not the list endpoints.
+    
     messages?: SupportTicketMessage[];
 }
 

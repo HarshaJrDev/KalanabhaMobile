@@ -5,7 +5,7 @@ import ShipmentCard from '@components/ShipmentCard';
 import TruckSelector from '@components/TruckSelector';
 
 interface PackageProps {
-    onNext?: () => void; // ✅ add this prop
+    onNext?: () => void; 
 }
 
 
@@ -24,10 +24,7 @@ const Package: React.FC<PackageProps> = ({ onNext }) => {
 
             />
 
-            {/* <View>
-                <TruckSelector />
-
-            </View> */}
+            {}
 
 
 

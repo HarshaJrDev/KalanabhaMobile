@@ -7,10 +7,10 @@ export const mapsKeys = {
         ['maps', 'fuel-stations', lat.toFixed(3), lng.toFixed(3), radiusKm] as const,
 };
 
-// Screen -> hook -> maps.api -> GET /maps/fuel-stations -> cache -> UI.
-// Rounds lat/lng to ~100m for the cache key so tiny GPS jitter doesn't
-// refetch on every render — a driver looking for fuel doesn't need
-// meter-level cache precision.
+
+
+
+
 export const useNearbyFuelStations = (lat: number | null, lng: number | null, radiusKm = 5) => {
     const { isAuthenticated } = useAuthState();
     return useQuery({

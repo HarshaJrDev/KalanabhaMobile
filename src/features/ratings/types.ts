@@ -1,4 +1,4 @@
-// Mirrors kalanabhaBackend's RATING_TAGS exactly (create-rating.dto.ts).
+
 export const RATING_TAGS = [
     'Punctual Delivery',
     'Careful Handling',
@@ -9,7 +9,7 @@ export const RATING_TAGS = [
 ] as const;
 export type RatingTag = (typeof RATING_TAGS)[number];
 
-// GET/POST /shipments/:id/rating response row.
+
 export interface Rating {
     id: string;
     shipmentId: string;

@@ -2,31 +2,19 @@ import React, { FC, memo, useMemo } from 'react';
 import { Text, TextProps, TextStyle, View, StyleSheet } from 'react-native';
 import { useAppTheme } from '@theme/ThemeContext';
 
-// Variants extracted from existing usage: 'label'/'description' reproduce
-// CustomLabel.tsx exactly (field label + optional required-asterisk +
-// helper text below); 'body'/'title'/'error' cover the plain-Text patterns
-// repeated ad hoc across screens (InputField's label & error text, etc.).
+
+
+
+
 export type AppTextVariant = 'label' | 'description' | 'body' | 'title' | 'error' | 'caption';
 
 export interface AppTextProps extends TextProps {
     variant?: AppTextVariant;
-    /** Mirrors CustomLabel's `required` — appends a red asterisk. Only meaningful with variant="label". */
-    required?: boolean;
-    /** Mirrors CustomLabel's `description` — renders a second, smaller line below. Only meaningful with variant="label". */
-    description?: string;
+        required?: boolean;
+        description?: string;
     color?: string;
 }
 
-/**
- * Single source of truth for text styling. Defaults reproduce the exact
- * look of CustomLabel.tsx (variant="label" + required/description) and the
- * plain Text patterns used for body copy, titles, error messages, and
- * captions across the app — nothing new introduced.
- *
- * Styles are computed from `useAppTheme()` on every render instead of a
- * module-level StyleSheet.create — that's what makes text actually repaint
- * when the device switches light/dark, instead of staying baked at import.
- */
 const AppText: FC<AppTextProps> = ({
     variant = 'body',
     required,

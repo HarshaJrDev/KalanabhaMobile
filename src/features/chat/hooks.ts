@@ -10,9 +10,9 @@ export const chatKeys = {
     messages: (shipmentId: string) => ['chat', shipmentId, 'messages'] as const,
 };
 
-// Screen -> hook -> chat.api -> GET /shipments/:id/messages -> cache -> UI.
-// Live updates come from useChatSocket below, which pushes into this same
-// query's cache — no polling needed once the socket is connected.
+
+
+
 export const useChatMessages = (shipmentId: string | undefined) => {
     const { isAuthenticated } = useAuthState();
     return useQuery({
@@ -36,9 +36,9 @@ export const useSendMessage = (shipmentId: string) => {
     });
 };
 
-// Joins the shipment's chat room (ChatGateway) for the lifetime of the
-// screen and appends any pushed message straight into the query cache —
-// replaces the old Firestore onSnapshot listener on shipments/{id}/messages.
+
+
+
 export const useChatSocket = (shipmentId: string | undefined) => {
     const queryClient = useQueryClient();
     const socketRef = useRef<Socket | null>(null);

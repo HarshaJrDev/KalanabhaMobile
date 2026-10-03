@@ -2,7 +2,7 @@ import { apiClient } from '@api/client';
 import type { ApiSuccessResponse } from '@api/types';
 import type { SavedAddress, CreateSavedAddressPayload, UpdateSavedAddressPayload } from './types';
 
-// One-to-one with kalanabhaBackend/src/modules/saved-addresses/controllers/saved-addresses.controller.ts
+
 
 export const getMySavedAddresses = async (): Promise<SavedAddress[]> => {
     const { data } = await apiClient.get<ApiSuccessResponse<SavedAddress[]>>('/users/me/saved-addresses');

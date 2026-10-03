@@ -1,8 +1,8 @@
-// NewTicketScreen.tsx — Customer & Driver
-//
-// POST /support/tickets (kalanabhaBackend SupportController.create) — a
-// real ticket the admin's SupportTicketsPage queue already handles, wired
-// up on the mobile side for the first time.
+
+
+
+
+
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,11 +23,11 @@ const NewTicketScreen = () => {
     const styles = useMemo(() => makeStyles(colors, fonts, spacing, radius, insets), [colors, fonts, spacing, radius, insets]);
     const { t } = useTranslation();
 
-    // Optional prefill — e.g. Settings' "Delete Account" row opens this
-    // screen with the subject/description already filled in, so deletion
-    // is a real support ticket an admin actually sees and actions,
-    // instead of either a fake "account deleted" message with nothing
-    // behind it or a dead-end mailto link.
+    
+    
+    
+    
+    
     const [category, setCategory] = useState<string>(route.params?.prefillCategory ?? TICKET_CATEGORIES[0]);
     const [subject, setSubject] = useState(route.params?.prefillSubject ?? '');
     const [description, setDescription] = useState(route.params?.prefillDescription ?? '');

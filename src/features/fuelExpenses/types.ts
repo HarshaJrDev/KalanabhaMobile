@@ -1,4 +1,4 @@
-// kalanabhaBackend DriverFuelExpense — /fuel-expenses response row.
+
 export interface FuelExpense {
     id: string;
     driverId: string;
@@ -8,9 +8,9 @@ export interface FuelExpense {
     lng: number;
     litres: number | null;
     amount: number;
-    // receiptFileKey is never returned by the API (same as
-    // DriverDocument.fileKey) — this just says whether one exists; the
-    // real bytes come from GET /fuel-expenses/:id/receipt.
+    
+    
+    
     hasReceipt: boolean;
     createdAt: string;
 }
@@ -22,6 +22,5 @@ export interface CreateFuelExpenseInput {
     amount: number;
     litres?: number;
     shipmentId?: string;
-    /** file:// URI from the device picker/camera — sent as multipart, matching driver-documents' upload pattern. */
-    receiptUri?: string;
+        receiptUri?: string;
 }

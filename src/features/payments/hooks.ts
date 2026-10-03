@@ -10,11 +10,11 @@ interface PayForShipmentArgs {
     customerPhone?: string;
 }
 
-// Full pay flow in one call: create the Razorpay order server-side, open
-// the native checkout sheet, then verify the signature server-side.
-// Throws (with a user-facing message) on cancellation or a failed verify —
-// callers show a toast, same pattern every other mutation in this app
-// follows via react-query's onError.
+
+
+
+
+
 export const usePayForShipment = () => {
     const queryClient = useQueryClient();
 

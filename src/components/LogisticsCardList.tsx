@@ -81,18 +81,18 @@ export interface LogisticsItem {
     expiresAt?: string;
     customerName?: string;
     customerPhone?: string;
-    // 'PARCEL' (default) | 'HOUSE_SHIFTING' — Porter-style movers booking.
+    
     category?: string;
     helpersCount?: number;
-    // Real driver arrival sub-state (kalanabhaBackend 7708464) — drives
-    // the arrival-aware CTA below.
+    
+    
     arrivalState?: 'NONE' | 'EN_ROUTE_TO_PICKUP' | 'ARRIVED_AT_PICKUP' | 'EN_ROUTE_TO_DROP' | 'ARRIVED_AT_DROP';
-    // Real customer-set drop-off preference ("Leave at door", etc.).
+    
     deliveryInstructions?: string | null;
 }
 
-// Role now comes from the backend-authenticated user (features/store/authStore),
-// not "is Firebase signed in" — every user is signed in via the backend now.
+
+
 const useUserRole = (): UserRole => {
     const role = useAuthStore((s) => s.user?.role);
     return role === 'DRIVER' ? 'driver' : 'customer';
@@ -129,10 +129,10 @@ const ActionButton: React.FC<{
     );
 });
 
-// POST /shipments/:id/cancel — kalanabhaBackend allows either the owning
-// customer or an admin/dispatcher; the guard is enforced server-side.
-// Feedback goes through the global toast (ui/alert/toastStore), same
-// surface every other feature uses, instead of a one-off native Alert.
+
+
+
+
 const useCustomerActions = () => {
     const { t } = useTranslation();
     const onCancel = useCallback(async (id: string) => {
@@ -147,14 +147,14 @@ const useCustomerActions = () => {
     return { onCancel };
 };
 
-// POST /shipments/:id/{accept,start,complete} — kalanabhaBackend's
-// DispatchService does the same atomic "status must still be X" guard
-// server-side that the old Firestore transaction did client-side, so a
-// driver can no longer race or spoof an accept.
-// Exported so the driver Home screen's Active Delivery card (the one
-// place a driver actually manages their current shipment, as opposed to
-// this file's searching-pool list) can drive the same real
-// arrive/start/complete actions instead of duplicating them.
+
+
+
+
+
+
+
+
 export const useDriverActions = () => {
     const { t } = useTranslation();
     const onAccept = useCallback(async (id: string) => {
@@ -166,16 +166,16 @@ export const useDriverActions = () => {
         }
     }, [t]);
 
-    // Real, geofence-validated arrival (kalanabhaBackend 7708464) — the
-    // backend decides whether this is pickup or drop arrival from the
-    // shipment's own current arrivalState, and rejects with the real
-    // distance if the driver isn't actually there yet. `coords` is only
-    // ever passed by the DEV-only "Simulate Arrival" button (real
-    // pickup/drop coordinates from the shipment itself, run through this
-    // exact same endpoint — not a bypass of the geofence check, just a
-    // convenient way to be "at" the location without physically
-    // travelling there on an emulator); every other caller uses the
-    // device's real GPS fix.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     const onArrive = useCallback((id: string, coords?: { latitude: number; longitude: number }) => {
         const submit = (latitude: number, longitude: number) => {
             arriveAtShipment(id, latitude, longitude)
@@ -202,21 +202,21 @@ export const useDriverActions = () => {
         })();
     }, [t]);
 
-    // Real pickup OTP + pickup photo (kalanabhaBackend 63a33d4,
-    // Shipment.pickupOtp / POST /shipments/:id/pickup-proof) — symmetric
-    // to the delivery-side verification below. A driver needs the code
-    // the customer reads out at hand-off AND a photo to actually start
-    // the trip, instead of the previous single tap trusting the driver's
-    // own say-so entirely.
+    
+    
+    
+    
+    
+    
     const onStartDelivery = useCallback((id: string) => {
         (async () => {
             const otp = await requestOtp('pickup');
             if (!otp) return;
 
-            // Real, confirmed failure otherwise: AndroidManifest.xml
-            // declares CAMERA (needed elsewhere), which means
-            // react-native-image-picker will NOT request it for us —
-            // see cameraPermission.ts.
+            
+            
+            
+            
             const hasCameraPermission = await ensureCameraPermission();
             if (!hasCameraPermission) {
                 showToast(t('logisticsCard.cameraPermissionPickup'), 'error');
@@ -227,9 +227,9 @@ export const useDriverActions = () => {
                 if (response.didCancel) return;
                 const asset = response.assets?.[0];
                 if (response.errorCode || !asset?.uri) {
-                    // Surface the real reason — see GlobalDeliveryCompletionSheet's
-                    // identical fix for why (camera_unavailable/permission/others
-                    // was previously hidden behind a generic message).
+                    
+                    
+                    
                     if (__DEV__) console.warn('[onStartDelivery] camera error', response.errorCode, response.errorMessage);
                     showToast(
                         response.errorCode ? t('logisticsCard.couldNotCapturePhoto', { reason: response.errorMessage ?? response.errorCode }) : t('logisticsCard.couldNotCapturePhotoRetry'),
@@ -255,24 +255,24 @@ export const useDriverActions = () => {
         })();
     }, [t]);
 
-    // Complete Delivery is visible immediately after Accept — no GPS/
-    // arrival prerequisite (product decision, kalanabhaBackend 81263b1).
-    // Opens the real Delivery Completion Sheet (OTP + photos + optional
-    // signature, each step independently verified server-side) instead
-    // of the previous single OTP-prompt-then-camera sequence.
+    
+    
+    
+    
+    
     const onCompleteDelivery = useCallback((id: string) => {
         requestCompleteDelivery(id).then((completed) => {
             if (completed) showToast(t('logisticsCard.deliveryCompleted'), 'success');
         });
     }, [t]);
 
-    // Backing out of an already-accepted job — only works server-side
-    // while still 'accepted' (before the pickup OTP/photo flow starts).
-    // Unassigns the driver and reopens the shipment to the searching pool
-    // instead of cancelling the customer's order outright. Confirmed
-    // first, same as the customer-side cancel in ShipmentDetailsScreen —
-    // this is a destructive action from the driver's perspective too
-    // (loses the job to someone else).
+    
+    
+    
+    
+    
+    
+    
     const onDriverCancel = useCallback(async (id: string) => {
         const confirmed = await confirmDialog({
             title: t('logisticsCard.driverCancelTitle'),
@@ -383,7 +383,7 @@ const LogisticsCard: React.FC<{
     return (
         <Animated.View entering={FadeInUp.delay(index * 50)}>
             <View style={styles.card}>
-                {/* Header */}
+                {}
                 <View style={styles.cardHeader}>
                     <View style={styles.headerLeft}>
                         <View style={styles.avatar}>
@@ -391,9 +391,7 @@ const LogisticsCard: React.FC<{
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.headerTitle} numberOfLines={1}>
-                                {/* House Shifting has no real weight (never
-                                    measured) — showing "0.0kg" there would
-                                    read as a bug, not "not applicable". */}
+                                {}
                                 {item.category === 'HOUSE_SHIFTING'
                                     ? t('logisticsCard.helpersCountLabel', { goodsType: item.goodsType, count: item.helpersCount ?? 0, plural: item.helpersCount === 1 ? '' : 's' })
                                     : t('logisticsCard.weightLabel', { goodsType: item.goodsType, weight: item.weightKg?.toFixed(1) ?? '0' })}
@@ -406,7 +404,7 @@ const LogisticsCard: React.FC<{
                     <Text style={styles.price}>{price}</Text>
                 </View>
 
-                {/* Route */}
+                {}
                 <View style={styles.route}>
                     <View style={styles.routeIcons}>
                         <Circle size={10} color="#10B981" />
@@ -423,7 +421,7 @@ const LogisticsCard: React.FC<{
                     </View>
                 </View>
 
-                {/* Meta */}
+                {}
                 <View style={styles.metaRow}>
                     <View style={styles.metaItem}>
                         <Route size={14} color="#6B7280" />
@@ -438,7 +436,7 @@ const LogisticsCard: React.FC<{
                     </View>
                 </View>
 
-                {/* Actions */}
+                {}
                 <View style={styles.actionBar}>
                     <ActionButton
                         icon={<Navigation size={16} color="#000" />}
@@ -456,7 +454,7 @@ const LogisticsCard: React.FC<{
                         onPress={onShare}
                     />
 
-                    {/* ACCEPT (only unassigned jobs) */}
+                    {}
                     {isDriver && item.status === 'searching' && !item.driverId && (
                         <ActionButton
                             icon={<Check size={16} color="#FFF" />}
@@ -466,12 +464,7 @@ const LogisticsCard: React.FC<{
                         />
                     )}
 
-                    {/* Status-driven CTA — visible immediately after the
-                        relevant transition, no GPS/arrival prerequisite
-                        (product decision, kalanabhaBackend 81263b1).
-                        "Complete" opens the real Delivery Completion
-                        Sheet (OTP + photos + optional signature) instead
-                        of completing on a single tap. */}
+                    {}
                     {isDriver && isAssignedToMe && item.status === 'accepted' && (
                         <ActionButton
                             icon={<Truck size={16} color="#FFF" />}
@@ -481,11 +474,7 @@ const LogisticsCard: React.FC<{
                         />
                     )}
 
-                    {/* Driver backing out before pickup starts — releases
-                        the job back to the searching pool instead of
-                        leaving the customer stuck with an unresponsive
-                        driver. Not offered once IN_TRANSIT (see
-                        DispatchService.driverCancel). */}
+                    {}
                     {isDriver && isAssignedToMe && item.status === 'accepted' && (
                         <ActionButton
                             icon={<XCircle size={16} color="#EF4444" />}
@@ -504,7 +493,7 @@ const LogisticsCard: React.FC<{
                     )}
                 </View>
 
-                {/* Shipment chat — GET/POST /shipments/:id/messages, live via ChatGateway */}
+                {}
                 <TouchableOpacity
                     onPress={() => setChatOpen(o => !o)}
                     style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}
@@ -580,9 +569,9 @@ export const LogisticsCardList: React.FC<{ data: LogisticsItem[]; refreshControl
             [isDriver, customerActions, driverActions]
         );
 
-        // Had no bottom padding at all — the last card in this list (used
-        // on every tab-hosted "Nearby Orders"/"My Orders" screen) sat
-        // right behind the bottom tab bar instead of scrolling clear of it.
+        
+        
+        
         const bottomPadding = useTabBarContentPadding();
         const items = Array.isArray(data) ? data : [];
 
@@ -608,7 +597,7 @@ export const LogisticsCardList: React.FC<{ data: LogisticsItem[]; refreshControl
                 data={items}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.id}
-                // estimatedItemSize={240}
+                
                 showsVerticalScrollIndicator={false}
                 refreshControl={refreshControl}
                 contentContainerStyle={{ paddingBottom: bottomPadding }}

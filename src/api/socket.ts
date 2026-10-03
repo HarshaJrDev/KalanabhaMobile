@@ -2,8 +2,8 @@ import { io, type Socket } from 'socket.io-client';
 import { API_BASE_URL } from '../config/env';
 import { getToken } from '../services/storage';
 
-// Backend gateways (src/websocket/*.gateway.ts) live at the HTTP origin,
-// not under the /api/v1 prefix — strip it back off.
+
+
 const SOCKET_ORIGIN = API_BASE_URL.replace(/\/api\/v1$/, '');
 
 /**

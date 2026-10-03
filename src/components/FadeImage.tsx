@@ -1,9 +1,9 @@
-// FadeImage — a plain remote <Image> that fades in smoothly once loaded
-// instead of popping in abruptly, with a solid placeholder color behind it
-// so there's never a blank/broken-looking gap while it's still fetching.
-// Used for real illustration photos (e.g. Home.tsx's first-booking nudge,
-// House Shifting banner) sourced from a public, freely-licensed source
-// (Wikimedia Commons) — not fabricated placeholder art.
+
+
+
+
+
+
 import React, { useRef } from 'react';
 import { Animated, StyleSheet, View, type ImageStyle, type StyleProp } from 'react-native';
 

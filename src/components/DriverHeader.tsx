@@ -1,13 +1,13 @@
-// components/DriverHeader.tsx
-//
-// Was a plain white card with a tiny Switch — revamped to match the
-// brand mockup: gradient header, a real initials avatar (no photo field
-// exists on the backend for drivers, same pattern used everywhere else
-// this app needs a "photo" it doesn't have) with a real online/offline
-// dot overlapping its corner, a proper pill-shaped Go Online/Go Offline
-// button instead of a tiny switch, and a real notification bell (reusing
-// the same GET /notifications/mine unread count the customer header
-// already uses — that endpoint is role-agnostic, just req.user-scoped).
+
+
+
+
+
+
+
+
+
+
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,10 +27,10 @@ interface DriverHeaderProps {
     deliveredToday: number;
     isOnline: boolean;
     style?: ViewStyle;
-    // No emergency-dispatch system exists on the backend — this just opens
-    // a real support email (see HomeScreen.tsx's handleSos), same as
-    // before this was a separate overlay button; now a header action so it
-    // doesn't collide with the bell/toggle now living in the same corner.
+    
+    
+    
+    
     onSos: () => void;
 }
 
@@ -48,10 +48,10 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
     const user = useAuthStore((s) => s.user);
     const { colors, fonts } = useAppTheme();
     const { t } = useTranslation();
-    // Real device safe-area inset — was a bare paddingTop: 14, so the
-    // avatar/name/toggle sat under the status bar/camera cutout on real
-    // devices (same overlap bug already fixed on ShipmentChatScreen,
-    // onboarding, SelectAccount, both tab bars).
+    
+    
+    
+    
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => makeStyles(colors, fonts, insets), [colors, fonts, insets]);
     const { mutate: setOnlineStatus, isPending } = useSetOnlineStatus();
@@ -83,11 +83,11 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
                         disabled={isPending}
                         onPress={() =>
                             setOnlineStatus(!isOnline, {
-                                // Real gate now (kalanabhaBackend
-                                // UsersService.setOnlineStatus) — a driver
-                                // whose documents aren't admin-approved
-                                // gets a real 403 here instead of the
-                                // toggle just silently doing nothing.
+                                
+                                
+                                
+                                
+                                
                                 onError: (err) => showToast(normalizeError(err) || t('driverHeader.couldNotUpdateStatus'), 'error'),
                             })
                         }

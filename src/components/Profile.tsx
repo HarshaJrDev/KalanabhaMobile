@@ -45,7 +45,7 @@ const ProfileCom: React.FC<ProfileProps> = ({
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            {/* Header */}
+            {}
             <View style={styles.header}>
                 {avatarUrl ? (
                     <Image source={{ uri: avatarUrl }} style={styles.avatar} />
@@ -60,7 +60,7 @@ const ProfileCom: React.FC<ProfileProps> = ({
                 </View>
             </View>
 
-            {/* Navigation */}
+            {}
             <View style={styles.navContainer}>
                 {navItems.map((item, idx) => (
                     <TouchableOpacity
@@ -75,7 +75,7 @@ const ProfileCom: React.FC<ProfileProps> = ({
                 ))}
             </View>
 
-            {/* Info Section */}
+            {}
             <View style={styles.infoContainer}>
                 {info.map((item, idx) => (
                     <View key={idx} style={styles.infoRow}>

@@ -35,9 +35,9 @@ import { showToast } from '@ui/alert/toastStore';
 import type { RootStackParamList } from '../navigation/types';
 import FONTS from '@utils/fonts';
 
-// Was rendering "8148m ago" for anything older than an hour — never
-// rolled minutes over into hours/days, so a stale/test location ping
-// produced an absurd-looking number instead of a sane relative time.
+
+
+
 const makeFormatTimeAgo = (t: (key: string, opts?: Record<string, unknown>) => string) => (date: Date | null): string => {
     if (!date) return t('shipmentChat.justNow');
     const seconds = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
@@ -65,23 +65,23 @@ const makeDayLabel = (t: (key: string) => string) => (date: Date) => {
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
 
-// Canned quick-replies — just prefill/send real text through the same
-// sendMessage mutation every other bubble uses, not a separate mechanism.
+
+
 const makeQuickReplies = (t: (key: string) => string) => [
     t('shipmentChat.quickReply1'), t('shipmentChat.quickReply2'), t('shipmentChat.quickReply3'),
 ];
 
-// Screen -> useChatMessages/useSendMessage/useChatSocket -> chat.api ->
-// GET/POST /shipments/:id/messages (+ live via ChatGateway) -> UI.
-// "Chat Support" on ShipmentDetailsScreen opens this — the same shipment
-// chat backend LogisticsCardList's inline driver panel already uses.
-//
-// The header's live-tracking strip, distance, and "dispatched" banner are
-// all derived from real data already fetched elsewhere in this app
-// (useShipment's dispatch/drop fields, useLiveDriverLocation) — no speed/
-// ETA is shown since neither exists anywhere in the backend (DriverLocation
-// only ever carries lat/lng/updatedAt) and no read-receipts/image messages
-// since ChatMessage has no read-status or attachment field to back them.
+
+
+
+
+
+
+
+
+
+
+
 const ShipmentChatScreen = () => {
     const navigation = useNavigation();
     const { colors, isDark } = useAppTheme();
@@ -126,7 +126,7 @@ const ShipmentChatScreen = () => {
 
     return (
         <KeyboardAvoidingView style={styles.container} behavior={Platform.select({ ios: 'padding' })}>
-            {/* Header */}
+            {}
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
                     <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
@@ -180,7 +180,7 @@ const ShipmentChatScreen = () => {
                 </View>
             </View>
 
-            {/* Destination / live-tracking strip */}
+            {}
             {isDriverEnRoute && shipment && (
                 <>
                     <Pressable
@@ -261,11 +261,7 @@ const ShipmentChatScreen = () => {
                 />
             </AsyncState>
 
-            {/* Quick replies — was stretching to fill all the leftover
-                vertical space above the input bar (each chip rendered as a
-                tall column instead of a small pill) since neither the
-                FlatList nor its row container capped a height; both now
-                do. */}
+            {}
             <FlatList
                 horizontal
                 style={styles.quickRepliesList}
@@ -310,13 +306,13 @@ const ShipmentChatScreen = () => {
 
 export default ShipmentChatScreen;
 
-// Computed from useAppTheme() so this screen repaints correctly in dark
-// mode instead of staying pinned to the light palette baked at import.
-// Real device safe-area insets, not a bare paddingVertical/padding guess —
-// without them the header sat under the status bar/camera cutout and the
-// input row sat flush against the device's home indicator/gesture bar,
-// same class of overlap bug already fixed elsewhere (onboarding,
-// SelectAccount, the tab bars) but missed on this screen.
+
+
+
+
+
+
+
 const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], insets: { top: number; bottom: number }) => StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.BACKGROUND },
     header: {
@@ -367,9 +363,9 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], insets: { 
         alignItems: 'center',
         justifyContent: 'center',
     },
-    // Was overflowing/overlapping itself for a long tracking id — no width
-    // cap and no line-clamp, so the text just kept laying out past the
-    // pill's edge instead of shrinking to fit.
+    
+    
+    
     trackingPill: {
         backgroundColor: colors.BACKGROUND,
         borderRadius: 10,

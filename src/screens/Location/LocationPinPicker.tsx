@@ -1,11 +1,11 @@
-// LocationPinPicker.tsx — drag-to-adjust pin location refinement
-// (the Porter/Rapido-style "fine-tune your exact spot on a map" screen).
-// Previously the order form's only refinement was a text search box
-// (LocationRefiner in addOrders.tsx) with no visual map at all. This adds
-// the map-based alternative alongside it — a fixed center pin while the
-// map pans underneath, reverse-geocoded live via the backend's
-// /maps/geocode/reverse proxy, plus a top search bar (forward geocode)
-// to jump straight to a typed place.
+
+
+
+
+
+
+
+
 import React, { useCallback, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, TextInput, ActivityIndicator, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,7 +36,7 @@ const LocationPinPicker: React.FC = () => {
 
     const initial: LngLat = route.params?.initial
         ? [route.params.initial.lng, route.params.initial.lat]
-        : [78.4867, 17.385]; // Hyderabad fallback — only used if no area/GPS point was ever available upstream
+        : [78.4867, 17.385]; 
     const onConfirm: (point: { lat: number; lng: number; address: string }) => void = route.params?.onConfirm ?? (() => {});
 
     const [center, setCenter] = useState<LngLat>(initial);
@@ -59,7 +59,7 @@ const LocationPinPicker: React.FC = () => {
             } catch {
                 // Keep whatever address was last resolved — a transient
                 // geocode failure shouldn't blank out a location the user
-                // can already see pinned on the map.
+                
             } finally {
                 setResolving(false);
             }

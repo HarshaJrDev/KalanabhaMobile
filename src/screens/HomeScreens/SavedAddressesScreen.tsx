@@ -1,11 +1,11 @@
-// SavedAddressesScreen.tsx — Customer
-//
-// Real "manage saved addresses" list (My Addresses) backed by
-// kalanabhaBackend's saved-addresses CRUD (Prisma model + controller,
-// see src/features/savedAddresses). Creation already happens inline
-// from the New Order picker (addOrders.tsx's PlacePicker "bookmark"
-// affordance); this screen is where the list actually lives — rename
-// (label only, the ServiceArea itself is fixed once saved) and delete.
+
+
+
+
+
+
+
+
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
 import { SkeletonList } from '@components/ui';

@@ -55,20 +55,20 @@ import FONTS from '@utils/fonts';
 import { SkeletonDashboard } from '@components/ui';
 import { useTabBarContentPadding } from '../../navigation/useTabBarStyle';
 
-// Same real K-branded truck photo already used on the customer Home
-// header — reused here rather than sourcing a new image.
+
+
 const DRIVE_MORE_TRUCK = require('../../../../assets/images/home/delivery-truck-hero.png');
 
-// No emergency/support phone number exists anywhere in this app's
-// backend (BusinessSetting has no such key) — reusing the same real
-// support channel Profile.tsx's Help Center already uses rather than
-// inventing a fake SOS hotline.
+
+
+
+
 const SUPPORT_EMAIL = 'support@kalanabha.com';
 
 interface HomeScreenProps { }
 
-// Adapts features/shipments' mapped Shipment (shipment/types.ts shape) to
-// this screen's LogisticsItem, which LogisticsCardList renders.
+
+
 const makeToLogisticsItem = (t: (key: string) => string) => (s: import('@shipment/types').Shipment): LogisticsItem => ({
     id: s.id,
     goodsType: s.goodsType,
@@ -91,7 +91,7 @@ const makeToLogisticsItem = (t: (key: string) => string) => (s: import('@shipmen
 });
 
 const HomeScreen: React.FC<HomeScreenProps> = () => {
-    // Screen -> hook -> shipments.api -> GET /shipments/searching -> cache -> UI
+    
     const navigation = useNavigation();
     const { t } = useTranslation();
     const {
@@ -102,19 +102,19 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
         refetch: refetchShipments,
     } = useSearchingShipments();
 
-    // Real "shipments assigned to me" data (GET /shipments/driver/mine) —
-    // added specifically so there's a way to reach the chat for whichever
-    // delivery this driver is actively on. Previously nothing on this
-    // screen (or anywhere else in the driver app) surfaced this.
+    
+    
+    
+    
     const { data: myShipments, refetch: refetchMyShipments } = useMyShipmentsAsDriver();
     const activeDelivery = useMemo(
         () => myShipments?.find((s) => s.status === 'accepted' || s.status === 'in_transit'),
         [myShipments],
     );
     const driverActions = useDriverActions();
-    // Multi-stop bookings — completed strictly in order (server-enforced);
-    // the mutation targets activeDelivery.id so it stays wired to whichever
-    // shipment is currently active without a separate per-stop hook call.
+    
+    
+    
     const { mutate: completeStop, isPending: completingStop } = useCompleteShipmentStop(activeDelivery?.id ?? '');
     const nextPendingStop = useMemo(
         () => activeDelivery?.stops?.find((s) => s.status !== 'COMPLETED') ?? null,
@@ -127,12 +127,12 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     );
     const error = shipmentsError ? shipmentsError.message : null;
 
-    // Real today's earnings/delivered-count, now that GET
-    // /shipments/driver/mine (`myShipments` above) exists — previously
-    // stuck at 0 because there was no driver-scoped shipments endpoint to
-    // compute them from. `updatedAt` is used as the delivery timestamp
-    // (the row is updated exactly when DispatchService.completeDelivery
-    // flips status to DELIVERED) since there's no separate completedAt column.
+    
+    
+    
+    
+    
+    
     const todaysDeliveries = useMemo(() => {
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
@@ -145,27 +145,27 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
         [todaysDeliveries],
     );
     const deliveredToday = todaysDeliveries.length;
-    // Was a disconnected local useState(true) — always showed "Online"
-    // regardless of the real, persisted User.isOnline value (and never
-    // reflected a toggle made from another device/session).
+    
+    
+    
     const isOnline = useAuthStore((s) => s.user?.isOnline ?? false);
     const documentsVerified = useAuthStore((s) => s.user?.documentsVerified ?? false);
 
-    // Real, admin-set vehicle photos (GET /settings/vehicle-configs) — the
-    // same data every vehicle picker in the customer app already reads,
-    // matched here by name against a shipment's real vehicleType so the
-    // incoming-request and active-delivery cards show the actual vehicle
-    // photo instead of a generic package icon.
+    
+    
+    
+    
+    
     const { data: vehicleConfigsData } = useVehicleConfigs();
     const vehicleForType = useCallback(
         (vehicleType: string) => vehicleConfigsData?.find((v) => v.name.toLowerCase() === vehicleType.toLowerCase()) ?? { name: vehicleType, imageUrl: null },
         [vehicleConfigsData],
     );
 
-    // Same background tile-caching as the customer Home screen (Settings >
-    // Offline Maps) — arguably matters more here, since a driver mid-trip
-    // relying on the live-tracking map is exactly the moment a weak
-    // signal is most disruptive.
+    
+    
+    
+    
     const { data: driverServiceAreas } = useServiceAreas();
     const { data: businessSettings } = useBusinessSettings();
     useEffect(() => {
@@ -173,15 +173,15 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
         if (active.length > 0 && getOfflineMapsEnabled()) {
             ensureServiceAreaTilesCached(active);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        
     }, [driverServiceAreas?.length]);
 
-    // First searching-pool request becomes the "Incoming Load Request"
-    // hero card below, matching what the reference mockup highlights —
-    // everything on it (price, distance, package, sender, insured flag)
-    // is real; no surge multiplier, demand radar, countdown/expiry,
-    // acceptance-score %, or OTP claim since none of those have any
-    // backend behind them.
+    
+    
+    
+    
+    
+    
     const incomingRequest = searchingShipments?.[0];
     const remainingShipments = useMemo(
         () => shipments.filter((s) => s.id !== incomingRequest?.id),
@@ -191,9 +191,9 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     const [dismissedIncomingId, setDismissedIncomingId] = useState<string | null>(null);
 
     // Real countdown to the shipment's real, admin-set expiry
-    // (Shipment.expiresAt, set by kalanabhaBackend's ShipmentsService.create
-    // and enforced by ShipmentExpiryProcessor) — ticks down to 0 and stays
-    // there; not a fabricated timer.
+    
+    
+    
     const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
     useEffect(() => {
         if (!incomingRequest?.expiresAt) {
@@ -234,9 +234,9 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     };
 
     const handleSos = () => {
-        // Calls the admin-configured emergency_contact_phone directly when
-        // set; falls back to the existing mailto flow otherwise (the setting
-        // defaults to empty — no real emergency number exists to fabricate).
+        
+        
+        
         const emergencyPhone = businessSettings?.find((s) => s.key === 'emergency_contact_phone')?.value;
         if (emergencyPhone) {
             Linking.openURL(`tel:${emergencyPhone}`).catch(() =>
@@ -249,30 +249,30 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
         );
     };
 
-    // ━━━━━ Animations
+    
     const headerScale = useSharedValue(0.95);
     const contentOpacity = useSharedValue(0);
 
     useEffect(() => {
         headerScale.value = withSpring(1, { damping: 12, mass: 1 });
         contentOpacity.value = withSpring(1, { damping: 10, mass: 1 });
-        // headerScale/contentOpacity are Reanimated shared values with stable identity.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        
+        
     }, []);
 
 
 
 
-    // Rapido-style live tracking: only pings location while this driver has
-    // a shipment actively accepted/in_transit — not just because they're
-    // online, to avoid draining battery for idle drivers browsing orders.
-    // Previously always evaluated false: it checked the SEARCHING pool
-    // (`shipments` above), which by definition never contains a shipment
-    // already assigned to this driver. Fixed now that
-    // GET /shipments/driver/mine (`activeDelivery` above) exists.
+    
+    
+    
+    
+    
+    
+    
     const driverPosition = useDriverLiveLocation(!!activeDelivery);
-    // In-app turn-by-turn (free OSRM) to whichever leg is currently active —
-    // pickup while accepted, drop once in_transit.
+    
+    
     const navRoute = useTurnByTurnRoute(
         driverPosition,
         activeDelivery ? (activeDelivery.status === 'accepted' ? activeDelivery.pickup : activeDelivery.drop) : null,
@@ -289,29 +289,29 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
         ];
     }, [activeDelivery]);
 
-    // FCM listener registration (foreground/background/killed-tap
-    // navigation) is now centralized once in App.tsx — was duplicated
-    // here before, re-registering a whole second set of listeners every
-    // time this screen mounted. Token registration alone still happens
-    // here too (harmless/idempotent) since App.tsx's effect already
-    // covers it on every authenticated session, but this direct call
-    // keeps it fresh right when the driver actually opens Home.
+    
+    
+    
+    
+    
+    
+    
     useEffect(() => {
         registerFCMToken('driver');
     }, []);
 
-    // ━━━━━ Pull to Refresh
+    
     const onRefresh = useCallback(() => {
         refetchShipments();
         refetchMyShipments();
     }, [refetchShipments, refetchMyShipments]);
 
-    // ━━━━━ Retry handler
+    
     const onRetry = useCallback(() => {
         refetchShipments();
     }, [refetchShipments]);
 
-    // ━━━━━ Animated styles
+    
     const headerAnimStyle = useAnimatedStyle(() => ({
         transform: [{ scale: headerScale.value }],
     }));
@@ -321,7 +321,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     }));
     const tabBarPadding = useTabBarContentPadding();
 
-    // ━━━━━ Loading State
+    
     if (loading) {
         return (
             <View style={styles.container}>
@@ -331,7 +331,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
         );
     }
 
-    // ━━━━━ Error State
+    
     if (error && shipments.length === 0) {
         return (
             <View style={styles.errorContainer}>
@@ -345,7 +345,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                     <TouchableOpacity
                         style={styles.retryButton}
                         onPress={onRetry}
-                    // entering={SlideInDown.delay(200)}
+                    
                     >
                         <RefreshCw size={18} color="#FFF" />
                         <Text style={styles.retryText}>{t('common.retry')}</Text>
@@ -372,7 +372,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                     }
                     contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarPadding }]}
                 >
-                {/* 🚚 Driver Header */}
+                {}
                 <Animated.View style={[headerAnimStyle, { width: '100%' }]}>
                     <DriverHeader
                         earnings={todayEarnings}
@@ -383,7 +383,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                     />
                 </Animated.View>
 
-                {/* 💬 Active Delivery — chat + real directions */}
+                {}
                 {activeDelivery && (
                     <View style={styles.activeDeliveryCard}>
                         <TouchableOpacity
@@ -447,12 +447,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                                 </React.Fragment>
                             ))}
                         </View>
-                        {/* Real in-app turn-by-turn (free OSRM routing over
-                            the existing MapLibre map, no API key) — the
-                            driver's current position to whichever leg is
-                            active (pickup while accepted, drop while
-                            in_transit). "Open in Maps" stays alongside as a
-                            fallback for drivers who prefer Google/Apple Maps. */}
+                        {}
                         <View style={styles.embeddedMapWrap}>
                             <LiveTrackingMap
                                 pickup={activeDelivery.status === 'accepted' ? activeDelivery.pickup : undefined}
@@ -472,11 +467,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                             <Text style={styles.openMapsText}>{t('driverHome.openDirectionsInMaps')}</Text>
                         </TouchableOpacity>
 
-                        {/* Status-driven CTA — visible immediately after
-                            the relevant transition, no GPS/arrival
-                            prerequisite (product decision, kalanabhaBackend
-                            81263b1). "Complete Delivery" opens the real
-                            Delivery Completion Sheet. */}
+                        {}
                         {activeDelivery.status === 'accepted' && (
                             <TouchableOpacity style={styles.arrivalCtaBtn} onPress={() => driverActions.onStartDelivery(activeDelivery.id)}>
                                 <Text style={styles.arrivalCtaText}>{t('driverHome.verifyPickup')}</Text>
@@ -488,10 +479,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                             </TouchableOpacity>
                         )}
 
-                        {/* Multi-stop bookings — completed strictly in order
-                            (server rejects an out-of-order attempt), so only
-                            the next pending stop ever shows an actionable
-                            button; completed/upcoming stops are read-only. */}
+                        {}
                         {!!activeDelivery.stops?.length && (
                             <View style={styles.stopsListWrap}>
                                 {activeDelivery.stops.map((stop) => {
@@ -520,14 +508,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                     </View>
                 )}
 
-                {/* 📥 Incoming Load Request — the top searching-pool
-                    shipment, styled as the reference mockup's hero card.
-                    Every figure on it is real (price/distanceKm/package/
-                    sender/insured flag); the countdown is real too — backed
-                    by Shipment.expiresAt (kalanabhaBackend's
-                    ShipmentExpiryProcessor auto-cancels it at 0). No surge,
-                    demand-radar, acceptance-score, or OTP claim — none of
-                    those exist anywhere in the backend. */}
+                {}
                 {showIncomingCard && incomingRequest && (
                     <Animated.View entering={FadeIn} style={styles.incomingCard}>
                         <View style={styles.incomingHeaderRow}>
@@ -587,9 +568,9 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                                 iconColor="#FF7518"
                             />
                             {incomingRequest.category === 'HOUSE_SHIFTING' ? (
-                                // No real weight for a house move (never measured) —
-                                // showing "Up to 0 kg" would read as a bug. Helper
-                                // count is the real number this job actually carries.
+                                
+                                
+                                
                                 <Text style={styles.incomingVehicleText}>
                                     {t('driverHome.helpersNeeded', { vehicle: incomingRequest.vehicleType, count: incomingRequest.helpersCount, plural: incomingRequest.helpersCount === 1 ? '' : 's' })}
                                 </Text>
@@ -601,9 +582,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                             <Text style={styles.incomingPackageText} numberOfLines={1}>
                                 {incomingRequest.package?.category ?? incomingRequest.goodsType}
                             </Text>
-                            {/* Real flags now (kalanabhaBackend 5f7763e) — worth surfacing
-                                to the driver since "fragile" is an actual handling
-                                instruction, not a fee (no payment gateway charges it). */}
+                            {}
                             {incomingRequest.fragile && (
                                 <View style={styles.incomingFragileBadge}>
                                     <ShieldAlert size={11} color="#B45309" />
@@ -641,11 +620,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                     </Animated.View>
                 )}
 
-                {/* ⛽ Find nearby fuel stations (GET /maps/fuel-stations, free
-                    OpenStreetMap data) + 📄 My Documents (real KYC upload/
-                    status, GET /files/driver-documents/mine) — a two-column
-                    quick-access row instead of stacking full-width, matching
-                    the reference mockup's layout. */}
+                {}
                 <View style={styles.quickRow}>
                     <TouchableOpacity
                         style={[styles.quickCard, { backgroundColor: '#FEF3C7' }]}
@@ -672,9 +647,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                     </TouchableOpacity>
                 </View>
 
-                {/* 🚚 "Drive More, Earn More" — real encouragement to stay
-                    online, no invented bonus/incentive figure attached
-                    (no such system exists on the backend). */}
+                {}
                 <LinearGradient
                     colors={['#FF7518', '#E9600A']}
                     start={{ x: 0, y: 0 }}
@@ -688,7 +661,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                     <Image source={DRIVE_MORE_TRUCK} resizeMode="contain" style={styles.driveMoreImage} />
                 </LinearGradient>
 
-                {/* 📦 Orders Section */}
+                {}
                 <Animated.View style={contentAnimStyle}>
                     <View style={styles.ordersSection}>
                         <View style={styles.sectionHeader}>
@@ -734,7 +707,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                     </View>
                 </Animated.View>
 
-                {/* 📊 Live Stats Footer */}
+                {}
                 {shipments.length > 0 && (
                     <Animated.View
                         entering={SlideInDown.delay(400)}
@@ -774,7 +747,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
 
 export default HomeScreen;
 
-// ━━━━━ STYLES
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -784,7 +757,7 @@ const styles = StyleSheet.create({
         flexGrow: 1,
     },
 
-    // Loading States
+    
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -806,7 +779,7 @@ const styles = StyleSheet.create({
         color: '#9CA3AF',
     },
 
-    // Error States
+    
     errorContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -849,12 +822,12 @@ const styles = StyleSheet.create({
         fontFamily: FONTS.SEMI_BOLD_PRIMARY,
     },
 
-    // Header
+    
     header: {
         marginBottom: 0,
     },
 
-    // Active Delivery card
+    
     sosBtn: {
         position: 'absolute',
         top: 14,
@@ -1010,7 +983,7 @@ const styles = StyleSheet.create({
     },
     devSimulateText: { color: '#6B7280', fontSize: 11, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
 
-    // ── Incoming Load Request hero card
+    
     incomingCard: {
         marginHorizontal: 16,
         marginTop: 12,
@@ -1095,9 +1068,9 @@ const styles = StyleSheet.create({
     quickCardTitle: { fontSize: 13, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827' },
     quickCardSub: { fontSize: 11, fontFamily: FONTS.MEDIUM_PRIMARY, color: '#57534E', marginTop: 3, lineHeight: 15 },
 
-    // "Drive More, Earn More" banner — real copy encouraging drivers to
-    // stay online (no fabricated bonus amount or figure attached to it,
-    // there's no incentive/bonus system on the backend).
+    
+    
+    
     driveMoreBanner: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -1112,7 +1085,7 @@ const styles = StyleSheet.create({
     driveMoreSub: { fontSize: 12, fontFamily: FONTS.MEDIUM_PRIMARY, color: 'rgba(255,255,255,0.9)', marginTop: 6, lineHeight: 16 },
     driveMoreImage: { width: 110, height: 90 },
 
-    // Orders Section
+    
     ordersSection: {
         flex: 1,
         paddingHorizontal: 16,
@@ -1147,7 +1120,7 @@ const styles = StyleSheet.create({
         fontFamily: FONTS.BOLD_PRIMARY,
     },
 
-    // Empty State
+    
     emptyState: {
         flex: 1,
         justifyContent: 'center',
@@ -1218,7 +1191,7 @@ const styles = StyleSheet.create({
         color: '#FF7518',
     },
 
-    // Stats Footer
+    
     statsFooterWrap: {
         paddingHorizontal: 16,
         paddingVertical: 12,

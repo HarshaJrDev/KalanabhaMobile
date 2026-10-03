@@ -8,9 +8,9 @@ export interface DriverPosition {
     lng: number;
 }
 
-// Returns the driver's own current position (used by TurnByTurnNav as the
-// nav origin) in addition to its original job — pinging the server so the
-// customer's LiveTrackingMap marker moves. One GPS watch, two consumers.
+
+
+
 export const useDriverLiveLocation = (isActive: boolean): DriverPosition | null => {
     const watchId = useRef<number | null>(null);
     const [position, setPosition] = useState<DriverPosition | null>(null);
@@ -39,8 +39,8 @@ export const useDriverLiveLocation = (isActive: boolean): DriverPosition | null 
                     const { latitude, longitude } = geoPosition.coords;
                     setPosition({ lat: latitude, lng: longitude });
                     pingLocation(latitude, longitude).catch(() => {
-                        // Non-critical — a missed ping just means a stale
-                        // marker on the customer's side until the next one.
+                        
+                        
                     });
                 },
                 error => {

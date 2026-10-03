@@ -2,7 +2,7 @@ import { apiClient } from '@api/client';
 import type { ApiSuccessResponse } from '@api/types';
 import type { CreateRatingInput, Rating } from '../types';
 
-// One-to-one with kalanabhaBackend/src/modules/ratings/controllers/ratings.controller.ts
+
 
 export const getRating = async (shipmentId: string): Promise<Rating | null> => {
     const { data } = await apiClient.get<ApiSuccessResponse<Rating | null>>(`/shipments/${shipmentId}/rating`);

@@ -119,15 +119,15 @@ const isPackage = Package;
 const isCircleCheck = CircleCheck;
 const isUser = User;
 
-// ─── TYPES ────────────────────────────────────────────────────────────────────
+
 
 type SenderForm = {
   name: string;
   phone: string;
   email: string;
-  // House no./landmark — free text, appended onto the selected place's
-  // name for the driver's benefit. The place itself (city/pincode/real
-  // coordinates) always comes from the service-area dropdown, never typed.
+  
+  
+  
   landmark: string;
   address: string;
   city: string;
@@ -155,31 +155,31 @@ type PackageForm = {
   insurance: boolean;
   category: string;
   price: number;
-  // House Shifting only — real per-helper charge (business setting
-  // 'helper_rate_per_person') is applied server-side per this count.
+  
+  
   helpersCount: number;
 };
 
 type OrderDetailsForm = {
   serviceType: 'standard' | 'express' | 'same-day';
-  // Not a fixed union any more — real VehicleConfig rows (admin-managed),
-  // so a type the admin renames/adds/deactivates is picked up here without
-  // a mobile release. See VEHICLE_ICON_BY_NAME below for the icon mapping.
+  
+  
+  
   vehicleType: string;
   paymentMode: 'prepaid' | 'cod' | 'credit';
   notes: string;
   pickupDate: string;
   pickupSlot: string;
-  // Optional promo code, validated against POST /promotions/validate
-  // before booking (StepOrderDetails' Promo Code section).
+  
+  
   promoCode: string;
-  // "Book now" (false, the existing/default behaviour) vs a future-dated
-  // pickup — scheduledAt only actually sent to the backend when true.
+  
+  
   scheduled: boolean;
-  // ISO datetime, only meaningful when scheduled === true.
+  
   scheduledAt: string;
-  // Real driver-facing drop-off preference ("Leave at door", "Call
-  // before delivery") — distinct from `notes`, which is general.
+  
+  
   deliveryInstructions: string;
 };
 
@@ -191,7 +191,7 @@ type AllOrderData = {
 };
 
 const log = (scope: string, message: string, data?: unknown) => {
-  // Avoid noisy logs in production
+  
   if (__DEV__) {
     console.log(`[${scope}] ${message}`, data ?? '');
   }
@@ -233,12 +233,12 @@ const makeSteps = (t: (key: string) => string) => [
   },
 ];
 
-// Real, admin-managed categories now (GET /settings/package-categories) —
-// was a frozen client array before. `icon` on each real category is a
-// lucide-react-native component name the admin sets in KalanabhaAdmin;
-// packageCategoryIconFor resolves it defensively (an admin could type a
-// name that doesn't exist) to the generic Package icon rather than
-// crashing or rendering nothing.
+
+
+
+
+
+
 const PACKAGE_CATEGORY_ICONS: Record<string, LucideIcon> = {
   FileText,
   Smartphone,
@@ -251,14 +251,14 @@ const PACKAGE_CATEGORY_ICONS: Record<string, LucideIcon> = {
 const packageCategoryIconFor = (icon: string): LucideIcon =>
   PACKAGE_CATEGORY_ICONS[icon] ?? Package;
 
-// Real, admin-set surcharges (GET /settings/business — same
-// 'service_type_express_surcharge'/'service_type_same_day_surcharge'
-// keys PricingService.quote() now actually adds to the price) — this
-// used to show a fixed ₹99/₹199/₹349 regardless of what selecting a
-// service type actually changed about the price (nothing; the backend
-// silently ignored serviceType entirely). Standard carries no
-// surcharge, so it reads "Included" rather than inventing a base fee
-// that was never really its own line item.
+
+
+
+
+
+
+
+
 const makeServiceTypes = (
   COLORS: OrderColors,
   expressSurcharge: number,
@@ -298,9 +298,9 @@ const makeServiceTypes = (
   },
 ];
 
-// VehicleConfig.icon is a free-text string set by whichever admin created
-// the row (seen values: "Bike"/"Van"/"Truck"), not a Lucide icon key — maps
-// the real config's `name` to a matching glyph. Same mapping as Home.tsx.
+
+
+
 const VEHICLE_ICON_BY_NAME: Record<string, LucideIcon> = {
   bike: Bike,
   van: Car,
@@ -327,10 +327,10 @@ const makePickupSlots = (t: (key: string) => string) => [
   t('addOrder.slot2to4'),
   t('addOrder.slot4to6'),
 ];
-// Stable English keys used as form values/backend payload — PICKUP_SLOTS
-// kept as the canonical (untranslated) values so a pickupSlot chosen in
-// one language still means the same slot after a language switch; only
-// makePickupSlots' translated labels are ever shown in the UI.
+
+
+
+
 const PICKUP_SLOTS = [
   '9:00 AM – 11:00 AM',
   '11:00 AM – 1:00 PM',
@@ -338,9 +338,9 @@ const PICKUP_SLOTS = [
   '4:00 PM – 6:00 PM',
 ];
 
-// Quick-select drop-off preferences — Shipment.deliveryInstructions is
-// plain free text (shown as-is to the driver), so the translated label
-// itself is what gets stored; a customer can also just type their own.
+
+
+
 const DELIVERY_INSTRUCTION_OPTIONS = [
   'leaveAtDoor',
   'callBeforeDelivery',
@@ -348,7 +348,7 @@ const DELIVERY_INSTRUCTION_OPTIONS = [
   'callOnArrival',
 ] as const;
 
-// ─── INITIAL STATES ───────────────────────────────────────────────────────────
+
 
 const INIT_SENDER: SenderForm = {
   name: '',
@@ -448,11 +448,11 @@ const InputField = ({
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           autoCapitalize="none"
-          // Android (Samsung especially) can still draw its own
-          // autofill/suggestion chrome over a phone-type field
-          // regardless of these flags — inputStyles.input now also
-          // sets an explicit backgroundColor so that chrome can't
-          // paint an opaque surface with no color underneath.
+          
+          
+          
+          
+          
           importantForAutofill="no"
           autoComplete="off"
           autoCorrect={false}
@@ -487,11 +487,11 @@ const makeInputStyles = (COLORS: OrderColors) =>
     rowFocused: { borderColor: COLORS.primary, backgroundColor: '#FAFCFF' },
     rowError: { borderColor: COLORS.danger },
     icon: { marginRight: 8 },
-    // backgroundColor is required here, not just on `row` — Samsung's
-    // autofill overlay (phone-number fields especially) paints its own
-    // opaque white surface directly on the native TextInput view, which
-    // sits above the wrapper View's background and swallows an
-    // unstyled/transparent input, making the typed text unreadable.
+    
+    
+    
+    
+    
     input: {
       flex: 1,
       fontSize: 14,
@@ -502,13 +502,13 @@ const makeInputStyles = (COLORS: OrderColors) =>
     error: { color: COLORS.danger, fontSize: 11, marginTop: 3 },
   });
 
-// Once a service area is picked, this optionally narrows it down to the
-// customer's exact spot via a real OpenStreetMap (Nominatim) search,
-// biased toward the chosen area's name/city. If the search comes up empty
-// or fails, the area's own center coordinates keep working as the
-// fallback (set by the caller before this ever renders a result) — this
-// component only ever narrows the location, it never blocks on being
-// left alone or on a failed lookup.
+
+
+
+
+
+
+
 const LocationRefiner = ({
   area,
   refined,
@@ -812,12 +812,12 @@ const makeNavStyles = (COLORS: OrderColors) =>
     nextText: { color: '#fff', fontSize: 15, fontFamily: FONTS.BOLD_PRIMARY },
   });
 
-// ─── STEP 1: SENDER ───────────────────────────────────────────────────────────
+
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// "123, MG Road" free-text style, but built from a real place instead —
-// "<landmark>, <locality>, <city>" (landmark omitted if blank).
+
+
 const composeAddress = (
   landmark: string,
   place: ServiceArea | null,
@@ -828,13 +828,13 @@ const composeAddress = (
     : `${place.name}, ${place.city}`;
 };
 
-// ─── STEP 0: CATEGORY ─────────────────────────────────────────────────────────
+
 
 type ShipmentCategory = 'PARCEL' | 'HOUSE_SHIFTING';
 
-// Real K-branded photos for the two booking categories, not stock/generic
-// icons — one require() per category, read generically off CATEGORY_OPTIONS
-// below rather than hardcoded per-card JSX.
+
+
+
 const CATEGORY_IMAGES: Record<ShipmentCategory, ReturnType<typeof require>> = {
   PARCEL: require('../../../assets/images/home/category-package.png'),
   HOUSE_SHIFTING: require('../../../assets/images/home/category-house-shifting.png'),
@@ -1105,7 +1105,7 @@ const StepSender = ({
   );
 };
 
-// ─── STEP 2: RECEIVER ─────────────────────────────────────────────────────────
+
 
 const StepReceiver = ({
   data,
@@ -1134,10 +1134,10 @@ const StepReceiver = ({
   const [errors, setErrors] = useState<
     Partial<Record<keyof ReceiverForm | 'place', string>>
   >({});
-  // Real "repeat order" contacts — every unique receiver (by phone) from
-  // this customer's own order history, not a fabricated address book.
-  // No new backend endpoint needed: GET /shipments/mine/history already
-  // returns each past shipment's receiver contact info.
+  
+  
+  
+  
   const { data: shipmentHistory } = useMyShipmentHistory();
   const recentReceivers = useMemo(() => {
     const seen = new Set<string>();
@@ -1266,7 +1266,7 @@ const StepReceiver = ({
   );
 };
 
-// ─── STEP 3: PACKAGE ──────────────────────────────────────────────────────────
+
 
 const StepPackage = ({
   data,
@@ -1322,8 +1322,8 @@ const StepPackage = ({
       if (!data.quantity.trim() || !Number.isInteger(quantity) || quantity < 1)
         e.quantity = t('addOrder.errorQuantityInvalid');
 
-      // Dimensions are optional, but a garbage/negative value if entered
-      // at all is still worth catching before it reaches the backend.
+      
+      
       (['length', 'width', 'height'] as const).forEach(dim => {
         if (!data[dim].trim()) return;
         const v = Number(data[dim]);
@@ -1355,7 +1355,7 @@ const StepPackage = ({
 
       {!isHouseShifting && (
         <>
-          {/* Category chips */}
+          {}
           <Text style={pkgStyles.catLabel}>
             {t('addOrder.categoryChipsLabel')}
           </Text>
@@ -1519,7 +1519,7 @@ const StepPackage = ({
         </>
       )}
 
-      {/* Toggles */}
+      {}
       <View style={pkgStyles.toggleCard}>
         <View style={pkgStyles.toggleRow}>
           <View style={pkgStyles.toggleLeft}>
@@ -1550,11 +1550,7 @@ const StepPackage = ({
               <Text style={pkgStyles.toggleTitle}>
                 {t('addOrder.requestInsuranceTitle')}
               </Text>
-              {/* A real self-insurance premium (insurance_premium_rate_percent,
-                                default 0) is added to the price when this is on, and funds a
-                                real admin-reviewed claim (InsuranceClaimsModule) — still no
-                                fixed "up to ₹X" coverage figure to promise, since there's no
-                                declared-value field to base one on. */}
+              {}
               <Text style={pkgStyles.toggleSub}>
                 {t('addOrder.requestInsuranceSubtitle')}
               </Text>
@@ -1685,7 +1681,7 @@ const makePkgStyles = (COLORS: OrderColors) =>
     helpersError: { color: COLORS.danger, fontSize: 11, marginTop: 8 },
   });
 
-// ─── STEP 4: ORDER DETAILS + REVIEW ──────────────────────────────────────────
+
 
 const StepOrderDetails = ({
   data,
@@ -1743,16 +1739,16 @@ const StepOrderDetails = ({
     reset: resetPromoResult,
   } = useValidatePromoCode();
   const { data: activePromoCodes } = useActivePromoCodes();
-  // Real, admin-managed vehicle types (GET /settings/vehicle-configs) —
-  // previously a hardcoded bike/van/truck array here, so renaming, adding,
-  // or deactivating a vehicle type in the admin panel never reached this
-  // screen at all. House Shifting excludes bike — a bike can't move
-  // furniture/helpers, so it's never offered for that category.
+  
+  
+  
+  
+  
   const { data: vehicleConfigsData } = useVehicleConfigs();
-  // Real capacity filter (VehicleConfig.maxWeight) on top of the
-  // existing active/category filtering — a real field that existed
-  // but was never actually used to exclude a vehicle too small for
-  // the goods weight entered on the previous step.
+  
+  
+  
+  
   const { results: activeVehicleConfigs, excludedForCapacity } =
     useVehicleSearch(vehicleConfigsData, {
       minCapacityKg:
@@ -1761,10 +1757,10 @@ const StepOrderDetails = ({
           : safeNumber(allData.package.weight),
       excludeNames: category === 'HOUSE_SHIFTING' ? ['bike'] : undefined,
     });
-  // If the currently-selected type was deactivated/renamed/removed since
-  // the form's default was set, fall back to the first active config
-  // rather than silently submitting a vehicle type the backend will
-  // reject as "unknown or inactive" at quote/booking time.
+  
+  
+  
+  
   useEffect(() => {
     if (activeVehicleConfigs.length === 0) return;
     const stillValid = activeVehicleConfigs.some(
@@ -1773,7 +1769,7 @@ const StepOrderDetails = ({
     if (!stillValid) {
       onChange('vehicleType', activeVehicleConfigs[0].name.toLowerCase());
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [activeVehicleConfigs]);
   const [stopDraftPlace, setStopDraftPlace] = useState<ServiceArea | null>(
     null,
@@ -1793,10 +1789,10 @@ const StepOrderDetails = ({
   // plain requests below, with no invented price attached to either.
   // Real, distance-based fare from the pickup/drop coordinates + the
   // selected vehicle's rate card. Was falling back to a flat guess
-  // ({standard: 99, ...}) on a geocode/quote failure and displaying it as
-  // a normal total — indistinguishable from a real price, right above a
-  // Place Order button that would then hard-block on the same failure.
-  // `total` is null whenever there's no real price to show yet.
+  
+  
+  
+  
   const basePrice = fareEstimate.price;
   const total = basePrice;
 
@@ -1805,7 +1801,7 @@ const StepOrderDetails = ({
       showsVerticalScrollIndicator={true}
       keyboardShouldPersistTaps="handled"
     >
-      {/* Service Type */}
+      {}
       <SectionHeader
         title={t('addOrder.serviceTypeSectionTitle')}
         subtitle={t('addOrder.serviceTypeSectionSubtitle')}
@@ -1843,7 +1839,7 @@ const StepOrderDetails = ({
         ))}
       </View>
 
-      {/* Vehicle Type */}
+      {}
       <SectionHeader
         title={t('addOrder.vehicleTypeSectionTitle')}
         subtitle={t('addOrder.vehicleTypeSectionSubtitle')}
@@ -1870,9 +1866,7 @@ const StepOrderDetails = ({
               ]}
               activeOpacity={0.8}
             >
-              {/* Real, admin-set illustration (KalanabhaAdmin Vehicle
-                                Configs) — falls back to the same icon mapping until
-                                an admin sets one. */}
+              {}
               <VehicleVisual
                 vehicle={vt}
                 size={56}
@@ -1899,7 +1893,7 @@ const StepOrderDetails = ({
         })}
       </View>
 
-      {/* Payment Mode */}
+      {}
       <SectionHeader title={t('addOrder.paymentMethodSectionTitle')} />
       {PAYMENT_MODES.map(pm => (
         <TouchableOpacity
@@ -1942,7 +1936,7 @@ const StepOrderDetails = ({
         </TouchableOpacity>
       ))}
 
-      {/* Promo Code */}
+      {}
       <SectionHeader title={t('addOrder.promoCodeSectionTitle')} />
       {!!activePromoCodes?.length && (
         <ScrollView
@@ -2026,7 +2020,7 @@ const StepOrderDetails = ({
         </Text>
       )}
 
-      {/* Schedule pickup */}
+      {}
       <SectionHeader
         title={t('addOrder.schedulePickupSectionTitle')}
         subtitle={t('addOrder.schedulePickupSectionSubtitle')}
@@ -2078,7 +2072,7 @@ const StepOrderDetails = ({
         />
       )}
 
-      {/* Pickup Slot */}
+      {}
       <SectionHeader
         title={t('addOrder.pickupTimeSlotSectionTitle')}
         subtitle={t('addOrder.pickupTimeSlotSectionSubtitle')}
@@ -2106,8 +2100,7 @@ const StepOrderDetails = ({
         ))}
       </View>
 
-      {/* Delivery Instructions — real driver-facing drop-off
-                preference, distinct from the general Notes box below. */}
+      {}
       <SectionHeader
         title={t('addOrder.deliveryInstructionsSectionTitle')}
         subtitle={t('addOrder.deliveryInstructionsSectionSubtitle')}
@@ -2190,7 +2183,7 @@ const StepOrderDetails = ({
         </>
       )}
 
-      {/* Notes */}
+      {}
       <SectionHeader
         title={t('addOrder.deliveryNotesSectionTitle')}
         subtitle={t('addOrder.deliveryNotesSectionSubtitle')}
@@ -2208,7 +2201,7 @@ const StepOrderDetails = ({
         />
       </View>
 
-      {/* ── Hero fare card ── */}
+      {}
       <LinearGradient
         colors={[COLORS.primary, COLORS.primaryDark]}
         start={{ x: 0, y: 0 }}
@@ -2240,9 +2233,9 @@ const StepOrderDetails = ({
                 style={{ alignSelf: 'flex-start', marginTop: 6 }}
               />
             ) : fareEstimate.error ? (
-              // Was showing "₹0" (or ₹49/₹29 from fees alone) here on a
-              // geocode/quote failure — a real number in a fare-looking
-              // slot, when there's no real fare at all yet.
+              
+              
+              
               <Text style={odStyles.fareHeroPrice}>—</Text>
             ) : (
               <Text style={odStyles.fareHeroPrice}>
@@ -2260,7 +2253,7 @@ const StepOrderDetails = ({
         </View>
       </LinearGradient>
 
-      {/* ── Order Summary Review ── */}
+      {}
       <View style={odStyles.reviewSection}>
         <SectionHeader
           title={t('addOrder.orderSummarySectionTitle')}
@@ -2268,7 +2261,7 @@ const StepOrderDetails = ({
         />
 
         <View style={odStyles.summaryCard}>
-          {/* Route */}
+          {}
           <View style={odStyles.routeBox}>
             <View style={odStyles.routePoint}>
               <View
@@ -2279,7 +2272,7 @@ const StepOrderDetails = ({
                   {t('addOrder.routeLabelPickup')}
                 </Text>
                 <Text style={odStyles.routeName}>{allData.sender.name}</Text>
-                {/* address already ends in "<locality>, <city>" (composeAddress) */}
+                {}
                 <Text style={odStyles.routeAddr}>{allData.sender.address}</Text>
               </View>
             </View>
@@ -2302,7 +2295,7 @@ const StepOrderDetails = ({
 
           <View style={odStyles.summDivider} />
 
-          {/* Package Summary */}
+          {}
           <View style={odStyles.summRow}>
             <Text style={odStyles.summKey}>
               {t('addOrder.summaryKeyPackage')}
@@ -2341,10 +2334,7 @@ const StepOrderDetails = ({
               </Text>
               <View style={odStyles.summValRow}>
                 <Check size={13} color={COLORS.success} strokeWidth={3} />
-                {/* Coverage is a real admin-reviewed claim against a real
-                                    premium pool now (kalanabhaBackend InsuranceClaimsModule) —
-                                    but there's no fixed "up to ₹X" coverage figure to promise,
-                                    so this still only confirms the request, not a dollar amount. */}
+                {}
                 <Text style={[odStyles.summVal, { color: COLORS.success }]}>
                   {t('addOrder.summaryInsuranceValue')}
                 </Text>
@@ -2381,23 +2371,17 @@ const StepOrderDetails = ({
 
           <View style={odStyles.summDivider} />
 
-          {/* Price breakdown — base fare shown in the hero card above */}
+          {}
           {fareEstimate.error && (
             <View style={odStyles.fareErrorRow}>
               <AlertTriangle size={12} color={COLORS.warning} />
-              {/* Was "— showing a flat estimate instead", implying the order
-                                could still go through — it couldn't. Real coordinates for
-                                pickup/drop are required for dispatch/tracking, so there's
-                                no flat-estimate fallback that actually lets this order be
-                                placed; the button below is disabled until this resolves. */}
+              {}
               <Text style={odStyles.fareError}>
                 {t('addOrder.fareErrorSuffix', { error: fareEstimate.error })}
               </Text>
             </View>
           )}
-          {/* helperCost is already folded into fareEstimate.price by
-                        PricingService — shown here as a breakdown line, not
-                        added again into `total`. */}
+          {}
           {category === 'HOUSE_SHIFTING' && !!fareEstimate.helperCost && (
             <View style={odStyles.summRow}>
               <Text style={odStyles.summKey}>
@@ -2408,9 +2392,7 @@ const StepOrderDetails = ({
               <Text style={odStyles.summVal}>₹{fareEstimate.helperCost}</Text>
             </View>
           )}
-          {/* Real premium (insurance_premium_rate_percent business
-                        setting) — 0 and hidden until an admin sets a real rate, same
-                        "inert until configured" pattern as the helper cost above. */}
+          {}
           {!!fareEstimate.insurancePremium && (
             <View style={odStyles.summRow}>
               <Text style={odStyles.summKey}>
@@ -2814,7 +2796,7 @@ const makeOdStyles = (COLORS: OrderColors) =>
     },
     fareError: { fontSize: 11, color: COLORS.warning, flexShrink: 1 },
 
-    // ── Hero fare card (Rapido-style "confirm ride" price display)
+    
     fareHero: {
       borderRadius: RADIUS.xl,
       padding: 18,
@@ -2854,7 +2836,7 @@ const makeOdStyles = (COLORS: OrderColors) =>
     },
   });
 
-// ─── SUCCESS MODAL ────────────────────────────────────────────────────────────
+
 
 const SuccessModal = ({
   visible,
@@ -3011,7 +2993,7 @@ const makeSuccessStyles = (COLORS: OrderColors) =>
     },
   });
 
-// ─── STEP INDICATOR HEADER ────────────────────────────────────────────────────
+
 
 const StepHeader = ({ current, total }: { current: number; total: number }) => {
   const { colors: BRAND } = useAppTheme();
@@ -3161,7 +3143,7 @@ const makeHeaderStyles = (COLORS: OrderColors) =>
     connectorDone: { backgroundColor: '#fff' },
   });
 
-// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
+
 
 const NewOrder = () => {
   const { colors: BRAND } = useAppTheme();
@@ -3170,10 +3152,10 @@ const NewOrder = () => {
   const STEPS = useMemo(() => makeSteps(t), [t]);
   const mainStyles = useMemo(() => makeMainStyles(COLORS), [COLORS]);
   const navigation = useNavigation();
-  // Optional hand-off from CheckRate.tsx's "Book This Shipment" — only
-  // pre-fills the pickup/drop addresses and vehicle type it already
-  // collected, so the rate the user just saw and this booking are for the
-  // same route/vehicle instead of starting over from blank fields.
+  
+  
+  
+  
   const route = useRoute<any>();
   const prefill = route.params?.prefill as
     | {
@@ -3184,18 +3166,18 @@ const NewOrder = () => {
       }
     | undefined;
 
-  // Real logged-in customer's profile (GET /users/me, hydrated into the
-  // auth store) — the sender is almost always the account holder
-  // themselves, so pre-filling name/phone/email/address from their real
-  // profile saves re-typing every single order instead of starting blank.
-  // Still fully editable — someone booking on a business's behalf can
-  // change any field.
+  
+  
+  
+  
+  
+  
   const user = useAuthStore(s => s.user);
 
   const [step, setStep] = useState(0);
-  // Porter-style booking type, chosen on StepCategory (step 0). Drives the
-  // Package step's fields, the Vehicle Type choices (no bike for House
-  // Shifting), and the real per-helper charge added server-side.
+  
+  
+  
   const [category, setCategory] = useState<ShipmentCategory>(
     prefill?.category ?? 'PARCEL',
   );
@@ -3207,13 +3189,13 @@ const NewOrder = () => {
   }));
   const [receiver, setReceiver] = useState<ReceiverForm>(INIT_RECEIVER);
 
-  // Admin-managed service areas (GET /settings/service-areas) — the
-  // source of truth for real pickup/drop coordinates, replacing the
-  // previous free-text address + always-geocode approach. sender/
-  // receiver's address/city/pincode are kept in sync from whichever area
-  // is selected (see updateSender/updateReceiver and selectPickupPlace/
-  // selectDropPlace below) purely so the rest of the app/API payload
-  // still sees plain strings, same as before.
+  
+  
+  
+  
+  
+  
+  
   const { data: serviceAreasData } = useServiceAreas();
   const activeAreas = useMemo(
     () => (serviceAreasData ?? []).filter(a => a.active),
@@ -3222,9 +3204,9 @@ const NewOrder = () => {
 
   const [pickupPlace, setPickupPlace] = useState<ServiceArea | null>(null);
   const [dropPlace, setDropPlace] = useState<ServiceArea | null>(null);
-  // Optional OpenStreetMap-refined coordinates within the selected area
-  // (LocationRefiner) — overrides the area's center when present, but
-  // never required: the area's own lat/lng is always a valid fallback.
+  
+  
+  
   const [pickupRefine, setPickupRefine] = useState<
     (KnownCoords & { label: string }) | null
   >(null);
@@ -3232,10 +3214,10 @@ const NewOrder = () => {
     (KnownCoords & { label: string }) | null
   >(null);
   const [pkg, setPkg] = useState<PackageForm>(INIT_PACKAGE);
-  // Optional intermediate stops between pickup and drop (max 10) — each
-  // backed by a real service area like pickup/drop, not free text, so
-  // its lat/lng is always real. Driver completes them strictly in order
-  // (server-enforced) via PATCH /shipments/:id/stops/:stopId/complete.
+  
+  
+  
+  
   const [stops, setStops] = useState<
     { id: string; place: ServiceArea; landmark: string }[]
   >([]);
@@ -3250,8 +3232,8 @@ const NewOrder = () => {
   const [submitting, setSubmitting] = useState(false);
   const [trackingId, setTrackingId] = useState('');
   // See handleSubmit's comment — one key per order attempt, reused
-  // across retries so a post-Network-Error retap is correctly deduped
-  // server-side instead of hitting the duplicate-shipment guard.
+  
+  
   const submitIdempotencyKeyRef = useRef<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const { mutateAsync: payForShipment } = usePayForShipment();
@@ -3259,10 +3241,10 @@ const NewOrder = () => {
   const slideAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  // Effective coordinates: an OpenStreetMap-refined point within the area
-  // if the customer searched for one, else the area's own center — one
-  // or the other is always available once a place is picked, so this
-  // never comes back null/blocking the way free-text geocoding could.
+  
+  
+  
+  
   const pickupCoords: KnownCoords | null =
     pickupRefine ??
     (pickupPlace ? { lat: pickupPlace.lat, lng: pickupPlace.lng } : null);
@@ -3270,9 +3252,9 @@ const NewOrder = () => {
     dropRefine ??
     (dropPlace ? { lat: dropPlace.lat, lng: dropPlace.lng } : null);
 
-  // Real, distance-based fare — ready as soon as both places are picked,
-  // independent of which step is currently showing so it's ready by the
-  // time the user reaches Review instead of loading there.
+  
+  
+  
   const fareEstimate = useFareEstimate(
     sender.address ? `${sender.address}, ${sender.city}` : '',
     receiver.address ? `${receiver.address}, ${receiver.city}` : '',
@@ -3285,10 +3267,10 @@ const NewOrder = () => {
     pkg.insurance,
   );
 
-  // Real, admin-set per-helper rate (BusinessSetting
-  // 'helper_rate_per_person') — shown on the Package step before booking
-  // so the customer sees the same number PricingService will actually
-  // charge, not a guess baked into the app.
+  
+  
+  
+  
   const { data: businessSettingsData } = useBusinessSettings();
   const helperRate = useMemo(() => {
     const raw = businessSettingsData?.find(
@@ -3297,11 +3279,11 @@ const NewOrder = () => {
     return raw != null ? Number(raw) : null;
   }, [businessSettingsData]);
 
-  // CheckRate.tsx's prefill carries free-text addresses (its own pickup/
-  // drop inputs aren't place-backed) — only auto-select once the real
-  // service-area list has loaded, and only when the text unambiguously
-  // names exactly one known locality; otherwise the customer picks from
-  // the dropdown themselves rather than us guessing.
+  
+  
+  
+  
+  
   useEffect(() => {
     if (activeAreas.length === 0) return;
     const matchFromText = (text?: string): ServiceArea | null => {
@@ -3334,15 +3316,15 @@ const NewOrder = () => {
         }));
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [activeAreas.length]);
 
-  // FCM listener registration (foreground/background/killed-tap
-  // navigation) is now centralized once in App.tsx — was duplicated
-  // here before, and only ever worked while this specific screen
-  // happened to be mounted (a customer notified while browsing Home
-  // got nothing). Token registration alone still happens here too
-  // (harmless/idempotent).
+  
+  
+  
+  
+  
+  
   useEffect(() => {
     registerFCMToken('customer');
   }, []);
@@ -3392,10 +3374,10 @@ const NewOrder = () => {
     if (step > 0) animateToStep(step - 1, 'back');
   }, [step, animateToStep]);
 
-  // Any edit after reaching Review invalidates a previously-minted
-  // submit idempotency key — otherwise a materially different order
-  // (re-submitted after tweaking a field) would incorrectly reuse the
-  // old key and get deduped against the stale attempt.
+  
+  
+  
+  
   const clearSubmitIdempotencyKey = useCallback(() => {
     submitIdempotencyKeyRef.current = null;
   }, []);
@@ -3428,7 +3410,7 @@ const NewOrder = () => {
     (p: ServiceArea) => {
       clearSubmitIdempotencyKey();
       setPickupPlace(p);
-      setPickupRefine(null); // a refined point belonged to the previous area
+      setPickupRefine(null); 
       setSender(prev => ({
         ...prev,
         address: composeAddress(prev.landmark, p),
@@ -3503,23 +3485,23 @@ const NewOrder = () => {
     [sender, receiver, pkg, orderDetails],
   );
 
-  // POST /shipments — kalanabhaBackend ShipmentsService.create already
-  // does the duplicate guard (same customer/from/to/pickupSlot while
-  // searching/accepted) AND the Rapido-style auto-match server-side, so
-  // neither needs doing client-side any more.
+  
+  
+  
+  
   const handleSubmit = useCallback(async (): Promise<void> => {
     const scope = 'CREATE_SHIPMENT';
-    // One key per order ATTEMPT, not per tap — minted lazily on first
-    // submit and reused across retries via submitIdempotencyKeyRef.
-    // Was generating a fresh key on every single call, which meant a
-    // user re-tapping "Place Order" after a perceived Network Error
-    // (the request may have actually succeeded server-side) never got
-    // deduped by the backend's IdempotencyInterceptor — it sailed
-    // through as a "new" request and hit ShipmentsService's separate
-    // duplicate-shipment guard instead, surfacing a confusing "This
-    // shipment already exists" error. The ref is cleared on success
-    // (submitIdempotencyKeyRef reset below) and whenever the user
-    // edits the order after reaching Review (see goBack/clearIdempotencyKey).
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (!submitIdempotencyKeyRef.current) {
       submitIdempotencyKeyRef.current = `${Date.now()}-${Math.random()
         .toString(36)
@@ -3544,9 +3526,9 @@ const NewOrder = () => {
 
       const shipment = await createShipment(
         {
-          // House Shifting never collects a package category chip
-          // (chips are hidden for it) — pkg.category would still hold
-          // INIT_PACKAGE's 'Documents' default, which is wrong here.
+          
+          
+          
           goodsType: isHouseShifting
             ? 'House Shifting'
             : pkg?.category ?? 'General',
@@ -3570,11 +3552,11 @@ const NewOrder = () => {
           vehicleType: orderDetails.vehicleType,
           paymentMode: orderDetails.paymentMode,
           pickupSlot: orderDetails.pickupSlot,
-          // House Shifting has no separate "package category/weight"
-          // fields to carry pkg.description (what's being moved) —
-          // fold it into notes so the driver actually sees it. Parcel
-          // flow is untouched (its description already implies the
-          // package.category chip, unlike this one).
+          
+          
+          
+          
+          
           notes:
             isHouseShifting && pkg?.description
               ? `Items: ${pkg.description}${
@@ -3608,10 +3590,10 @@ const NewOrder = () => {
       setTrackingId(shipment.trackingId);
       setShowSuccess(true);
 
-      // Prepaid orders collect real payment right after booking — a
-      // failure here doesn't undo the shipment (it's already placed,
-      // same as if the customer paid COD instead); the customer can
-      // still pay later from ShipmentDetailsScreen's "Pay Now".
+      
+      
+      
+      
       if (
         orderDetails.paymentMode === 'prepaid' &&
         shipment.paymentStatus === 'PENDING'
@@ -3657,7 +3639,7 @@ const NewOrder = () => {
     <View style={mainStyles.root}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
 
-      {/* Back button on header */}
+      {}
       <StepHeader current={step} total={STEPS.length} />
 
       <KeyboardAvoidingView

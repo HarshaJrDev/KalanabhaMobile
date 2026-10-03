@@ -1,12 +1,12 @@
-// DateTimeChipPicker.tsx
-//
-// Custom, themed date/time picker — deliberately not the native
-// @react-native-community/datetimepicker (Android's system dialog can't
-// be restyled to match the app's own colors, and pulled in a native
-// module that needed a full rebuild for no visual benefit). Plain chip
-// rows in whatever colors the caller passes, same interaction pattern
-// everywhere it's used: addOrders.tsx's "Schedule for later" step and
-// ShipmentDetailsScreen's "Change pickup time".
+
+
+
+
+
+
+
+
+
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Clock } from 'lucide-react-native';
@@ -28,7 +28,7 @@ export const scheduleDateOptions = (t: (key: string, opts?: Record<string, unkno
 };
 
 export const SCHEDULE_TIME_OPTIONS: { hour: number; minute: number }[] = Array.from({ length: 27 }, (_, i) => {
-    const totalMinutes = 7 * 60 + i * 30; // 7:00 AM through 8:00 PM, 30-min steps
+    const totalMinutes = 7 * 60 + i * 30; 
     return { hour: Math.floor(totalMinutes / 60), minute: totalMinutes % 60 };
 });
 
@@ -49,7 +49,7 @@ interface DateTimeChipPickerColors {
 
 interface DateTimeChipPickerProps {
     colors: DateTimeChipPickerColors;
-    value: string; // ISO datetime, or '' if unset
+    value: string; 
     onChange: (iso: string) => void;
     t: (key: string, opts?: Record<string, unknown>) => string;
 }

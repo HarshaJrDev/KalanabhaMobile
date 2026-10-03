@@ -18,10 +18,10 @@ const COLORS = {
     info: '#1E88E5',
 } as const;
 
-// Mounted once at the app root (App.tsx). Renders whatever is currently in
-// useToastStore — the single global toast surface for the whole app, so any
-// screen/hook/service calls `showToast(...)` instead of building its own
-// alert UI.
+
+
+
+
 export const GlobalToast: React.FC = () => {
     const toast = useToastStore((s) => s.toast);
     const clear = useToastStore((s) => s.clear);

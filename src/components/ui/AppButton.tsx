@@ -20,27 +20,13 @@ export interface AppButtonProps {
   loading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;
-  /** Overrides the default brand-colored background — Button.tsx's `backgroundColor` prop. */
-  backgroundColor?: string;
-  /** Overrides the default white text color — Button.tsx's `textColor` prop. */
-  textColor?: string;
-  /** 'solid' reproduces AppButton.tsx's exact look (radius 8, no margin). 'legacy' reproduces
-   * Button.tsx's exact look (radius 5, marginTop 20, no loading state) for its existing call sites. */
-  variant?: 'solid' | 'legacy';
+    backgroundColor?: string;
+    textColor?: string;
+    variant?: 'solid' | 'legacy';
 }
 
 const PRESS_SCALE = 0.96;
 
-/**
- * Single source of truth for buttons across the app. Defaults (variant="solid")
- * reproduce AppButton.tsx exactly; variant="legacy" reproduces Button.tsx
- * exactly, for its existing call sites that don't use a loading state.
- *
- * Press feedback is a Reanimated scale (1 → 0.96 → 1, per the brand spec's
- * §9) rather than TouchableOpacity's dimming — every button in the app
- * picks this up from here, nothing per-screen. Colors come from
- * `useAppTheme()` so buttons repaint correctly in dark mode.
- */
 const AppButton: FC<AppButtonProps> = ({
   title,
   onPress,

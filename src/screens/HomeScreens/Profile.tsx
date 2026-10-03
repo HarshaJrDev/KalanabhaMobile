@@ -18,7 +18,7 @@ import {
     X,
 } from 'lucide-react-native';
 import { H, RF, W } from '@utils/responsive';
-import { useLogout, } from '@hooks/useLogout'; // Add navigation
+import { useLogout, } from '@hooks/useLogout'; 
 import { useUpdateProfile } from '@hooks/useUpdateProfile';
 import { useMyShipmentHistory } from '@features/shipments/hooks';
 import { useAuthStore } from '@features/store/authStore';
@@ -35,11 +35,11 @@ import { useTranslation } from 'react-i18next';
 import { LanguagePickerModal } from '@components/LanguagePickerModal';
 import { LANGUAGE_LABELS, type SupportedLanguage } from '../../i18n';
 
-// Same real-initials-avatar pattern used everywhere else this app needs a
-// "photo" it doesn't actually have (Driver ProfileScreen, the incoming-
-// request sender avatar) — kalanabhaBackend's User model has no
-// profile-photo field, so a random stranger's photo from randomuser.me
-// was never anyone's actual picture.
+
+
+
+
+
 const initialsFor = (label: string) =>
     label.trim().split(/\s+/).filter(Boolean).map((p) => p[0]).slice(0, 2).join('').toUpperCase() || '?';
 
@@ -76,15 +76,15 @@ const ProfileScreen = () => {
         if (confirmed) logoutMutation.mutate();
     };
 
-    // Previously "Saved Address" (singular, this row) and "Saved Addresses"
-    // (plural, the real multi-address book) sat back-to-back — two rows
-    // that looked like two features but the singular one just reopened
-    // Edit Profile's single address field. Removed; that field is still
-    // editable from the "Edit" button on the header above, and the real
-    // address book is the one remaining "Addresses" row below. Payment
-    // Method was a pure "coming soon" stub with no feature behind it —
-    // replaced with the real Refer & Earn screen instead of leaving a
-    // fake row in a real menu.
+    
+    
+    
+    
+    
+    
+    
+    
+    
     const menuItems = [
         { icon: Bookmark, label: t('profile.savedAddresses'), onPress: () => navigation.navigate('SavedAddresses' as never) },
         { icon: Gift, label: t('profile.referAndEarn'), onPress: () => navigation.navigate('Referral' as never) },
@@ -99,9 +99,9 @@ const ProfileScreen = () => {
         {
             icon: HelpCircle,
             label: t('profile.helpCenter'),
-            // Real ticket system now (kalanabhaBackend SupportController,
-            // already used by the admin panel) instead of only a mailto:
-            // link — a raised ticket gets a real reply thread here.
+            
+            
+            
             onPress: () => navigation.navigate('SupportTickets' as never),
         },
         {
@@ -114,7 +114,7 @@ const ProfileScreen = () => {
 
     return (
         <View style={styles.root}>
-            {/* Gradient Header */}
+            {}
             <LinearGradient
                 colors={[colors.PRIMARY_DARK, colors.PRIMARY]}
                 style={styles.header}
@@ -140,7 +140,7 @@ const ProfileScreen = () => {
                 </View>
             </LinearGradient>
 
-            {/* Stats Cards */}
+            {}
             <View style={styles.statsContainer}>
                 <View style={styles.statCard}>
                     <Text style={styles.statTitle}>{t('profile.totalShipments')}</Text>
@@ -152,7 +152,7 @@ const ProfileScreen = () => {
                 </View>
             </View>
 
-            {/* Menu List */}
+            {}
             <ScrollView
                 style={styles.menuScroll}
                 contentContainerStyle={{ paddingBottom: tabBarPadding }}
@@ -193,7 +193,7 @@ const ProfileScreen = () => {
     );
 };
 
-// Screen -> useUpdateProfile -> users.api -> PATCH /users/me -> authStore + cache -> UI
+
 const EditProfileModal = ({ visible, onClose }: { visible: boolean; onClose: () => void }) => {
     const { colors, fonts } = useAppTheme();
     const { t } = useTranslation();
@@ -273,8 +273,8 @@ const EditProfileModal = ({ visible, onClose }: { visible: boolean; onClose: () 
 
 export default ProfileScreen;
 
-// Computed from useAppTheme() so this screen repaints correctly in dark
-// mode instead of staying pinned to the light palette baked at import.
+
+
 const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: ReturnType<typeof useAppTheme>['fonts']) => StyleSheet.create({
     root: {
         flex: 1,
@@ -426,7 +426,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
         fontFamily: fonts.PRIMARY,
     },
 
-    // Edit Profile sheet
+    
     modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',

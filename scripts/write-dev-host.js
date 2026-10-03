@@ -1,25 +1,25 @@
 #!/usr/bin/env node
-// Writes this machine's current LAN IP into src/config/devHost.generated.ts
-// before every Metro start — run as a "pre" step on android/ios/start (see
-// package.json), so the dev backend host is always baked fresh into the
-// bundle, no runtime detection needed and no manual edits ever.
-//
-// Why this exists: NativeModules.SourceCode.scriptURL (the old runtime
-// trick for finding "what host did this bundle load from") returns
-// undefined under React Native's New Architecture (Fabric/Bridgeless),
-// which silently broke dev networking on a physical device. Computing the
-// LAN IP here, at build time with plain Node, sidesteps that entirely —
-// it works the same regardless of architecture, and covers physical
-// devices and emulators/simulators alike (the LAN IP is reachable from
-// both).
+
+
+
+
+
+
+
+
+
+
+
+
+
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
 const pickLanIp = () => {
     const interfaces = os.networkInterfaces();
-    // Prefer common WiFi/Ethernet interface names first (stable ordering
-    // across runs), then fall back to the first external IPv4 found.
+    
+    
     const preferredOrder = ['en0', 'en1', 'Wi-Fi', 'eth0'];
     const candidates = [];
 

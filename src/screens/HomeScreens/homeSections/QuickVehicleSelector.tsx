@@ -1,7 +1,7 @@
-// QuickVehicleSelector — real, admin-managed vehicle types (GET
-// /settings/vehicle-configs), unchanged logic from the previous Home.tsx,
-// just relocated to its own file. Tapping a card hands off into the real
-// booking flow (addOrders.tsx) with that vehicle prefilled.
+
+
+
+
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
 import Reanimated, { useAnimatedStyle, interpolate, Extrapolate, type SharedValue } from 'react-native-reanimated';
@@ -39,11 +39,7 @@ const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, index, isFirst, card
     return (
         <Reanimated.View style={[{ width: cardWidth }, animatedStyle]}>
             <Pressable style={[styles.vehicleCard, isFirst && styles.vehicleCardFeatured]} onPress={onPress}>
-                {/* Full-width photo banner — the real fleet photo is the
-                    hero of the card now, not a small 56px chip squeezed
-                    beside the text. Falls back to the Lucide icon on its
-                    own tinted background exactly like before if a vehicle
-                    has no photo at all. */}
+                {}
                 <View style={styles.bannerWrap}>
                     <VehicleVisual
                         vehicle={vehicle}

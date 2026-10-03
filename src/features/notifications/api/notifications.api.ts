@@ -2,7 +2,7 @@ import { apiClient } from '@api/client';
 import type { ApiSuccessResponse } from '@api/types';
 import type { BackendNotification } from '../types';
 
-// One-to-one with kalanabhaBackend/src/modules/notifications/controllers/notifications.controller.ts
+
 
 export const getMyNotifications = async (): Promise<BackendNotification[]> => {
     const { data } = await apiClient.get<ApiSuccessResponse<BackendNotification[]>>('/notifications/mine');

@@ -4,9 +4,9 @@ import { useAuthState } from './useAuthState';
 
 export const meQueryKey = ['users', 'me'] as const;
 
-// Screen -> useMe -> users.api -> GET /users/me -> typed StoredUser -> cache -> UI
-// Only fires once an access token exists — an unauthenticated call would
-// just 401 and get swallowed by the retry logic below.
+
+
+
 export const useMe = () => {
     const { isAuthenticated } = useAuthState();
 

@@ -1,15 +1,15 @@
-// useLocationSearch.ts
-//
-// Real pickup/drop location search, extending — not replacing — the
-// existing ServiceArea picker already in addOrders.tsx's PlacePicker.
-// ServiceArea is a real, admin-managed "which localities does this
-// platform actually operate in" list (kalanabhaBackend model) — it's a
-// genuine business constraint, not just a UI convenience, so this
-// deliberately does NOT add free-text/geocoded address search that could
-// resolve to somewhere the platform can't actually serve. Instead it adds
-// the real, honestly-buildable pieces on top of that same real list:
-// debounced search, GPS-based "current location" resolved to the nearest
-// real serviceable locality, and a locally-persisted recent-picks list.
+
+
+
+
+
+
+
+
+
+
+
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Geolocation from 'react-native-geolocation-service';
 import { storage } from '@services/storage';
@@ -34,12 +34,12 @@ const writeRecents = (ids: string[]) => {
     try {
         storage.set(RECENTS_KEY, JSON.stringify(ids.slice(0, MAX_RECENTS)));
     } catch {
-        // Non-critical — recents are a convenience, not load-bearing.
+        
     }
 };
 
-// Records a real user pick so it can resurface as a "Recent" next time —
-// call this from wherever a ServiceArea is actually selected (PlacePicker).
+
+
 export const recordRecentServiceArea = (id: string) => {
     const current = readRecents().filter((existing) => existing !== id);
     writeRecents([id, ...current]);
@@ -48,12 +48,9 @@ export const recordRecentServiceArea = (id: string) => {
 export interface UseLocationSearchResult {
     query: string;
     setQuery: (q: string) => void;
-    /** Debounced, filtered results grouped by city, same shape PlacePicker already renders. */
-    results: Record<string, ServiceArea[]>;
-    /** Real recently-picked areas (most recent first), empty until the user has picked at least one. */
-    recents: ServiceArea[];
-    /** Requests real GPS, resolves to the nearest real ServiceArea (haversine over the real list — no geocoding API involved). null if permission denied/no fix/no areas configured nearby. */
-    locateNearestServiceArea: () => Promise<ServiceArea | null>;
+        results: Record<string, ServiceArea[]>;
+        recents: ServiceArea[];
+        locateNearestServiceArea: () => Promise<ServiceArea | null>;
     locatingCurrentPosition: boolean;
 }
 
@@ -62,8 +59,8 @@ export const useLocationSearch = (areas: ServiceArea[]): UseLocationSearchResult
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [locatingCurrentPosition, setLocatingCurrentPosition] = useState(false);
 
-    // Debounced — do not re-filter (or, if this were ever backed by a real
-    // network call, re-request) on every keystroke.
+    
+    
     useEffect(() => {
         const timer = setTimeout(() => setDebouncedQuery(query), DEBOUNCE_MS);
         return () => clearTimeout(timer);
@@ -83,9 +80,9 @@ export const useLocationSearch = (areas: ServiceArea[]): UseLocationSearchResult
     const recents = useMemo(() => {
         const ids = readRecents();
         return ids.map((id) => areas.find((a) => a.id === id)).filter((a): a is ServiceArea => !!a);
-        // Re-derives from `areas` each render rather than caching stale
-        // ServiceArea objects — if admin deactivates/renames one, recents
-        // reflect that instead of showing a fabricated stale copy.
+        
+        
+        
     }, [areas]);
 
     const locateNearestServiceArea = useCallback(async (): Promise<ServiceArea | null> => {

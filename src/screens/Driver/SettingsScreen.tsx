@@ -1,18 +1,18 @@
-// SettingsScreen.tsx — Driver
-//
-// Real settings screen (replacing the Profile menu's "Settings" no-op):
-// notification permission status (backed by the same
-// @react-native-firebase/messaging used by utils/fcm.ts's registerFCMToken),
-// language, offline maps, legal, delete-account request, app version, and
-// logout. No new backend endpoints — everything here is either on-device
-// or reuses existing flows.
-//
-// Re-themed (was hardcoded light-mode hex colors, doesn't repaint in dark
-// mode) and grouped into sections, matching the customer SettingsScreen's
-// layout exactly — was the one piece of driver/customer parity still
-// missing after that screen's own redesign. Added Offline Maps here too
-// (previously customer-only, despite a driver relying on the live-
-// tracking map just as much, arguably more, mid-trip).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Switch } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,7 +30,7 @@ import { confirmDialog } from '@ui/alert/confirmStore';
 import { getOfflineMapsEnabled, setOfflineMapsEnabled } from '@services/storage';
 import { LanguagePickerModal } from '@components/LanguagePickerModal';
 import { LANGUAGE_LABELS, type SupportedLanguage } from '../../i18n';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+
 const { version: appVersion } = require('../../../package.json');
 
 const SettingsScreen = () => {
@@ -46,9 +46,9 @@ const SettingsScreen = () => {
     const insets = useSafeAreaInsets();
     const styles = useMemo(() => makeStyles(colors, fonts, insets), [colors, fonts, insets]);
 
-    // Modular API — the namespaced `messaging()` call style is deprecated
-    // as of RNFirebase v22 and logs a console warning on every use.
-    // See https://rnfirebase.io/migrating-to-v22.
+    
+    
+    
     const refreshPermission = useCallback(async () => {
         const authStatus = await hasPermission(getMessaging(getApp()));
         const enabled =
@@ -64,13 +64,13 @@ const SettingsScreen = () => {
     const onToggleNotifications = useCallback(
         async (value: boolean) => {
             if (value) {
-                // Registers with the OS + backend, same path as login.
+                
                 await registerFCMToken('driver');
                 await refreshPermission();
             } else {
-                // iOS/Android don't let apps revoke their own notification
-                // permission — the OS settings screen is the only way.
-                // Reflect that honestly instead of pretending to toggle it off.
+                
+                
+                
                 await confirmDialog({
                     title: t('settings.turnOffTitle'),
                     message: t('settings.turnOffMessage'),

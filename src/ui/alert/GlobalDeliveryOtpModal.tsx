@@ -4,12 +4,12 @@ import { useDeliveryOtpStore } from './deliveryOtpStore';
 import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 
-// Mounted once at the app root (App.tsx), same pattern as GlobalToast — the
-// driver's "Start delivery" and "Complete delivery" flows
-// (LogisticsCardList.tsx) both call requestOtp('pickup' | 'delivery') from
-// a plain callback and await whatever the driver types here. Real
-// verification happens server-side (DispatchService.startDelivery /
-// completeDelivery); this is just the input surface.
+
+
+
+
+
+
 export const GlobalDeliveryOtpModal: React.FC = () => {
     const open = useDeliveryOtpStore((s) => s.open);
     const kind = useDeliveryOtpStore((s) => s.kind);

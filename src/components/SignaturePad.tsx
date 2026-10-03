@@ -1,12 +1,12 @@
-// SignaturePad.tsx — a real, dependency-free freehand drawing surface.
-//
-// No signature-canvas/webview/SVG library exists anywhere in this app
-// (confirmed by inspection — adding one is a native-rebuild decision
-// outside this slice's scope), so this captures real stroke geometry
-// (an array of point arrays) via plain PanResponder + View segments
-// instead of a rasterized image. Each segment is a thin View rotated to
-// connect two consecutive touch points — a standard no-dependency
-// technique, not a placeholder.
+
+
+
+
+
+
+
+
+
 import React, { useMemo, useRef, useState } from 'react';
 import { View, StyleSheet, PanResponder, Pressable, Text } from 'react-native';
 import { useAppTheme } from '@theme/ThemeContext';

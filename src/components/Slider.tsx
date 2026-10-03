@@ -15,7 +15,7 @@ import FONTS from '@utils/fonts';
 const { width } = Dimensions.get('window');
 
 interface SlideItem {
-    image: string; // public URL
+    image: string; 
 
 }
 

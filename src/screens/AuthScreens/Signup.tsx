@@ -61,10 +61,10 @@ const Signup = () => {
     const [form, setForm] = useState<FormState>(INITIAL_FORM);
     const [errors, setErrors] = useState<FormErrors>({});
     const [type, setType] = useState<UserType>('HOME');
-    // Kept separate from FormState (not INITIAL_FORM/FIELD_MESSAGE_KEY) so
-    // it stays genuinely optional — FormState fields are all required by
-    // isDisabled's "every field truthy" check below, but a referral code
-    // shouldn't block signup for someone who doesn't have one.
+    
+    
+    
+    
     const [referralCode, setReferralCode] = useState('');
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -90,10 +90,10 @@ const Signup = () => {
         const result = signupSchema.safeParse(form);
         if (result.success) { setErrors({}); return true; }
         // zod's own issue.message is always English (built-in defaults like
-        // "Invalid email" plus our one custom "Passwords must match") — not
-        // something a schema defined at module scope can call t() for, so
-        // each field maps to its own translated message here instead of
-        // ever showing the raw zod string to the user.
+        
+        
+        
+        
         const FIELD_MESSAGE_KEY: Record<keyof FormState, string> = {
             name: 'signup.validationName',
             email: 'signup.validationEmail',
@@ -116,10 +116,10 @@ const Signup = () => {
         [form, isPending]
     );
 
-    // NOTE: kalanabhaBackend's RegisterDto only accepts email/password/
-    // displayName/role — phone, address, and account `type` (collected
-    // below for UX/future use) have no field to land in yet on the
-    // backend, so they are intentionally not sent here.
+    
+    
+    
+    
     const handleSubmit = useCallback(() => {
         clear();
 
@@ -167,7 +167,7 @@ const Signup = () => {
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                {/* Header */}
+                {}
                 <LinearGradient
                     colors={[colors.PRIMARY, colors.PRIMARY_DARK]}
                     style={styles.header}
@@ -183,7 +183,7 @@ const Signup = () => {
                     </Animated.View>
                 </LinearGradient>
 
-                {/* Form Card */}
+                {}
                 <Animated.View
                     style={[
                         styles.card,
@@ -192,7 +192,7 @@ const Signup = () => {
                 >
                     <AlertBanner alert={alert} />
 
-                    {/* Section: Personal */}
+                    {}
                     <View style={styles.sectionHeader}>
                         <View style={styles.sectionDot} />
                         <Text style={styles.sectionTitle}>{t('signup.personalInfo')}</Text>
@@ -223,7 +223,7 @@ const Signup = () => {
                         keyboardType="phone-pad"
                     />
 
-                    {/* Section: Location */}
+                    {}
                     <View style={[styles.sectionHeader, { marginTop: H(16) }]}>
                         <View style={styles.sectionDot} />
                         <Text style={styles.sectionTitle}>{t('signup.location')}</Text>
@@ -243,7 +243,7 @@ const Signup = () => {
 
                     <UserTypeSelector value={type} onChange={setType} />
 
-                    {/* Section: Security */}
+                    {}
                     <View style={[styles.sectionHeader, { marginTop: H(16) }]}>
                         <View style={styles.sectionDot} />
                         <Text style={styles.sectionTitle}>{t('signup.security')}</Text>
@@ -289,8 +289,8 @@ const Signup = () => {
 
 export default Signup;
 
-// Computed from useAppTheme() so this screen repaints correctly in dark
-// mode instead of staying pinned to the light palette baked at import.
+
+
 const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: ReturnType<typeof useAppTheme>['fonts']) => StyleSheet.create({
     container: {
         flex: 1,

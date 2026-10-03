@@ -1,4 +1,4 @@
-// components/SectionCard.tsx
+
 import React, { ReactNode } from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import COLOR from '@utils/color';

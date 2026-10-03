@@ -1,5 +1,5 @@
-// AppLoader.tsx — canonical full-screen loading overlay. Extracted verbatim
-// from CustomLoader.tsx (single source of truth for this pattern).
+
+
 import React, { useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, Modal, ActivityIndicator, Animated } from 'react-native';
 import { useAppTheme } from '@theme/ThemeContext';
@@ -19,7 +19,7 @@ export const AppLoader = ({ visible, message = 'Loading...' }: AppLoaderProps) =
 
     useEffect(() => {
         if (visible) {
-            // Enter animation
+            
             Animated.parallel([
                 Animated.spring(scaleValue, {
                     toValue: 1,
@@ -34,7 +34,7 @@ export const AppLoader = ({ visible, message = 'Loading...' }: AppLoaderProps) =
                 }),
             ]).start();
 
-            // Continuous spinner rotation
+            
             Animated.loop(
                 Animated.timing(rotateValue, {
                     toValue: 1,
@@ -43,7 +43,7 @@ export const AppLoader = ({ visible, message = 'Loading...' }: AppLoaderProps) =
                 })
             ).start();
         } else {
-            // Exit animation
+            
             Animated.parallel([
                 Animated.spring(scaleValue, {
                     toValue: 0,
@@ -82,15 +82,15 @@ export const AppLoader = ({ visible, message = 'Loading...' }: AppLoaderProps) =
                         },
                     ]}
                 >
-                    {/* Outer ring */}
+                    {}
                     <View style={styles.outerRing} />
 
-                    {/* Inner spinner */}
+                    {}
                     <Animated.View style={[styles.spinner, { transform: [{ rotate }] }]}>
                         <ActivityIndicator size="large" color={colors.PRIMARY} />
                     </Animated.View>
 
-                    {/* Dots */}
+                    {}
                     <View style={styles.dots}>
                         <View style={[styles.dot, styles.dot1]} />
                         <View style={[styles.dot, styles.dot2]} />
@@ -106,9 +106,9 @@ export const AppLoader = ({ visible, message = 'Loading...' }: AppLoaderProps) =
     );
 };
 
-// Rebranded from a hardcoded iOS-blue (#007AFF) spinner to the app's own
-// brand orange (§4/§7) — computed per-render from useAppTheme() so it also
-// tracks a future primary-color change (e.g. dark mode) automatically.
+
+
+
 const makeStyles = (primary: string) =>
     StyleSheet.create({
         overlay: {

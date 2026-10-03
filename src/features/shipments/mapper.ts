@@ -10,9 +10,9 @@ const STATUS_MAP: Record<BackendShipment['status'], ShipmentStatus> = {
     CANCELLED: 'cancelled',
 };
 
-// Adapts the backend's flat Prisma row to the shape the app's screens
-// already render (shipment/types.ts::Shipment) — pickup/drop nested,
-// lowercase status — so existing UI/render code needs no changes.
+
+
+
 export const toShipment = (row: BackendShipment): Shipment => ({
     id: row.id,
     shipmentId: row.shipmentId,
@@ -65,8 +65,8 @@ export const toShipment = (row: BackendShipment): Shipment => ({
             completedAt: row.dispatch.completedAt,
         }
         : null,
-    // The backend has no per-shipment "customer profile snapshot" endpoint —
-    // callers needing customer contact info should use `sender`/`receiver`.
+    
+    
     userMeta: undefined,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,

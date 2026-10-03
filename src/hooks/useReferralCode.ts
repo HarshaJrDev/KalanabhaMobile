@@ -8,6 +8,6 @@ export const useReferralCode = () => {
         queryKey: ['users', 'me', 'referral'] as const,
         queryFn: getMyReferralCode,
         enabled: isAuthenticated,
-        staleTime: Infinity, // a user's own referral code never changes once generated
+        staleTime: Infinity, 
     });
 };

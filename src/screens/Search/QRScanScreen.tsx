@@ -1,18 +1,18 @@
-// QRScanScreen.tsx
-//
-// Real camera-based QR scanning needs a native module
-// (react-native-vision-camera + its permission/pod-install/New-Architecture
-// setup) that can't be added and verified on-device in this environment.
-// Per explicit instruction, this ships with a simulated scan step instead —
-// clearly labeled as such to the user, not disguised as a working camera —
-// while everything downstream of "a code was scanned" is real: it looks the
-// scanned tracking ID up against the customer's actual shipments
-// (useMyShipments -> GET /shipments/mine, the same data SearchScreen
-// filters) and opens the real ShipmentDetailsScreen on a match.
-//
-// Swapping in a real scanner later only means replacing `simulateScan()`
-// with the camera library's decoded-value callback — the lookup/navigation
-// below does not change.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -34,8 +34,8 @@ const QRScanScreen = () => {
     const simulateScan = () => {
         setScanning(true);
 
-        // Fake the brief delay a real camera decode would have, so the UI
-        // doesn't feel instant/fake-obvious.
+        
+        
         setTimeout(() => {
             setScanning(false);
 

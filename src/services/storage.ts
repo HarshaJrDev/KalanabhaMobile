@@ -2,7 +2,7 @@ import { createMMKV } from 'react-native-mmkv';
 
 export const storage = createMMKV();
 
-// Keys
+
 const TOKEN_KEY = 'access_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
 const USER_KEY = 'auth_user';
@@ -10,9 +10,9 @@ const ONBOARDING_KEY = 'has_seen_onboarding';
 const LANGUAGE_KEY = 'app_language';
 const OFFLINE_MAPS_KEY = 'offline_maps_enabled';
 
-// Shape returned by GET /users/me — mirrors kalanabhaBackend's UserEntity
-// field-for-field (verified against a running instance) rather than only
-// the subset the app happened to read at the time this was first written.
+
+
+
 export interface StoredUser {
     id: string;
     email: string;
@@ -37,9 +37,9 @@ export interface StoredUser {
     updatedAt: string;
 }
 
-// ----------------------
-// ACCESS TOKEN
-// ----------------------
+
+
+
 export const setToken = (token: string): void => {
     storage.set(TOKEN_KEY, token);
 };
@@ -52,9 +52,9 @@ export const clearToken = (): void => {
     storage.remove(TOKEN_KEY);
 };
 
-// ----------------------
-// REFRESH TOKEN
-// ----------------------
+
+
+
 export const setRefreshToken = (token: string): void => {
     storage.set(REFRESH_TOKEN_KEY, token);
 };
@@ -67,9 +67,9 @@ export const clearRefreshToken = (): void => {
     storage.remove(REFRESH_TOKEN_KEY);
 };
 
-// ----------------------
-// USER
-// ----------------------
+
+
+
 export const setUser = (user: StoredUser): void => {
     storage.set(USER_KEY, JSON.stringify(user));
 };
@@ -90,9 +90,9 @@ export const clearUser = (): void => {
     storage.remove(USER_KEY);
 };
 
-// ----------------------
-// ONBOARDING
-// ----------------------
+
+
+
 export const setOnboardingSeen = (): void => {
     storage.set(ONBOARDING_KEY, true);
 };
@@ -105,9 +105,9 @@ export const clearOnboarding = (): void => {
     storage.remove(ONBOARDING_KEY);
 };
 
-// ----------------------
-// LANGUAGE
-// ----------------------
+
+
+
 export const setStoredLanguage = (lang: string): void => {
     storage.set(LANGUAGE_KEY, lang);
 };
@@ -116,13 +116,13 @@ export const getStoredLanguage = (): string | null => {
     return storage.getString(LANGUAGE_KEY) ?? null;
 };
 
-// ----------------------
-// OFFLINE MAPS
-// ----------------------
-// Gates offlineMapCache.ts's background tile downloads (Settings >
-// Offline Maps) — defaults on (undefined -> true) since most users
-// benefit from it, but downloads real data on the user's connection, so
-// it needs a real off switch, not just an always-on background task.
+
+
+
+
+
+
+
 export const setOfflineMapsEnabled = (enabled: boolean): void => {
     storage.set(OFFLINE_MAPS_KEY, enabled);
 };
@@ -131,9 +131,9 @@ export const getOfflineMapsEnabled = (): boolean => {
     return storage.getBoolean(OFFLINE_MAPS_KEY) ?? true;
 };
 
-// ----------------------
-// CLEAR ALL
-// ----------------------
+
+
+
 export const clearAuth = (): void => {
     storage.remove(TOKEN_KEY);
     storage.remove(REFRESH_TOKEN_KEY);

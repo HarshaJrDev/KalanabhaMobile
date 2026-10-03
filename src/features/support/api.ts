@@ -2,7 +2,7 @@ import { apiClient } from '@api/client';
 import type { ApiSuccessResponse, PaginatedResult } from '@api/types';
 import type { CreateTicketPayload, SupportTicket, SupportTicketMessage } from './types';
 
-// One-to-one with kalanabhaBackend/src/modules/support/controllers/support.controller.ts
+
 
 export const createTicket = async (payload: CreateTicketPayload): Promise<SupportTicket> => {
     const { data } = await apiClient.post<ApiSuccessResponse<SupportTicket>>('/support/tickets', payload);

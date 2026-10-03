@@ -1,10 +1,10 @@
-// SupportTicketsScreen.tsx — Customer & Driver
-//
-// Real backend contract (kalanabhaBackend SupportController — full ticket
-// lifecycle, already used by the admin panel's SupportTicketsPage) that
-// had no mobile UI at all before this. Profile.tsx's "Help Center" only
-// opened a mailto: link; this is a real "My Tickets" list + "New Ticket"
-// entry point.
+
+
+
+
+
+
+
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
 import { SkeletonList } from '@components/ui';
@@ -47,9 +47,9 @@ const makeStatusMeta = (
 const SupportTicketsScreen = () => {
   const navigation = useNavigation();
   const { colors, fonts, spacing, radius } = useAppTheme();
-  // Real device safe-area inset — this header used a bare
-  // `paddingTop: 50`, so it sat under the status bar/camera cutout on
-  // real devices (same overlap bug class already fixed elsewhere).
+  
+  
+  
   const insets = useSafeAreaInsets();
   const styles = useMemo(
     () => makeStyles(colors, fonts, spacing, radius, insets),

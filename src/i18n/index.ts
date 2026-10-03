@@ -23,10 +23,10 @@ const resources = {
     ta: { translation: ta },
 };
 
-// No react-native-localize dependency — that's a native module and this
-// app's default has always just been English; a stored preference (set via
-// Profile > Language) is the only thing that should ever override it, not
-// a guess at device locale.
+
+
+
+
 const initialLanguage = (getStoredLanguage() as SupportedLanguage | null) ?? 'en';
 
 i18n.use(initReactI18next).init({

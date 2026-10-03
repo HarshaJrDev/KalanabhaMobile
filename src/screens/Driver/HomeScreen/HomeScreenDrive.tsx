@@ -24,13 +24,13 @@ const AddOrdersButton = ({ children, onPress }: any) => (
 );
 
 const DriverTabs = () => {
-    // Was a hardcoded `height: 70` with no safe-area bottom inset — the
-    // device's own on-screen nav bar (Android back/home/recents, or the
-    // iOS home indicator) then drew on top of this custom tab bar instead
-    // of sitting below it, which is also why screen content butted right
-    // up against the bar with no room to breathe (the "buttons
-    // overlapping the screen" bug). Shared with the customer tab
-    // navigator (HomeTabs.tsx) so both stay correct together.
+    
+    
+    
+    
+    
+    
+    
     const tabBarStyle = useTabBarStyle('#fff');
 
     return (
@@ -50,21 +50,9 @@ const DriverTabs = () => {
         >
             <Tab.Screen name="Home" component={HomeScreen} />
             <Tab.Screen name="Orders" component={shipment} />
-            {/* <Tab.Screen
-
-                name="addOrders"
-                component={addOrders}
-                options={{
-                    tabBarLabel: '',
-
-                    tabBarIcon: ({ color, size }) => (
-                        <Plus color="#fff" width={30} height={30} style={{ top: 8 }} />
-                    ),
-                    tabBarButton: (props) => <AddOrdersButton {...props} />,
-                }}
-            /> */}
+            {}
             <Tab.Screen name="Profile" component={ProfileScreen} />
-            {/* <Tab.Screen name="Profile" component={Profile} /> */}
+            {}
         </Tab.Navigator>
     );
 };

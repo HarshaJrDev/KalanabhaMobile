@@ -1,12 +1,12 @@
-// EarningsScreen.tsx — Driver
-//
-// Was only a generic Transactions list before (shipment rows, no
-// aggregation) — this is the first real today/week/all-time earnings
-// summary, backed by GET /shipments/driver/earnings-summary
-// (ShipmentsController.earningsSummary), computed server-side by summing
-// Shipment.price over this driver's own DELIVERED trips. No separate
-// wallet/payout ledger exists yet — this IS the transaction record, same
-// reasoning TransactionsScreen.tsx's own comment gives on the customer side.
+
+
+
+
+
+
+
+
+
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
 import { useNavigation } from '@react-navigation/native';

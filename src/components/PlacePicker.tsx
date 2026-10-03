@@ -1,12 +1,12 @@
-// PlacePicker.tsx — real search + recents + saved-address favorites +
-// "use current location" over the admin-managed ServiceArea list.
-//
-// Extracted from addOrders.tsx (where it was originally built for the
-// Sender/Receiver pickup/drop steps) so it can also back the Home screen's
-// "Tap to set location" pill — same real picker everywhere a locality gets
-// picked, not two competing implementations. Deliberately still scoped to
-// the real ServiceArea list (an admin-managed "where the platform actually
-// operates" constraint), not free-text/geocoded addresses.
+
+
+
+
+
+
+
+
+
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, ScrollView } from 'react-native';
 import { ChevronLeft, MapPin, Search, Navigation2, Clock, Bookmark, BookmarkPlus, Check } from 'lucide-react-native';
@@ -21,9 +21,9 @@ import FONTS from '@utils/fonts';
 
 const RADIUS = { sm: 8, md: 12, lg: 16, xl: 22, full: 999 };
 
-// Small, self-contained copy of addOrders.tsx's private color mapping —
-// not exported there, and not worth coupling this file to that one just
-// to share a 19-line token map.
+
+
+
 const makeColors = (BRAND: ReturnType<typeof useAppTheme>['colors']) => ({
     primary: BRAND.PRIMARY,
     text: BRAND.TEXT_PRIMARY,
@@ -44,9 +44,9 @@ interface Props {
     onSelect: (place: ServiceArea) => void;
     placeholder?: string;
     error?: string;
-    // When provided, replaces the default trigger row entirely (used by
-    // HomeHeader's location pill) — the label/error text is skipped too,
-    // since a custom trigger owns its own presentation.
+    
+    
+    
     renderTrigger?: (opts: { value: ServiceArea | null; label: string; open: () => void }) => React.ReactNode;
 }
 

@@ -1,11 +1,11 @@
-// GET/POST/PUT /settings/vehicle-configs — Prisma `VehicleConfig` model.
+
 export interface VehicleConfig {
     id: string;
     name: string;
     icon: string;
-    // Real, admin-set illustration/photo — falls back to the Lucide icon
-    // mapping (vehicleIconFor) until an admin sets one, never a fabricated
-    // placeholder image.
+    
+    
+    
     imageUrl?: string | null;
     maxWeight: number;
     maxLength: number;
@@ -20,12 +20,12 @@ export interface VehicleConfig {
     updatedAt: string;
 }
 
-// POST/PUT /settings/vehicle-configs — VehicleConfigDto
+
 export type VehicleConfigPayload = Omit<VehicleConfig, 'id' | 'updatedAt'>;
 
-// GET /settings/service-areas — Prisma `ServiceArea` model, admin-managed
-// (KalanabhaAdmin's Service Areas page). addOrders.tsx's pickup/drop
-// picker lists these instead of free-text address entry.
+
+
+
 export interface ServiceArea {
     id: string;
     name: string;
@@ -38,9 +38,9 @@ export interface ServiceArea {
     updatedAt: string;
 }
 
-// GET /settings/package-categories — Prisma `PackageCategory` model.
-// `icon` is a lucide-react-native icon name resolved client-side (see
-// packageCategoryIconFor in addOrders.tsx) — not an uploaded image.
+
+
+
 export interface PackageCategory {
     id: string;
     name: string;
@@ -51,7 +51,7 @@ export interface PackageCategory {
     updatedAt: string;
 }
 
-// GET /settings/business — Prisma `BusinessSetting` model.
+
 export interface BusinessSetting {
     key: string;
     value: string;

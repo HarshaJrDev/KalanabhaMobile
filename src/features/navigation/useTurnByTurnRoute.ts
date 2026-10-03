@@ -7,9 +7,9 @@ interface MapPoint {
     lng: number;
 }
 
-// Re-fetch the route once the driver has drifted this far off the last
-// computed line — cheap, avoids hammering the free public OSRM instance
-// on every single GPS tick.
+
+
+
 const REROUTE_THRESHOLD_KM = 0.15;
 
 export const useTurnByTurnRoute = (origin: MapPoint | null | undefined, destination: MapPoint | null | undefined) => {
@@ -35,7 +35,7 @@ export const useTurnByTurnRoute = (origin: MapPoint | null | undefined, destinat
             }
         });
         return () => { cancelled = true; };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        
     }, [origin?.lat, origin?.lng, destination?.lat, destination?.lng]);
 
     const nextStep = route?.steps.find((s) => s.maneuver !== 'depart') ?? null;

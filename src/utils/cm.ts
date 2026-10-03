@@ -1,4 +1,4 @@
-// utils/fcm.ts
+
 import { getApp } from '@react-native-firebase/app';
 import {
   getMessaging,
@@ -15,23 +15,23 @@ import { getToken as getAccessToken } from '../services/storage';
 import { handleNotificationTap } from '../features/notifications/deepLink';
 import { ensureNotificationPermission } from './notificationPermission';
 
-// Modular API — the namespaced `messaging()` call style is deprecated as of
-// RNFirebase v22 and logs a console warning on every use (was showing up
-// as "This method is deprecated..." on every screen that registered FCM).
-// See https://rnfirebase.io/migrating-to-v22.
+
+
+
+
 const messagingInstance = () => getMessaging(getApp());
 
-// Mirrors PATCH /users/me/fcm-token — kalanabhaBackend UsersController.
-// `role` is unused server-side now (the backend already knows the caller's
-// role from their JWT); kept in the signature so call sites don't need to
-// change.
+
+
+
+
 export const registerFCMToken = async (_role: 'customer' | 'driver') => {
   try {
-    // Android's own runtime prompt — requestPermission() below only
-    // actually shows a system dialog on iOS; on Android 13+ it just
-    // reports whatever POST_NOTIFICATIONS is already set to, so
-    // without requesting it first here, it's permanently DENIED and
-    // this whole function silently no-ops every time.
+    
+    
+    
+    
+    
     const androidGranted = await ensureNotificationPermission();
     if (!androidGranted) return;
 
@@ -63,15 +63,15 @@ const tapFromData = (data: Record<string, unknown> | undefined) => {
   );
 };
 
-// Real OS notification + deep link only — no custom in-app Alert popup.
-// FCM auto-displays a system notification when the app is backgrounded/
-// killed, but deliberately does NOT when it's foregrounded (onMessage
-// fires instead, silently, by design — that's standard FCM behavior on
-// both platforms). Previously this gap was filled with a one-off
-// Alert.alert "View/Dismiss" dialog; now it's filled with a real local
-// notification via notifee instead, so a foregrounded app behaves the
-// same as a backgrounded one — same notification tray entry, same tap-to-
-// open-the-right-screen behavior — with no separate in-screen popup.
+
+
+
+
+
+
+
+
+
 export const setupFCMListeners = () => {
   const messaging = messagingInstance();
 
@@ -101,15 +101,15 @@ export const setupFCMListeners = () => {
     });
   });
 
-  // Background tap — was console.log-only before, so tapping a
-  // notification while the app sat backgrounded did nothing at all.
+  
+  
   onNotificationOpenedApp(messaging, remote => {
     tapFromData(remote.data);
   });
 
-  // Killed-app tap — same real navigation, via the pending-target queue
-  // in deepLink.ts since the NavigationContainer isn't necessarily
-  // mounted yet at this point in a cold start.
+  
+  
+  
   getInitialNotification(messaging).then(remote => {
     if (!remote) return;
     tapFromData(remote.data);

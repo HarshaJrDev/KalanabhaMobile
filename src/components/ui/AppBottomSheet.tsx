@@ -1,14 +1,14 @@
-// AppBottomSheet.tsx — the one real bottom-sheet component screens should
-// use, instead of hand-rolling `<Modal transparent animationType="slide">`
-// with its own one-off corner radius/overlay opacity (every "bottom
-// sheet" in this app — EditProfileModal, LanguagePickerModal,
-// BottomSheetSelectInput, ShipmentResultModal, PlacePicker's save dialog —
-// did exactly that, despite @gorhom/bottom-sheet already being a
-// dependency and never actually used). This wraps BottomSheetModal (which
-// portals to the app root via BottomSheetModalProvider in App.tsx, so it
-// renders correctly as a full overlay regardless of how deeply the
-// triggering screen is nested in tab/stack navigators) with the app's own
-// theme, a real drag handle, and swipe-to-dismiss.
+
+
+
+
+
+
+
+
+
+
+
 import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from 'react';
 import { StyleSheet } from 'react-native';
 import {
@@ -27,8 +27,7 @@ export interface AppBottomSheetRef {
 
 interface Props {
     children: React.ReactNode;
-    /** Omit to size the sheet to its content automatically. */
-    snapPoints?: BottomSheetModalProps['snapPoints'];
+        snapPoints?: BottomSheetModalProps['snapPoints'];
     onDismiss?: () => void;
 }
 

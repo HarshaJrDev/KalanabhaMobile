@@ -7,7 +7,7 @@ export const vehicleConfigKeys = {
     all: ['vehicle-configs'] as const,
 };
 
-// Screen -> hook -> settings.api -> GET /settings/vehicle-configs -> cache -> UI
+
 export const useVehicleConfigs = () => {
     const { isAuthenticated } = useAuthState();
     return useQuery({
@@ -61,10 +61,10 @@ export const serviceAreaKeys = {
     all: ['service-areas'] as const,
 };
 
-// Screen -> hook -> settings.api -> GET /settings/service-areas -> cache ->
-// UI. addOrders.tsx's PlacePicker reads this instead of a static file, so
-// an admin adding/renaming/deactivating a locality reaches the booking
-// flow the same way Vehicle Configs already does.
+
+
+
+
 export const useServiceAreas = () => {
     const { isAuthenticated } = useAuthState();
     return useQuery({
@@ -79,10 +79,10 @@ export const packageCategoryKeys = {
     all: ['package-categories'] as const,
 };
 
-// Screen -> hook -> settings.api -> GET /settings/package-categories ->
-// cache -> UI. addOrders.tsx's Package Details "Category" chips read this
-// instead of a hardcoded array, so an admin adding/renaming/deactivating
-// a category reaches the booking flow the same way Vehicle Configs does.
+
+
+
+
 export const usePackageCategories = () => {
     const { isAuthenticated } = useAuthState();
     return useQuery({
@@ -97,11 +97,11 @@ export const businessSettingKeys = {
     all: ['business-settings'] as const,
 };
 
-// Screen -> hook -> settings.api -> GET /settings/business -> cache -> UI.
-// addOrders.tsx's House Shifting step reads 'helper_rate_per_person' from
-// this to show the real per-helper charge before booking, rather than a
-// number baked into the app that could drift from what PricingService
-// actually charges.
+
+
+
+
+
 export const useBusinessSettings = () => {
     const { isAuthenticated } = useAuthState();
     return useQuery({

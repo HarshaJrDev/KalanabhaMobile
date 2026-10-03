@@ -11,10 +11,10 @@ interface Props {
     onClose: () => void;
 }
 
-// Real, working language switch — persisted via services/storage
-// (setStoredLanguage) and applied instantly through i18next, not a
-// "coming soon" stub. Covers the four languages the product actually
-// asked for: English, Hindi, Telugu, Tamil.
+
+
+
+
 export const LanguagePickerModal: React.FC<Props> = ({ visible, onClose }) => {
     const { t, i18n } = useTranslation();
     const { colors, fonts } = useAppTheme();

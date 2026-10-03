@@ -1,16 +1,16 @@
-// color.ts — Kalanabha brand palette.
-//
-// Rebranded from the old #FF6347 placeholder to the real Kalanabha brand
-// color (#FF7518). Every screen/component that reads COLOR.PRIMARY (or
-// `colors.PRIMARY` via config/theme.ts) picks this up automatically —
-// AppButton, AppTextInput's card variant, AppText, etc.
-//
-// Existing keys (PRIMARY/BACKGROUND/TEXT_PRIMARY/etc.) are kept so nothing
-// that already reads them breaks; DARK holds the dark-mode surface set
-// (§7 of the brand spec — proper dark surfaces, not colors inverted).
-// Nothing currently switches to DARK at runtime (no ThemeContext/
-// useColorScheme wiring exists yet) — it's the real token set, ready for
-// that to be wired in as a follow-up, not a decorative placeholder.
+
+
+
+
+
+
+
+
+
+
+
+
+
 const COLOR = {
     PRIMARY: '#FF7518',
     PRIMARY_DARK: '#E9600A',

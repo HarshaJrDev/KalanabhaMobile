@@ -1,18 +1,18 @@
-// GlobalDeliveryCompletionSheet.tsx — Driver
-//
-// Mounted once at the app root (App.tsx), same pattern as GlobalToast /
-// GlobalDeliveryOtpModal. Replaces the previous "OTP prompt -> camera ->
-// API call" sequence for delivery completion with a real 3-step sheet
-// (OTP, Photos, Signature) + a final-validation checklist, per the
-// product decision that Complete Delivery must be reachable immediately
-// after accept — no GPS/geofence involved anywhere in this sheet. Every
-// step calls a real backend endpoint; the UI state (✓ marks) is just a
-// reflection of what actually succeeded server-side, never a client-side
-// assumption. The final "Complete Trip" call independently re-validates
-// OTP + photo itself (kalanabhaBackend 81263b1) regardless of what this
-// sheet thinks it already confirmed.
-//
-// Pickup verification is untouched — this sheet is delivery-only.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React, { useRef, useState } from 'react';
 import { Modal, View, Text, StyleSheet, TextInput, Pressable, ActivityIndicator } from 'react-native';
 import { CheckCircle2, Circle, X } from 'lucide-react-native';
@@ -48,9 +48,9 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
     // Real backend behavior: podFileKey is a single field — each upload
     // OVERWRITES the previous one (kalanabhaBackend ShipmentsRepository.
     // setPod), there's no multi-photo model. A counter here would be
-    // fabricated ("2 photos added" when only the last one is ever kept) —
-    // this stays a boolean and "Take Another Photo" is honestly a retake,
-    // not an addition.
+    
+    
+    
     const [photoUploaded, setPhotoUploaded] = useState(false);
     const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
@@ -94,10 +94,10 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
     const handleTakePhoto = async () => {
         if (!shipmentId) return;
 
-        // Real, confirmed failure otherwise (found live on the pickup
-        // flow, same launchCamera call shape): AndroidManifest.xml
-        // declares CAMERA, so react-native-image-picker won't request it
-        // for us — see cameraPermission.ts.
+        
+        
+        
+        
         const hasCameraPermission = await ensureCameraPermission();
         if (!hasCameraPermission) {
             showToast(t('deliveryCompletion.cameraPermissionRequired'), 'error');
@@ -108,11 +108,11 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
             if (response.didCancel) return;
             const asset = response.assets?.[0];
             if (response.errorCode || !asset?.uri) {
-                // Surface the real reason (camera_unavailable/permission/
-                // others) instead of a generic message — this is exactly
-                // the class of error an emulator with no configured
-                // camera or a denied permission throws, and the generic
-                // toast was hiding which one it actually was.
+                
+                
+                
+                
+                
                 if (__DEV__) console.warn('[DeliveryCompletionSheet] camera error', response.errorCode, response.errorMessage);
                 showToast(
                     response.errorCode ? t('deliveryCompletion.couldNotCapturePhoto', { reason: response.errorMessage ?? response.errorCode }) : t('deliveryCompletion.couldNotCapturePhotoRetry'),
@@ -178,7 +178,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
                     </View>
                     <Text style={styles.subtitle}>{t('deliveryCompletion.subtitle')}</Text>
 
-                    {/* Step 1 — Delivery OTP */}
+                    {}
                     <View style={styles.stepCard}>
                         <View style={styles.stepHeaderRow}>
                             <Text style={styles.stepTitle}>{t('deliveryCompletion.step1Title')}</Text>
@@ -215,7 +215,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
                         )}
                     </View>
 
-                    {/* Step 2 — Delivery Photos */}
+                    {}
                     <View style={styles.stepCard}>
                         <View style={styles.stepHeaderRow}>
                             <Text style={styles.stepTitle}>{t('deliveryCompletion.step2Title')}</Text>
@@ -232,7 +232,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
                         {photoUploaded && <Text style={styles.doneText}>{t('deliveryCompletion.photoAddedHint')}</Text>}
                     </View>
 
-                    {/* Step 3 — Customer Signature (optional) */}
+                    {}
                     <View style={styles.stepCard}>
                         <View style={styles.stepHeaderRow}>
                             <Text style={styles.stepTitle}>{t('deliveryCompletion.step3Title')}</Text>
@@ -253,7 +253,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
                         )}
                     </View>
 
-                    {/* Final validation */}
+                    {}
                     <View style={styles.validationCard}>
                         <Text style={styles.validationTitle}>{t('deliveryCompletion.finalValidation')}</Text>
                         <ValidationRow label={t('deliveryCompletion.otpVerifiedLabel')} done={otpVerified} colors={colors} />

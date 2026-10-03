@@ -21,14 +21,14 @@ import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 import { handleNotificationTap } from '@features/notifications/deepLink';
 
-// Screen -> hook -> notifications.api -> GET /notifications/mine -> cache -> UI
+
 const NotificationScreen = () => {
   const { colors } = useAppTheme();
   const { t } = useTranslation();
-  // Real device safe-area inset — this screen had none at all, so the
-  // header sat under the status bar/camera cutout on real devices (same
-  // overlap bug class already fixed on several other screens this
-  // session).
+  
+  
+  
+  
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(colors, insets), [colors, insets]);
   const {
@@ -42,8 +42,8 @@ const NotificationScreen = () => {
   const { mutate: markAllRead, isPending: markingAll } =
     useMarkAllNotificationsRead();
 
-  // Was mark-as-read only — tapping a notification here went nowhere,
-  // same real gap the FCM background/killed-tap handlers had.
+  
+  
   const renderItem = ({ item }: { item: BackendNotification }) => (
     <Pressable
       style={[styles.card, !item.read && styles.cardUnread]}
@@ -81,12 +81,7 @@ const NotificationScreen = () => {
         )}
       </View>
 
-      {/* Once the list has loaded at least once, never fall back to
-                the full skeleton again (e.g. during the background
-                refetch that mark-all-read's cache invalidation triggers)
-                — that refetch should be invisible, not a jarring "the
-                whole screen is loading" flash over a list the user is
-                actively looking at. */}
+      {}
       <AsyncState
         isLoading={isLoading && !notifications}
         error={error}
@@ -109,8 +104,8 @@ const NotificationScreen = () => {
 
 export default NotificationScreen;
 
-// Computed from useAppTheme() so this screen repaints correctly in dark
-// mode instead of staying pinned to the light palette baked at import.
+
+
 const makeStyles = (
   colors: ReturnType<typeof useAppTheme>['colors'],
   insets: { top: number },

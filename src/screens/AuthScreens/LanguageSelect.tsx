@@ -1,9 +1,9 @@
-// LanguageSelect.tsx — shown exactly once, the first time the app is
-// opened (Splash routes here only when getStoredLanguage() is still null;
-// every later launch skips straight to OnBoarding). Picking a language is
-// optional here — English is pre-selected so "Next" always works — this
-// is just making the choice visible up front instead of silently
-// defaulting to English with no way to discover Profile > Language later.
+
+
+
+
+
+
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

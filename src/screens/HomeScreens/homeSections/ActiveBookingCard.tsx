@@ -1,15 +1,15 @@
-// ActiveBookingCard — the state-aware hero: if the customer has a live
-// shipment, it's the first thing they see, not a card buried in a list.
-// Every number here is real:
-//  - status/driver/route: the shipment row itself
-//  - "assigned Xm ago": derived from dispatch.acceptedAt (a real
-//    timestamp), not a fabricated ETA — kalanabhaBackend never sets
-//    Shipment.etaMinutes anywhere, so showing one would be invented
-//  - "~X km from pickup": haversine between the driver's live tracked
-//    position (useLiveDriverLocation — the same socket
-//    ShipmentDetailsScreen's map already uses) and the shipment's real
-//    pickup coordinates. Only rendered once a live position actually
-//    exists; no placeholder distance is shown before that.
+
+
+
+
+
+
+
+
+
+
+
+
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Reanimated, { FadeIn } from 'react-native-reanimated';
@@ -26,8 +26,8 @@ const makeStatusLabel = (t: (key: string, opts?: Record<string, unknown>) => str
     in_transit: t('home.statusInTransitLong'),
 });
 
-// Real elapsed time since a real timestamp — "3 min ago", never a
-// fabricated countdown/ETA.
+
+
 const makeTimeAgo = (t: (key: string, opts?: Record<string, unknown>) => string) => (iso?: string): string | null => {
     if (!iso) return null;
     const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));

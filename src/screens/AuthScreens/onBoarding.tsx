@@ -20,10 +20,10 @@ import { useTranslation } from 'react-i18next';
 
 const { width, height } = Dimensions.get('window');
 
-// Every real K-mascot illustration in the asset set gets its own slide
-// (none repeated, none combined) — each image is a standalone hero, so
-// the copy beside it names what that scene means rather than
-// re-captioning or adding chip rows on top of what's already drawn.
+
+
+
+
 const SLIDE_IMAGES = [
     require('../../../assets/images/home/onboarding-1.png'),
     require('../../../assets/images/home/onboarding-1-delivery.png'),
@@ -37,10 +37,10 @@ const SLIDE_IMAGES = [
 
 type OnBoardingScreenProp = NativeStackNavigationProp<RootStackParamList, 'OnBoarding'>;
 
-// Eight slides, one per real illustration, arranged as a narrative arc:
-// intro → coverage → booking → choosing a vehicle → live tracking →
-// trust/insurance → the driver side → "there's a path for everyone"
-// (which sets up SelectAccount's actual customer/driver choice next).
+
+
+
+
 const makeSlides = (t: (key: string) => string) => ([
     { key: '1', title: t('onboarding.slide1Title'), accent: t('onboarding.slide1Accent'), description: t('onboarding.slide1Desc') },
     { key: '2', title: t('onboarding.slide2Title'), accent: t('onboarding.slide2Accent'), description: t('onboarding.slide2Desc') },
@@ -84,11 +84,11 @@ const OnBoarding = () => {
     const goSkip = () => navigation.reset({ index: 0, routes: [{ name: 'SelectAccount' }] });
 
     const renderItem = ({ item, index }: { item: typeof SLIDES[0]; index: number }) => {
-        // A soft two-tone glow behind the artwork instead of a flat
-        // tinted box — reads as a considered backdrop rather than a
-        // placeholder card, and lets the transparent PNG's own colors
-        // (mostly brand orange + skin tones) sit on something with a
-        // little depth.
+        
+        
+        
+        
+        
         return (
             <View style={styles.slide}>
                 <View style={styles.illustrationWrap}>
@@ -138,12 +138,12 @@ const OnBoarding = () => {
                 onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
                     useNativeDriver: false,
                 })}
-                // Every slide is exactly `width` wide, so the offset is
-                // computable up front — without this, scrollToIndex (used
-                // by both Next and Back, with scrolling disabled so it's
-                // the only way to move) has to guess at the position of
-                // any slide RN hasn't measured yet, which is unreliable
-                // once there are more than a couple of slides.
+                
+                
+                
+                
+                
+                
                 getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
                 style={styles.slidesList}
             />
@@ -178,8 +178,8 @@ const OnBoarding = () => {
 
 export default OnBoarding;
 
-// Computed from useAppTheme() so this screen repaints correctly in dark
-// mode instead of staying pinned to the light palette baked at import.
+
+
 const makeStyles = (
     colors: ReturnType<typeof useAppTheme>['colors'],
     fonts: ReturnType<typeof useAppTheme>['fonts'],
@@ -193,12 +193,12 @@ const makeStyles = (
     root: { flex: 1, backgroundColor: colors.BACKGROUND },
     slidesList: { flex: 1 },
 
-    // Real device safe-area insets, not a guessed Platform.OS constant —
-    // a fixed 36/56px top padding overlaps the status bar on phones with
-    // a taller notch/cutout, and a fixed 28/40px bottom padding overlaps
-    // Android's 3-button nav bar (which is taller than that on plenty of
-    // real devices) the same way the bottom tab bar used to before it
-    // switched to real insets.
+    
+    
+    
+    
+    
+    
     topBar: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -222,11 +222,11 @@ const makeStyles = (
 
     slide: { width: screenWidth, flex: 1 },
 
-    // Full-bleed, edge-to-edge illustration zone sized off screen height —
-    // the artwork is the hero, not a graphic wedged between two text
-    // blocks. Two overlapping soft circles stand in for a flat tinted
-    // box, giving the backdrop a little depth without adding any new
-    // "claims" or content.
+    
+    
+    
+    
+    
     illustrationWrap: {
         width: '100%',
         height: screenHeight * 0.5,

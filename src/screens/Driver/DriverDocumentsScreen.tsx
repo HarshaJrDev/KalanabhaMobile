@@ -1,10 +1,10 @@
-// DriverDocumentsScreen.tsx — Driver
-//
-// Real backend contract (kalanabhaBackend DriverDocumentsController) that
-// had no mobile screen at all before this — admin could review documents,
-// but nothing let a driver actually upload one from the app. One card per
-// document type; tapping an unfilled one launches the camera/gallery
-// picker and uploads straight to POST /files/driver-documents.
+
+
+
+
+
+
+
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator } from 'react-native';
 import { SkeletonList } from '@components/ui';
@@ -37,9 +37,9 @@ const DriverDocumentsScreen = () => {
     const { mutate: upload, isPending: uploading } = useUploadDriverDocument();
     const [pickerFor, setPickerFor] = useState<DriverDocumentType | null>(null);
 
-    // Latest row per type — a re-upload after rejection creates a new row
-    // rather than overwriting the old one, so this picks whichever the
-    // driver would actually care about seeing.
+    
+    
+    
     const latestByType = useMemo(() => {
         const map: Partial<Record<DriverDocumentType, DriverDocument>> = {};
         (documents ?? []).forEach((d) => {
@@ -64,9 +64,9 @@ const DriverDocumentsScreen = () => {
     };
 
     const handlePick = async (type: DriverDocumentType, source: 'camera' | 'gallery') => {
-        // Real, confirmed failure otherwise: AndroidManifest.xml declares
-        // CAMERA, so react-native-image-picker won't request it for
-        // us — see cameraPermission.ts.
+        
+        
+        
         if (source === 'camera') {
             const hasCameraPermission = await ensureCameraPermission();
             if (!hasCameraPermission) {

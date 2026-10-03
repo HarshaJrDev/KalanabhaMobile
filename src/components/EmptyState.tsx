@@ -1,12 +1,12 @@
-// EmptyState.tsx — the one illustrated "nothing here yet" component every
-// screen should use, replacing bare "No shipments found"-style text (and
-// AsyncState's old plain Inbox-icon-on-gray-text fallback). A soft
-// gradient-blob SVG scene with a themed glyph floating inside it, plus a
-// couple of drifting accent dots — real vector illustration drawn with
-// react-native-svg (already a dependency), not a fetched stock image, so
-// it stays crisp at any size, themes correctly in dark mode, and adds
-// nothing to bundle size. Animates in with Reanimated so it never feels
-// like a static fallback.
+
+
+
+
+
+
+
+
+
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Svg, {

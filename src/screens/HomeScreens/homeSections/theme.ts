@@ -1,6 +1,6 @@
-// Shared color/spacing tokens for every Home-screen section component.
-// Kept separate from the screen's own useAppTheme() colors object so each
-// section file can import just this, not the whole Home.tsx.
+
+
+
 import { useAppTheme } from '@theme/ThemeContext';
 
 export const makeHomeColors = (BRAND: ReturnType<typeof useAppTheme>['colors']) => ({

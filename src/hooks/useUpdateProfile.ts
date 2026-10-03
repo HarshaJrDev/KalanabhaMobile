@@ -3,11 +3,11 @@ import { updateProfile, type UpdateProfilePayload } from '@features/users/api/us
 import { useAuthStore } from '@features/store/authStore';
 import { meQueryKey } from './useMe';
 
-// Screen -> useUpdateProfile -> users.api -> PATCH /users/me -> typed
-// StoredUser -> authStore (persisted via its own Zustand `persist` storage)
-// + query cache -> UI. Mirrors useLogin's exact hydration pattern so every
-// screen reading the authStore user (Profile, DriverHeader,
-// LogisticsCardList, etc.) sees the edit immediately.
+
+
+
+
+
 export const useUpdateProfile = () => {
     const setUser = useAuthStore((s) => s.setUser);
     const queryClient = useQueryClient();

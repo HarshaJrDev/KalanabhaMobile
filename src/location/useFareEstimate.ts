@@ -21,22 +21,22 @@ export interface KnownCoords {
     lng: number;
 }
 
-// Real, distance-based fare estimate (Rapido-style "see price before you
-// book"). Geocodes the typed pickup/drop addresses (via Nominatim) unless
-// the caller already knows real coordinates for them — addOrders.tsx's
-// place picker (GET /settings/service-areas, admin-managed) supplies known
-// center coordinates for its listed localities, which skips geocoding (and
-// the failure mode it has: an address Nominatim can't resolve, or a flaky
-// network call) entirely for those. Either way, the price itself always comes from the same
-// POST /shipments/quote endpoint (kalanabhaBackend PricingService) the
-// actual booking flow uses server-side — never a separate, client-computed
-// price that could drift from what the backend charges.
-//
-// Previously read pricing from a Firestore `vehicleConfigs` collection that
-// nothing populates any more (vehicle pricing lives in Postgres since the
-// backend migration) — every quote silently fell back to hardcoded
-// defaults regardless of the real per-vehicle rates. Fixed to call the
-// backend directly.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export const useFareEstimate = (
     pickupAddress: string,
     dropAddress: string,

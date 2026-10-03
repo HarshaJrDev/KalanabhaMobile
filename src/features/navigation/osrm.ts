@@ -1,13 +1,13 @@
-// osrm.ts — free, no-API-key routing for driver turn-by-turn navigation.
-//
-// Uses OSRM's public demo server (router.project-osrm.org) — genuinely
-// free/open like the Nominatim geocoding and OpenFreeMap tiles this app
-// already relies on (src/services/location.ts, LiveTrackingMap.tsx), same
-// spirit as this whole app's "no billing-enabled API key" constraint.
-// Tradeoff, stated plainly: it's a shared public demo instance — rate
-// limited, not an SLA'd production endpoint. Fine for this app's current
-// traffic; a self-hosted OSRM/Valhalla instance would be the upgrade path
-// if usage ever outgrows the public server.
+
+
+
+
+
+
+
+
+
+
 const OSRM_BASE_URL = 'https://router.project-osrm.org';
 const REQUEST_TIMEOUT_MS = 8000;
 

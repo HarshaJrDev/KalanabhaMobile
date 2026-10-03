@@ -1,8 +1,8 @@
-// Backend's actual wire shape — kalanabhaBackend returns the raw Prisma
-// `Shipment` row (flat pickup*/drop* columns, UPPERCASE status), NOT the
-// nested shape described in shipments/entities/shipment.entity.ts (that
-// file documents intent; nothing in the backend maps rows into it before
-// sending the response). Verified against a running instance.
+
+
+
+
+
 export type BackendShipmentStatus = 'SCHEDULED' | 'SEARCHING' | 'ACCEPTED' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED';
 
 export interface BackendDispatchInfo {
@@ -32,7 +32,7 @@ export interface BackendPackageInfo {
     weight?: number;
 }
 
-// GET/POST /shipments* response row
+
 export interface BackendShipment {
     id: string;
     shipmentId: string;
@@ -71,84 +71,84 @@ export interface BackendShipment {
 
     status: BackendShipmentStatus;
 
-    // 'PARCEL' (default) | 'HOUSE_SHIFTING' — Porter-style movers booking.
+    
     category: string;
     helpersCount: number;
 
-    // Real handling-request flags — no fee attached (no payment system
-    // exists to charge one through).
+    
+    
     fragile: boolean;
     insuranceRequested: boolean;
 
-    // null until the driver actually uploads one via POST
-    // /shipments/:id/pod — ShipmentDetailsScreen.tsx uses this to know
-    // whether "Download POD" has anything real to show.
+    
+    
+    
     podUploadedAt: string | null;
 
-    // Real 4-digit delivery OTP (kalanabhaBackend DispatchService,
-    // generated on accept/admin-assign/auto-match) — null while SEARCHING,
-    // required from the driver at POST /shipments/:id/complete. The
-    // customer app shows this to the customer; the driver app never
-    // renders it (the driver has to ask the customer for it).
+    
+    
+    
+    
+    
     deliveryOtp: string | null;
 
-    // Real 4-digit pickup OTP (kalanabhaBackend DispatchService, generated
-    // alongside deliveryOtp — an independent code, not the same one) —
-    // null while SEARCHING, required from the driver at
-    // POST /shipments/:id/start. Same customer-only visibility as
-    // deliveryOtp.
+    
+    
+    
+    
+    
     pickupOtp: string | null;
 
-    // null until the driver uploads one via POST
-    // /shipments/:id/pickup-proof — mirrors podUploadedAt for the pickup
-    // side.
+    
+    
+    
     pickupProofUploadedAt: string | null;
 
-    // Real driver arrival sub-state (kalanabhaBackend 7708464, additive
-    // within ACCEPTED/IN_TRANSIT — the core status enum is untouched).
-    // Drives which CTA the driver app shows and the "Driver Arrived"
-    // banner on the customer side; ARRIVED_AT_PICKUP/ARRIVED_AT_DROP only
-    // ever get set via a real, geofence-validated
-    // POST /shipments/:id/arrive.
+    
+    
+    
+    
+    
+    
     arrivalState: 'NONE' | 'EN_ROUTE_TO_PICKUP' | 'ARRIVED_AT_PICKUP' | 'EN_ROUTE_TO_DROP' | 'ARRIVED_AT_DROP';
     pickupArrivedAt: string | null;
     dropArrivedAt: string | null;
 
-    // null until the driver saves one via POST /shipments/:id/signature
-    // (kalanabhaBackend 81263b1) — optional completion step, real
-    // captured stroke geometry, not exposed as an image.
+    
+    
+    
     deliverySignatureCapturedAt: string | null;
 
-    // Real, admin-set expiry (BusinessSetting
-    // 'shipment_search_expiry_minutes') a SEARCHING shipment auto-cancels
-    // at if no driver accepts it — set on creation, backing the driver
-    // Home screen's real countdown on the incoming-request card.
+    
+    
+    
+    
     expiresAt: string | null;
 
-    // Real Razorpay payment status — independent of paymentMode
-    // ('prepaid'|'cod'|'credit'); only 'prepaid' shipments ever move off
-    // PENDING, via POST /payments/orders + /payments/verify.
+    
+    
+    
     paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
 
-    // Promo code applied at booking, if any — null/undefined otherwise.
+    
     promoCode: string | null;
     promoDiscount: number | null;
 
-    // Future-dated pickup — null means "book now" (the existing,
-    // only-supported behaviour before this). Status starts SCHEDULED
-    // instead of SEARCHING when this is set in the future.
+    
+    
+    
     scheduledAt: string | null;
 
-    // Optional intermediate stops between pickup and drop, ordered by
-    // sequence — the driver must complete them strictly in order (server
-    // enforced). Empty/absent for a normal two-point shipment.
+    
+    
+    
     stops?: ShipmentStop[];
 
     createdAt: string;
     updatedAt: string;
 }
 
-// POST /shipments — CreateShipmentDto
+
 export interface CreateShipmentPayload {
     goodsType: string;
     weightKg: number;
@@ -162,25 +162,25 @@ export interface CreateShipmentPayload {
     paymentMode: string;
     pickupSlot: string;
     notes?: string;
-    // 'PARCEL' (default, omit) | 'HOUSE_SHIFTING' — Porter-style movers
-    // booking (StepCategory in addOrders.tsx).
+    
+    
     category?: string;
     helpersCount?: number;
-    // Real handling-request flags — no fee attached (no payment system
-    // exists to charge one through).
+    
+    
     fragile?: boolean;
     insuranceRequested?: boolean;
-    // Optional promo code, validated server-side against POST
-    // /promotions/validate's same logic before the discount is applied.
+    
+    
     promoCode?: string;
-    // Optional future pickup time, ISO string. Omit to book now.
+    
     scheduledAt?: string;
-    // Real driver-facing drop-off preference ("Leave at door", "Call
-    // before delivery") — distinct from `notes`.
+    
+    
     deliveryInstructions?: string;
-    // Optional intermediate stops between pickup and drop (max 10),
-    // completed by the driver strictly in order — POST /shipments'
-    // StopDto[].
+    
+    
+    
     stops?: ShipmentStopInput[];
 }
 
@@ -195,7 +195,7 @@ export interface ShipmentStopInput {
 
 export type ShipmentStopStatus = 'PENDING' | 'ARRIVED' | 'COMPLETED';
 
-// Nested on Shipment — GET /shipments/:id's ordered `stops` array.
+
 export interface ShipmentStop {
     id: string;
     sequence: number;
@@ -209,7 +209,7 @@ export interface ShipmentStop {
     completedAt: string | null;
 }
 
-// POST /shipments/quote — QuoteShipmentDto / response
+
 export interface QuoteShipmentPayload {
     pickup: { lat: number; lng: number };
     drop: { lat: number; lng: number };
@@ -224,16 +224,16 @@ export interface ShipmentQuote {
     price: number;
     distanceKm: number;
     helperCost: number;
-    // Real Express/Same Day surcharge PricingService.quote() now actually
-    // adds (kalanabhaBackend 389a5bc) — 0 for Standard.
+    
+    
     serviceSurcharge: number;
-    // Real self-insurance premium (insurance_premium_rate_percent business
-    // setting) — 0 unless insuranceRequested was true AND an admin has set
-    // a real rate. Already included in `price` above.
+    
+    
+    
     insurancePremium: number;
 }
 
-// GET/POST /shipments/:id/insurance-claim — InsuranceClaimsController
+
 export interface InsuranceClaim {
     id: string;
     shipmentId: string;
@@ -248,18 +248,18 @@ export interface InsuranceClaim {
     createdAt: string;
 }
 
-// POST /shipments/:id/assign — AssignShipmentDto
+
 export interface AssignShipmentPayload {
     driverId: string;
 }
 
-// GET /shipments/:id/history — Prisma ShipmentStatusHistory model, one row
-// per real status transition. `status` is the backend's uppercase
-// enum-as-string ('SEARCHING'/'ACCEPTED'/'IN_TRANSIT'/'DELIVERED'/
-// 'CANCELLED'), not the lowercase ShipmentStatus this app displays
-// elsewhere.
-// GET /shipments/driver/earnings-summary — Driver/EarningsScreen.tsx's
-// single data source.
+
+
+
+
+
+
+
 export interface DriverEarningsWindow {
     total: number;
     trips: number;

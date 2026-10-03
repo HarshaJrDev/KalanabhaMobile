@@ -1,4 +1,4 @@
-// components/ShipmentResultModal.tsx
+
 import React from 'react';
 import {
     Modal,
@@ -36,10 +36,10 @@ const ShipmentResultModal: React.FC<ShipmentResultModalProps> = ({
             transparent
             onRequestClose={onClose}
         >
-            {/* Overlay */}
+            {}
             <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose} />
 
-            {/* Bottom Sheet */}
+            {}
             <View style={styles.sheetContainer}>
                 <View style={styles.headerBar} />
                 <Text style={styles.title}>Shipment Summary</Text>
@@ -63,7 +63,7 @@ const ShipmentResultModal: React.FC<ShipmentResultModalProps> = ({
                     ))}
                 </ScrollView>
 
-                {/* Create Shipment Button */}
+                {}
                 <TouchableOpacity style={styles.createButton} onPress={onCreateShipment}>
                     <Text style={styles.createButtonText}>Create Shipment</Text>
                 </TouchableOpacity>

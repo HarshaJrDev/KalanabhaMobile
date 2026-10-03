@@ -1,15 +1,15 @@
-// InboxScreen.tsx — replaces the old message.tsx/Message/ChatScreen.tsx
-// demo pair (100% mock data, no navigation route ever reached it — deleted
-// earlier this session).
-//
-// There's no backend "conversations" or general-support-chat endpoint —
-// ChatMessage rows are strictly per-shipment (kalanabhaBackend prisma
-// schema: `ChatMessage.shipmentId` is a required FK). Rather than invent
-// one, this is a real inbox over what already exists: every one of the
-// customer's active shipments that has a driver assigned (dispatch != null,
-// so there's actually someone to talk to) is a "conversation", opening the
-// same real ShipmentChatScreen backend (GET/POST /shipments/:id/messages)
-// that already works from ShipmentDetailsScreen.
+
+
+
+
+
+
+
+
+
+
+
+
 import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -24,8 +24,8 @@ import FONTS from '@utils/fonts';
 const ConversationRow = ({ shipment }: { shipment: Shipment }) => {
     const navigation = useNavigation();
     const { t } = useTranslation();
-    // Each row's own last-message preview — cheap, and shares the cache
-    // with ShipmentChatScreen so opening a thread doesn't refetch.
+    
+    
     const { data: messages } = useChatMessages(shipment.id);
     const last = messages?.[messages.length - 1];
 

@@ -1,14 +1,14 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-// Must run before any component using useTranslation() mounts.
+
 import './src/i18n';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as Sentry from '@sentry/react-native';
 import { initSentry, navigationIntegration } from '@config/sentry';
 
-// As early as possible, before the component tree renders — a no-op
-// until a real DSN is set (see src/config/sentry.ts).
+
+
 initSentry();
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
@@ -67,8 +67,8 @@ import { useNotificationsSocket } from '@features/notifications/hooks';
 
 const Stack = createNativeStackNavigator();
 
-// Needs to run under QueryClientProvider (useQueryClient) — App itself
-// renders that provider, so this can't be called at App's own top level.
+
+
 const NotificationsSocketBridge = () => {
   useNotificationsSocket();
   return null;
@@ -87,9 +87,9 @@ const App = () => {
     if (!showAppFlow) return;
     registerFCMToken(role === 'DRIVER' ? 'driver' : 'customer');
     flushPendingNotificationTarget();
-    // Real OS notification + deep link on tap — no in-app Alert popup
-    // (see utils/cm.ts: foreground messages now post a real local
-    // notification via notifee instead of showing a custom dialog).
+    
+    
+    
     const unsub = setupFCMListeners();
     return unsub;
   }, [showAppFlow, role]);
@@ -244,8 +244,8 @@ const LoadingGate = () => {
   );
 };
 
-// Adds an automatic top-level error boundary + touch breadcrumbs — a
-// no-op wrapper when Sentry was never initialized (no DSN set).
+
+
 export default Sentry.wrap(App);
 
 const styles = StyleSheet.create({

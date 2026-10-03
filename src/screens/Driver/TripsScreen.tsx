@@ -1,20 +1,20 @@
-// TripsScreen.tsx — Driver
-//
-// Replaces ProfileScreen's "Your Trips" "Coming soon" toast — it was a
-// no-op only because there was no backend endpoint returning "shipments
-// assigned to me" for a driver (GET /shipments/searching is the unassigned
-// pool, GET /shipments/mine is customer-scoped). Added
-// GET /shipments/driver/mine (ShipmentsController.findMineAsDriver) for
-// this — same real data model, actual trip history, not fabricated.
-//
-// The current ACCEPTED/IN_TRANSIT shipment (if any) is pinned at the top
-// with a "Chat with Customer" button — this is also the fix for "customer
-// sends a message but the driver never gets it": the driver app had no
-// chat entry point at all before this, even though the chat backend
-// (GET/POST /shipments/:id/messages + ChatGateway websocket) already
-// worked correctly (verified independently via curl + a raw socket.io
-// client — messages were delivered live; the mobile driver side just never
-// opened the screen that reads them).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
 import { useNavigation } from '@react-navigation/native';

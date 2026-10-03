@@ -8,7 +8,7 @@ import type {
 } from './types';
 import { useAuthState } from '@hooks/useAuthState';
 
-// Screen -> hook -> shipments.api -> backend -> BackendShipment[] -> toShipment -> cache -> UI
+
 export const shipmentKeys = {
     all: ['shipments'] as const,
     mine: () => [...shipmentKeys.all, 'mine'] as const,
@@ -27,16 +27,16 @@ export const useMyShipments = () => {
         queryKey: shipmentKeys.mine(),
         queryFn: async () => (await shipmentsApi.getMyShipments()).map(toShipment),
         enabled: isAuthenticated,
-        // Active shipments can change server-side (auto-match, driver accept)
-        // without any local action, so poll while the screen is focused —
-        // there's no shipment-list push channel, only the per-shipment
-        // chat/tracking sockets.
+        
+        
+        
+        
         refetchInterval: ACTIVE_SHIPMENT_POLL_MS,
     });
 };
 
-// driver only — see getMyShipmentsAsDriver. Powers both the "active
-// delivery" chat entry point and trip history on the driver side.
+
+
 export const useMyShipmentsAsDriver = () => {
     const { isAuthenticated } = useAuthState();
     return useQuery({
@@ -47,7 +47,7 @@ export const useMyShipmentsAsDriver = () => {
     });
 };
 
-// driver only — today/week/all-time earnings totals + recent trips.
+
 export const useDriverEarningsSummary = () => {
     const { isAuthenticated } = useAuthState();
     return useQuery({
@@ -57,10 +57,10 @@ export const useDriverEarningsSummary = () => {
     });
 };
 
-// Every shipment this customer has ever made, any status — see
-// getMyShipmentHistory. Powers Profile.tsx's real stats and Transactions
-// History; doesn't need the active-shipment poll interval since past
-// shipments don't change.
+
+
+
+
 export const useMyShipmentHistory = () => {
     const { isAuthenticated } = useAuthState();
     return useQuery({
@@ -102,7 +102,7 @@ export const useShipment = (id: string | undefined) => {
 
 // Screen -> hook -> shipments.api -> GET /shipments/:id/history -> cache
 // -> UI. ShipmentDetailsScreen's Tracking Timeline; real status
-// transitions, not a guessed 'placed'/'picked-up'/'in-transit' sequence.
+
 export const useShipmentHistory = (id: string | undefined) => {
     const { isAuthenticated } = useAuthState();
     return useQuery({
@@ -130,9 +130,9 @@ export const useCreateShipment = () => {
     });
 };
 
-// Shared invalidation for every mutation that changes a shipment's status —
-// keeps `mine`/`searching`/`admin`/`detail` in sync without each screen
-// having to know which lists it might be showing in.
+
+
+
 const useInvalidateShipmentCaches = (id: string) => {
     const queryClient = useQueryClient();
     return () => {
@@ -210,8 +210,8 @@ export const useRescheduleShipment = (id: string) => {
     });
 };
 
-// Returns null (not an error) when the customer hasn't filed one yet —
-// GET /shipments/:id/insurance-claim finds nothing, not a 404.
+
+
 export const useInsuranceClaim = (shipmentId: string | undefined, insuranceRequested: boolean | undefined) => {
     const { isAuthenticated } = useAuthState();
     return useQuery({

@@ -74,11 +74,11 @@ import { useTabBarContentPadding } from '../navigation/useTabBarStyle';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// ─── Design Tokens ──────────────────────────────────────────────────────────
-// Rebranded to Kalanabha's own orange identity (§4/§7) — every key kept so
-// the rest of this file (which reads C.* extensively) didn't need touching.
-// Built from useAppTheme() inside each component below instead of a
-// module-level constant, so it flips with dark mode.
+
+
+
+
+
 const makeC = (BRAND: ReturnType<typeof useAppTheme>['colors']) => ({
   primary: BRAND.PRIMARY,
   primaryDark: BRAND.PRIMARY_DARK,
@@ -104,7 +104,7 @@ const S = (v: number) => v;
 const H = (v: number) => v;
 const W = (v: number) => v;
 
-// Vehicle icon mapping
+
 const VEHICLE_ICONS: Record<string, LucideIcon> = {
   bike: Bike,
   mini: Car,
@@ -124,7 +124,7 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   Others: Package,
 };
 
-// Status configuration with enhanced colors
+
 const makeStatus = (
   C: ListColors,
   t: (key: string) => string,
@@ -180,13 +180,13 @@ const makeTabs = (t: (key: string) => string) => [
 
 type HomeScreenProp = NativeStackNavigationProp<RootStackParamList, 'Shipment'>;
 
-// ─── Main Component ──────────────────────────────────────────────────────────
-// features/shipments' BackendShipment mapped to this screen's loosely-typed
-// display shape — mirrors the old Firestore doc shape closely enough that
-// the render code below needed no changes.
-// NOTE: GET /shipments/mine only returns active shipments (SEARCHING/
-// ACCEPTED/IN_TRANSIT) — kalanabhaBackend has no "full shipment history"
-// endpoint yet, so the Delivered/Expired tabs stay empty until one exists.
+
+
+
+
+
+
+
 const toListItem = (s: MyShipment) => ({
   id: s.id,
   status: s.status === 'in_transit' ? 'in-transit' : s.status,
@@ -198,11 +198,11 @@ const toListItem = (s: MyShipment) => ({
   to: s.to,
   price: s.price,
   createdAt: { seconds: Math.floor(new Date(s.createdAt).getTime() / 1000) },
-  // Previously dropped by this mapper even though ShipmentCard's JSX
-  // already referenced item.sender/receiver/pickupSlot/serviceType —
-  // those rendered as "undefined (undefined)" silently. Carried through
-  // for real now, plus dispatch/paymentMode for the mockup's driver row
-  // and payment-mode caption.
+  
+  
+  
+  
+  
   sender: s.sender,
   receiver: s.receiver,
   pickupSlot: s.pickupSlot,
@@ -228,22 +228,22 @@ const ShipmentScreen = () => {
   const [searchText, setSearchText] = useState('');
   // This screen lives under the bottom tab bar (HomeTabs.tsx "Orders")
   // — the list's fixed H(44) bottom padding didn't account for it, so
-  // the last card sat behind the bar instead of scrolling clear of it.
+  
   const tabBarPadding = useTabBarContentPadding();
 
-  // Reanimated values
+  
   const headerScale = useSharedValue(0.95);
   const fadeOpacity = useSharedValue(0);
   const listSlide = useSharedValue(20);
   const listFade = useSharedValue(0);
 
-  // Initialize header animations
+  
   useEffect(() => {
     headerScale.value = withSpring(1, { damping: 12, mass: 1 });
     fadeOpacity.value = withTiming(1, { duration: 600 });
   }, []);
 
-  // Trigger list animation
+  
   const animateList = () => {
     listSlide.value = 20;
     listFade.value = 0;
@@ -251,22 +251,22 @@ const ShipmentScreen = () => {
     listFade.value = withTiming(1, { duration: 400 });
   };
 
-  // Re-run the list entrance animation whenever the backend-sourced list changes.
+  
   useEffect(() => {
     if (!loading) {
       animateList();
     }
   }, [loading, shipments]);
 
-  // Handle tab change
+  
   const handleTabChange = (key: string) => {
     setActiveTab(key);
     animateList();
   };
 
-  // Filter by tab, then by the search box — client-side over the
-  // already-fetched active-shipment list (no separate search endpoint
-  // exists), matching against tracking ID, route, or recipient name.
+  
+  
+  
   const filtered = useMemo(() => {
     let list =
       activeTab === 'all'
@@ -286,7 +286,7 @@ const ShipmentScreen = () => {
     return list;
   }, [shipments, activeTab, searchText]);
 
-  // Count per tab
+  
   const counts = TABS.reduce((acc, tab) => {
     acc[tab.key] =
       tab.key === 'all'
@@ -298,7 +298,7 @@ const ShipmentScreen = () => {
     counts['in-transit'] +
     shipments.filter(s => s.status === 'accepted').length;
 
-  // Animated styles
+  
   const headerAnimStyle = useAnimatedStyle(() => ({
     opacity: fadeOpacity.value,
     transform: [{ scale: headerScale.value }],
@@ -313,7 +313,7 @@ const ShipmentScreen = () => {
     <View style={styles.root}>
       <StatusBar barStyle="light-content" backgroundColor={C.primaryDark} />
 
-      {/* Header */}
+      {}
       <Animated.View style={[headerAnimStyle]}>
         <LinearGradient
           colors={[C.primary, C.primaryDark]}
@@ -325,7 +325,7 @@ const ShipmentScreen = () => {
           <View style={styles.blob2} />
           <View style={styles.blob3} />
 
-          {/* Header Content */}
+          {}
           <View style={styles.headerTop}>
             <View style={{ flex: 1 }}>
               <Text
@@ -354,7 +354,7 @@ const ShipmentScreen = () => {
             )}
           </View>
 
-          {/* Search */}
+          {}
           <View style={styles.searchBar}>
             <Search size={16} color={C.textLight} />
             <TextInput
@@ -369,7 +369,7 @@ const ShipmentScreen = () => {
         </LinearGradient>
       </Animated.View>
 
-      {/* Tab Navigation */}
+      {}
       <View style={styles.tabsWrap}>
         <ScrollView
           horizontal
@@ -420,7 +420,7 @@ const ShipmentScreen = () => {
         </ScrollView>
       </View>
 
-      {/* Content */}
+      {}
       {loading ? (
         <SkeletonList />
       ) : filtered.length === 0 ? (
@@ -457,7 +457,7 @@ const ShipmentScreen = () => {
         </Animated.View>
       )}
 
-      {/* Footer utility bar */}
+      {}
       <View style={styles.footerBar}>
         <Pressable
           style={styles.filterDateBtn}
@@ -505,7 +505,7 @@ const ShipmentScreen = () => {
   );
 };
 
-// ─── Shipment Card Component ─────────────────────────────────────────────────
+
 type ShipmentCardProps = {
   item: any;
   index: number;
@@ -599,7 +599,7 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({
         <View style={[styles.cardAccent, { backgroundColor: cfg.color }]} />
 
         <View style={styles.cardBody}>
-          {/* Header: tracking id + date, status badge */}
+          {}
           <View style={styles.cardHeader}>
             <View style={styles.cardTrackingRow}>
               <Text
@@ -634,9 +634,9 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({
           </View>
 
           {isDelivered ? (
-            // Compact single-line route for a finished order — the
-            // full pick-up/drop-off breakdown matters while it's
-            // still moving, not after.
+            
+            
+            
             <View style={styles.compactRouteRow}>
               <Text
                 style={[
@@ -745,7 +745,7 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({
             </View>
           )}
 
-          {/* Tags: vehicle + package category */}
+          {}
           <View style={styles.packageDetails}>
             <View style={styles.detailChip}>
               <VehicleIcon
@@ -964,15 +964,15 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({
 
 export default ShipmentScreen;
 
-// ─── Styles ─────────────────────────────────────────────────────────────────
-// Computed from useAppTheme() (via the C token set derived above) instead
-// of a module-level StyleSheet baked with the light palette, so this
-// screen repaints correctly in dark mode.
+
+
+
+
 const makeStyles = (C: ListColors) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: C.bg },
 
-    // Header
+    
     header: {
       paddingTop: Platform.OS === 'ios' ? H(56) : H(38),
       paddingHorizontal: S(16),
@@ -1054,7 +1054,7 @@ const makeStyles = (C: ListColors) =>
     },
     searchInput: { flex: 1, fontSize: 13, color: C.text },
 
-    // Tabs
+    
     tabsWrap: {
       backgroundColor: C.white,
       borderBottomWidth: 1,
@@ -1100,7 +1100,7 @@ const makeStyles = (C: ListColors) =>
     tabBadgeText: { fontSize: 10, color: C.textMid },
     tabBadgeTextActive: { color: '#fff' },
 
-    // List
+    
     listContent: {
       paddingHorizontal: S(12),
       paddingVertical: H(12),
@@ -1114,7 +1114,7 @@ const makeStyles = (C: ListColors) =>
     },
     loadingText: { color: C.textLight, fontSize: 13 },
 
-    // Card
+    
     card: {
       backgroundColor: C.card,
       borderRadius: W(16),
@@ -1156,12 +1156,12 @@ const makeStyles = (C: ListColors) =>
     cardDateRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     cardDateText: { fontSize: 11, color: C.textLight },
 
-    // Compact route for a delivered order
+    
     compactRouteRow: { flexDirection: 'row', alignItems: 'center', gap: S(6) },
     compactRouteText: { flex: 1, fontSize: 12, color: C.textMid },
     compactRouteFare: { fontSize: 14, color: C.text },
 
-    // Route + fare (searching/accepted/in-transit)
+    
     routeFareRow: { flexDirection: 'row', gap: S(10) },
     routeCol: { flex: 1 },
     routeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: S(8) },
@@ -1197,7 +1197,7 @@ const makeStyles = (C: ListColors) =>
     chipEmoji: {},
     chipText: { fontSize: 11, color: C.textMid },
 
-    // Driver row (accepted/in-transit)
+    
     driverRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -1238,7 +1238,7 @@ const makeStyles = (C: ListColors) =>
     },
     trackLiveBtnText: { color: '#fff', fontSize: 11 },
 
-    // Searching / no driver yet
+    
     findingFooter: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -1256,7 +1256,7 @@ const makeStyles = (C: ListColors) =>
     },
     viewStatusBtnText: { fontSize: 11, color: C.textMid },
 
-    // Delivered footer
+    
     deliveredFooter: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -1292,7 +1292,7 @@ const makeStyles = (C: ListColors) =>
     },
     podBtnText: { fontSize: 11, color: C.textMid },
 
-    // ── Footer utility bar
+    
     footerBar: {
       flexDirection: 'row',
       alignItems: 'center',

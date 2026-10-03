@@ -2,7 +2,7 @@ import { apiClient } from '@api/client';
 import type { ApiSuccessResponse } from '@api/types';
 import type { CreateFuelExpenseInput, FuelExpense } from '../types';
 
-// One-to-one with kalanabhaBackend/src/modules/fuel-expenses/controllers/fuel-expenses.controller.ts
+
 
 export const createFuelExpense = async (input: CreateFuelExpenseInput): Promise<FuelExpense> => {
     const form = new FormData();
@@ -13,9 +13,9 @@ export const createFuelExpense = async (input: CreateFuelExpenseInput): Promise<
     if (input.litres != null) form.append('litres', String(input.litres));
     if (input.shipmentId) form.append('shipmentId', input.shipmentId);
     if (input.receiptUri) {
-        // Same multipart-file shape React Native's fetch/axios expects —
-        // no separate image-picker dependency added here; the caller
-        // supplies whatever URI it already has (camera or gallery).
+        
+        
+        
         form.append('receipt', { uri: input.receiptUri, name: 'receipt.jpg', type: 'image/jpeg' } as any);
     }
 

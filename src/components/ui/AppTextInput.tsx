@@ -14,18 +14,16 @@ import { useAppTheme } from '@theme/ThemeContext';
 export type AppTextInputVariant = 'outline' | 'card';
 
 export interface AppTextInputProps extends Omit<TextInputProps, 'onChange'> {
-    /** 'outline' reproduces InputField.tsx (labeled, bordered, error state, optional secure-entry eye toggle).
-     *  'card' reproduces CustomInput.tsx (white shadow card, optional left/right icon slot). */
-    variant?: AppTextInputVariant;
+        variant?: AppTextInputVariant;
 
-    // outline-variant props (InputField.tsx)
+    
     label?: string;
     value?: string;
     onChange?: (value: string) => void;
     error?: string;
     secure?: boolean;
 
-    // card-variant props (CustomInput.tsx)
+    
     leftIcon?: LucideIcon;
     rightIcon?: LucideIcon;
     onRightIconPress?: () => void;
@@ -35,14 +33,6 @@ export interface AppTextInputProps extends Omit<TextInputProps, 'onChange'> {
 
 const HIT_SLOP = { top: 10, bottom: 10, left: 10, right: 10 };
 
-/**
- * Single source of truth for text inputs across the app. Two variants,
- * matching the two distinct input styles already in use — this does not
- * introduce a third look, it centralizes the two that exist. Styles are
- * built from `useAppTheme()` per render so inputs repaint correctly when
- * the device switches light/dark, instead of a module-level StyleSheet
- * baked at import with the light palette only.
- */
 const AppTextInput = memo(
     forwardRef<TextInput, AppTextInputProps>((props, ref) => {
         const {
@@ -81,11 +71,11 @@ const AppTextInput = memo(
                         paddingHorizontal: spacing.md,
                         backgroundColor: colors.SURFACE,
                     },
-                    // backgroundColor set directly on the input (not just
-                    // inputContainer) — Samsung's autofill chrome (phone
-                    // fields especially) paints its own opaque surface at
-                    // the native TextInput layer and swallows text left on
-                    // a transparent input.
+                    
+                    
+                    
+                    
+                    
                     input: { flex: 1, color: colors.TEXT_SECONDARY, fontFamily: fonts.PRIMARY, fontSize: fontSize.md, backgroundColor: colors.SURFACE },
                     errorBorder: { borderColor: colors.DANGER },
                     errorText: { color: colors.DANGER, fontSize: fontSize.xs, fontFamily: fonts.PRIMARY },

@@ -1,10 +1,10 @@
-// ReferralScreen.tsx
-//
-// Real "invite a friend" — the code shown here is the same
-// User.referralCode a new signup can enter (Signup.tsx's optional field),
-// and the reward is a real, redeemable one-time promo code both sides
-// actually get once the referred friend's first order is delivered
-// (kalanabhaBackend ReferralsListener), not a fabricated points balance.
+
+
+
+
+
+
+
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, Share, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';

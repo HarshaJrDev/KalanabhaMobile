@@ -19,11 +19,11 @@ import { getStoredLanguage } from '@services/storage';
 const { width } = Dimensions.get('window');
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Splash'>;
 
-// Kalanabha's own visual identity — a clean cream/white surface with the
-// brand orange used strategically (mark + progress bar only), not a
-// borrowed stock-photo backdrop. No network image dependency either,
-// which also means no flash-of-unstyled-content while a Splash screen
-// waits on a slow connection to fetch a background.
+
+
+
+
+
 const FEATURES = [
     { icon: Package, label: 'Move Anything' },
     { icon: Zap, label: 'Real-time Tracking' },
@@ -49,9 +49,9 @@ const Splash = () => {
         wordmarkY.value = withDelay(200, withSpring(0, { damping: 12 }));
         progress.value = withTiming(1, { duration: 1600, easing: Easing.out(Easing.cubic) });
 
-        // First-ever open (no language chosen yet) routes through the
-        // language selector once; every later launch goes straight to
-        // OnBoarding as before.
+        
+        
+        
         const nextRoute = getStoredLanguage() === null ? 'LanguageSelect' : 'OnBoarding';
         const timer = setTimeout(() => navigation.replace(nextRoute), 1700);
         return () => clearTimeout(timer);
@@ -110,8 +110,8 @@ const Splash = () => {
 
 export default Splash;
 
-// Computed from useAppTheme() (rather than a module-level StyleSheet baked
-// with the light palette) so Splash repaints correctly in dark mode.
+
+
 const makeStyles = (
     colors: ReturnType<typeof useAppTheme>['colors'],
     fonts: ReturnType<typeof useAppTheme>['fonts'],

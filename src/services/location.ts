@@ -1,9 +1,9 @@
 import { apiClient } from '@api/client';
 
-// Routed through kalanabhaBackend's /maps/geocode/* proxy (not Nominatim
-// directly) — every device sharing one backend-enforced rate limit and
-// cache instead of each phone hammering the public Nominatim instance
-// independently, which was out of compliance with its usage policy.
+
+
+
+
 export const reverseGeocode = async (
     lat: number,
     lon: number,
@@ -17,10 +17,10 @@ export const reverseGeocode = async (
     return data.data.displayName;
 };
 
-// Sender/receiver addresses in the order form are free-typed text with no
-// coordinates. This turns an address string into lat/lng so we can compute
-// a real distance-based fare (see StepOrderDetails's fare estimate) instead
-// of the flat per-service-type price.
+
+
+
+
 export const forwardGeocode = async (
     address: string,
     signal?: AbortSignal,

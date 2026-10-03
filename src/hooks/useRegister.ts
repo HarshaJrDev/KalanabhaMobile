@@ -7,8 +7,8 @@ import { setRefreshToken, setToken, type StoredUser } from '@services/storage';
 import { ApiError } from '@api/types';
 import { meQueryKey } from './useMe';
 
-// Screen -> useRegister -> auth.api/users.api -> POST /auth/register + GET /users/me
-// -> typed StoredUser -> authStore + MMKV + query cache -> UI
+
+
 const registerAndFetchProfile = async (payload: RegisterPayload): Promise<StoredUser> => {
     const tokens = await register(payload);
 

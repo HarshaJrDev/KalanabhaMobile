@@ -1,9 +1,9 @@
-// AddressFormModal.tsx — full add/edit form for a saved address
-// (Swiggy/Zomato-style: locality picker + house/flat no, floor, street,
-// landmark, contact details, a type category, and a default toggle).
-// Previously SavedAddressesScreen only supported renaming the label —
-// creating one happened as a side-effect of the order form's "bookmark"
-// button, and there was no field for house/floor/landmark detail at all.
+
+
+
+
+
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Briefcase, Home as HomeIcon, Hotel, MapPin, X } from 'lucide-react-native';
@@ -28,10 +28,8 @@ const TYPE_OPTIONS: SavedAddressType[] = ['HOME', 'WORK', 'HOTEL', 'OTHER'];
 interface Props {
     visible: boolean;
     onClose: () => void;
-    /** Pass an existing address to edit it; omit to create a new one. */
-    initial?: SavedAddress | null;
-    /** Pre-fill the locality (e.g. opened from a map pin) when creating new. */
-    initialArea?: ServiceArea | null;
+        initial?: SavedAddress | null;
+        initialArea?: ServiceArea | null;
 }
 
 export const AddressFormModal: React.FC<Props> = ({ visible, onClose, initial, initialArea }) => {

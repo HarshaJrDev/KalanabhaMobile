@@ -1,4 +1,4 @@
-// GET /dashboard/overview response — kalanabhaBackend OverviewStats
+
 export interface OverviewStats {
     total: number;
     searching: number;

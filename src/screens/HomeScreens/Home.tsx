@@ -1,16 +1,16 @@
-// Home.tsx — customer Home screen.
-//
-// Rebuilt around real state instead of a static card stack: an active
-// shipment (if any) is promoted to a dominant hero card at the top
-// (ActiveBookingCard), not buried in a list; the primary booking surfaces
-// (vehicle selector, recent trips, popular pickup points) are all real,
-// backend-backed data with their own independent loading/empty states, so
-// one failing section (e.g. history) never blocks booking. The fabricated
-// promo carousel (no coupons/promotions backend exists anywhere in this
-// app) has been removed rather than kept as decoration with no product
-// purpose — see §27/§39 of this app's "don't fabricate a backend feature"
-// rule, which the new design brief's "no decoration without purpose"
-// principle reinforces rather than contradicts.
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
     View,
@@ -131,15 +131,15 @@ const HomeScreen: React.FC = () => {
     const activeServiceAreas = useMemo(() => (serviceAreas ?? []).filter((a) => a.active), [serviceAreas]);
     const { data: savedAddresses } = useSavedAddresses();
 
-    // Best-effort, silent background tile caching for every active
-    // locality — so the map still renders (LocationPinPicker, live
-    // tracking) if the connection drops mid-trip. Runs once per app
-    // session's worth of distinct areas, not on every Home remount.
+    
+    
+    
+    
     useEffect(() => {
         if (activeServiceAreas.length > 0 && getOfflineMapsEnabled()) {
             ensureServiceAreaTilesCached(activeServiceAreas);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        
     }, [activeServiceAreas.length]);
 
     const activeShipmentsRaw = useMemo(() => myShipments ?? [], [myShipments]);
@@ -155,9 +155,9 @@ const HomeScreen: React.FC = () => {
     const recentDeliveredTrips = useMemo(() => (shipmentHistory ?? []).filter((s) => s.status === 'delivered'), [shipmentHistory]);
 
     const notifCount = unreadCount ?? 0;
-    // Critical first-paint data only — history/service-areas are secondary
-    // sections that show their own empty state rather than blocking the
-    // whole screen behind a skeleton.
+    
+    
+    
     const initialLoading = shipmentsLoading && vehiclesLoading;
     const refreshing = shipmentsRefetching;
 
@@ -266,9 +266,7 @@ const HomeScreen: React.FC = () => {
                     bellShake={bellShake}
                 />
 
-                {/* State #1 priority: an active booking is the most urgent
-                    thing on screen, promoted above everything else — not a
-                    card buried in a list further down. */}
+                {}
                 {heroShipment && (
                     <ActiveBookingCard
                         shipment={heroShipment}
@@ -294,38 +292,16 @@ const HomeScreen: React.FC = () => {
                     ))}
                 </Animated.View>
 
-                {/* Real referral-program banner — links straight to the
-                    working Referral screen (real reward codes, not a
-                    decorative dead-end), not a fabricated coupon carousel. */}
-               {/* <Pressable
-                    style={styles.promoBanner}
-                    onPress={() => (navigation as any).navigate('Referral')}
-                >
-                    <Image
-                        source={require('../../../assets/images/home/promo-banner.jpg')}
-                        style={styles.promoBannerImage}
-                        resizeMode="cover"
-                    />
-                </Pressable> */}
+                {}
+               {}
 
-                {/* <View style={styles.processBanner}>
-                    <Image
-                        source={require('../../../assets/images/home/process-banner.jpg')}
-                        style={styles.processBannerImage}
-                        resizeMode="cover"
-                    />
-                </View> */}
+                {}
 
                 <View style={styles.mainContent}>
-                    {/* New-customer first-booking nudge — only shown when
-                        there's genuinely no history at all, not decoration
-                        for a returning customer. */}
+                    {}
                     {isNewCustomer && (
                         <Pressable style={styles.firstBookingCard} onPress={() => (navigation as any).navigate('AddOrder')}>
-                            {/* Real photo (Wikimedia Commons, freely licensed),
-                                not a fabricated illustration asset — fades in
-                                once it loads, a solid tint shows underneath
-                                until then. */}
+                            {}
                             <FadeImage
                                 uri="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/A_Courier_Delivering_a_Parcel.jpg/960px-A_Courier_Delivering_a_Parcel.jpg"
                                 style={StyleSheet.absoluteFill}
@@ -562,8 +538,8 @@ const makeStyles = (COLORS: HomeColors, FONTS: ReturnType<typeof useAppTheme>['f
         backgroundColor: COLORS.primaryDark, borderRadius: 18, padding: 16, marginTop: SPACING.l, marginBottom: SPACING.l,
         overflow: 'hidden', position: 'relative',
     },
-    // Darkens the real photo behind the card's text/icon just enough to
-    // keep them readable regardless of the image's own brightness.
+    
+    
     firstBookingScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
     firstBookingIconWrap: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
     firstBookingTitle: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: '#fff' },

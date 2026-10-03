@@ -13,7 +13,7 @@ export const notificationKeys = {
 
 const NOTIFICATIONS_POLL_MS = 15000;
 
-// Screen -> hook -> notifications.api -> GET /notifications/mine -> cache -> UI
+
 export const useMyNotifications = () => {
     const { isAuthenticated } = useAuthState();
     return useQuery({
@@ -34,13 +34,13 @@ export const useUnreadNotificationCount = () => {
     });
 };
 
-// Instant delivery on top of the 15s poll above (NotificationsGateway) —
-// for the case that actually needs it, e.g. a driver accepting a shipment
-// should move the bell right away while the customer is watching the app,
-// not after up to 15s. The REST poll stays as the reliable path for
-// reconnects/backgrounding; this only shortens the common-case wait while
-// the socket is actually connected. No 'join' message needed — the server
-// puts the connection straight into its own user room from the verified JWT.
+
+
+
+
+
+
+
 export const useNotificationsSocket = () => {
     const { isAuthenticated } = useAuthState();
     const queryClient = useQueryClient();

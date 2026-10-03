@@ -1,11 +1,11 @@
-// WebViewScreen.tsx — Customer & Driver
-//
-// Generic in-app browser for a real URL, passed via route params. Backs
-// Settings' Privacy Policy / Terms of Service rows — those point at the
-// real pages already live on the KalanabhaWebsite marketing site
-// (kalanabhalogistics.com/privacy, /terms), not a fake/placeholder
-// in-app page duplicating content that has to be kept in sync in two
-// places.
+
+
+
+
+
+
+
+
 import React, { useState } from 'react';
 import {
   View,
@@ -56,14 +56,14 @@ const WebViewScreen = () => {
         onLoadStart={() => setLoading(true)}
         onLoadEnd={() => setLoading(false)}
         // Android's WebView keeps its own on-disk HTTP cache,
-        // independent of the server's Cache-Control and of any
-        // regular browser's cache — it was the one still showing
-        // the old admin-redirect page after the nginx fix, with a
-        // simple app restart not clearing it. cacheEnabled=false
-        // plus a cache-busting LOAD_NO_CACHE mode on Android stop
-        // it from serving a stored response at all; iOS's
-        // WKWebView already treats these pages as effectively
-        // uncached in practice for this use case.
+        
+        
+        
+        
+        
+        
+        
+        
         cacheEnabled={false}
         incognito
       />
