@@ -395,9 +395,9 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                                 <Text style={styles.arrivalStatusText}>
                                     {activeDelivery.status === 'accepted' ? t('driverHome.pickupVerificationPending') : t('driverHome.inTransitStatus')}
                                 </Text>
-                                {!!activeDelivery.deliveryInstructions && (
+                                {!!activeDelivery.deliveryInstructions?.length && (
                                     <Text style={styles.deliveryInstructionsText} numberOfLines={1}>
-                                        {t('driverHome.deliveryInstructionsLabel')}: {activeDelivery.deliveryInstructions}
+                                        {t('driverHome.deliveryInstructionsLabel')}: {activeDelivery.deliveryInstructions.join(', ')}
                                     </Text>
                                 )}
                             </View>

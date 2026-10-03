@@ -252,10 +252,17 @@ const CheckRate = () => {
                             {fareEstimate.distanceKm} km · {selectedVehicle?.name}
                         </Text>
                         <View style={styles.breakdown}>
-                            <View style={styles.breakdownRow}>
-                                <Clock3 size={14} color="#6B7280" />
-                                <Text style={styles.breakdownText}>Estimated delivery: {Math.max(20, Math.round((fareEstimate.distanceKm ?? 0) * 4))} min</Text>
-                            </View>
+                            {/* Was a fabricated distance*4 formula — now the
+                                same real OSRM driving-route estimate the
+                                booking flow and live tracking both use.
+                                Hidden (not shown with a fake number) if the
+                                routing service doesn't respond. */}
+                            {fareEstimate.etaMinutes != null && (
+                                <View style={styles.breakdownRow}>
+                                    <Clock3 size={14} color="#6B7280" />
+                                    <Text style={styles.breakdownText}>Estimated delivery: ~{fareEstimate.etaMinutes} min</Text>
+                                </View>
+                            )}
                             <View style={styles.breakdownRow}>
                                 <ShieldCheck size={14} color="#6B7280" />
                                 <Text style={styles.breakdownText}>Includes OTP proof and live tracking</Text>

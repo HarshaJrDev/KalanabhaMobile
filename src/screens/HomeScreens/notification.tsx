@@ -8,8 +8,11 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
+import { Trash2 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
+  useDeleteNotification,
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
   useMyNotifications,
@@ -41,23 +44,40 @@ const NotificationScreen = () => {
   const { mutate: markRead } = useMarkNotificationRead();
   const { mutate: markAllRead, isPending: markingAll } =
     useMarkAllNotificationsRead();
+  const { mutate: deleteNotification } = useDeleteNotification();
 
-  
-  
+  // Right-to-left swipe reveals a Delete action and removes the
+  // notification — optimistic on the mobile side (useDeleteNotification),
+  // backed by a real DELETE /notifications/:id server-side.
   const renderItem = ({ item }: { item: BackendNotification }) => (
-    <Pressable
-      style={[styles.card, !item.read && styles.cardUnread]}
-      onPress={() => {
-        if (!item.read) markRead(item.id);
-        handleNotificationTap(item.type, item.shipmentId, item.ticketId);
+    <Swipeable
+      renderRightActions={() => (
+        <Pressable
+          style={styles.deleteAction}
+          onPress={() => deleteNotification(item.id)}
+        >
+          <Trash2 color="#fff" size={20} />
+        </Pressable>
+      )}
+      onSwipeableOpen={(direction) => {
+        if (direction === 'right') deleteNotification(item.id);
       }}
+      overshootRight={false}
     >
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.body}>{item.body}</Text>
-      <Text style={styles.time}>
-        {new Date(item.createdAt).toLocaleString()}
-      </Text>
-    </Pressable>
+      <Pressable
+        style={[styles.card, !item.read && styles.cardUnread]}
+        onPress={() => {
+          if (!item.read) markRead(item.id);
+          handleNotificationTap(item.type, item.shipmentId, item.ticketId);
+        }}
+      >
+        <Text style={styles.title}>{item.title}</Text>
+        <Text style={styles.body}>{item.body}</Text>
+        <Text style={styles.time}>
+          {new Date(item.createdAt).toLocaleString()}
+        </Text>
+      </Pressable>
+    </Swipeable>
   );
 
   return (
@@ -143,6 +163,14 @@ const makeStyles = (
       borderRadius: 12,
     },
     cardUnread: { borderLeftWidth: 3, borderLeftColor: colors.PRIMARY },
+    deleteAction: {
+      backgroundColor: colors.ERROR,
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: 72,
+      marginBottom: 10,
+      borderRadius: 12,
+    },
     title: {
       fontSize: 14,
       fontFamily: FONTS.BOLD_PRIMARY,

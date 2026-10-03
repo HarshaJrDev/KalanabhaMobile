@@ -67,7 +67,7 @@ export interface BackendShipment {
     paymentMode: string;
     pickupSlot: string;
     notes: string | null;
-    deliveryInstructions: string | null;
+    deliveryInstructions: string[];
 
     status: BackendShipmentStatus;
 
@@ -177,7 +177,7 @@ export interface CreateShipmentPayload {
     scheduledAt?: string;
     
     
-    deliveryInstructions?: string;
+    deliveryInstructions?: string[];
     
     
     

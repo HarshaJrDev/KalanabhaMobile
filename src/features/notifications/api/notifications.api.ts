@@ -14,11 +14,16 @@ export const getUnreadCount = async (): Promise<number> => {
     return data.data.count;
 };
 
-export const markNotificationRead = async (id: string): Promise<BackendNotification> => {
-    const { data } = await apiClient.patch<ApiSuccessResponse<BackendNotification>>(`/notifications/${id}/read`);
-    return data.data;
+export const markNotificationRead = async (id: string): Promise<void> => {
+    await apiClient.patch<ApiSuccessResponse<{ id: string; read: boolean }>>(`/notifications/${id}/read`);
 };
 
 export const markAllNotificationsRead = async (): Promise<void> => {
     await apiClient.post<ApiSuccessResponse<null>>('/notifications/mark-all-read');
+};
+
+// Swipe-to-delete on the mobile Notifications screen — real deletion,
+// scoped server-side to the caller's own notifications.
+export const deleteNotification = async (id: string): Promise<void> => {
+    await apiClient.delete<ApiSuccessResponse<null>>(`/notifications/${id}`);
 };

@@ -77,6 +77,8 @@ import {
 } from '@location/useFareEstimate';
 import { forwardGeocode } from '@services/location';
 import { useCreateShipment, useMyShipmentHistory } from '@features/shipments/hooks';
+import { useSavedAddresses } from '@features/savedAddresses/hooks';
+import type { SavedAddress } from '@features/savedAddresses/types';
 import {
   useValidatePromoCode,
   useActivePromoCodes,
@@ -169,7 +171,7 @@ type OrderDetailsForm = {
   scheduledAt: string;
   
   
-  deliveryInstructions: string;
+  deliveryInstructions: string[];
 };
 
 type AllOrderData = {
@@ -327,6 +329,26 @@ const PICKUP_SLOTS = [
   '4:00 PM – 6:00 PM',
 ];
 
+// These slots were selectable for a same-day "book now" order no matter
+// what time it actually was — picking "9:00 AM – 11:00 AM" at 5 PM gave
+// no warning the window had already passed. Only relevant when NOT
+// scheduling for a future date (data.scheduled), since a scheduled
+// pickup's slot applies to that future day, not today.
+const isSlotPassed = (slot: string): boolean => {
+  const endLabel = slot.split('–')[1]?.trim();
+  if (!endLabel) return false;
+  const match = endLabel.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return false;
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const isPM = match[3].toUpperCase() === 'PM';
+  if (isPM && hours !== 12) hours += 12;
+  if (!isPM && hours === 12) hours = 0;
+  const slotEnd = new Date();
+  slotEnd.setHours(hours, minutes, 0, 0);
+  return Date.now() > slotEnd.getTime();
+};
+
 
 
 
@@ -380,7 +402,7 @@ const INIT_ORDER: OrderDetailsForm = {
   promoCode: '',
   scheduled: false,
   scheduledAt: '',
-  deliveryInstructions: '',
+  deliveryInstructions: [],
 };
 
 // ─── REUSABLE SUB-COMPONENTS ──────────────────────────────────────────────────
@@ -408,9 +430,18 @@ const InputField = ({
   const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
   const inputStyles = useMemo(() => makeInputStyles(COLORS), [COLORS]);
   const [focused, setFocused] = useState(false);
+  // Labels like "Full Name *" had the asterisk as plain text, same color
+  // as the rest of the label — easy to miss while scanning the form, so
+  // required fields only became obvious after hitting Continue and
+  // getting an error. Split it out and color it so it's visible upfront.
+  const isRequired = label.endsWith('*');
+  const labelText = isRequired ? label.slice(0, -1).trimEnd() : label;
   return (
     <View style={inputStyles.wrapper}>
-      <Text style={inputStyles.label}>{label}</Text>
+      <Text style={inputStyles.label}>
+        {labelText}
+        {isRequired && <Text style={inputStyles.requiredMark}> *</Text>}
+      </Text>
       <View
         style={[
           inputStyles.row,
@@ -462,6 +493,10 @@ const makeInputStyles = (COLORS: OrderColors) =>
       color: COLORS.textSecondary,
       marginBottom: 5,
       letterSpacing: 0.3,
+    },
+    requiredMark: {
+      color: COLORS.danger,
+      fontFamily: FONTS.BOLD_PRIMARY,
     },
     row: {
       flexDirection: 'row',
@@ -855,10 +890,14 @@ const StepCategory = ({
   value,
   onSelect,
   onNext,
+  recentOrders,
+  onRepeatOrder,
 }: {
   value: ShipmentCategory;
   onSelect: (category: ShipmentCategory) => void;
   onNext: () => void;
+  recentOrders: import('@shipment/types').Shipment[];
+  onRepeatOrder: (order: import('@shipment/types').Shipment) => void;
 }) => {
   const { colors: BRAND } = useAppTheme();
   const { t } = useTranslation();
@@ -868,6 +907,29 @@ const StepCategory = ({
 
   return (
     <ScrollView showsVerticalScrollIndicator={true}>
+      {recentOrders.length > 0 && (
+        <View style={{ marginBottom: 18 }}>
+          <Text style={recentReceiverStyles.label}>
+            {t('addOrder.repeatOrderLabel')}
+          </Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {recentOrders.map(order => (
+              <TouchableOpacity
+                key={order.id}
+                style={catStyles.repeatOrderCard}
+                activeOpacity={0.85}
+                onPress={() => onRepeatOrder(order)}
+              >
+                <Text style={catStyles.repeatOrderRoute} numberOfLines={1}>
+                  {order.from} → {order.to}
+                </Text>
+                <Text style={catStyles.repeatOrderMeta}>₹{order.price} · {order.goodsType}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
       <SectionHeader
         title={t('addOrder.categorySectionTitle')}
         subtitle={t('addOrder.categorySectionSubtitle')}
@@ -920,6 +982,26 @@ const StepCategory = ({
 
 const makeCategoryStyles = (COLORS: OrderColors) =>
   StyleSheet.create({
+    repeatOrderCard: {
+      backgroundColor: COLORS.surface,
+      borderWidth: 1,
+      borderColor: COLORS.border,
+      borderRadius: RADIUS.md,
+      padding: 12,
+      marginRight: 10,
+      minWidth: 160,
+      maxWidth: 200,
+    },
+    repeatOrderRoute: {
+      fontSize: 12,
+      fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+      color: COLORS.text,
+      marginBottom: 4,
+    },
+    repeatOrderMeta: {
+      fontSize: 11,
+      color: COLORS.textMuted,
+    },
     card: {
       height: 152,
       borderRadius: RADIUS.lg,
@@ -1007,6 +1089,19 @@ const StepSender = ({
     Partial<Record<keyof SenderForm | 'place', string>>
   >({});
 
+  // Receiver has a "recent receivers" quick-pick (name/phone only, no
+  // address) — the sender/pickup side had no equivalent at all, despite
+  // the real SavedAddress feature (home/work addresses with a real
+  // serviceAreaId + house/floor/landmark) already existing and being
+  // managed elsewhere in the app, just never wired into booking.
+  const { data: savedAddresses } = useSavedAddresses();
+  const applySavedAddress = (addr: SavedAddress) => {
+    const matchedArea = areas.find(a => a.id === addr.serviceAreaId);
+    if (matchedArea) onSelectPlace(matchedArea);
+    const landmarkParts = [addr.houseNo, addr.floor, addr.landmark].filter(Boolean);
+    if (landmarkParts.length > 0) onChange('landmark', landmarkParts.join(', '));
+  };
+
   const validate = () => {
     const e: typeof errors = {};
     if (!data.name.trim()) e.name = t('addOrder.errorNameRequired');
@@ -1037,6 +1132,29 @@ const StepSender = ({
         title={t('addOrder.senderSectionTitle')}
         subtitle={t('addOrder.senderSectionSubtitle')}
       />
+
+      {!!savedAddresses?.length && (
+        <View style={{ marginBottom: 16 }}>
+          <Text style={recentReceiverStyles.label}>
+            {t('addOrder.savedAddressesLabel')}
+          </Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {savedAddresses.map(addr => (
+              <TouchableOpacity
+                key={addr.id}
+                style={recentReceiverStyles.chip}
+                activeOpacity={0.8}
+                onPress={() => applySavedAddress(addr)}
+              >
+                <MapPin size={12} color="#FF7518" />
+                <Text style={recentReceiverStyles.chipText} numberOfLines={1}>
+                  {addr.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
       <InputField
         label={t('addOrder.labelFullNameRequired')}
@@ -1310,6 +1428,7 @@ const StepPackage = ({
       const quantity = Number(data.quantity);
       if (!data.quantity.trim() || !Number.isInteger(quantity) || quantity < 1)
         e.quantity = t('addOrder.errorQuantityInvalid');
+      else if (quantity > 500) e.quantity = t('addOrder.errorQuantityExceedsLimit');
 
       
       
@@ -1765,6 +1884,19 @@ const StepOrderDetails = ({
   );
   const [stopDraftLandmark, setStopDraftLandmark] = useState('');
   const canAddMoreStops = stops.length < 10;
+  // If the selected pickup slot's window has already passed (only
+  // matters for a same-day "book now" order, not a scheduled future
+  // pickup), bump to the next still-open slot automatically rather than
+  // silently letting the customer submit an already-expired window.
+  useEffect(() => {
+    if (data.scheduled) return;
+    if (!isSlotPassed(data.pickupSlot)) return;
+    const nextOpen = PICKUP_SLOTS.find(s => !isSlotPassed(s));
+    if (nextOpen && nextOpen !== data.pickupSlot) {
+      onChange('pickupSlot', nextOpen);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.scheduled, data.pickupSlot]);
   const handleAddStop = () => {
     if (!stopDraftPlace) return;
     onAddStop(stopDraftPlace, stopDraftLandmark);
@@ -1783,7 +1915,15 @@ const StepOrderDetails = ({
   
   
   const basePrice = fareEstimate.price;
-  const total = basePrice;
+  // Previously always basePrice, even with a valid promo applied — the
+  // "Promo Applied -₹X" success message showed right above a total that
+  // never actually moved, reading as a lie even though the discount WAS
+  // real and did get sent to the backend (promoCode on submit). Now the
+  // displayed total matches what createShipment will actually charge.
+  const promoDiscount =
+    promoResult?.valid && data.promoCode.trim() ? promoResult.discount : 0;
+  const total =
+    basePrice != null ? Math.max(0, basePrice - promoDiscount) : null;
 
   return (
     <ScrollView
@@ -2067,26 +2207,35 @@ const StepOrderDetails = ({
         subtitle={t('addOrder.pickupTimeSlotSectionSubtitle')}
       />
       <View style={odStyles.slotGrid}>
-        {PICKUP_SLOTS.map((slot, i) => (
-          <TouchableOpacity
-            key={slot}
-            onPress={() => onChange('pickupSlot', slot)}
-            style={[
-              odStyles.slotChip,
-              data.pickupSlot === slot && odStyles.slotChipActive,
-            ]}
-            activeOpacity={0.8}
-          >
-            <Text
+        {PICKUP_SLOTS.map((slot, i) => {
+          const passed = !data.scheduled && isSlotPassed(slot);
+          return (
+            <TouchableOpacity
+              key={slot}
+              disabled={passed}
+              onPress={() => onChange('pickupSlot', slot)}
               style={[
-                odStyles.slotText,
-                data.pickupSlot === slot && odStyles.slotTextActive,
+                odStyles.slotChip,
+                data.pickupSlot === slot && odStyles.slotChipActive,
+                passed && odStyles.slotChipDisabled,
               ]}
+              activeOpacity={0.8}
             >
-              {translatedSlots[i]}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  odStyles.slotText,
+                  data.pickupSlot === slot && odStyles.slotTextActive,
+                  passed && odStyles.slotTextDisabled,
+                ]}
+              >
+                {translatedSlots[i]}
+              </Text>
+              {passed && (
+                <Text style={odStyles.slotPassedTag}>{t('addOrder.slotPassed')}</Text>
+              )}
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {}
@@ -2097,12 +2246,21 @@ const StepOrderDetails = ({
       <View style={odStyles.slotGrid}>
         {DELIVERY_INSTRUCTION_OPTIONS.map(key => {
           const label = t(`addOrder.deliveryInstruction_${key}`);
-          const isSelected = data.deliveryInstructions === label;
+          // Real multi-select now — "leave at door" and "call on
+          // arrival" aren't mutually exclusive, so forcing one-at-a-time
+          // via a shared string field was the actual bug, not just a UI
+          // limitation. Backend's deliveryInstructions is a real array.
+          const isSelected = data.deliveryInstructions.includes(label);
           return (
             <TouchableOpacity
               key={key}
               onPress={() =>
-                onChange('deliveryInstructions', isSelected ? '' : label)
+                onChange(
+                  'deliveryInstructions',
+                  isSelected
+                    ? data.deliveryInstructions.filter(l => l !== label)
+                    : [...data.deliveryInstructions, label],
+                )
               }
               style={[odStyles.slotChip, isSelected && odStyles.slotChipActive]}
               activeOpacity={0.8}
@@ -2134,7 +2292,7 @@ const StepOrderDetails = ({
             {composeAddress(s.landmark, s.place)}
           </Text>
           <TouchableOpacity onPress={() => onRemoveStop(s.id)} hitSlop={8}>
-            <Text style={odStyles.stopRemove}>{t('addOrder.reset')}</Text>
+            <Text style={odStyles.stopRemove}>{t('addOrder.removeStop')}</Text>
           </TouchableOpacity>
         </View>
       ))}
@@ -2181,13 +2339,15 @@ const StepOrderDetails = ({
         <TextInput
           style={odStyles.notesInput}
           value={data.notes}
-          onChangeText={v => onChange('notes', v)}
+          onChangeText={v => onChange('notes', v.slice(0, 500))}
           placeholder={t('addOrder.placeholderNotes')}
           placeholderTextColor={COLORS.placeholder}
           multiline
           numberOfLines={3}
           textAlignVertical="top"
+          maxLength={500}
         />
+        <Text style={odStyles.notesCounter}>{data.notes.length}/500</Text>
       </View>
 
       {}
@@ -2232,13 +2392,25 @@ const StepOrderDetails = ({
               </Text>
             )}
           </View>
-          {fareEstimate.distanceKm != null && (
-            <View style={odStyles.fareHeroChip}>
-              <Text style={odStyles.fareHeroChipText}>
-                {fareEstimate.distanceKm} km
-              </Text>
-            </View>
-          )}
+          <View style={{ alignItems: 'flex-end', gap: 6 }}>
+            {fareEstimate.distanceKm != null && (
+              <View style={odStyles.fareHeroChip}>
+                <Text style={odStyles.fareHeroChipText}>
+                  {fareEstimate.distanceKm} km
+                </Text>
+              </View>
+            )}
+            {/* Real OSRM driving-route estimate — hidden (not shown as
+                "0 min") when the free routing service doesn't respond,
+                rather than guessing from distance alone. */}
+            {fareEstimate.etaMinutes != null && (
+              <View style={odStyles.fareHeroChip}>
+                <Text style={odStyles.fareHeroChipText}>
+                  {t('addOrder.etaChip', { minutes: fareEstimate.etaMinutes })}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
       </LinearGradient>
 
@@ -2388,6 +2560,14 @@ const StepOrderDetails = ({
                 {t('addOrder.summaryInsurancePremiumLabel')}
               </Text>
               <Text style={odStyles.summVal}>₹{fareEstimate.insurancePremium}</Text>
+            </View>
+          )}
+          {promoDiscount > 0 && (
+            <View style={odStyles.summRow}>
+              <Text style={[odStyles.summKey, { color: COLORS.success }]}>
+                {t('addOrder.summaryPromoDiscountLabel', { code: data.promoCode.trim().toUpperCase() })}
+              </Text>
+              <Text style={[odStyles.summVal, { color: COLORS.success }]}>-₹{promoDiscount}</Text>
             </View>
           )}
           <View style={odStyles.totalRow}>
@@ -2644,6 +2824,14 @@ const makeOdStyles = (COLORS: OrderColors) =>
       fontFamily: FONTS.MEDIUM_PRIMARY,
     },
     slotTextActive: { color: COLORS.primary, fontFamily: FONTS.BOLD_PRIMARY },
+    slotChipDisabled: { opacity: 0.5, backgroundColor: COLORS.bg },
+    slotTextDisabled: { color: COLORS.textMuted },
+    slotPassedTag: {
+      fontSize: 9,
+      color: COLORS.danger,
+      fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+      marginTop: 2,
+    },
 
     notesBox: {
       borderWidth: 1.5,
@@ -2655,6 +2843,12 @@ const makeOdStyles = (COLORS: OrderColors) =>
       minHeight: 80,
     },
     notesInput: { fontSize: 14, color: COLORS.text, lineHeight: 22 },
+    notesCounter: {
+      fontSize: 11,
+      color: COLORS.textMuted,
+      textAlign: 'right',
+      marginTop: 4,
+    },
 
     offersScroll: { marginBottom: 10 },
     offerChip: {
@@ -2831,10 +3025,12 @@ const SuccessModal = ({
   visible,
   trackingId,
   onDone,
+  onViewOrder,
 }: {
   visible: boolean;
   trackingId: string;
   onDone: () => void;
+  onViewOrder: () => void;
 }) => {
   const { colors: BRAND } = useAppTheme();
   const { t } = useTranslation();
@@ -2886,6 +3082,16 @@ const SuccessModal = ({
           </View>
 
           <Text style={successStyles.hint}>{t('addOrder.successHint')}</Text>
+
+          <TouchableOpacity
+            style={successStyles.viewOrderBtn}
+            onPress={onViewOrder}
+            activeOpacity={0.85}
+          >
+            <Text style={successStyles.viewOrderBtnText}>
+              {t('addOrder.viewOrderButton')}
+            </Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={successStyles.doneBtn}
@@ -2967,16 +3173,32 @@ const makeSuccessStyles = (COLORS: OrderColors) =>
       textAlign: 'center',
       marginBottom: 24,
     },
-    doneBtn: {
+    viewOrderBtn: {
       backgroundColor: COLORS.primary,
       borderRadius: RADIUS.md,
       paddingVertical: 14,
       paddingHorizontal: 40,
       width: '100%',
       alignItems: 'center',
+      marginBottom: 10,
+    },
+    viewOrderBtnText: {
+      color: '#fff',
+      fontSize: 15,
+      fontFamily: FONTS.BOLD_PRIMARY,
+    },
+    doneBtn: {
+      backgroundColor: 'transparent',
+      borderRadius: RADIUS.md,
+      borderWidth: 1.5,
+      borderColor: COLORS.border,
+      paddingVertical: 14,
+      paddingHorizontal: 40,
+      width: '100%',
+      alignItems: 'center',
     },
     doneBtnText: {
-      color: '#fff',
+      color: COLORS.textSecondary,
       fontSize: 15,
       fontFamily: FONTS.BOLD_PRIMARY,
     },
@@ -2984,7 +3206,15 @@ const makeSuccessStyles = (COLORS: OrderColors) =>
 
 
 
-const StepHeader = ({ current, total }: { current: number; total: number }) => {
+const StepHeader = ({
+  current,
+  total,
+  onStepPress,
+}: {
+  current: number;
+  total: number;
+  onStepPress?: (step: number) => void;
+}) => {
   const { colors: BRAND } = useAppTheme();
   const { t } = useTranslation();
   const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
@@ -3016,7 +3246,10 @@ const StepHeader = ({ current, total }: { current: number; total: number }) => {
           return (
             <React.Fragment key={step.label}>
               <View style={headerStyles.stepNode}>
-                <View
+                <TouchableOpacity
+                  disabled={!done}
+                  onPress={() => onStepPress?.(idx)}
+                  hitSlop={8}
                   style={[
                     headerStyles.stepCircle,
                     done && headerStyles.stepDone,
@@ -3036,7 +3269,7 @@ const StepHeader = ({ current, total }: { current: number; total: number }) => {
                       step.icon
                     )}
                   </Text>
-                </View>
+                </TouchableOpacity>
                 <Text
                   style={[
                     headerStyles.stepLabel,
@@ -3203,6 +3436,16 @@ const NewOrder = () => {
     (KnownCoords & { label: string }) | null
   >(null);
   const [pkg, setPkg] = useState<PackageForm>(INIT_PACKAGE);
+  // "Repeat this order" — this screen already fetches shipment history
+  // for the receiver step's quick-pick, but nothing let a customer
+  // actually re-use a full past order (route, package, everything) in
+  // one tap; they had to retype it all even for a delivery they make
+  // regularly.
+  const { data: shipmentHistoryForRepeat } = useMyShipmentHistory();
+  const recentOrdersToRepeat = useMemo(
+    () => (shipmentHistoryForRepeat ?? []).slice(0, 5),
+    [shipmentHistoryForRepeat],
+  );
   
   
   
@@ -3220,6 +3463,7 @@ const NewOrder = () => {
   );
   const [submitting, setSubmitting] = useState(false);
   const [trackingId, setTrackingId] = useState('');
+  const [createdShipmentId, setCreatedShipmentId] = useState('');
   // See handleSubmit's comment — one key per order attempt, reused
   
   
@@ -3363,6 +3607,69 @@ const NewOrder = () => {
   const goBack = useCallback(() => {
     if (step > 0) animateToStep(step - 1, 'back');
   }, [step, animateToStep]);
+
+  // Tapping an already-completed step circle in the header jumps straight
+  // there — previously the circles were inert, so fixing a typo in Sender
+  // info while on a later step meant tapping Back repeatedly through
+  // every step in between. Only completed steps are reachable this way,
+  // not future ones — those still require Continue's validation.
+  const goToStep = useCallback((targetStep: number) => {
+    if (targetStep < step) animateToStep(targetStep, 'back');
+  }, [step, animateToStep]);
+
+  // Matches the past order's real pickup/drop addresses against the
+  // real admin-managed service areas — same substring match the
+  // CheckRate/Rebook prefill flow already uses — rather than fabricating
+  // a synthetic ServiceArea with a fake id for a locality that was never
+  // actually looked up.
+  const matchAreaForAddress = useCallback(
+    (address: string): ServiceArea | null => {
+      const q = address.trim().toLowerCase();
+      const matches = activeAreas.filter(a => q.includes(a.name.toLowerCase()));
+      return matches.length === 1 ? matches[0] : matches[0] ?? null;
+    },
+    [activeAreas],
+  );
+
+  const handleRepeatOrder = useCallback((past: import('@shipment/types').Shipment) => {
+    setCategory((past.category as ShipmentCategory) ?? 'PARCEL');
+    setSender(prev => ({
+      ...prev,
+      name: past.sender?.name || prev.name,
+      phone: past.sender?.phone || prev.phone,
+    }));
+    setReceiver(prev => ({
+      ...prev,
+      name: past.receiver?.name ?? prev.name,
+      phone: past.receiver?.phone ?? prev.phone,
+    }));
+    const pickupMatch = matchAreaForAddress(past.pickup.address);
+    if (pickupMatch) {
+      setPickupPlace(pickupMatch);
+      setSender(prev => ({ ...prev, address: composeAddress(prev.landmark, pickupMatch), city: pickupMatch.city, pincode: pickupMatch.pincode }));
+    }
+    const dropMatch = matchAreaForAddress(past.drop.address);
+    if (dropMatch) {
+      setDropPlace(dropMatch);
+      setReceiver(prev => ({ ...prev, address: composeAddress(prev.landmark, dropMatch), city: dropMatch.city, pincode: dropMatch.pincode }));
+    }
+    setPkg(prev => ({
+      ...prev,
+      description: past.goodsType || prev.description,
+      weight: past.weightKg ? String(past.weightKg) : prev.weight,
+      fragile: past.fragile,
+      insurance: past.insuranceRequested,
+      helpersCount: past.helpersCount || prev.helpersCount,
+    }));
+    setOrderDetails(prev => ({
+      ...prev,
+      vehicleType: past.vehicleType || prev.vehicleType,
+      serviceType: (past.serviceType as OrderDetailsForm['serviceType']) || prev.serviceType,
+      paymentMode: (past.paymentMode as OrderDetailsForm['paymentMode']) || prev.paymentMode,
+    }));
+    showToast(t('addOrder.repeatOrderFilled'), 'success');
+    animateToStep(1, 'forward');
+  }, [matchAreaForAddress, animateToStep, t]);
 
   
   
@@ -3563,7 +3870,9 @@ const NewOrder = () => {
               ? orderDetails.scheduledAt
               : undefined,
           deliveryInstructions:
-            orderDetails.deliveryInstructions.trim() || undefined,
+            orderDetails.deliveryInstructions.length > 0
+              ? orderDetails.deliveryInstructions
+              : undefined,
           stops:
             stops.length > 0
               ? stops.map(s => ({
@@ -3578,6 +3887,7 @@ const NewOrder = () => {
 
       submitIdempotencyKeyRef.current = null;
       setTrackingId(shipment.trackingId);
+      setCreatedShipmentId(shipment.id);
       setShowSuccess(true);
 
       
@@ -3626,12 +3936,22 @@ const NewOrder = () => {
     navigation.goBack();
   }, [navigation]);
 
+  // Previously the only action after booking was "Go to Home" — a
+  // customer who wanted to check tracking/status right away had to
+  // navigate there manually and find the order themselves.
+  const handleViewOrder = useCallback(() => {
+    setShowSuccess(false);
+    (navigation as any).navigate('ShipmentDetailsScreen', {
+      id: createdShipmentId,
+    });
+  }, [navigation, createdShipmentId]);
+
   return (
     <View style={mainStyles.root}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
 
       {}
-      <StepHeader current={step} total={STEPS.length} />
+      <StepHeader current={step} total={STEPS.length} onStepPress={goToStep} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -3649,6 +3969,8 @@ const NewOrder = () => {
               value={category}
               onSelect={setCategory}
               onNext={goNext}
+              recentOrders={recentOrdersToRepeat}
+              onRepeatOrder={handleRepeatOrder}
             />
           )}
           {step === 1 && (
@@ -3712,6 +4034,7 @@ const NewOrder = () => {
         visible={showSuccess}
         trackingId={trackingId}
         onDone={handleDone}
+        onViewOrder={handleViewOrder}
       />
     </View>
   );

@@ -57,7 +57,7 @@ export interface LogisticsItem {
     category?: string;
     helpersCount?: number;
     arrivalState?: Shipment['arrivalState'];
-    deliveryInstructions?: string | null;
+    deliveryInstructions?: string[];
 }
 
 export const useUserRole = (): UserRole => {
