@@ -11,9 +11,10 @@ export interface FareEstimate {
     drop: { lat: number; lng: number } | null;
     error: string | null;
     helperCost: number | null;
+    insurancePremium: number | null;
 }
 
-const IDLE: FareEstimate = { loading: false, price: null, distanceKm: null, pickup: null, drop: null, error: null, helperCost: null };
+const IDLE: FareEstimate = { loading: false, price: null, distanceKm: null, pickup: null, drop: null, error: null, helperCost: null, insurancePremium: null };
 
 export interface KnownCoords {
     lat: number;
@@ -45,6 +46,7 @@ export const useFareEstimate = (
     dropCoords?: KnownCoords | null,
     category?: string,
     helpersCount?: number,
+    insuranceRequested?: boolean,
 ): FareEstimate => {
     const [estimate, setEstimate] = useState<FareEstimate>(IDLE);
     const requestId = useRef(0);
@@ -72,7 +74,7 @@ export const useFareEstimate = (
                     return;
                 }
 
-                const quote = await quoteShipment({ pickup, drop, vehicleType, serviceType, category, helpersCount });
+                const quote = await quoteShipment({ pickup, drop, vehicleType, serviceType, category, helpersCount, insuranceRequested });
 
                 if (currentRequest !== requestId.current) return;
 
@@ -84,6 +86,7 @@ export const useFareEstimate = (
                     drop,
                     error: null,
                     helperCost: quote.helperCost,
+                    insurancePremium: quote.insurancePremium,
                 });
             } catch (err) {
                 if (currentRequest !== requestId.current) return;
@@ -93,7 +96,7 @@ export const useFareEstimate = (
         };
 
         run();
-    }, [pickupAddress, dropAddress, vehicleType, serviceType, pickupCoords?.lat, pickupCoords?.lng, dropCoords?.lat, dropCoords?.lng, category, helpersCount]);
+    }, [pickupAddress, dropAddress, vehicleType, serviceType, pickupCoords?.lat, pickupCoords?.lng, dropCoords?.lat, dropCoords?.lng, category, helpersCount, insuranceRequested]);
 
     return estimate;
 };

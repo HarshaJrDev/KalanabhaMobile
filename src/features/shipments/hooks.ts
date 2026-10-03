@@ -209,3 +209,25 @@ export const useRescheduleShipment = (id: string) => {
         onSuccess: invalidate,
     });
 };
+
+// Returns null (not an error) when the customer hasn't filed one yet —
+// GET /shipments/:id/insurance-claim finds nothing, not a 404.
+export const useInsuranceClaim = (shipmentId: string | undefined, insuranceRequested: boolean | undefined) => {
+    const { isAuthenticated } = useAuthState();
+    return useQuery({
+        queryKey: [...shipmentKeys.all, 'insurance-claim', shipmentId],
+        queryFn: () => shipmentsApi.getInsuranceClaim(shipmentId!),
+        enabled: isAuthenticated && !!shipmentId && !!insuranceRequested,
+    });
+};
+
+export const useFileInsuranceClaim = (shipmentId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ description, photo }: { description: string; photo?: { uri: string; name: string; type: string } }) =>
+            shipmentsApi.fileInsuranceClaim(shipmentId, description, photo),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [...shipmentKeys.all, 'insurance-claim', shipmentId] });
+        },
+    });
+};

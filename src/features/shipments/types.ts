@@ -217,6 +217,7 @@ export interface QuoteShipmentPayload {
     serviceType: string;
     category?: string;
     helpersCount?: number;
+    insuranceRequested?: boolean;
 }
 
 export interface ShipmentQuote {
@@ -226,6 +227,25 @@ export interface ShipmentQuote {
     // Real Express/Same Day surcharge PricingService.quote() now actually
     // adds (kalanabhaBackend 389a5bc) — 0 for Standard.
     serviceSurcharge: number;
+    // Real self-insurance premium (insurance_premium_rate_percent business
+    // setting) — 0 unless insuranceRequested was true AND an admin has set
+    // a real rate. Already included in `price` above.
+    insurancePremium: number;
+}
+
+// GET/POST /shipments/:id/insurance-claim — InsuranceClaimsController
+export interface InsuranceClaim {
+    id: string;
+    shipmentId: string;
+    customerId: string;
+    description: string;
+    photoFileKey: string | null;
+    photoMimeType: string | null;
+    status: 'OPEN' | 'APPROVED' | 'REJECTED' | 'PAID';
+    payoutAmount: number | null;
+    adminNote: string | null;
+    resolvedAt: string | null;
+    createdAt: string;
 }
 
 // POST /shipments/:id/assign — AssignShipmentDto

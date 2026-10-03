@@ -28,12 +28,14 @@ import {
     Share2,
     User,
     Truck,
+    XCircle,
 } from 'lucide-react-native';
 import { ScrollView, TextInput } from 'react-native-gesture-handler';
 import { useAuthStore } from '@features/store/authStore';
 import {
     acceptShipment as acceptShipmentRequest,
     cancelShipment as cancelShipmentRequest,
+    driverCancelShipment as driverCancelShipmentRequest,
     startDelivery as startDeliveryRequest,
     uploadPickupProof,
     arriveAtShipment,
@@ -46,6 +48,7 @@ import { useChatMessages, useChatSocket, useSendMessage } from '@features/chat/h
 import { normalizeError } from '@utils/error';
 import { useTabBarContentPadding } from '../screens/navigation/useTabBarStyle';
 import { showToast } from '@ui/alert/toastStore';
+import { confirmDialog } from '@ui/alert/confirmStore';
 import { requestCompleteDelivery } from '@ui/alert/deliveryCompletionStore';
 import { requestOtp } from '@ui/alert/deliveryOtpStore';
 import { useTranslation } from 'react-i18next';
@@ -263,7 +266,31 @@ export const useDriverActions = () => {
         });
     }, [t]);
 
-    return { onAccept, onArrive, onStartDelivery, onCompleteDelivery };
+    // Backing out of an already-accepted job — only works server-side
+    // while still 'accepted' (before the pickup OTP/photo flow starts).
+    // Unassigns the driver and reopens the shipment to the searching pool
+    // instead of cancelling the customer's order outright. Confirmed
+    // first, same as the customer-side cancel in ShipmentDetailsScreen —
+    // this is a destructive action from the driver's perspective too
+    // (loses the job to someone else).
+    const onDriverCancel = useCallback(async (id: string) => {
+        const confirmed = await confirmDialog({
+            title: t('logisticsCard.driverCancelTitle'),
+            message: t('logisticsCard.driverCancelConfirm'),
+            confirmText: t('logisticsCard.driverCancelConfirmBtn'),
+            destructive: true,
+        });
+        if (!confirmed) return;
+
+        try {
+            await driverCancelShipmentRequest(id);
+            showToast(t('logisticsCard.driverCancelled'), 'success');
+        } catch (err) {
+            showToast(normalizeError(err), 'error');
+        }
+    }, [t]);
+
+    return { onAccept, onArrive, onStartDelivery, onCompleteDelivery, onDriverCancel };
 };
 
 const getStatusColor = (status: LogisticsStatus): string => {
@@ -451,6 +478,19 @@ const LogisticsCard: React.FC<{
                             label={t('logisticsCard.verifyPickup')}
                             primary
                             onPress={() => driverActions.onStartDelivery(item.id)}
+                        />
+                    )}
+
+                    {/* Driver backing out before pickup starts — releases
+                        the job back to the searching pool instead of
+                        leaving the customer stuck with an unresponsive
+                        driver. Not offered once IN_TRANSIT (see
+                        DispatchService.driverCancel). */}
+                    {isDriver && isAssignedToMe && item.status === 'accepted' && (
+                        <ActionButton
+                            icon={<XCircle size={16} color="#EF4444" />}
+                            label={t('logisticsCard.cantDeliver')}
+                            onPress={() => driverActions.onDriverCancel(item.id)}
                         />
                     )}
 

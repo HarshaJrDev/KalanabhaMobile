@@ -34,6 +34,7 @@ import {
   Share,
   Modal,
   Image,
+  TextInput,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -42,10 +43,13 @@ import {
   useShipmentHistory,
   useRescheduleShipment,
   useCancelShipment,
+  useInsuranceClaim,
+  useFileInsuranceClaim,
 } from '@features/shipments/hooks';
 import { usePayForShipment } from '@features/payments/hooks';
 import { DateTimeChipPicker } from '@components/DateTimeChipPicker';
 import { useLiveDriverLocation } from '@location/useLiveDriverLocation';
+import { useTurnByTurnRoute } from '@features/navigation/useTurnByTurnRoute';
 import { haversineDistanceKm } from '@utils/geo';
 import { openGoogleMapsDirections } from '@utils/navigation';
 import { showToast } from '@ui/alert/toastStore';
@@ -218,6 +222,14 @@ const ShipmentDetailsScreen = () => {
   const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
   const [pendingScheduledAt, setPendingScheduledAt] = useState('');
 
+  // Real self-insurance claim (kalanabhaBackend InsuranceClaimsModule) —
+  // only fetched at all when the shipment actually requested insurance,
+  // same "don't query what can't apply" guard the hook itself enforces.
+  const { data: insuranceClaim } = useInsuranceClaim(shipmentId, shipment?.insuranceRequested);
+  const { mutate: fileClaim, isPending: filingClaim } = useFileInsuranceClaim(shipmentId ?? '');
+  const [claimModalOpen, setClaimModalOpen] = useState(false);
+  const [claimDescription, setClaimDescription] = useState('');
+
   const isDriverEnRoute =
     shipment?.status === 'accepted' || shipment?.status === 'in_transit';
   // Real pickup/delivery OTPs (kalanabhaBackend d17a770, 63a33d4) — only
@@ -238,13 +250,35 @@ const ShipmentDetailsScreen = () => {
   const liveDriverLocation = useLiveDriverLocation(
     isDriverEnRoute ? shipmentId : null,
   );
+  // The driver's actual next real destination — pickup while still
+  // 'accepted' (hasn't collected the package yet), drop once 'in_transit'.
+  // Previously this always measured against pickup, which was simply
+  // wrong once the trip moved to in_transit.
+  const trackingTarget =
+    shipment?.status === 'in_transit'
+      ? shipment?.drop
+      : shipment?.pickup;
   const distanceToDriverKm =
-    liveDriverLocation && shipment?.pickup?.lat != null
+    liveDriverLocation && trackingTarget?.lat != null
       ? haversineDistanceKm(
-          { lat: shipment.pickup.lat, lng: shipment.pickup.lng },
+          { lat: trackingTarget.lat, lng: trackingTarget.lng },
           { lat: liveDriverLocation.lat, lng: liveDriverLocation.lng },
         )
       : null;
+  // Real driving-route ETA (OSRM, same source as the driver's own
+  // turn-by-turn nav) — not a fabricated speed-based guess. Falls back to
+  // the plain distance text below if the public OSRM instance is slow/
+  // unreachable (route stays null, no crash, no fake number shown).
+  const { route: etaRoute } = useTurnByTurnRoute(
+    liveDriverLocation
+      ? { lat: liveDriverLocation.lat, lng: liveDriverLocation.lng }
+      : null,
+    trackingTarget?.lat != null
+      ? { lat: trackingTarget.lat, lng: trackingTarget.lng }
+      : null,
+  );
+  const etaMinutes =
+    etaRoute != null ? Math.max(1, Math.round(etaRoute.durationSeconds / 60)) : null;
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const headerScale = useRef(new Animated.Value(0.95)).current;
@@ -666,7 +700,9 @@ const ShipmentDetailsScreen = () => {
                                 ARRIVED_AT_PICKUP/ARRIVED_AT_DROP in practice.
                                 Showing distance only, rather than an
                                 "arrived" signal that could never fire. */}
-              {distanceToDriverKm != null
+              {etaMinutes != null
+                ? t('shipmentDetails.driverEtaMinutes', { minutes: etaMinutes })
+                : distanceToDriverKm != null
                 ? t('shipmentDetails.driverAwayKm', {
                     km: distanceToDriverKm.toFixed(1),
                   })
@@ -796,6 +832,53 @@ const ShipmentDetailsScreen = () => {
             </View>
           )}
         </View>
+      </AnimatedCard>
+    );
+  };
+
+  // Only relevant once the delivery has actually happened (or didn't) —
+  // filing a claim on a still-in-flight shipment makes no sense yet.
+  // Hidden entirely when insuranceRequested is false, or when the real
+  // premium charged was 0 (InsuranceClaimsService rejects filing against
+  // a shipment with no real premium pool behind it either way).
+  const renderInsuranceClaim = () => {
+    if (!shipment.insuranceRequested || shipment.status !== 'delivered') return null;
+
+    return (
+      <AnimatedCard anim={cardAnims[3]} fade={cardFades[3]} cardStyle={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>{t('shipmentDetails.insuranceClaimTitle')}</Text>
+        </View>
+        {insuranceClaim ? (
+          <>
+            <Text style={styles.payLabel}>{t('shipmentDetails.insuranceClaimStatusLabel')}</Text>
+            <Text style={[styles.payValue, { marginTop: 4 }]}>
+              {t(`shipmentDetails.insuranceClaimStatus_${insuranceClaim.status}`)}
+            </Text>
+            {insuranceClaim.payoutAmount != null && (
+              <View style={[styles.payRow, { marginTop: 8 }]}>
+                <Text style={styles.payLabel}>{t('shipmentDetails.insuranceClaimPayoutLabel')}</Text>
+                <Text style={styles.payValue}>₹{insuranceClaim.payoutAmount}</Text>
+              </View>
+            )}
+            {!!insuranceClaim.adminNote && (
+              <Text style={[styles.payLabel, { marginTop: 8 }]}>{insuranceClaim.adminNote}</Text>
+            )}
+          </>
+        ) : (
+          <>
+            <Text style={styles.payLabel}>{t('shipmentDetails.insuranceClaimSubtitle')}</Text>
+            <TouchableOpacity
+              style={[styles.scheduleActionBtn, styles.scheduleActionBtnPrimary, { marginTop: 12 }]}
+              activeOpacity={0.85}
+              onPress={() => setClaimModalOpen(true)}
+            >
+              <Text style={[styles.scheduleActionBtnText, { color: '#fff' }]}>
+                {t('shipmentDetails.fileInsuranceClaim')}
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
       </AnimatedCard>
     );
   };
@@ -1060,6 +1143,7 @@ const ShipmentDetailsScreen = () => {
           {renderDeliveryOtp()}
           {renderPackage()}
           {renderPayment()}
+          {renderInsuranceClaim()}
           {renderActions()}
         </View>
       </ScrollView>
@@ -1156,6 +1240,80 @@ const ShipmentDetailsScreen = () => {
               ) : (
                 <Text style={[styles.scheduleActionBtnText, { color: '#fff' }]}>
                   {t('shipmentDetails.confirmNewTime')}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={claimModalOpen}
+        animationType="slide"
+        onRequestClose={() => setClaimModalOpen(false)}
+      >
+        <View style={styles.rescheduleModalContainer}>
+          <View style={styles.rescheduleModalHeader}>
+            <Text style={styles.cardTitle}>
+              {t('shipmentDetails.fileInsuranceClaim')}
+            </Text>
+            <TouchableOpacity onPress={() => setClaimModalOpen(false)}>
+              <Text style={{ color: C.primary, fontFamily: FONTS.BOLD_PRIMARY }}>
+                {t('common.close')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView contentContainerStyle={{ padding: 16 }}>
+            <Text style={styles.payLabel}>
+              {t('shipmentDetails.insuranceClaimDescriptionLabel')}
+            </Text>
+            <TextInput
+              value={claimDescription}
+              onChangeText={setClaimDescription}
+              placeholder={t('shipmentDetails.insuranceClaimDescriptionPlaceholder')}
+              placeholderTextColor={C.textMid}
+              multiline
+              numberOfLines={5}
+              style={{
+                borderWidth: 1,
+                borderColor: C.border,
+                borderRadius: 10,
+                padding: 12,
+                marginTop: 8,
+                minHeight: 110,
+                textAlignVertical: 'top',
+                color: C.text,
+                fontFamily: FONTS.PRIMARY,
+              }}
+            />
+            <TouchableOpacity
+              style={[
+                styles.scheduleActionBtn,
+                styles.scheduleActionBtnPrimary,
+                { marginTop: 16 },
+              ]}
+              activeOpacity={0.85}
+              disabled={claimDescription.trim().length < 10 || filingClaim}
+              onPress={() =>
+                fileClaim(
+                  { description: claimDescription.trim() },
+                  {
+                    onSuccess: () => {
+                      setClaimModalOpen(false);
+                      setClaimDescription('');
+                      showToast(t('shipmentDetails.insuranceClaimFiled'), 'success');
+                    },
+                    onError: () =>
+                      showToast(t('shipmentDetails.insuranceClaimFileFailed'), 'error'),
+                  },
+                )
+              }
+            >
+              {filingClaim ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={[styles.scheduleActionBtnText, { color: '#fff' }]}>
+                  {t('shipmentDetails.submitClaim')}
                 </Text>
               )}
             </TouchableOpacity>

@@ -1550,8 +1550,11 @@ const StepPackage = ({
               <Text style={pkgStyles.toggleTitle}>
                 {t('addOrder.requestInsuranceTitle')}
               </Text>
-              {/* Was "Protection up to ₹10,000" — no real insurance product
-                                exists yet; this just flags the request for admin/driver. */}
+              {/* A real self-insurance premium (insurance_premium_rate_percent,
+                                default 0) is added to the price when this is on, and funds a
+                                real admin-reviewed claim (InsuranceClaimsModule) — still no
+                                fixed "up to ₹X" coverage figure to promise, since there's no
+                                declared-value field to base one on. */}
               <Text style={pkgStyles.toggleSub}>
                 {t('addOrder.requestInsuranceSubtitle')}
               </Text>
@@ -2338,9 +2341,10 @@ const StepOrderDetails = ({
               </Text>
               <View style={odStyles.summValRow}>
                 <Check size={13} color={COLORS.success} strokeWidth={3} />
-                {/* Was "Covered up to ₹10,000" — no real insurance product
-                                    exists behind this yet, just a request flag driver/admin
-                                    can see. Don't promise coverage that isn't real. */}
+                {/* Coverage is a real admin-reviewed claim against a real
+                                    premium pool now (kalanabhaBackend InsuranceClaimsModule) —
+                                    but there's no fixed "up to ₹X" coverage figure to promise,
+                                    so this still only confirms the request, not a dollar amount. */}
                 <Text style={[odStyles.summVal, { color: COLORS.success }]}>
                   {t('addOrder.summaryInsuranceValue')}
                 </Text>
@@ -2402,6 +2406,17 @@ const StepOrderDetails = ({
                 })}
               </Text>
               <Text style={odStyles.summVal}>₹{fareEstimate.helperCost}</Text>
+            </View>
+          )}
+          {/* Real premium (insurance_premium_rate_percent business
+                        setting) — 0 and hidden until an admin sets a real rate, same
+                        "inert until configured" pattern as the helper cost above. */}
+          {!!fareEstimate.insurancePremium && (
+            <View style={odStyles.summRow}>
+              <Text style={odStyles.summKey}>
+                {t('addOrder.summaryInsurancePremiumLabel')}
+              </Text>
+              <Text style={odStyles.summVal}>₹{fareEstimate.insurancePremium}</Text>
             </View>
           )}
           <View style={odStyles.totalRow}>
@@ -3267,6 +3282,7 @@ const NewOrder = () => {
     dropCoords,
     category,
     category === 'HOUSE_SHIFTING' ? pkg.helpersCount : undefined,
+    pkg.insurance,
   );
 
   // Real, admin-set per-helper rate (BusinessSetting

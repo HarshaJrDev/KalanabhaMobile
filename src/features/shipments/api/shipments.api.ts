@@ -5,6 +5,7 @@ import type {
     BackendShipment,
     CreateShipmentPayload,
     DriverEarningsSummary,
+    InsuranceClaim,
     QuoteShipmentPayload,
     ShipmentQuote,
     ShipmentStatusHistoryEntry,
@@ -168,6 +169,15 @@ export const cancelShipment = async (id: string, reason?: string): Promise<Backe
     return data.data;
 };
 
+// Driver-only, and only while still 'accepted' (before the pickup OTP/
+// photo flow starts) — a driver backing out of a job they can't deliver.
+// Unassigns them and reopens the shipment to the searching pool for
+// another driver, instead of cancelling the customer's order outright.
+export const driverCancelShipment = async (id: string, reason?: string): Promise<BackendShipment> => {
+    const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/driver-cancel`, { reason });
+    return data.data;
+};
+
 // Owner-only, and only while the shipment is still 'scheduled' (not yet
 // dispatched) — ShipmentDetailsScreen's "Change pickup time".
 export const rescheduleShipment = async (id: string, scheduledAt: string): Promise<BackendShipment> => {
@@ -193,5 +203,32 @@ export const uploadShipmentPod = async (id: string, fileUri: string, fileName: s
     const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/pod`, form, {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
+    return data.data;
+};
+
+// Customer only, and only on a shipment that actually paid a real
+// insurance premium (kalanabhaBackend InsuranceClaimsService enforces
+// this — insuranceRequested alone isn't enough if the rate was 0 at
+// booking time). One claim per shipment; photo is optional.
+export const fileInsuranceClaim = async (
+    shipmentId: string,
+    description: string,
+    photo?: { uri: string; name: string; type: string },
+): Promise<InsuranceClaim> => {
+    const form = new FormData();
+    form.append('description', description);
+    if (photo) {
+        form.append('photo', { uri: photo.uri, name: photo.name, type: photo.type } as any);
+    }
+    const { data } = await apiClient.post<ApiSuccessResponse<InsuranceClaim>>(
+        `/shipments/${shipmentId}/insurance-claim`,
+        form,
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+    );
+    return data.data;
+};
+
+export const getInsuranceClaim = async (shipmentId: string): Promise<InsuranceClaim | null> => {
+    const { data } = await apiClient.get<ApiSuccessResponse<InsuranceClaim | null>>(`/shipments/${shipmentId}/insurance-claim`);
     return data.data;
 };
