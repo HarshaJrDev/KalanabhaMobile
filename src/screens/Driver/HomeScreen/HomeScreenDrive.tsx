@@ -1,36 +1,20 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-import { Truck, User, Box, Plus, MessageCircleIcon } from 'lucide-react-native';
+import { Truck, User, Box } from 'lucide-react-native';
 import COLOR from '@utils/color';
-import Home from '../../HomeScreens/Home';
-import shipment from '../../HomeScreens/shipment';
+import TripsScreen from '../TripsScreen';
 import HomeScreen from './HomeScreen';
 import ProfileScreen from '../ProfileScreen';
 import { useTabBarStyle } from '../../navigation/useTabBarStyle';
 
-
 const Tab = createBottomTabNavigator();
 
-const AddOrdersButton = ({ children, onPress }: any) => (
-    <TouchableOpacity
-        style={styles.addButtonContainer}
-        onPress={onPress}
-        activeOpacity={0.8}
-    >
-        {children}
-    </TouchableOpacity>
-);
-
+// Driver's own tab bar — distinct from HomeTabs (the customer one).
+// "Orders" here is TripsScreen (the driver's own accepted/in-progress
+// deliveries, fetched via useMyShipmentsAsDriver), not the customer
+// booking screen — a driver has no "+ book a shipment" action.
 const DriverTabs = () => {
-    
-    
-    
-    
-    
-    
-    
     const tabBarStyle = useTabBarStyle('#fff');
 
     return (
@@ -49,29 +33,10 @@ const DriverTabs = () => {
             })}
         >
             <Tab.Screen name="Home" component={HomeScreen} />
-            <Tab.Screen name="Orders" component={shipment} />
-            {}
+            <Tab.Screen name="Orders" component={TripsScreen} />
             <Tab.Screen name="Profile" component={ProfileScreen} />
-            {}
         </Tab.Navigator>
     );
 };
 
 export default DriverTabs;
-
-const styles = StyleSheet.create({
-    addButtonContainer: {
-        top: -30,
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: 70,
-        height: 70,
-        borderRadius: 35,
-        backgroundColor: COLOR.PRIMARY,
-        shadowColor: '#000',
-        shadowOpacity: 0.3,
-        shadowOffset: { width: 0, height: 5 },
-        shadowRadius: 5,
-        elevation: 5,
-    },
-});

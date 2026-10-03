@@ -18,7 +18,7 @@
 import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { ChevronLeft, MessageCircle, Package } from 'lucide-react-native';
+import { MessageCircle, Package } from 'lucide-react-native';
 import { useMyShipmentsAsDriver } from '@features/shipments/hooks';
 import { AsyncState } from '@components/AsyncState';
 import type { Shipment, ShipmentStatus } from '@shipment/types';
@@ -131,9 +131,7 @@ const TripsScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-          <ChevronLeft color="#111" size={24} />
-        </Pressable>
+        <View style={{ width: 24 }} />
         <Text style={styles.headerTitle}>{t('trips.yourTrips')}</Text>
         <View style={{ width: 24 }} />
       </View>
