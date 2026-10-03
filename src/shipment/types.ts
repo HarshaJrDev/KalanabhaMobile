@@ -4,7 +4,8 @@ export type ShipmentStatus =
     | 'accepted'
     | 'in_transit'
     | 'delivered'
-    | 'cancelled';
+    | 'cancelled'
+    | 'failed';
 
 export interface LatLng {
     address: string;

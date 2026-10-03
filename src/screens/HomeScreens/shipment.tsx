@@ -20,6 +20,9 @@ import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMyShipments, useCancelShipment } from '@features/shipments/hooks';
+import { getPodPdfBase64 } from '@features/shipments/api/shipments.api';
+import Share from 'react-native-share';
+import { normalizeError } from '@utils/error';
 import type { Shipment as MyShipment } from '@shipment/types';
 import Animated, {
   FadeInDown,
@@ -496,7 +499,7 @@ const ShipmentScreen = () => {
         </Pressable>
         <Pressable
           style={styles.fab}
-          onPress={() => (navigation as any).navigate('AddOrder')}
+          onPress={() => (navigation as any).navigate('addOrder')}
         >
           <Plus size={20} color="#fff" />
         </Pressable>
@@ -530,6 +533,8 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({
   status: STATUS,
 }) => {
   const { t } = useTranslation();
+  const navigation = useNavigation<any>();
+  const [downloadingPod, setDownloadingPod] = useState(false);
   const cfg = STATUS[item.status] || STATUS.pending;
   const VehicleIcon = VEHICLE_ICONS[item.vehicleType] || Truck;
   const CategoryIcon = CATEGORY_ICONS[item.package?.category] || Package;
@@ -785,7 +790,16 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({
               </View>
               <View style={styles.deliveredActions}>
                 <TouchableOpacity
-                  onPress={() => showToast('Rebooking is coming soon', 'info')}
+                  onPress={() =>
+                    navigation.navigate('addOrder', {
+                      prefill: {
+                        pickup: item.pickup?.address,
+                        drop: item.drop?.address,
+                        vehicleType: item.vehicleType,
+                        category: item.category,
+                      },
+                    })
+                  }
                 >
                   <Text
                     style={[
@@ -798,12 +812,26 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({
                 </TouchableOpacity>
                 <Pressable
                   style={styles.podBtn}
-                  onPress={() =>
-                    showToast(
-                      'Proof of delivery download is not available yet',
-                      'info',
-                    )
-                  }
+                  disabled={downloadingPod}
+                  onPress={async () => {
+                    setDownloadingPod(true);
+                    try {
+                      const base64 = await getPodPdfBase64(item.id);
+                      await Share.open({
+                        url: `data:application/pdf;base64,${base64}`,
+                        type: 'application/pdf',
+                        filename: `POD-${item.trackingId}`,
+                        failOnCancel: false,
+                      });
+                    } catch (err) {
+                      showToast(
+                        normalizeError(err) || 'Could not download proof of delivery',
+                        'error',
+                      );
+                    } finally {
+                      setDownloadingPod(false);
+                    }
+                  }}
                 >
                   <Download size={12} color={C.textMid} />
                   <Text

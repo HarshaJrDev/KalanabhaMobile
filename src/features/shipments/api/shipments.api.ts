@@ -5,6 +5,7 @@ import type {
     BackendShipment,
     CreateShipmentPayload,
     DriverEarningsSummary,
+    DeliveryDispute,
     InsuranceClaim,
     QuoteShipmentPayload,
     ShipmentQuote,
@@ -140,8 +141,17 @@ export const uploadPickupProof = async (id: string, fileUri: string, fileName: s
 
 
 
-export const completeDelivery = async (id: string, otp: string): Promise<BackendShipment> => {
-    const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/complete`, { otp });
+export const completeDelivery = async (
+    id: string,
+    otp: string,
+    packageCondition?: 'GOOD' | 'DAMAGED',
+    deliveryNote?: string,
+): Promise<BackendShipment> => {
+    const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/complete`, {
+        otp,
+        packageCondition,
+        deliveryNote,
+    });
     return data.data;
 };
 
@@ -175,6 +185,27 @@ export const cancelShipment = async (id: string, reason?: string): Promise<Backe
 
 export const driverCancelShipment = async (id: string, reason?: string): Promise<BackendShipment> => {
     const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/driver-cancel`, { reason });
+    return data.data;
+};
+
+
+
+
+
+
+export const failDeliveryShipment = async (
+    id: string,
+    reason: 'CUSTOMER_UNREACHABLE' | 'WRONG_ADDRESS' | 'REFUSED' | 'OTHER',
+    note?: string,
+): Promise<BackendShipment> => {
+    const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/fail-delivery`, { reason, note });
+    return data.data;
+};
+
+
+
+export const retryDeliveryShipment = async (id: string): Promise<BackendShipment> => {
+    const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/retry-delivery`);
     return data.data;
 };
 
@@ -231,4 +262,62 @@ export const fileInsuranceClaim = async (
 export const getInsuranceClaim = async (shipmentId: string): Promise<InsuranceClaim | null> => {
     const { data } = await apiClient.get<ApiSuccessResponse<InsuranceClaim | null>>(`/shipments/${shipmentId}/insurance-claim`);
     return data.data;
+};
+
+
+
+
+export const fileDispute = async (
+    shipmentId: string,
+    category: 'WRONG_ITEM' | 'MISSING_ITEM' | 'OVERCHARGED' | 'OTHER',
+    description: string,
+    photo?: { uri: string; name: string; type: string },
+): Promise<DeliveryDispute> => {
+    const form = new FormData();
+    form.append('category', category);
+    form.append('description', description);
+    if (photo) {
+        form.append('photo', { uri: photo.uri, name: photo.name, type: photo.type } as any);
+    }
+    const { data } = await apiClient.post<ApiSuccessResponse<DeliveryDispute>>(
+        `/shipments/${shipmentId}/dispute`,
+        form,
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+    );
+    return data.data;
+};
+
+export const getDispute = async (shipmentId: string): Promise<DeliveryDispute | null> => {
+    const { data } = await apiClient.get<ApiSuccessResponse<DeliveryDispute | null>>(`/shipments/${shipmentId}/dispute`);
+    return data.data;
+};
+
+
+
+
+const BASE64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+    const bytes = new Uint8Array(buffer);
+    let result = '';
+    for (let i = 0; i < bytes.length; i += 3) {
+        const b1 = bytes[i];
+        const b2 = bytes[i + 1];
+        const b3 = bytes[i + 2];
+        result += BASE64_CHARS[b1 >> 2];
+        result += BASE64_CHARS[((b1 & 3) << 4) | (b2 >> 4)];
+        result += b2 === undefined ? '=' : BASE64_CHARS[((b2 & 15) << 2) | (b3 >> 6)];
+        result += b3 === undefined ? '=' : BASE64_CHARS[b3 & 63];
+    }
+    return result;
+};
+
+// Real, backend-generated POD PDF (GET /shipments/:id/pod-pdf) — only
+// available once DELIVERED. Returns base64 (not a blob URL) so the
+// caller can hand it straight to react-native-share's data-URL support
+
+export const getPodPdfBase64 = async (shipmentId: string): Promise<string> => {
+    const { data } = await apiClient.get<ArrayBuffer>(`/shipments/${shipmentId}/pod-pdf`, {
+        responseType: 'arraybuffer',
+    });
+    return arrayBufferToBase64(data);
 };

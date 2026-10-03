@@ -61,6 +61,12 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
 
     const [completing, setCompleting] = useState(false);
 
+    
+    
+    
+    const [packageCondition, setPackageCondition] = useState<'GOOD' | 'DAMAGED'>('GOOD');
+    const [deliveryNote, setDeliveryNote] = useState('');
+
     const reset = () => {
         setOtp('');
         setOtpVerified(false);
@@ -69,6 +75,8 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
         setSignatureCaptured(false);
         setStrokes([]);
         padRef.current?.clear();
+        setPackageCondition('GOOD');
+        setDeliveryNote('');
     };
 
     const close = (completed: boolean) => {
@@ -156,7 +164,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
         if (!shipmentId || !canComplete) return;
         setCompleting(true);
         try {
-            await completeDelivery(shipmentId, otp);
+            await completeDelivery(shipmentId, otp, packageCondition, deliveryNote.trim() || undefined);
             showToast(t('deliveryCompletion.deliveryCompleted'), 'success');
             close(true);
         } catch (err) {
@@ -254,6 +262,42 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
                     </View>
 
                     {}
+                    <View style={styles.stepCard}>
+                        <View style={styles.stepHeaderRow}>
+                            <Text style={styles.stepTitle}>{t('deliveryCompletion.step4Title')}</Text>
+                            <Text style={styles.optionalTag}>{t('deliveryCompletion.optional')}</Text>
+                        </View>
+                        <View style={styles.conditionRow}>
+                            <Pressable
+                                style={[styles.conditionBtn, packageCondition === 'GOOD' && styles.conditionBtnActive]}
+                                onPress={() => setPackageCondition('GOOD')}
+                            >
+                                <Text style={[styles.conditionBtnText, packageCondition === 'GOOD' && styles.conditionBtnTextActive]}>
+                                    {t('deliveryCompletion.conditionGood')}
+                                </Text>
+                            </Pressable>
+                            <Pressable
+                                style={[styles.conditionBtn, packageCondition === 'DAMAGED' && styles.conditionBtnActiveDamaged]}
+                                onPress={() => setPackageCondition('DAMAGED')}
+                            >
+                                <Text style={[styles.conditionBtnText, packageCondition === 'DAMAGED' && styles.conditionBtnTextActive]}>
+                                    {t('deliveryCompletion.conditionDamaged')}
+                                </Text>
+                            </Pressable>
+                        </View>
+                        {packageCondition === 'DAMAGED' && (
+                            <TextInput
+                                style={styles.noteInput}
+                                value={deliveryNote}
+                                onChangeText={setDeliveryNote}
+                                placeholder={t('deliveryCompletion.deliveryNotePlaceholder')}
+                                placeholderTextColor={colors.GRAY}
+                                multiline
+                            />
+                        )}
+                    </View>
+
+                    {}
                     <View style={styles.validationCard}>
                         <Text style={styles.validationTitle}>{t('deliveryCompletion.finalValidation')}</Text>
                         <ValidationRow label={t('deliveryCompletion.otpVerifiedLabel')} done={otpVerified} colors={colors} />
@@ -315,6 +359,13 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
         smallBtnOutline: { borderWidth: 1, borderColor: colors.PRIMARY, borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
         smallBtnOutlineText: { color: colors.PRIMARY, fontSize: 13, fontWeight: '700' },
         signatureActionsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
+        conditionRow: { flexDirection: 'row', gap: 10 },
+        conditionBtn: { flex: 1, borderWidth: 1, borderColor: colors.BORDER, borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
+        conditionBtnActive: { backgroundColor: colors.SUCCESS, borderColor: colors.SUCCESS },
+        conditionBtnActiveDamaged: { backgroundColor: colors.ERROR, borderColor: colors.ERROR },
+        conditionBtnText: { fontSize: 13, fontWeight: '700', color: colors.TEXT_SECONDARY },
+        conditionBtnTextActive: { color: '#fff' },
+        noteInput: { borderWidth: 1, borderColor: colors.BORDER, borderRadius: 10, padding: 10, marginTop: 10, minHeight: 60, textAlignVertical: 'top', color: colors.TEXT_PRIMARY, fontSize: 13 },
         validationCard: { backgroundColor: colors.SURFACE, borderRadius: 12, borderWidth: 1, borderColor: colors.BORDER, padding: 14, marginBottom: 16 },
         validationTitle: { fontSize: 13, fontFamily: fonts.SEMI_BOLD_PRIMARY, color: colors.TEXT_PRIMARY, marginBottom: 2 },
         completeBtn: { backgroundColor: colors.PRIMARY, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },

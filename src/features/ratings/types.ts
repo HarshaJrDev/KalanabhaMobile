@@ -18,6 +18,9 @@ export interface Rating {
     stars: number;
     tags: string[];
     note: string | null;
+    
+    
+    serviceStars: number | null;
     createdAt: string;
 }
 
@@ -25,4 +28,5 @@ export interface CreateRatingInput {
     stars: number;
     tags: RatingTag[];
     note?: string;
+    serviceStars?: number;
 }

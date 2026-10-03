@@ -3,7 +3,7 @@
 
 
 
-export type BackendShipmentStatus = 'SCHEDULED' | 'SEARCHING' | 'ACCEPTED' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED';
+export type BackendShipmentStatus = 'SCHEDULED' | 'SEARCHING' | 'ACCEPTED' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED' | 'FAILED';
 
 export interface BackendDispatchInfo {
     driverId: string;
@@ -243,6 +243,23 @@ export interface InsuranceClaim {
     photoMimeType: string | null;
     status: 'OPEN' | 'APPROVED' | 'REJECTED' | 'PAID';
     payoutAmount: number | null;
+    adminNote: string | null;
+    resolvedAt: string | null;
+    createdAt: string;
+}
+
+
+
+
+export interface DeliveryDispute {
+    id: string;
+    shipmentId: string;
+    customerId: string;
+    category: 'WRONG_ITEM' | 'MISSING_ITEM' | 'OVERCHARGED' | 'OTHER';
+    description: string;
+    photoFileKey: string | null;
+    status: 'OPEN' | 'APPROVED' | 'REJECTED' | 'REFUNDED';
+    refundAmount: number | null;
     adminNote: string | null;
     resolvedAt: string | null;
     createdAt: string;

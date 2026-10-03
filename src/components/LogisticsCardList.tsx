@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     Linking,
     Share,
+    Modal,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import Animated, {
@@ -36,6 +37,7 @@ import {
     acceptShipment as acceptShipmentRequest,
     cancelShipment as cancelShipmentRequest,
     driverCancelShipment as driverCancelShipmentRequest,
+    failDeliveryShipment,
     startDelivery as startDeliveryRequest,
     uploadPickupProof,
     arriveAtShipment,
@@ -49,12 +51,13 @@ import { normalizeError } from '@utils/error';
 import { useTabBarContentPadding } from '../screens/navigation/useTabBarStyle';
 import { showToast } from '@ui/alert/toastStore';
 import { confirmDialog } from '@ui/alert/confirmStore';
+import { WEBSITE_URL } from '@config/env';
 import { requestCompleteDelivery } from '@ui/alert/deliveryCompletionStore';
 import { requestOtp } from '@ui/alert/deliveryOtpStore';
 import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 
-type LogisticsStatus = 'scheduled' | 'searching' | 'accepted' | 'in_transit' | 'delivered' | 'cancelled';
+type LogisticsStatus = 'scheduled' | 'searching' | 'accepted' | 'in_transit' | 'delivered' | 'cancelled' | 'failed';
 type UserRole = 'customer' | 'driver';
 
 interface Location {
@@ -65,6 +68,7 @@ interface Location {
 
 export interface LogisticsItem {
     id: string;
+    trackingId: string;
     goodsType: string;
     weightKg?: number;
     pickup: Location;
@@ -290,7 +294,20 @@ export const useDriverActions = () => {
         }
     }, [t]);
 
-    return { onAccept, onArrive, onStartDelivery, onCompleteDelivery, onDriverCancel };
+    
+    
+    
+    
+    const onFailDelivery = useCallback(async (id: string, reason: 'CUSTOMER_UNREACHABLE' | 'WRONG_ADDRESS' | 'REFUSED' | 'OTHER', note?: string) => {
+        try {
+            await failDeliveryShipment(id, reason, note);
+            showToast(t('logisticsCard.deliveryFailedRecorded'), 'info');
+        } catch (err) {
+            showToast(normalizeError(err), 'error');
+        }
+    }, [t]);
+
+    return { onAccept, onArrive, onStartDelivery, onCompleteDelivery, onDriverCancel, onFailDelivery };
 };
 
 const getStatusColor = (status: LogisticsStatus): string => {
@@ -301,6 +318,7 @@ const getStatusColor = (status: LogisticsStatus): string => {
         in_transit: '#8B5CF6',
         delivered: '#10B981',
         cancelled: '#EF4444',
+        failed: '#DC2626',
     };
     return colors[status] || '#6B7280';
 };
@@ -313,6 +331,7 @@ const makeStatusLabel = (t: (key: string) => string) => (status: LogisticsStatus
         in_transit: t('logisticsCard.statusInTransit'),
         delivered: t('logisticsCard.statusDelivered'),
         cancelled: t('logisticsCard.statusCancelled'),
+        failed: t('logisticsCard.statusFailed'),
     };
     return labels[status] || status;
 };
@@ -329,6 +348,7 @@ const LogisticsCard: React.FC<{
     const statusColor = useMemo(() => getStatusColor(item.status), [item.status]);
     const price = useMemo(() => `₹${item.price.toFixed(0)}`, [item.price]);
     const [chatOpen, setChatOpen] = useState(false);
+    const [failModalOpen, setFailModalOpen] = useState(false);
     const [chatMsg, setChatMsg] = useState('');
 
 
@@ -372,11 +392,22 @@ const LogisticsCard: React.FC<{
         );
     }, [isDriver, item.customerPhone, item.driverPhone, t]);
 
+    
+    
+    
+    
     const onShare = useCallback(() => {
+        const trackingUrl = `${WEBSITE_URL}/track/${item.trackingId}`;
         Share.share({
-            message: t('logisticsCard.trackShipmentMessage', { goodsType: item.goodsType, pickup: item.pickup?.address, drop: item.drop?.address, status: getStatusLabel(item.status) }),
+            message: t('logisticsCard.trackShipmentMessage', {
+                goodsType: item.goodsType,
+                pickup: item.pickup?.address,
+                drop: item.drop?.address,
+                status: getStatusLabel(item.status),
+            }) + `\n${trackingUrl}`,
+            url: trackingUrl,
         }).catch(() => showToast(t('logisticsCard.unableToShare'), 'error'));
-    }, [item.goodsType, item.pickup, item.drop, item.status, t, getStatusLabel]);
+    }, [item.goodsType, item.pickup, item.drop, item.status, item.trackingId, t, getStatusLabel]);
 
 
 
@@ -491,7 +522,53 @@ const LogisticsCard: React.FC<{
                             onPress={() => driverActions.onCompleteDelivery(item.id)}
                         />
                     )}
+
+                    {}
+                    {isDriver && isAssignedToMe && item.status === 'in_transit' && (
+                        <ActionButton
+                            icon={<XCircle size={16} color="#EF4444" />}
+                            label={t('logisticsCard.unableToDeliver')}
+                            onPress={() => setFailModalOpen(true)}
+                        />
+                    )}
                 </View>
+
+                <Modal
+                    visible={failModalOpen}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => setFailModalOpen(false)}
+                >
+                    <View style={failModalStyles.overlay}>
+                        <View style={failModalStyles.sheet}>
+                            <Text style={failModalStyles.title}>
+                                {t('logisticsCard.unableToDeliverTitle')}
+                            </Text>
+                            {(['WRONG_ADDRESS', 'CUSTOMER_UNREACHABLE', 'REFUSED', 'OTHER'] as const).map((reason) => (
+                                <TouchableOpacity
+                                    key={reason}
+                                    style={failModalStyles.reasonBtn}
+                                    onPress={() => {
+                                        setFailModalOpen(false);
+                                        driverActions.onFailDelivery(item.id, reason);
+                                    }}
+                                >
+                                    <Text style={failModalStyles.reasonText}>
+                                        {t(`logisticsCard.failReason_${reason}`)}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                            <TouchableOpacity
+                                style={failModalStyles.cancelBtn}
+                                onPress={() => setFailModalOpen(false)}
+                            >
+                                <Text style={failModalStyles.cancelText}>
+                                    {t('common.close')}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
 
                 {}
                 <TouchableOpacity
@@ -604,6 +681,16 @@ export const LogisticsCardList: React.FC<{ data: LogisticsItem[]; refreshControl
             />
         );
     };
+
+const failModalStyles = StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 24 },
+    sheet: { backgroundColor: '#fff', borderRadius: 14, padding: 18 },
+    title: { fontSize: 15, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827', marginBottom: 14 },
+    reasonBtn: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+    reasonText: { fontSize: 14, fontFamily: FONTS.MEDIUM_PRIMARY, color: '#111827' },
+    cancelBtn: { paddingVertical: 12, marginTop: 4, alignItems: 'center' },
+    cancelText: { fontSize: 14, fontFamily: FONTS.SEMI_BOLD_PRIMARY, color: '#6B7280' },
+});
 
 const styles = StyleSheet.create({
     card: {

@@ -21,6 +21,9 @@ import { showToast } from '@ui/alert/toastStore';
 import { useTranslation } from 'react-i18next';
 import AppButton from '../../components/ui/AppButton';
 import { SkeletonDetail } from '@components/ui';
+import { getPodPdfBase64 } from '@features/shipments/api/shipments.api';
+import Share from 'react-native-share';
+import { normalizeError } from '@utils/error';
 
 const makePaymentLabel = (t: (key: string) => string): Record<string, string> => ({
     prepaid: t('rating.paidViaUpi'),
@@ -42,8 +45,10 @@ const RatingScreen = () => {
     const { mutate: submitRating, isPending } = useSubmitRating(shipmentId ?? '');
 
     const [stars, setStars] = useState(0);
+    const [serviceStars, setServiceStars] = useState(0);
     const [selectedTags, setSelectedTags] = useState<RatingTag[]>([]);
     const [note, setNote] = useState('');
+    const [downloadingInvoice, setDownloadingInvoice] = useState(false);
 
     const toggleTag = (tag: RatingTag) => {
         setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((existingTag) => existingTag !== tag) : [...prev, tag]));
@@ -63,7 +68,12 @@ const RatingScreen = () => {
             return;
         }
         submitRating(
-            { stars, tags: selectedTags, note: note.trim() || undefined },
+            {
+                stars,
+                tags: selectedTags,
+                note: note.trim() || undefined,
+                serviceStars: serviceStars > 0 ? serviceStars : undefined,
+            },
             {
                 onSuccess: () => {
                     showToast(t('rating.ratingSubmitted'), 'success');
@@ -174,6 +184,16 @@ const RatingScreen = () => {
                 )}
 
                 {}
+                <Text style={styles.sectionTitle}>{t('rating.howWasTheService')}</Text>
+                <View style={styles.starsRow}>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                        <Pressable key={n} onPress={() => setServiceStars(n)} hitSlop={6}>
+                            <Star size={28} color="#F59E0B" fill={n <= serviceStars ? '#F59E0B' : 'transparent'} strokeWidth={1.5} />
+                        </Pressable>
+                    ))}
+                </View>
+
+                {}
                 <View style={styles.tagsHeaderRow}>
                     <Text style={styles.tagsTitle}>{t('rating.whatWentGreat')}</Text>
                     <Text style={styles.tagsHint}>{t('rating.selectAllThatApply')}</Text>
@@ -223,7 +243,24 @@ const RatingScreen = () => {
                     <Text style={styles.fareValue}>₹{shipment.price.toFixed(2)}</Text>
                     <Pressable
                         style={styles.invoiceRow}
-                        onPress={() => showToast(t('rating.invoiceNotAvailable'), 'info')}
+                        disabled={downloadingInvoice}
+                        onPress={async () => {
+                            if (!shipmentId) return;
+                            setDownloadingInvoice(true);
+                            try {
+                                const base64 = await getPodPdfBase64(shipmentId);
+                                await Share.open({
+                                    url: `data:application/pdf;base64,${base64}`,
+                                    type: 'application/pdf',
+                                    filename: `POD-${shipment.trackingId}`,
+                                    failOnCancel: false,
+                                });
+                            } catch (err) {
+                                showToast(normalizeError(err) || t('rating.invoiceNotAvailable'), 'error');
+                            } finally {
+                                setDownloadingInvoice(false);
+                            }
+                        }}
                     >
                         <Receipt size={14} color={colors.TEXT_SECONDARY} />
                         <Text style={styles.invoiceText}>{t('rating.downloadInvoicePdf')}</Text>

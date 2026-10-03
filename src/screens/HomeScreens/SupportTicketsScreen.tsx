@@ -6,7 +6,7 @@
 
 
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
+import { View, Text, StyleSheet, Pressable, FlatList, Linking } from 'react-native';
 import { SkeletonList } from '@components/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -17,12 +17,15 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
+  Phone,
 } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { useMyTickets } from '@features/support/hooks';
+import { useBusinessSettings } from '@features/settings/hooks';
 import type { SupportTicket, TicketStatus } from '@features/support/types';
 import { EmptyState } from '@components/EmptyState';
+import { showToast } from '@ui/alert/toastStore';
 
 const makeStatusMeta = (
   t: (key: string) => string,
@@ -59,6 +62,21 @@ const SupportTicketsScreen = () => {
   const STATUS_META = useMemo(() => makeStatusMeta(t), [t]);
 
   const { data: tickets, isLoading } = useMyTickets();
+  const { data: businessSettings } = useBusinessSettings();
+
+  
+  
+  const handleCallSupport = () => {
+    const phone = businessSettings?.find((s) => s.key === 'support_phone')?.value;
+    const supportEmail = businessSettings?.find((s) => s.key === 'support_email')?.value;
+    if (phone) {
+      Linking.openURL(`tel:${phone}`).catch(() => showToast(t('support.couldNotCall'), 'error'));
+      return;
+    }
+    if (supportEmail) {
+      Linking.openURL(`mailto:${supportEmail}`).catch(() => showToast(t('support.couldNotCall'), 'error'));
+    }
+  };
 
   const renderItem = ({ item }: { item: SupportTicket }) => {
     const meta = STATUS_META[item.status];
@@ -103,7 +121,9 @@ const SupportTicketsScreen = () => {
           <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
         </Pressable>
         <Text style={styles.headerTitle}>{t('support.myTickets')}</Text>
-        <View style={{ width: 40 }} />
+        <Pressable onPress={handleCallSupport} hitSlop={12} style={styles.backBtn}>
+          <Phone color={colors.PRIMARY} size={20} />
+        </Pressable>
       </View>
 
       {isLoading ? (

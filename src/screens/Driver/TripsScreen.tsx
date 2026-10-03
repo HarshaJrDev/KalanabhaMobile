@@ -34,6 +34,7 @@ const makeStatusLabel = (
   in_transit: t('status.inTransit'),
   delivered: t('status.delivered'),
   cancelled: t('status.cancelled'),
+  failed: t('status.failed'),
 });
 
 const STATUS_COLOR: Record<ShipmentStatus, string> = {
@@ -43,6 +44,7 @@ const STATUS_COLOR: Record<ShipmentStatus, string> = {
   in_transit: '#F59E0B',
   delivered: '#10B981',
   cancelled: '#DC2626',
+  failed: '#991B1B',
 };
 
 const TripRow = ({

@@ -45,6 +45,8 @@ import {
   useCancelShipment,
   useInsuranceClaim,
   useFileInsuranceClaim,
+  useDispute,
+  useFileDispute,
 } from '@features/shipments/hooks';
 import { usePayForShipment } from '@features/payments/hooks';
 import { DateTimeChipPicker } from '@components/DateTimeChipPicker';
@@ -54,7 +56,7 @@ import { haversineDistanceKm } from '@utils/geo';
 import { openGoogleMapsDirections } from '@utils/navigation';
 import { showToast } from '@ui/alert/toastStore';
 import { confirmDialog } from '@ui/alert/confirmStore';
-import { API_BASE_URL } from '@config/env';
+import { API_BASE_URL, WEBSITE_URL } from '@config/env';
 import { getToken } from '@services/storage';
 import { useAuthStore } from '@features/store/authStore';
 import { LiveTrackingMap } from '@components/LiveTrackingMap';
@@ -229,6 +231,14 @@ const ShipmentDetailsScreen = () => {
   const { mutate: fileClaim, isPending: filingClaim } = useFileInsuranceClaim(shipmentId ?? '');
   const [claimModalOpen, setClaimModalOpen] = useState(false);
   const [claimDescription, setClaimDescription] = useState('');
+
+  // Distinct from insurance claims — applies to any delivered shipment,
+  // not just insured ones (wrong/missing item, overcharge).
+  const { data: dispute } = useDispute(shipmentId);
+  const { mutate: fileDisputeMutation, isPending: filingDispute } = useFileDispute(shipmentId ?? '');
+  const [disputeModalOpen, setDisputeModalOpen] = useState(false);
+  const [disputeCategory, setDisputeCategory] = useState<'WRONG_ITEM' | 'MISSING_ITEM' | 'OVERCHARGED' | 'OTHER'>('WRONG_ITEM');
+  const [disputeDescription, setDisputeDescription] = useState('');
 
   const isDriverEnRoute =
     shipment?.status === 'accepted' || shipment?.status === 'in_transit';
@@ -411,8 +421,10 @@ const ShipmentDetailsScreen = () => {
             style={styles.iconBtn}
             activeOpacity={0.8}
             onPress={() => {
+              const trackingUrl = `${WEBSITE_URL}/track/${shipment.trackingId}`;
               Share.share({
-                message: `Track my Kalanabha shipment #${shipment.trackingId}`,
+                message: `Track my Kalanabha shipment #${shipment.trackingId}\n${trackingUrl}`,
+                url: trackingUrl,
               }).catch(() =>
                 showToast(t('shipmentDetails.unableToShare'), 'error'),
               );
@@ -831,6 +843,50 @@ const ShipmentDetailsScreen = () => {
   
   
   
+  
+  
+  const renderDispute = () => {
+    if (shipment.status !== 'delivered') return null;
+
+    return (
+      <AnimatedCard anim={cardAnims[3]} fade={cardFades[3]} cardStyle={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>{t('shipmentDetails.disputeTitle')}</Text>
+        </View>
+        {dispute ? (
+          <>
+            <Text style={styles.payLabel}>{t('shipmentDetails.disputeStatusLabel')}</Text>
+            <Text style={[styles.payValue, { marginTop: 4 }]}>
+              {t(`shipmentDetails.disputeStatus_${dispute.status}`)}
+            </Text>
+            {dispute.refundAmount != null && (
+              <View style={[styles.payRow, { marginTop: 8 }]}>
+                <Text style={styles.payLabel}>{t('shipmentDetails.disputeRefundLabel')}</Text>
+                <Text style={styles.payValue}>₹{dispute.refundAmount}</Text>
+              </View>
+            )}
+            {!!dispute.adminNote && (
+              <Text style={[styles.payLabel, { marginTop: 8 }]}>{dispute.adminNote}</Text>
+            )}
+          </>
+        ) : (
+          <>
+            <Text style={styles.payLabel}>{t('shipmentDetails.disputeSubtitle')}</Text>
+            <TouchableOpacity
+              style={[styles.scheduleActionBtn, styles.scheduleActionBtnPrimary, { marginTop: 12 }]}
+              activeOpacity={0.85}
+              onPress={() => setDisputeModalOpen(true)}
+            >
+              <Text style={[styles.scheduleActionBtnText, { color: '#fff' }]}>
+                {t('shipmentDetails.fileDispute')}
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </AnimatedCard>
+    );
+  };
+
   const renderInsuranceClaim = () => {
     if (!shipment.insuranceRequested || shipment.status !== 'delivered') return null;
 
@@ -1134,6 +1190,7 @@ const ShipmentDetailsScreen = () => {
           {renderPackage()}
           {renderPayment()}
           {renderInsuranceClaim()}
+          {renderDispute()}
           {renderActions()}
         </View>
       </ScrollView>
@@ -1301,6 +1358,103 @@ const ShipmentDetailsScreen = () => {
               ) : (
                 <Text style={[styles.scheduleActionBtnText, { color: '#fff' }]}>
                   {t('shipmentDetails.submitClaim')}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={disputeModalOpen}
+        animationType="slide"
+        onRequestClose={() => setDisputeModalOpen(false)}
+      >
+        <View style={styles.rescheduleModalContainer}>
+          <View style={styles.rescheduleModalHeader}>
+            <Text style={styles.cardTitle}>
+              {t('shipmentDetails.fileDispute')}
+            </Text>
+            <TouchableOpacity onPress={() => setDisputeModalOpen(false)}>
+              <Text style={{ color: C.primary, fontFamily: FONTS.BOLD_PRIMARY }}>
+                {t('common.close')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView contentContainerStyle={{ padding: 16 }}>
+            <Text style={styles.payLabel}>
+              {t('shipmentDetails.disputeCategoryLabel')}
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8, marginBottom: 16 }}>
+              {(['WRONG_ITEM', 'MISSING_ITEM', 'OVERCHARGED', 'OTHER'] as const).map((cat) => (
+                <TouchableOpacity
+                  key={cat}
+                  onPress={() => setDisputeCategory(cat)}
+                  style={{
+                    paddingHorizontal: 14,
+                    paddingVertical: 8,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: disputeCategory === cat ? C.primary : C.border,
+                    backgroundColor: disputeCategory === cat ? C.primary : 'transparent',
+                  }}
+                >
+                  <Text style={{ color: disputeCategory === cat ? '#fff' : C.text, fontFamily: FONTS.SEMI_BOLD_PRIMARY, fontSize: 12 }}>
+                    {t(`shipmentDetails.disputeCategory_${cat}`)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={styles.payLabel}>
+              {t('shipmentDetails.disputeDescriptionLabel')}
+            </Text>
+            <TextInput
+              value={disputeDescription}
+              onChangeText={setDisputeDescription}
+              placeholder={t('shipmentDetails.disputeDescriptionPlaceholder')}
+              placeholderTextColor={C.textMid}
+              multiline
+              numberOfLines={5}
+              style={{
+                borderWidth: 1,
+                borderColor: C.border,
+                borderRadius: 10,
+                padding: 12,
+                marginTop: 8,
+                minHeight: 110,
+                textAlignVertical: 'top',
+                color: C.text,
+                fontFamily: FONTS.PRIMARY,
+              }}
+            />
+            <TouchableOpacity
+              style={[
+                styles.scheduleActionBtn,
+                styles.scheduleActionBtnPrimary,
+                { marginTop: 16 },
+              ]}
+              activeOpacity={0.85}
+              disabled={disputeDescription.trim().length < 10 || filingDispute}
+              onPress={() =>
+                fileDisputeMutation(
+                  { category: disputeCategory, description: disputeDescription.trim() },
+                  {
+                    onSuccess: () => {
+                      setDisputeModalOpen(false);
+                      setDisputeDescription('');
+                      showToast(t('shipmentDetails.disputeFiled'), 'success');
+                    },
+                    onError: () =>
+                      showToast(t('shipmentDetails.disputeFileFailed'), 'error'),
+                  },
+                )
+              }
+            >
+              {filingDispute ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={[styles.scheduleActionBtnText, { color: '#fff' }]}>
+                  {t('shipmentDetails.submitDispute')}
                 </Text>
               )}
             </TouchableOpacity>

@@ -71,6 +71,7 @@ interface HomeScreenProps { }
 
 const makeToLogisticsItem = (t: (key: string) => string) => (s: import('@shipment/types').Shipment): LogisticsItem => ({
     id: s.id,
+    trackingId: s.trackingId,
     goodsType: s.goodsType,
     weightKg: s.weightKg,
     pickup: s.pickup,

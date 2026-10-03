@@ -26,6 +26,7 @@ const makeStatusColor = (
   in_transit: colors.WARNING,
   delivered: colors.SUCCESS,
   cancelled: colors.ERROR,
+  failed: colors.ERROR,
 });
 
 const makeStatusLabel = (
@@ -37,6 +38,7 @@ const makeStatusLabel = (
   in_transit: t('status.inTransit'),
   delivered: t('status.delivered'),
   cancelled: t('status.cancelled'),
+  failed: t('status.failed'),
 });
 
 const makePaymentLabel = (

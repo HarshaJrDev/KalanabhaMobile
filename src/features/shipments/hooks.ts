@@ -221,6 +221,35 @@ export const useInsuranceClaim = (shipmentId: string | undefined, insuranceReque
     });
 };
 
+
+
+export const useDispute = (shipmentId: string | undefined) => {
+    const { isAuthenticated } = useAuthState();
+    return useQuery({
+        queryKey: [...shipmentKeys.all, 'dispute', shipmentId],
+        queryFn: () => shipmentsApi.getDispute(shipmentId!),
+        enabled: isAuthenticated && !!shipmentId,
+    });
+};
+
+export const useFileDispute = (shipmentId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({
+            category,
+            description,
+            photo,
+        }: {
+            category: 'WRONG_ITEM' | 'MISSING_ITEM' | 'OVERCHARGED' | 'OTHER';
+            description: string;
+            photo?: { uri: string; name: string; type: string };
+        }) => shipmentsApi.fileDispute(shipmentId, category, description, photo),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [...shipmentKeys.all, 'dispute', shipmentId] });
+        },
+    });
+};
+
 export const useFileInsuranceClaim = (shipmentId: string) => {
     const queryClient = useQueryClient();
     return useMutation({

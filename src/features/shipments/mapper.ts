@@ -8,6 +8,7 @@ const STATUS_MAP: Record<BackendShipment['status'], ShipmentStatus> = {
     IN_TRANSIT: 'in_transit',
     DELIVERED: 'delivered',
     CANCELLED: 'cancelled',
+    FAILED: 'failed',
 };
 
 
