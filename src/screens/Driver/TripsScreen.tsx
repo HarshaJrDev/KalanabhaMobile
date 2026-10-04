@@ -19,6 +19,7 @@ import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MessageCircle, Package } from 'lucide-react-native';
+import { Images } from '@assets/images';
 import { useMyShipmentsAsDriver } from '@features/shipments/hooks';
 import { AsyncState } from '@components/AsyncState';
 import type { Shipment, ShipmentStatus } from '@shipment/types';
@@ -144,6 +145,7 @@ const TripsScreen = () => {
         emptyVariant="trip"
         emptyTitle={t('trips.noTripsYet')}
         emptyMessage={t('trips.acceptedShowHere')}
+        emptyIllustration={Images.illustrations.driverNoDeliveries}
       >
         <FlatList
           data={shipments ?? []}

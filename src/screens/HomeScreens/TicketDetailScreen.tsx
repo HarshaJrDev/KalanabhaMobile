@@ -7,9 +7,10 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { SkeletonDetail } from '@components/ui';
+import { ScreenHeader } from '@components/ScreenHeader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { ArrowLeft, Send } from 'lucide-react-native';
+import { Send } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@features/store/authStore';
@@ -67,15 +68,10 @@ const TicketDetailScreen = () => {
 
     return (
         <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            <View style={styles.header}>
-                <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.backBtn}>
-                    <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
-                </Pressable>
-                <View style={{ flex: 1, marginLeft: spacing.sm }}>
-                    <Text style={styles.headerTitle} numberOfLines={1}>{ticket?.subject ?? t('support.ticket')}</Text>
-                    {ticket && <Text style={styles.headerStatus}>{STATUS_LABEL[ticket.status]}</Text>}
-                </View>
-            </View>
+            <ScreenHeader
+                title={ticket?.subject ?? t('support.ticket')}
+                subtitle={ticket ? STATUS_LABEL[ticket.status] : undefined}
+            />
 
             {isLoading || !ticket ? (
                 <SkeletonDetail />
@@ -125,25 +121,6 @@ const makeStyles = (
     insets: { top: number },
 ) => StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.BACKGROUND },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: spacing.lg,
-        paddingTop: insets.top + 10,
-        paddingBottom: spacing.md,
-    },
-    backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.SURFACE,
-        borderWidth: 1,
-        borderColor: colors.BORDER,
-    },
-    headerTitle: { fontFamily: fonts.BOLD_PRIMARY, fontSize: 15, color: colors.TEXT_PRIMARY },
-    headerStatus: { fontFamily: fonts.PRIMARY, fontSize: 11, color: colors.TEXT_SECONDARY, marginTop: 1 },
 
     centerState: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 

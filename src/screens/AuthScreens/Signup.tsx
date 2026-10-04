@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import LinearGradient from 'react-native-linear-gradient';
-import { MapPin } from 'lucide-react-native';
+import { MapPin, Check } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
 
 import { H, S, RF, W } from '@utils/responsive';
 import { useAppTheme } from '@theme/ThemeContext';
@@ -27,6 +28,8 @@ import { signupSchema } from '@validation/authSchema';
 import { normalizeError } from '@utils/error';
 import { useAlert } from '@ui/alert/useAlert';
 import AlertBanner from '@ui/alert/AlertBanner';
+import { Illustration } from '@components/Illustration';
+import { Images } from '@assets/images';
 
 type FormState = {
     name: string;
@@ -66,6 +69,7 @@ const Signup = () => {
     
     
     const [referralCode, setReferralCode] = useState('');
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(30)).current;
@@ -77,6 +81,7 @@ const Signup = () => {
         ]).start();
     }, []);
 
+    const navigation = useNavigation();
     const { alert, show, clear } = useAlert();
     const { mutate, isPending } = useRegister();
     const { getAddress } = useAutoAddress();
@@ -112,8 +117,8 @@ const Signup = () => {
     }, [form, t]);
 
     const isDisabled = useMemo(() =>
-        isPending || Object.values(form).some(v => !v),
-        [form, isPending]
+        isPending || Object.values(form).some(v => !v) || !acceptedTerms,
+        [form, isPending, acceptedTerms]
     );
 
     
@@ -135,6 +140,9 @@ const Signup = () => {
                 displayName: form.name.trim(),
                 role: 'customer',
                 referralCode: referralCode.trim() || undefined,
+                phone: form.phone.trim(),
+                address: form.address.trim(),
+                customerType: type,
             },
             {
                 onSuccess: () => {
@@ -174,10 +182,8 @@ const Signup = () => {
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                 >
-                    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-                        <View style={styles.headerBadge}>
-                            <Text style={styles.badgeText}>K</Text>
-                        </View>
+                    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], alignItems: 'center' }}>
+                        <Illustration source={Images.illustrations.signupHero} size={150} />
                         <Text style={styles.headerTitle}>{t('signup.createAccount')}</Text>
                         <Text style={styles.headerSubtitle}>{t('signup.joinKalanabha')}</Text>
                     </Animated.View>
@@ -272,6 +278,32 @@ const Signup = () => {
                         onChange={v => setReferralCode(v.toUpperCase())}
                         autoCapitalize="characters"
                     />
+
+                    <Pressable
+                        style={styles.termsRow}
+                        onPress={() => setAcceptedTerms(v => !v)}
+                        hitSlop={8}
+                    >
+                        <View style={[styles.checkbox, acceptedTerms && styles.checkboxChecked]}>
+                            {acceptedTerms && <Check size={13} color="#fff" strokeWidth={3} />}
+                        </View>
+                        <Text style={styles.termsText}>
+                            {t('signup.acceptTermsPrefix')}{' '}
+                            <Text
+                                style={styles.termsLink}
+                                onPress={() => (navigation as any).navigate('WebView', { url: 'https://kalanabhalogistics.com/terms', title: t('settings.termsOfService') })}
+                            >
+                                {t('settings.termsOfService')}
+                            </Text>
+                            {' '}{t('signup.acceptTermsAnd')}{' '}
+                            <Text
+                                style={styles.termsLink}
+                                onPress={() => (navigation as any).navigate('WebView', { url: 'https://kalanabhalogistics.com/privacy', title: t('settings.privacyPolicy') })}
+                            >
+                                {t('settings.privacyPolicy')}
+                            </Text>
+                        </Text>
+                    </Pressable>
 
                     <View style={styles.submitWrapper}>
                         <AppButton
@@ -378,5 +410,36 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
     },
     submitWrapper: {
         marginTop: H(20),
+    },
+    termsRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: S(10),
+        marginTop: H(18),
+    },
+    checkbox: {
+        width: 20,
+        height: 20,
+        borderRadius: 5,
+        borderWidth: 1.5,
+        borderColor: colors.BORDER,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 1,
+    },
+    checkboxChecked: {
+        backgroundColor: colors.PRIMARY,
+        borderColor: colors.PRIMARY,
+    },
+    termsText: {
+        flex: 1,
+        fontSize: RF(12.5),
+        fontFamily: fonts.PRIMARY,
+        color: colors.TEXT_SECONDARY,
+        lineHeight: RF(18),
+    },
+    termsLink: {
+        color: colors.PRIMARY,
+        fontFamily: fonts.SEMI_BOLD_PRIMARY,
     },
 });

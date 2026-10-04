@@ -8,6 +8,7 @@ import {
     ScrollView,
     TouchableOpacity,
     Image,
+    Modal,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSearchingShipments, useMyShipmentsAsDriver, useAcceptShipment, useCompleteShipmentStop } from '@features/shipments/hooks';
@@ -25,6 +26,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
 import { DriverHeader } from '@components/DriverHeader';
+import { Illustration } from '@components/Illustration';
+import { Images } from '@assets/images';
 import { LogisticsCardList } from '@components/LogisticsCardList';
 import {
     AlertCircle,
@@ -220,10 +223,16 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
         });
     };
 
-    const handleSos = () => {
-        
-        
-        
+    
+    
+    
+    
+    const [sosModalOpen, setSosModalOpen] = useState(false);
+
+    const handleSos = () => setSosModalOpen(true);
+
+    const confirmSos = () => {
+        setSosModalOpen(false);
         const emergencyPhone = businessSettings?.find((s) => s.key === 'emergency_contact_phone')?.value;
         if (emergencyPhone) {
             Linking.openURL(`tel:${emergencyPhone}`).catch(() =>
@@ -728,12 +737,48 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                 )}
                 </ScrollView>
             </View>
+
+            <Modal
+                visible={sosModalOpen}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setSosModalOpen(false)}
+            >
+                <View style={sosStyles.overlay}>
+                    <View style={sosStyles.card}>
+                        <Illustration source={Images.illustrations.sosEmergency} size={160} />
+                        <Text style={sosStyles.title}>{t('driverHome.sosConfirmTitle')}</Text>
+                        <Text style={sosStyles.message}>
+                            {businessSettings?.find((s) => s.key === 'emergency_contact_phone')?.value
+                                ? t('driverHome.sosConfirmMessageCall')
+                                : t('driverHome.sosConfirmMessageEmail')}
+                        </Text>
+                        <TouchableOpacity style={sosStyles.confirmBtn} onPress={confirmSos} activeOpacity={0.85}>
+                            <Text style={sosStyles.confirmBtnText}>{t('driverHome.sosConfirmBtn')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={sosStyles.cancelBtn} onPress={() => setSosModalOpen(false)} activeOpacity={0.85}>
+                            <Text style={sosStyles.cancelBtnText}>{t('common.cancel')}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </>
     );
 };
 
 export default HomeScreen;
 
+
+const sosStyles = StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+    card: { backgroundColor: '#fff', borderRadius: 20, padding: 24, width: '100%', alignItems: 'center' },
+    title: { fontSize: 17, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827', marginTop: 8, textAlign: 'center' },
+    message: { fontSize: 13, color: '#6B7280', textAlign: 'center', marginTop: 8, marginBottom: 20, lineHeight: 19 },
+    confirmBtn: { backgroundColor: '#EF4444', borderRadius: 12, paddingVertical: 14, width: '100%', alignItems: 'center' },
+    confirmBtnText: { color: '#fff', fontSize: 15, fontFamily: FONTS.BOLD_PRIMARY },
+    cancelBtn: { paddingVertical: 14, width: '100%', alignItems: 'center' },
+    cancelBtnText: { color: '#6B7280', fontSize: 14, fontFamily: FONTS.SEMI_BOLD_PRIMARY },
+});
 
 const styles = StyleSheet.create({
     container: {

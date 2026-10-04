@@ -19,6 +19,7 @@ import { GlobalToast } from '@ui/alert/GlobalToast';
 import { GlobalDeliveryOtpModal } from '@ui/alert/GlobalDeliveryOtpModal';
 import { GlobalDeliveryCompletionSheet } from '@ui/alert/GlobalDeliveryCompletionSheet';
 import { GlobalConfirmDialog } from '@ui/alert/GlobalConfirmDialog';
+import { GlobalSuccessModal } from '@ui/alert/GlobalSuccessModal';
 import { registerFCMToken, setupFCMListeners } from '@utils/cm';
 import {
   navigationRef,
@@ -52,6 +53,7 @@ import CheckRate from '@screens/HomeScreens/CheckRate';
 import ShipmentDetailsScreen from '@screens/HomeScreens/ShipmentDetailsScreen/ShipmentDetailsScreen';
 import LocationPinPicker from '@screens/Location/LocationPinPicker';
 import WebViewScreen from '@screens/HomeScreens/WebViewScreen';
+import AdminPanelScreen from '@screens/AdminPanelScreen';
 import ReceiptScreen from '@screens/HomeScreens/ReceiptScreen';
 import ReferralScreen from '@screens/HomeScreens/ReferralScreen';
 import ShipmentChatScreen from '@screens/HomeScreens/ShipmentChatScreen';
@@ -83,10 +85,10 @@ const App = () => {
     const unsubscribe = initNetworkMonitoring();
     return unsubscribe;
   }, []);
-  // react-query's default web `focus` refetch does nothing in React
-  // Native — this wires AppState into focusManager so coming back to the
-  // foreground actually refetches stale queries, same pattern as
-  // initNetworkMonitoring above.
+  
+  
+  
+  
   useEffect(() => {
     const unsubscribe = initQueryFocusMonitoring();
     return unsubscribe;
@@ -120,6 +122,7 @@ const App = () => {
             <GlobalDeliveryOtpModal />
             <GlobalDeliveryCompletionSheet />
             <GlobalConfirmDialog />
+            <GlobalSuccessModal />
             <NavigationContainer
               ref={navigationRef}
               onReady={() => {
@@ -132,7 +135,11 @@ const App = () => {
               <Stack.Navigator
                 screenOptions={{ headerShown: false }}
                 initialRouteName={
-                  showAppFlow && role === 'DRIVER' ? 'DriverTabs' : undefined
+                  showAppFlow && role === 'DRIVER'
+                    ? 'DriverTabs'
+                    : showAppFlow && role === 'ADMIN'
+                      ? 'AdminPanel'
+                      : undefined
                 }
               >
                 {!showAppFlow ? (
@@ -158,6 +165,7 @@ const App = () => {
                   <>
                     <Stack.Screen name="Home" component={HomeTabs} />
                     <Stack.Screen name="DriverTabs" component={DriverTabs} />
+                    <Stack.Screen name="AdminPanel" component={AdminPanelScreen} />
                     <Stack.Screen
                       name="Notification"
                       component={notification}
@@ -167,6 +175,7 @@ const App = () => {
                     <Stack.Screen
                       name="ShipmentDetailsScreen"
                       component={ShipmentDetailsScreen}
+                      options={{ animation: 'fade_from_bottom' }}
                     />
                     <Stack.Screen
                       name="LocationPinPicker"
@@ -174,7 +183,11 @@ const App = () => {
                       options={{ animation: 'slide_from_bottom' }}
                     />
                     <Stack.Screen name="WebView" component={WebViewScreen} />
-                    <Stack.Screen name="Receipt" component={ReceiptScreen} />
+                    <Stack.Screen
+                      name="Receipt"
+                      component={ReceiptScreen}
+                      options={{ animation: 'fade_from_bottom' }}
+                    />
                     <Stack.Screen name="Referral" component={ReferralScreen} />
                     <Stack.Screen
                       name="ShipmentChat"
@@ -230,6 +243,7 @@ const App = () => {
                     <Stack.Screen
                       name="TicketDetail"
                       component={TicketDetailScreen}
+                      options={{ animation: 'fade_from_bottom' }}
                     />
                   </>
                 )}

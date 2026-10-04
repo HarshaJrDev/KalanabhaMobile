@@ -32,6 +32,8 @@ import { useForgotPassword, useResetPassword } from '@hooks/useForgotPassword';
 import { showToast } from '@ui/alert/toastStore';
 import { useAppTheme } from '@theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import { Illustration } from '@components/Illustration';
+import { Images } from '@assets/images';
 
 const ForgotPasswordScreen = () => {
     const navigation = useNavigation();
@@ -96,6 +98,17 @@ const ForgotPasswordScreen = () => {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} hitSlop={12}>
                     <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
                 </TouchableOpacity>
+
+                <Illustration
+                    key={step}
+                    source={
+                        step === 'request'
+                            ? Images.illustrations.forgotPassword
+                            : Images.illustrations.otpVerification
+                    }
+                    size={170}
+                    style={styles.illustration}
+                />
 
                 <Text style={styles.title}>
                     {step === 'request' ? t('forgotPassword.forgotPasswordTitle') : t('forgotPassword.resetPasswordTitle')}
@@ -173,6 +186,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
     container: { flex: 1, backgroundColor: colors.BACKGROUND },
     scrollContent: { padding: S(24), paddingTop: H(60), gap: H(16) },
     backButton: { marginBottom: H(16) },
+    illustration: { marginBottom: H(8) },
     title: {
         fontSize: RF(24),
         fontFamily: fonts.BOLD_PRIMARY,

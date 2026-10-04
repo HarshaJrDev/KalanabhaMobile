@@ -12,8 +12,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { SkeletonDetail } from '@components/ui';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { ChevronLeft, Download } from 'lucide-react-native';
+import { ScreenHeader } from '@components/ScreenHeader';
+import { useRoute, RouteProp } from '@react-navigation/native';
+import { Download } from 'lucide-react-native';
 import { generatePDF } from 'react-native-html-to-pdf';
 import Share from 'react-native-share';
 import { useShipment } from '@features/shipments/hooks';
@@ -34,7 +35,6 @@ const PAYMENT_MODE_LABEL: Record<string, string> = {
 const ReceiptScreen = () => {
     const { colors } = useAppTheme();
     const { t } = useTranslation();
-    const navigation = useNavigation();
     const route = useRoute<RouteProp<{ params: RouteParams }, 'params'>>();
     const shipmentId = route?.params?.id;
     const { data: shipment, isLoading } = useShipment(shipmentId);
@@ -76,17 +76,16 @@ const ReceiptScreen = () => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-                    <ChevronLeft color={colors.TEXT_PRIMARY} size={24} />
-                </Pressable>
-                <Text style={styles.headerTitle}>{t('receipt.title')}</Text>
-                <Pressable onPress={handleDownload} hitSlop={12} disabled={downloading}>
-                    {downloading
-                        ? <ActivityIndicator color={colors.PRIMARY} size="small" />
-                        : <Download color={colors.PRIMARY} size={20} />}
-                </Pressable>
-            </View>
+            <ScreenHeader
+                title={t('receipt.title')}
+                rightSlot={
+                    <Pressable onPress={handleDownload} hitSlop={12} disabled={downloading}>
+                        {downloading
+                            ? <ActivityIndicator color={colors.PRIMARY} size="small" />
+                            : <Download color={colors.PRIMARY} size={20} />}
+                    </Pressable>
+                }
+            />
 
             <ScrollView contentContainerStyle={styles.content}>
                 <View style={styles.card}>
@@ -153,12 +152,6 @@ export default ReceiptScreen;
 const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.BACKGROUND },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.BACKGROUND },
-    header: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        padding: 16, backgroundColor: colors.SURFACE,
-        borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.BORDER,
-    },
-    headerTitle: { fontSize: 16, fontFamily: FONTS.BOLD_PRIMARY, color: colors.TEXT_PRIMARY },
     content: { padding: 16 },
     card: { backgroundColor: colors.SURFACE, borderRadius: 16, padding: 20 },
     brand: { fontSize: 18, fontFamily: FONTS.BOLD_PRIMARY, color: colors.PRIMARY, textAlign: 'center' },

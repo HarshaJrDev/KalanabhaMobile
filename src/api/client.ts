@@ -137,14 +137,14 @@ apiClient.interceptors.response.use(
     
     
     if (error instanceof ApiError) {
-      // status undefined here is always the request interceptor's own
-      // offline pre-flight check above — a pure connectivity error.
-      // Every screen with a query already shows its own single,
-      // dedicated "You're offline" card (AsyncState, via useIsOnline()),
-      // so toasting the same thing here on top of that was duplicating
-      // the error on screen: one toast + one full-screen card for the
-      // exact same failure. Mutations that aren't behind AsyncState
-      // already catch and toast this themselves at the call site.
+      
+      
+      
+      
+      
+      
+      
+      
       if (error.status !== 401 && error.status !== undefined) {
         showToast(error.message, 'error');
       }
@@ -179,14 +179,14 @@ apiClient.interceptors.response.use(
     
     
     const isServerError = (error.response?.status ?? 0) >= 500;
-    // Network errors are deliberately not toasted here, same reasoning
-    // as the ApiError branch above — every query screen already shows
-    // its own single offline/error card for this exact failure
-    // (AsyncState), and toasting it too meant the user saw two separate
-    // error surfaces for one failure. Server errors (5xx) still toast:
-    // those aren't a connectivity issue AsyncState's offline branch
-    // covers, and plenty of call sites (mutations/button actions) have
-    // no card of their own to fall back on.
+    
+    
+    
+    
+    
+    
+    
+    
     if (!config?.skipGlobalErrorToast && isServerError) {
       showToast(apiError.message, 'error');
     }

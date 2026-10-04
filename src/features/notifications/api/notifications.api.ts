@@ -22,8 +22,8 @@ export const markAllNotificationsRead = async (): Promise<void> => {
     await apiClient.post<ApiSuccessResponse<null>>('/notifications/mark-all-read');
 };
 
-// Swipe-to-delete on the mobile Notifications screen — real deletion,
-// scoped server-side to the caller's own notifications.
+
+
 export const deleteNotification = async (id: string): Promise<void> => {
     await apiClient.delete<ApiSuccessResponse<null>>(`/notifications/${id}`);
 };

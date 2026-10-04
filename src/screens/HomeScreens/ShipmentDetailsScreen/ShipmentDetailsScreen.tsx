@@ -37,6 +37,7 @@ import {
   TextInput,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import RAnimated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import {
   useShipment,
@@ -55,6 +56,9 @@ import { useTurnByTurnRoute } from '@features/navigation/useTurnByTurnRoute';
 import { haversineDistanceKm } from '@utils/geo';
 import { openGoogleMapsDirections } from '@utils/navigation';
 import { showToast } from '@ui/alert/toastStore';
+import { showSuccessModal } from '@ui/alert/successModalStore';
+import { Illustration } from '@components/Illustration';
+import { Images } from '@assets/images';
 import { confirmDialog } from '@ui/alert/confirmStore';
 import { API_BASE_URL, WEBSITE_URL } from '@config/env';
 import { getToken } from '@services/storage';
@@ -206,6 +210,15 @@ const ShipmentDetailsScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<{ params: RouteParams }, 'params'>>();
   const shipmentId = route?.params?.id;
+
+  const entrance = useSharedValue(0);
+  useEffect(() => {
+    entrance.value = withTiming(1, { duration: 420, easing: Easing.out(Easing.cubic) });
+  }, [entrance]);
+  const entranceStyle = useAnimatedStyle(() => ({
+    opacity: entrance.value,
+    transform: [{ translateY: (1 - entrance.value) * 16 }],
+  }));
 
   const {
     data: shipment,
@@ -871,6 +884,7 @@ const ShipmentDetailsScreen = () => {
           </>
         ) : (
           <>
+            <Illustration source={Images.illustrations.emptyClaimsDisputes} size={130} />
             <Text style={styles.payLabel}>{t('shipmentDetails.disputeSubtitle')}</Text>
             <TouchableOpacity
               style={[styles.scheduleActionBtn, styles.scheduleActionBtnPrimary, { marginTop: 12 }]}
@@ -913,6 +927,7 @@ const ShipmentDetailsScreen = () => {
           </>
         ) : (
           <>
+            <Illustration source={Images.illustrations.emptyClaimsDisputes} size={130} />
             <Text style={styles.payLabel}>{t('shipmentDetails.insuranceClaimSubtitle')}</Text>
             <TouchableOpacity
               style={[styles.scheduleActionBtn, styles.scheduleActionBtnPrimary, { marginTop: 12 }]}
@@ -988,7 +1003,10 @@ const ShipmentDetailsScreen = () => {
                   onError: () =>
                     showToast(t('shipmentDetails.paymentFailed'), 'error'),
                   onSuccess: () =>
-                    showToast(t('shipmentDetails.paymentSuccess'), 'success'),
+                    showSuccessModal({
+                      illustration: Images.illustrations.successPayment,
+                      title: t('shipmentDetails.paymentSuccess'),
+                    }),
                 },
               )
             }
@@ -1179,7 +1197,7 @@ const ShipmentDetailsScreen = () => {
         contentContainerStyle={styles.scrollContent}
       >
         {renderHeader()}
-        <View style={styles.body}>
+        <RAnimated.View style={[styles.body, entranceStyle]}>
           {renderScheduleActions()}
           {renderNextAction()}
           {renderTimeline()}
@@ -1192,7 +1210,7 @@ const ShipmentDetailsScreen = () => {
           {renderInsuranceClaim()}
           {renderDispute()}
           {renderActions()}
-        </View>
+        </RAnimated.View>
       </ScrollView>
 
       {}
@@ -1345,7 +1363,10 @@ const ShipmentDetailsScreen = () => {
                     onSuccess: () => {
                       setClaimModalOpen(false);
                       setClaimDescription('');
-                      showToast(t('shipmentDetails.insuranceClaimFiled'), 'success');
+                      showSuccessModal({
+                        illustration: Images.illustrations.successClaimFiled,
+                        title: t('shipmentDetails.insuranceClaimFiled'),
+                      });
                     },
                     onError: () =>
                       showToast(t('shipmentDetails.insuranceClaimFileFailed'), 'error'),
@@ -1442,7 +1463,10 @@ const ShipmentDetailsScreen = () => {
                     onSuccess: () => {
                       setDisputeModalOpen(false);
                       setDisputeDescription('');
-                      showToast(t('shipmentDetails.disputeFiled'), 'success');
+                      showSuccessModal({
+                        illustration: Images.illustrations.successClaimFiled,
+                        title: t('shipmentDetails.disputeFiled'),
+                      });
                     },
                     onError: () =>
                       showToast(t('shipmentDetails.disputeFileFailed'), 'error'),

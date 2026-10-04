@@ -17,6 +17,9 @@ import LinearGradient from 'react-native-linear-gradient';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { AlertTriangle, Check } from 'lucide-react-native';
 import { KalanabhaMark } from '@components/KalanabhaMark';
+import { Illustration } from '@components/Illustration';
+import { Images } from '@assets/images';
+import { ADMIN_PANEL_URL } from '@config/env';
 
 import { H, S, W, RF } from '@utils/responsive';
 import { useAppTheme } from '@theme/ThemeContext';
@@ -234,6 +237,18 @@ const Login = () => {
                         { opacity: fadeAnim, transform: [{ translateY: cardSlide }] },
                     ]}
                 >
+                    {!isDriver && (
+                        <Illustration
+                            key={loginMode === 'otp' && otpStep === 'verify' ? 'otp' : 'login'}
+                            source={
+                                loginMode === 'otp' && otpStep === 'verify'
+                                    ? Images.illustrations.otpVerification
+                                    : Images.illustrations.loginHero
+                            }
+                            size={200}
+                            style={styles.heroIllustration}
+                        />
+                    )}
                     <Text style={styles.title}>
                         {isDriver ? 'Driver Login' : t('login.title')}
                     </Text>
@@ -380,7 +395,17 @@ const Login = () => {
                         <View style={styles.driverHelpRow}>
                             <Text style={styles.driverHelpText}>
                                 {t('login.havingTroublePrefix')}{' '}
-                                <Text style={styles.driverHelpLink}>{t('login.kalanabhaAdminPanel')}</Text>
+                                <Text
+                                    style={styles.driverHelpLink}
+                                    onPress={() =>
+                                        (navigation as any).navigate('WebView', {
+                                            url: ADMIN_PANEL_URL,
+                                            title: t('login.kalanabhaAdminPanel'),
+                                        })
+                                    }
+                                >
+                                    {t('login.kalanabhaAdminPanel')}
+                                </Text>
                             </Text>
                         </View>
                     )}
@@ -485,6 +510,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
     },
 
     
+    heroIllustration: { marginBottom: S(4) },
     card: {
         backgroundColor: colors.SURFACE,
         marginHorizontal: S(20),

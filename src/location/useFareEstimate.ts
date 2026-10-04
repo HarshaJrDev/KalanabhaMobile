@@ -13,10 +13,10 @@ export interface FareEstimate {
     error: string | null;
     helperCost: number | null;
     insurancePremium: number | null;
-    // Real OSRM driving-route duration (same source the live-tracking ETA
-    // on ShipmentDetailsScreen uses), not a distance/speed guess. null —
-    // not 0 — when the free public OSRM instance doesn't respond, so the
-    // UI can hide the ETA line entirely rather than show a fake "0 min".
+    
+    
+    
+    
     etaMinutes: number | null;
 }
 
@@ -106,12 +106,12 @@ export const useFareEstimate = (
         };
 
         run();
-        // Deliberately depending on .lat/.lng rather than the whole
-        // pickupCoords/dropCoords objects — callers (addOrders.tsx)
-        // construct a new object on every render even when the actual
-        // coordinates haven't changed, which would re-fetch on every
-        // keystroke elsewhere on the screen otherwise.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        
+        
+        
+        
+        
+        
     }, [pickupAddress, dropAddress, vehicleType, serviceType, pickupCoords?.lat, pickupCoords?.lng, dropCoords?.lat, dropCoords?.lng, category, helpersCount, insuranceRequested]);
 
     return estimate;

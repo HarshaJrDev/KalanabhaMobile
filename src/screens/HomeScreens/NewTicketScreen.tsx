@@ -5,9 +5,9 @@
 
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, ActivityIndicator } from 'react-native';
+import { ScreenHeader } from '@components/ScreenHeader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { ArrowLeft } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { useCreateTicket } from '@features/support/hooks';
@@ -50,13 +50,7 @@ const NewTicketScreen = () => {
 
     return (
         <View style={styles.root}>
-            <View style={styles.header}>
-                <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.backBtn}>
-                    <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
-                </Pressable>
-                <Text style={styles.headerTitle}>{t('support.newTicket')}</Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader title={t('support.newTicket')} />
 
             <ScrollView contentContainerStyle={styles.form}>
                 <Text style={styles.label}>{t('support.category')}</Text>
@@ -115,25 +109,6 @@ const makeStyles = (
     insets: { top: number },
 ) => StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.BACKGROUND },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg,
-        paddingTop: insets.top + 10,
-        paddingBottom: spacing.md,
-    },
-    backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.SURFACE,
-        borderWidth: 1,
-        borderColor: colors.BORDER,
-    },
-    headerTitle: { fontFamily: fonts.BOLD_PRIMARY, fontSize: 16, color: colors.TEXT_PRIMARY },
 
     form: { padding: spacing.lg, paddingBottom: 60 },
     label: { fontFamily: fonts.SEMI_BOLD_PRIMARY, fontSize: 13, color: colors.TEXT_PRIMARY, marginBottom: spacing.sm, marginTop: spacing.md },

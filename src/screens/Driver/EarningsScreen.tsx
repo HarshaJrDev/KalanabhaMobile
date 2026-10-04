@@ -9,8 +9,8 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { ChevronLeft, Wallet, TrendingUp, Package } from 'lucide-react-native';
+import { ScreenHeader } from '@components/ScreenHeader';
+import { Wallet, TrendingUp, Package } from 'lucide-react-native';
 import { useDriverEarningsSummary } from '@features/shipments/hooks';
 import { AsyncState } from '@components/AsyncState';
 import { EmptyState } from '@components/EmptyState';
@@ -18,7 +18,6 @@ import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 
 const EarningsScreen = () => {
-  const navigation = useNavigation();
   const { t } = useTranslation();
   const {
     data: summary,
@@ -29,13 +28,7 @@ const EarningsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-          <ChevronLeft color="#111" size={24} />
-        </Pressable>
-        <Text style={styles.headerTitle}>{t('earnings.title')}</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <ScreenHeader title={t('earnings.title')} />
 
       <AsyncState
         isLoading={isLoading}
@@ -122,16 +115,6 @@ export default EarningsScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7F7F7' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: '#FFF',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#EEE',
-  },
-  headerTitle: { fontSize: 16, fontFamily: FONTS.BOLD_PRIMARY },
   list: { padding: 12, gap: 10 },
   cardsRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   card: {

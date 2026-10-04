@@ -10,10 +10,10 @@ import { useTabBarStyle } from '../../navigation/useTabBarStyle';
 
 const Tab = createBottomTabNavigator();
 
-// Driver's own tab bar — distinct from HomeTabs (the customer one).
-// "Orders" here is TripsScreen (the driver's own accepted/in-progress
-// deliveries, fetched via useMyShipmentsAsDriver), not the customer
-// booking screen — a driver has no "+ book a shipment" action.
+
+
+
+
 const DriverTabs = () => {
     const tabBarStyle = useTabBarStyle('#fff');
 

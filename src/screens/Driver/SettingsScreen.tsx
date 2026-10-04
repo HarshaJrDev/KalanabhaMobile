@@ -15,10 +15,11 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Switch } from 'react-native';
+import { ScreenHeader } from '@components/ScreenHeader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getApp } from '@react-native-firebase/app';
 import { getMessaging, hasPermission, AuthorizationStatus } from '@react-native-firebase/messaging';
-import { ChevronLeft, ChevronRight, Bell, Globe, Map, Gift, Info, ShieldCheck, FileText, UserX, LogOut } from 'lucide-react-native';
+import { ChevronRight, Bell, Globe, Map, Gift, Info, ShieldCheck, FileText, UserX, LogOut } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useLogout } from '@hooks/useLogout';
 import { useMe } from '@hooks/useMe';
@@ -114,13 +115,7 @@ const SettingsScreen = () => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-                    <ChevronLeft color={colors.TEXT_PRIMARY} size={24} />
-                </Pressable>
-                <Text style={styles.headerTitle}>{t('settings.title')}</Text>
-                <View style={{ width: 24 }} />
-            </View>
+            <ScreenHeader title={t('settings.title')} />
 
             <Text style={styles.sectionLabel}>{t('settings.notificationsSection')}</Text>
             <View style={styles.row}>
@@ -234,18 +229,6 @@ const makeStyles = (
     insets: { top: number },
 ) => StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.BACKGROUND },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingTop: insets.top + 16,
-        paddingBottom: 16,
-        backgroundColor: colors.SURFACE,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.BORDER,
-    },
-    headerTitle: { fontSize: 16, fontFamily: fonts.BOLD_PRIMARY, color: colors.TEXT_PRIMARY },
     sectionLabel: {
         fontSize: 11.5, fontFamily: fonts.BOLD_PRIMARY, color: colors.TEXT_SECONDARY,
         textTransform: 'uppercase', letterSpacing: 0.4,

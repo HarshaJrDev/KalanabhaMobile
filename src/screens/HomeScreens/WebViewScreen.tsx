@@ -15,13 +15,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { ScreenHeader } from '@components/ScreenHeader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { ArrowLeft } from 'lucide-react-native';
+import { useRoute } from '@react-navigation/native';
 import { useAppTheme } from '@theme/ThemeContext';
 
 const WebViewScreen = () => {
-  const navigation = useNavigation();
   const route = useRoute<any>();
   const { colors, fonts, spacing } = useAppTheme();
   const insets = useSafeAreaInsets();
@@ -36,19 +35,7 @@ const WebViewScreen = () => {
 
   return (
     <View style={styles.root}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          hitSlop={12}
-          style={styles.backBtn}
-        >
-          <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
-        </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {title}
-        </Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <ScreenHeader title={title} />
 
       <WebView
         source={{ uri: url }}
@@ -86,34 +73,6 @@ const makeStyles = (
 ) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.BACKGROUND },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: spacing.lg,
-      paddingTop: insets.top + 10,
-      paddingBottom: spacing.md,
-      backgroundColor: colors.SURFACE,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.BORDER,
-    },
-    backBtn: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.BACKGROUND,
-      borderWidth: 1,
-      borderColor: colors.BORDER,
-    },
-    headerTitle: {
-      flex: 1,
-      textAlign: 'center',
-      fontFamily: fonts.BOLD_PRIMARY,
-      fontSize: 16,
-      color: colors.TEXT_PRIMARY,
-    },
     webview: { flex: 1 },
     loadingOverlay: {
       ...StyleSheet.absoluteFillObject,

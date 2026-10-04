@@ -16,6 +16,7 @@ module.exports = {
           
           
           '@app': '.',
+          '@assets': './src/assets',
           '@api': './src/api',
           '@config': './src/config',
           '@theme': './src/theme',

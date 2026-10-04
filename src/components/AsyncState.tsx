@@ -8,6 +8,7 @@ import {
   SkeletonStatTiles,
 } from '@components/ui';
 import { EmptyState, type EmptyStateVariant } from '@components/EmptyState';
+import type { ImageSourcePropType } from 'react-native';
 
 
 
@@ -24,6 +25,7 @@ interface AsyncStateProps {
   emptyTitle?: string;
   emptyMessage?: string;
     emptyVariant?: EmptyStateVariant;
+    emptyIllustration?: ImageSourcePropType;
     skeleton?: 'list' | 'detail' | 'stats';
   children: React.ReactNode;
 }
@@ -36,6 +38,7 @@ export const AsyncState: React.FC<AsyncStateProps> = ({
   emptyTitle,
   emptyMessage,
   emptyVariant = 'inbox',
+  emptyIllustration,
   skeleton = 'list',
   children,
 }) => {
@@ -90,6 +93,7 @@ export const AsyncState: React.FC<AsyncStateProps> = ({
           variant={emptyVariant}
           title={resolvedEmptyTitle}
           message={emptyMessage}
+          illustration={emptyIllustration}
         />
       </Animated.View>
     );

@@ -23,6 +23,8 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { showToast } from '@ui/alert/toastStore';
+import { Illustration } from '@components/Illustration';
+import { Images } from '@assets/images';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import {
   User,
@@ -67,7 +69,7 @@ import {
 import { useVehicleSearch } from '@features/vehicles/useVehicleSearch';
 import { useAuthStore } from '@features/store/authStore';
 import type { ServiceArea } from '@features/settings/types';
-import VehicleVisual from '@components/VehicleVisual';
+import VehicleSelectCards from '@components/VehicleSelectCards';
 import PlacePicker from '@components/PlacePicker';
 import { DateTimeChipPicker } from '@components/DateTimeChipPicker';
 import {
@@ -329,11 +331,11 @@ const PICKUP_SLOTS = [
   '4:00 PM – 6:00 PM',
 ];
 
-// These slots were selectable for a same-day "book now" order no matter
-// what time it actually was — picking "9:00 AM – 11:00 AM" at 5 PM gave
-// no warning the window had already passed. Only relevant when NOT
-// scheduling for a future date (data.scheduled), since a scheduled
-// pickup's slot applies to that future day, not today.
+
+
+
+
+
 const isSlotPassed = (slot: string): boolean => {
   const endLabel = slot.split('–')[1]?.trim();
   if (!endLabel) return false;
@@ -430,10 +432,10 @@ const InputField = ({
   const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
   const inputStyles = useMemo(() => makeInputStyles(COLORS), [COLORS]);
   const [focused, setFocused] = useState(false);
-  // Labels like "Full Name *" had the asterisk as plain text, same color
-  // as the rest of the label — easy to miss while scanning the form, so
-  // required fields only became obvious after hitting Continue and
-  // getting an error. Split it out and color it so it's visible upfront.
+  
+  
+  
+  
   const isRequired = label.endsWith('*');
   const labelText = isRequired ? label.slice(0, -1).trimEnd() : label;
   return (
@@ -1089,11 +1091,11 @@ const StepSender = ({
     Partial<Record<keyof SenderForm | 'place', string>>
   >({});
 
-  // Receiver has a "recent receivers" quick-pick (name/phone only, no
-  // address) — the sender/pickup side had no equivalent at all, despite
-  // the real SavedAddress feature (home/work addresses with a real
-  // serviceAreaId + house/floor/landmark) already existing and being
-  // managed elsewhere in the app, just never wired into booking.
+  
+  
+  
+  
+  
   const { data: savedAddresses } = useSavedAddresses();
   const applySavedAddress = (addr: SavedAddress) => {
     const matchedArea = areas.find(a => a.id === addr.serviceAreaId);
@@ -1885,9 +1887,9 @@ const StepOrderDetails = ({
   const [stopDraftLandmark, setStopDraftLandmark] = useState('');
   const canAddMoreStops = stops.length < 10;
   // If the selected pickup slot's window has already passed (only
-  // matters for a same-day "book now" order, not a scheduled future
-  // pickup), bump to the next still-open slot automatically rather than
-  // silently letting the customer submit an already-expired window.
+  
+  
+  
   useEffect(() => {
     if (data.scheduled) return;
     if (!isSlotPassed(data.pickupSlot)) return;
@@ -1895,7 +1897,7 @@ const StepOrderDetails = ({
     if (nextOpen && nextOpen !== data.pickupSlot) {
       onChange('pickupSlot', nextOpen);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [data.scheduled, data.pickupSlot]);
   const handleAddStop = () => {
     if (!stopDraftPlace) return;
@@ -1915,11 +1917,11 @@ const StepOrderDetails = ({
   
   
   const basePrice = fareEstimate.price;
-  // Previously always basePrice, even with a valid promo applied — the
-  // "Promo Applied -₹X" success message showed right above a total that
-  // never actually moved, reading as a lie even though the discount WAS
-  // real and did get sent to the backend (promoCode on submit). Now the
-  // displayed total matches what createShipment will actually charge.
+  
+  
+  
+  
+  
   const promoDiscount =
     promoResult?.valid && data.promoCode.trim() ? promoResult.discount : 0;
   const total =
@@ -1981,46 +1983,14 @@ const StepOrderDetails = ({
           })}
         </Text>
       )}
-      <View style={odStyles.vehicleRow}>
-        {activeVehicleConfigs.map(vt => {
-          const isSelected =
-            data.vehicleType.toLowerCase() === vt.name.toLowerCase();
-          return (
-            <TouchableOpacity
-              key={vt.id}
-              onPress={() => onChange('vehicleType', vt.name.toLowerCase())}
-              style={[
-                odStyles.vehicleCard,
-                isSelected && odStyles.vehicleCardActive,
-              ]}
-              activeOpacity={0.8}
-            >
-              {}
-              <VehicleVisual
-                vehicle={vt}
-                size={56}
-                iconSize={30}
-                borderRadius={12}
-                backgroundColor="transparent"
-                iconColor={isSelected ? COLORS.primary : COLORS.textSecondary}
-              />
-              <Text
-                style={[
-                  odStyles.vehicleLabel,
-                  isSelected && { color: COLORS.primary },
-                ]}
-              >
-                {vt.name}
-              </Text>
-              <Text style={odStyles.vehicleDesc}>
-                {t('addOrder.vehicleMaxWeightLabel', {
-                  maxWeight: vt.maxWeight,
-                })}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      <VehicleSelectCards
+        vehicles={activeVehicleConfigs}
+        selectedName={data.vehicleType}
+        onSelect={vt => onChange('vehicleType', vt.name.toLowerCase())}
+        maxWeightLabel={vt =>
+          t('addOrder.vehicleMaxWeightLabel', { maxWeight: vt.maxWeight })
+        }
+      />
 
       {}
       <SectionHeader title={t('addOrder.paymentMethodSectionTitle')} />
@@ -2246,10 +2216,10 @@ const StepOrderDetails = ({
       <View style={odStyles.slotGrid}>
         {DELIVERY_INSTRUCTION_OPTIONS.map(key => {
           const label = t(`addOrder.deliveryInstruction_${key}`);
-          // Real multi-select now — "leave at door" and "call on
-          // arrival" aren't mutually exclusive, so forcing one-at-a-time
-          // via a shared string field was the actual bug, not just a UI
-          // limitation. Backend's deliveryInstructions is a real array.
+          
+          
+          
+          
           const isSelected = data.deliveryInstructions.includes(label);
           return (
             <TouchableOpacity
@@ -2278,7 +2248,7 @@ const StepOrderDetails = ({
         })}
       </View>
 
-      {/* Extra Stops */}
+      {}
       <SectionHeader
         title={t('addOrder.stopsSectionTitle')}
         subtitle={t('addOrder.stopsSectionSubtitle')}
@@ -2400,9 +2370,7 @@ const StepOrderDetails = ({
                 </Text>
               </View>
             )}
-            {/* Real OSRM driving-route estimate — hidden (not shown as
-                "0 min") when the free routing service doesn't respond,
-                rather than guessing from distance alone. */}
+            {}
             {fareEstimate.etaMinutes != null && (
               <View style={odStyles.fareHeroChip}>
                 <Text style={odStyles.fareHeroChipText}>
@@ -2720,42 +2688,6 @@ const makeOdStyles = (COLORS: OrderColors) =>
       marginTop: 8,
     },
 
-    vehicleRow: { flexDirection: 'row', gap: 10, marginBottom: 18 },
-    vehicleCard: {
-      flex: 1,
-      borderRadius: RADIUS.lg,
-      borderWidth: 1.5,
-      borderColor: COLORS.border,
-      backgroundColor: COLORS.surface,
-      padding: 12,
-      alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.04,
-      shadowRadius: 4,
-      elevation: 1,
-    },
-    vehicleCardActive: {
-      borderColor: COLORS.primary,
-      backgroundColor: COLORS.primaryLight,
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 3,
-    },
-    vehicleIcon: { marginBottom: 4 },
-    vehicleLabel: {
-      fontSize: 13,
-      fontFamily: FONTS.BOLD_PRIMARY,
-      color: COLORS.text,
-      marginTop: 6,
-    },
-    vehicleDesc: {
-      fontSize: 10,
-      color: COLORS.textMuted,
-      marginTop: 2,
-      textAlign: 'center',
-    },
-
     payRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -3066,9 +2998,7 @@ const SuccessModal = ({
             { transform: [{ scale: scaleAnim }], opacity: fadeAnim },
           ]}
         >
-          <View style={successStyles.iconRing}>
-            <CheckCircle color={COLORS.success} width={52} height={52} />
-          </View>
+          <Illustration source={Images.illustrations.successOrderPlaced} size={170} />
           <Text style={successStyles.title}>{t('addOrder.successTitle')}</Text>
           <Text style={successStyles.subtitle}>
             {t('addOrder.successSubtitle')}
@@ -3436,11 +3366,11 @@ const NewOrder = () => {
     (KnownCoords & { label: string }) | null
   >(null);
   const [pkg, setPkg] = useState<PackageForm>(INIT_PACKAGE);
-  // "Repeat this order" — this screen already fetches shipment history
-  // for the receiver step's quick-pick, but nothing let a customer
-  // actually re-use a full past order (route, package, everything) in
-  // one tap; they had to retype it all even for a delivery they make
-  // regularly.
+  
+  
+  
+  
+  
   const { data: shipmentHistoryForRepeat } = useMyShipmentHistory();
   const recentOrdersToRepeat = useMemo(
     () => (shipmentHistoryForRepeat ?? []).slice(0, 5),
@@ -3608,20 +3538,20 @@ const NewOrder = () => {
     if (step > 0) animateToStep(step - 1, 'back');
   }, [step, animateToStep]);
 
-  // Tapping an already-completed step circle in the header jumps straight
-  // there — previously the circles were inert, so fixing a typo in Sender
-  // info while on a later step meant tapping Back repeatedly through
-  // every step in between. Only completed steps are reachable this way,
-  // not future ones — those still require Continue's validation.
+  
+  
+  
+  
+  
   const goToStep = useCallback((targetStep: number) => {
     if (targetStep < step) animateToStep(targetStep, 'back');
   }, [step, animateToStep]);
 
-  // Matches the past order's real pickup/drop addresses against the
-  // real admin-managed service areas — same substring match the
-  // CheckRate/Rebook prefill flow already uses — rather than fabricating
-  // a synthetic ServiceArea with a fake id for a locality that was never
-  // actually looked up.
+  
+  
+  
+  
+  
   const matchAreaForAddress = useCallback(
     (address: string): ServiceArea | null => {
       const q = address.trim().toLowerCase();
@@ -3936,9 +3866,9 @@ const NewOrder = () => {
     navigation.goBack();
   }, [navigation]);
 
-  // Previously the only action after booking was "Go to Home" — a
-  // customer who wanted to check tracking/status right away had to
-  // navigate there manually and find the order themselves.
+  
+  
+  
   const handleViewOrder = useCallback(() => {
     setShowSuccess(false);
     (navigation as any).navigate('ShipmentDetailsScreen', {

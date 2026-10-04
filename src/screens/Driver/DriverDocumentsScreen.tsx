@@ -8,9 +8,9 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator } from 'react-native';
 import { SkeletonList } from '@components/ui';
+import { ScreenHeader } from '@components/ScreenHeader';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
-import { useNavigation } from '@react-navigation/native';
-import { ArrowLeft, FileText, CheckCircle2, Clock, XCircle, Camera, Image as ImageIcon } from 'lucide-react-native';
+import { FileText, CheckCircle2, Clock, XCircle, Camera, Image as ImageIcon } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
 import { useMyDriverDocuments, useUploadDriverDocument } from '@features/driverDocuments/hooks';
 import { DRIVER_DOCUMENT_TYPES, DRIVER_DOCUMENT_TYPE_LABEL, type DriverDocumentType, type DriverDocument } from '@features/driverDocuments/types';
@@ -27,7 +27,6 @@ const makeStatusMeta = (t: (key: string) => string): Record<DriverDocument['stat
 });
 
 const DriverDocumentsScreen = () => {
-    const navigation = useNavigation();
     const { colors, fonts, spacing, radius } = useAppTheme();
     const { t } = useTranslation();
     const styles = useMemo(() => makeStyles(colors, fonts, spacing, radius), [colors, fonts, spacing, radius]);
@@ -83,13 +82,7 @@ const DriverDocumentsScreen = () => {
 
     return (
         <View style={styles.root}>
-            <View style={styles.header}>
-                <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.backBtn}>
-                    <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
-                </Pressable>
-                <Text style={styles.headerTitle}>{t('driverDocuments.myDocuments')}</Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <ScreenHeader title={t('driverDocuments.myDocuments')} />
 
             {isLoading ? (
                 <SkeletonList />
@@ -169,25 +162,6 @@ const makeStyles = (
     radius: ReturnType<typeof useAppTheme>['radius'],
 ) => StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.BACKGROUND },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg,
-        paddingTop: 50,
-        paddingBottom: spacing.md,
-    },
-    backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.SURFACE,
-        borderWidth: 1,
-        borderColor: colors.BORDER,
-    },
-    headerTitle: { fontFamily: fonts.BOLD_PRIMARY, fontSize: 16, color: colors.TEXT_PRIMARY },
 
     centerState: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 

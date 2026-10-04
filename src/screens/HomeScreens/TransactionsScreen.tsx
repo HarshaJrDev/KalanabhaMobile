@@ -8,8 +8,9 @@
 
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
+import { ScreenHeader } from '@components/ScreenHeader';
 import { useNavigation } from '@react-navigation/native';
-import { ChevronLeft, Receipt } from 'lucide-react-native';
+import { Receipt } from 'lucide-react-native';
 import { useMyShipmentHistory } from '@features/shipments/hooks';
 import { AsyncState } from '@components/AsyncState';
 import type { Shipment, ShipmentStatus } from '@shipment/types';
@@ -104,7 +105,6 @@ const TransactionRow = ({ shipment }: { shipment: Shipment }) => {
 };
 
 const TransactionsScreen = () => {
-  const navigation = useNavigation();
   const { colors } = useAppTheme();
   const { t } = useTranslation();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -112,13 +112,7 @@ const TransactionsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-          <ChevronLeft color={colors.TEXT_PRIMARY} size={24} />
-        </Pressable>
-        <Text style={styles.headerTitle}>{t('transactions.title')}</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <ScreenHeader title={t('transactions.title')} />
 
       <AsyncState
         isLoading={isLoading}
@@ -147,20 +141,6 @@ export default TransactionsScreen;
 const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.BACKGROUND },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: 16,
-      backgroundColor: colors.SURFACE,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: colors.BORDER,
-    },
-    headerTitle: {
-      fontSize: 16,
-      fontFamily: FONTS.BOLD_PRIMARY,
-      color: colors.TEXT_PRIMARY,
-    },
     list: { padding: 12, gap: 8 },
     row: {
       flexDirection: 'row',

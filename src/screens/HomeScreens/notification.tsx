@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Trash2 } from 'lucide-react-native';
+import { Images } from '@assets/images';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   useDeleteNotification,
@@ -46,9 +47,9 @@ const NotificationScreen = () => {
     useMarkAllNotificationsRead();
   const { mutate: deleteNotification } = useDeleteNotification();
 
-  // Right-to-left swipe reveals a Delete action and removes the
-  // notification — optimistic on the mobile side (useDeleteNotification),
-  // backed by a real DELETE /notifications/:id server-side.
+  
+  
+  
   const renderItem = ({ item }: { item: BackendNotification }) => (
     <Swipeable
       renderRightActions={() => (
@@ -108,6 +109,7 @@ const NotificationScreen = () => {
         onRetry={refetch}
         isEmpty={!notifications?.length}
         emptyTitle={t('notifications.noNotificationsYet')}
+        emptyIllustration={Images.illustrations.emptyNotifications}
       >
         <FlatList
           data={notifications ?? []}

@@ -8,10 +8,10 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList, Linking } from 'react-native';
 import { SkeletonList } from '@components/ui';
+import { ScreenHeader } from '@components/ScreenHeader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import {
-  ArrowLeft,
   Plus,
   MessageSquareText,
   Clock,
@@ -112,19 +112,14 @@ const SupportTicketsScreen = () => {
 
   return (
     <View style={styles.root}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          hitSlop={12}
-          style={styles.backBtn}
-        >
-          <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
-        </Pressable>
-        <Text style={styles.headerTitle}>{t('support.myTickets')}</Text>
-        <Pressable onPress={handleCallSupport} hitSlop={12} style={styles.backBtn}>
-          <Phone color={colors.PRIMARY} size={20} />
-        </Pressable>
-      </View>
+      <ScreenHeader
+        title={t('support.myTickets')}
+        rightSlot={
+          <Pressable onPress={handleCallSupport} hitSlop={12}>
+            <Phone color={colors.PRIMARY} size={20} />
+          </Pressable>
+        }
+      />
 
       {isLoading ? (
         <SkeletonList />
@@ -161,29 +156,6 @@ const makeStyles = (
 ) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.BACKGROUND },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: spacing.lg,
-      paddingTop: insets.top + 10,
-      paddingBottom: spacing.md,
-    },
-    backBtn: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.SURFACE,
-      borderWidth: 1,
-      borderColor: colors.BORDER,
-    },
-    headerTitle: {
-      fontFamily: fonts.BOLD_PRIMARY,
-      fontSize: 16,
-      color: colors.TEXT_PRIMARY,
-    },
 
     list: { padding: spacing.lg, gap: spacing.sm, flexGrow: 1 },
     card: {

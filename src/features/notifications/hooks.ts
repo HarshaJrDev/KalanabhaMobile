@@ -75,12 +75,12 @@ export const useMarkNotificationRead = () => {
     });
 };
 
-// Optimistic removal — the swipe-to-delete gesture already animates the
-// row off-screen client-side (NotificationScreen), so waiting on the
-// network round-trip before updating the list would show a brief
-// "snap back" of the item underneath the swiped-away row. Rolls back to
-// the pre-swipe list on failure (e.g. someone else's id, already
-// deleted), which also re-surfaces the row for the user to see.
+
+
+
+
+
+
 export const useDeleteNotification = () => {
     const queryClient = useQueryClient();
     return useMutation({
@@ -94,12 +94,12 @@ export const useDeleteNotification = () => {
             return { previous };
         },
         onError: (err, _id, context) => {
-            // The swipe gesture and the revealed action button can both
-            // end up calling delete for the same id (full swipe auto-
-            // deletes; the row is still tappable until it's gone). The
-            // second call 404s since the row's already deleted — that's
-            // not a real failure, so don't roll back a deletion that
-            // actually succeeded.
+            
+            
+            
+            
+            
+            
             if (err instanceof ApiError && err.status === 404) return;
             if (context?.previous) {
                 queryClient.setQueryData(notificationKeys.mine(), context.previous);

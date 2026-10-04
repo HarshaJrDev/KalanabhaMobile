@@ -40,6 +40,8 @@ import {
 } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import { Illustration } from './Illustration';
+import type { ImageSourcePropType } from 'react-native';
 
 export type EmptyStateVariant =
   | 'package'
@@ -70,6 +72,12 @@ interface Props {
   message?: string;
   retryLabel?: string;
   onRetry?: () => void;
+  
+  
+  
+  
+  
+  illustration?: ImageSourcePropType;
 }
 
 export const EmptyState: React.FC<Props> = ({
@@ -78,6 +86,7 @@ export const EmptyState: React.FC<Props> = ({
   message,
   retryLabel,
   onRetry,
+  illustration,
 }) => {
   const { colors, fonts } = useAppTheme();
   const { t } = useTranslation();
@@ -123,43 +132,47 @@ export const EmptyState: React.FC<Props> = ({
 
   return (
     <View style={styles.root}>
-      <Animated.View style={sceneStyle}>
-        <Svg width={132} height={132} viewBox="0 0 132 132">
-          <Defs>
-            <LinearGradient
-              id="blob"
-              x1="0"
-              y1="0"
-              x2="132"
-              y2="132"
-              gradientUnits="userSpaceOnUse"
-            >
-              <Stop offset="0" stopColor={colors.PRIMARY} stopOpacity={0.16} />
-              <Stop offset="1" stopColor={colors.PRIMARY} stopOpacity={0.05} />
-            </LinearGradient>
-          </Defs>
-          <Rect
-            x="2"
-            y="2"
-            width="128"
-            height="128"
-            rx="40"
-            fill="url(#blob)"
-          />
-          <Circle cx="24" cy="108" r="4" fill={colors.PRIMARY} opacity={0.3} />
-          <Circle cx="112" cy="26" r="3" fill={colors.PRIMARY} opacity={0.25} />
-          <Circle
-            cx="108"
-            cy="104"
-            r="5"
-            fill={colors.PRIMARY}
-            opacity={0.18}
-          />
-        </Svg>
-        <View style={styles.iconWrap}>
-          <Icon size={34} color={colors.PRIMARY} strokeWidth={1.6} />
-        </View>
-      </Animated.View>
+      {illustration ? (
+        <Illustration source={illustration} size={170} />
+      ) : (
+        <Animated.View style={sceneStyle}>
+          <Svg width={132} height={132} viewBox="0 0 132 132">
+            <Defs>
+              <LinearGradient
+                id="blob"
+                x1="0"
+                y1="0"
+                x2="132"
+                y2="132"
+                gradientUnits="userSpaceOnUse"
+              >
+                <Stop offset="0" stopColor={colors.PRIMARY} stopOpacity={0.16} />
+                <Stop offset="1" stopColor={colors.PRIMARY} stopOpacity={0.05} />
+              </LinearGradient>
+            </Defs>
+            <Rect
+              x="2"
+              y="2"
+              width="128"
+              height="128"
+              rx="40"
+              fill="url(#blob)"
+            />
+            <Circle cx="24" cy="108" r="4" fill={colors.PRIMARY} opacity={0.3} />
+            <Circle cx="112" cy="26" r="3" fill={colors.PRIMARY} opacity={0.25} />
+            <Circle
+              cx="108"
+              cy="104"
+              r="5"
+              fill={colors.PRIMARY}
+              opacity={0.18}
+            />
+          </Svg>
+          <View style={styles.iconWrap}>
+            <Icon size={34} color={colors.PRIMARY} strokeWidth={1.6} />
+          </View>
+        </Animated.View>
+      )}
 
       <Animated.View style={[styles.textWrap, textStyle]}>
         <Text style={styles.title}>{title}</Text>

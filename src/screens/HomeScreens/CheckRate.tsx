@@ -252,11 +252,7 @@ const CheckRate = () => {
                             {fareEstimate.distanceKm} km · {selectedVehicle?.name}
                         </Text>
                         <View style={styles.breakdown}>
-                            {/* Was a fabricated distance*4 formula — now the
-                                same real OSRM driving-route estimate the
-                                booking flow and live tracking both use.
-                                Hidden (not shown with a fake number) if the
-                                routing service doesn't respond. */}
+                            {}
                             {fareEstimate.etaMinutes != null && (
                                 <View style={styles.breakdownRow}>
                                     <Clock3 size={14} color="#6B7280" />

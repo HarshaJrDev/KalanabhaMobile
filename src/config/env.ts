@@ -10,3 +10,8 @@ export const API_BASE_URL = __DEV__ ? LOCAL_API_BASE_URL : PROD_API_BASE_URL;
 
 
 export const WEBSITE_URL = 'https://kalanabhalogistics.com';
+
+const LOCAL_ADMIN_URL = `http://${DEV_HOST}:5173`;
+const PROD_ADMIN_URL = 'https://admin.kalanabhalogistics.com';
+
+export const ADMIN_PANEL_URL = __DEV__ ? LOCAL_ADMIN_URL : PROD_ADMIN_URL;

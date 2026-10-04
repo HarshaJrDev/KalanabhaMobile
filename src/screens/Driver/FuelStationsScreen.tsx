@@ -17,8 +17,8 @@ import {
 } from 'react-native';
 import Geolocation from 'react-native-geolocation-service';
 import { SkeletonList } from '@components/ui';
-import { useNavigation } from '@react-navigation/native';
-import { ArrowLeft, Fuel, Navigation } from 'lucide-react-native';
+import { ScreenHeader } from '@components/ScreenHeader';
+import { Fuel, Navigation } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
 import { useNearbyFuelStations } from '@features/maps/hooks';
 import { useLogFuelExpense } from '@features/fuelExpenses/hooks';
@@ -31,7 +31,6 @@ import { EmptyState } from '@components/EmptyState';
 import { useTranslation } from 'react-i18next';
 
 const FuelStationsScreen = () => {
-  const navigation = useNavigation();
   const { colors, fonts, spacing, radius } = useAppTheme();
   const { t } = useTranslation();
   const styles = useMemo(
@@ -84,19 +83,7 @@ const FuelStationsScreen = () => {
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.BACKGROUND} />
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          hitSlop={12}
-          style={styles.backBtn}
-        >
-          <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
-        </Pressable>
-        <Text style={styles.headerTitle}>
-          {t('fuelStations.nearbyFuelStations')}
-        </Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <ScreenHeader title={t('fuelStations.nearbyFuelStations')} />
 
       {loggingFor ? (
         <LogFuelForm
@@ -248,29 +235,6 @@ const makeStyles = (
 ) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.BACKGROUND },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: spacing.lg,
-      paddingTop: 50,
-      paddingBottom: spacing.md,
-    },
-    backBtn: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.SURFACE,
-      borderWidth: 1,
-      borderColor: colors.BORDER,
-    },
-    headerTitle: {
-      fontFamily: fonts.BOLD_PRIMARY,
-      fontSize: 16,
-      color: colors.TEXT_PRIMARY,
-    },
 
     list: { padding: spacing.lg, gap: spacing.sm },
     stationCard: {

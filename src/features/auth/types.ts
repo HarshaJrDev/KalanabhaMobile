@@ -19,10 +19,10 @@ export interface RegisterPayload {
     password: string;
     displayName?: string;
     role: BackendUserRole;
-    
-    
-    
     referralCode?: string;
+    phone?: string;
+    address?: string;
+    customerType?: string;
 }
 
 

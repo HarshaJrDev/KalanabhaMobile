@@ -8,7 +8,6 @@ import {
     StatusBar,
     Dimensions,
     FlatList,
-    Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -17,6 +16,8 @@ import { ArrowRight, ArrowLeft } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '@theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import { Illustration } from '@components/Illustration';
+import { Images } from '@assets/images';
 
 const { width, height } = Dimensions.get('window');
 
@@ -24,15 +25,22 @@ const { width, height } = Dimensions.get('window');
 
 
 
+
+
+
+
+
+
+
 const SLIDE_IMAGES = [
-    require('../../../assets/images/home/onboarding-1.png'),
-    require('../../../assets/images/home/onboarding-1-delivery.png'),
-    require('../../../assets/images/home/ImaCustomer.png'),
-    require('../../../assets/images/home/onboarding-2-tracking.png'),
-    require('../../../assets/images/home/onboarding-2.png'),
-    require('../../../assets/images/home/onboarding-3-trust.png'),
-    require('../../../assets/images/home/ImaDriver.png'),
-    require('../../../assets/images/home/onboarding-3.png'),
+    Images.onboardingSlides.slide1,
+    Images.onboardingSlides.slide1Delivery,
+    Images.illustrations.onboardingFastBooking,
+    Images.onboardingSlides.slide2Tracking,
+    Images.illustrations.onboardingLiveTracking,
+    Images.illustrations.onboardingTrustSafety,
+    Images.onboardingSlides.driver,
+    Images.onboardingSlides.slide3,
 ];
 
 type OnBoardingScreenProp = NativeStackNavigationProp<RootStackParamList, 'OnBoarding'>;
@@ -94,7 +102,7 @@ const OnBoarding = () => {
                 <View style={styles.illustrationWrap}>
                     <View style={styles.glowBack} />
                     <View style={styles.glowFront} />
-                    <Image source={SLIDE_IMAGES[index]} resizeMode="contain" style={styles.heroImage} />
+                    <Illustration key={index} source={SLIDE_IMAGES[index]} style={styles.heroImage} />
                 </View>
 
                 <View style={styles.textArea}>
