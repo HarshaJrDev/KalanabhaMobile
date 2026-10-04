@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -6,6 +6,8 @@ import {
     TouchableOpacity,
     ScrollView,
 } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
     ChevronRight,
     Bookmark,
@@ -45,7 +47,8 @@ const initialsFor = (label: string) =>
 
 const ProfileScreen = () => {
     const { colors, fonts } = useAppTheme();
-    const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
+    const insets = useSafeAreaInsets();
+    const styles = useMemo(() => makeStyles(colors, fonts, insets), [colors, fonts, insets]);
     const { t, i18n } = useTranslation();
     const logoutMutation = useLogout();
     const navigation = useNavigation();
@@ -56,6 +59,15 @@ const ProfileScreen = () => {
     // — the menu ScrollView had no bottom padding at all, so the last
     // menu item (Logout) sat right behind the bar.
     const tabBarPadding = useTabBarContentPadding();
+
+    const entrance = useSharedValue(0);
+    useEffect(() => {
+        entrance.value = withTiming(1, { duration: 420, easing: Easing.out(Easing.cubic) });
+    }, [entrance]);
+    const entranceStyle = useAnimatedStyle(() => ({
+        opacity: entrance.value,
+        transform: [{ translateY: (1 - entrance.value) * 14 }],
+    }));
 
     // Real stats — GET /shipments/mine/history (every shipment this
     // customer has ever made, any status). Was hardcoded (102/78) before.
@@ -85,63 +97,65 @@ const ProfileScreen = () => {
     
     
     
-    const menuItems = [
-        { icon: Bookmark, label: t('profile.savedAddresses'), onPress: () => navigation.navigate('SavedAddresses' as never) },
-        { icon: Gift, label: t('profile.referAndEarn'), onPress: () => navigation.navigate('Referral' as never) },
-        { icon: Clock, label: t('profile.transactionsHistory'), onPress: () => navigation.navigate('Transactions' as never) },
-        { icon: Settings, label: t('profile.settings'), onPress: () => navigation.navigate('Settings' as never) },
+    const sections = [
         {
-            icon: Globe,
-            label: t('profile.language'),
-            value: LANGUAGE_LABELS[i18n.language as SupportedLanguage] ?? LANGUAGE_LABELS.en,
-            onPress: () => setLangVisible(true),
+            label: t('profile.sectionAccount'),
+            items: [
+                { icon: Bookmark, label: t('profile.savedAddresses'), onPress: () => navigation.navigate('SavedAddresses' as never) },
+                { icon: Clock, label: t('profile.transactionsHistory'), onPress: () => navigation.navigate('Transactions' as never) },
+                { icon: Gift, label: t('profile.referAndEarn'), onPress: () => navigation.navigate('Referral' as never) },
+            ],
         },
         {
-            icon: HelpCircle,
-            label: t('profile.helpCenter'),
-            
-            
-            
-            onPress: () => navigation.navigate('SupportTickets' as never),
+            label: t('profile.sectionPreferences'),
+            items: [
+                {
+                    icon: Globe,
+                    label: t('profile.language'),
+                    value: LANGUAGE_LABELS[i18n.language as SupportedLanguage] ?? LANGUAGE_LABELS.en,
+                    onPress: () => setLangVisible(true),
+                },
+                { icon: Settings, label: t('profile.settings'), onPress: () => navigation.navigate('Settings' as never) },
+            ],
         },
         {
-            icon: LogOut,
-            label: t('common.logout'),
-            onPress: handleLogout,
-            destructive: true,
+            label: t('profile.sectionSupport'),
+            items: [
+                { icon: HelpCircle, label: t('profile.helpCenter'), onPress: () => navigation.navigate('SupportTickets' as never) },
+            ],
         },
     ];
 
     return (
         <View style={styles.root}>
-            {}
             <LinearGradient
                 colors={[colors.PRIMARY_DARK, colors.PRIMARY]}
                 style={styles.header}
             >
-                <Text style={styles.title}>{t('profile.title')}</Text>
+                <Animated.View style={entranceStyle}>
+                    <Text style={styles.title}>{t('profile.title')}</Text>
 
-                <View style={styles.profileRow}>
-                    <View style={styles.avatar}>
-                        <Text style={styles.avatarText}>{initialsFor(user?.displayName || user?.email || '?')}</Text>
+                    <View style={styles.profileRow}>
+                        <View style={styles.avatar}>
+                            <Text style={styles.avatarText}>{initialsFor(user?.displayName || user?.email || '?')}</Text>
+                        </View>
+                        <View style={styles.profileInfo}>
+                            <Text style={styles.name} numberOfLines={1}>{user?.displayName || user?.email || 'Guest'}</Text>
+                            <Text style={styles.phone}>{user?.phone || t('profile.addPhonePlaceholder')}</Text>
+                        </View>
+                        <TouchableOpacity onPress={() => setEditVisible(true)} activeOpacity={0.85}>
+                            <LinearGradient
+                                colors={['#fff', 'rgba(255,255,255,0.8)']}
+                                style={styles.editButton}
+                            >
+                                <Text style={styles.editText}>{t('common.edit')}</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
                     </View>
-                    <View style={styles.profileInfo}>
-                        <Text style={styles.name}>{user?.displayName || user?.email || 'Guest'}</Text>
-                        <Text style={styles.phone}>{user?.phone || 'Add phone number'}</Text>
-                    </View>
-                    <TouchableOpacity onPress={() => setEditVisible(true)} activeOpacity={0.85}>
-                        <LinearGradient
-                            colors={['#fff', 'rgba(255,255,255,0.8)']}
-                            style={styles.editButton}
-                        >
-                            <Text style={styles.editText}>{t('common.edit')}</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
-                </View>
+                </Animated.View>
             </LinearGradient>
 
-            {}
-            <View style={styles.statsContainer}>
+            <Animated.View style={[styles.statsContainer, entranceStyle]}>
                 <View style={styles.statCard}>
                     <Text style={styles.statTitle}>{t('profile.totalShipments')}</Text>
                     <Text style={styles.statValue}>{totalShipments}</Text>
@@ -150,41 +164,53 @@ const ProfileScreen = () => {
                     <Text style={styles.statTitle}>{t('profile.delivered')}</Text>
                     <Text style={styles.statValue}>{deliveredCount}</Text>
                 </View>
-            </View>
+            </Animated.View>
 
-            {}
             <ScrollView
                 style={styles.menuScroll}
                 contentContainerStyle={{ paddingBottom: tabBarPadding }}
                 showsVerticalScrollIndicator={false}
             >
-                {menuItems.map((item, index) => (
-                    <TouchableOpacity
-                        key={index}
-                        style={[
-                            styles.menuItem,
-                            item.destructive && styles.menuItemDestructive,
-                        ]}
-                        activeOpacity={0.7}
-                        onPress={item.onPress}
-                    >
-                        <View style={styles.menuLeft}>
-                            <View style={[styles.menuIconWrap, { backgroundColor: item.destructive ? colors.ERROR + '1A' : colors.PRIMARY_LIGHT }]}>
-                                <item.icon color={item.destructive ? colors.ERROR : colors.PRIMARY} size={RF(18)} />
-                            </View>
-                            <Text style={[
-                                styles.menuLabel,
-                                item.destructive && styles.menuLabelDestructive,
-                            ]}>
-                                {item.label}
-                            </Text>
+                {sections.map((section) => (
+                    <View key={section.label} style={styles.sectionBlock}>
+                        <Text style={styles.sectionLabel}>{section.label}</Text>
+                        <View style={styles.sectionCard}>
+                            {section.items.map((item, index) => (
+                                <TouchableOpacity
+                                    key={item.label}
+                                    style={[
+                                        styles.menuItem,
+                                        index === section.items.length - 1 && styles.menuItemLast,
+                                    ]}
+                                    activeOpacity={0.7}
+                                    onPress={item.onPress}
+                                >
+                                    <View style={styles.menuLeft}>
+                                        <View style={[styles.menuIconWrap, { backgroundColor: colors.PRIMARY_LIGHT }]}>
+                                            <item.icon color={colors.PRIMARY} size={RF(18)} />
+                                        </View>
+                                        <Text style={styles.menuLabel}>{item.label}</Text>
+                                    </View>
+                                    <View style={styles.menuRight}>
+                                        {'value' in item && item.value && (
+                                            <Text style={styles.valueText}>{item.value}</Text>
+                                        )}
+                                        <ChevronRight color={colors.GRAY} size={RF(18)} />
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
                         </View>
-                        <View style={styles.menuRight}>
-                            {item.value && <Text style={styles.valueText}>{item.value}</Text>}
-                            <ChevronRight color={colors.GRAY} size={RF(18)} />
-                        </View>
-                    </TouchableOpacity>
+                    </View>
                 ))}
+
+                <TouchableOpacity
+                    style={styles.logoutRow}
+                    activeOpacity={0.7}
+                    onPress={handleLogout}
+                >
+                    <LogOut color={colors.ERROR} size={RF(18)} />
+                    <Text style={styles.logoutLabel}>{t('common.logout')}</Text>
+                </TouchableOpacity>
             </ScrollView>
 
             <EditProfileModal visible={editVisible} onClose={() => setEditVisible(false)} />
@@ -275,7 +301,11 @@ export default ProfileScreen;
 
 
 
-const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: ReturnType<typeof useAppTheme>['fonts']) => StyleSheet.create({
+const makeStyles = (
+    colors: ReturnType<typeof useAppTheme>['colors'],
+    fonts: ReturnType<typeof useAppTheme>['fonts'],
+    insets: { top: number } = { top: 0 },
+) => StyleSheet.create({
     root: {
         flex: 1,
         backgroundColor: colors.BACKGROUND,
@@ -284,7 +314,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
         borderBottomLeftRadius: W(24),
         borderBottomRightRadius: W(24),
         paddingHorizontal: W(20),
-        paddingTop: H(60),
+        paddingTop: insets.top + H(16),
         paddingBottom: H(24),
     },
     title: {
@@ -375,25 +405,52 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
         flex: 1,
         paddingHorizontal: W(20),
     },
-    menuItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+    sectionBlock: {
+        marginBottom: H(20),
+    },
+    sectionLabel: {
+        fontSize: RF(12),
+        fontFamily: fonts.SEMI_BOLD_PRIMARY,
+        color: colors.TEXT_SECONDARY,
+        textTransform: 'uppercase',
+        letterSpacing: 0.4,
+        marginBottom: H(8),
+        marginLeft: W(4),
+    },
+    sectionCard: {
         backgroundColor: colors.SURFACE,
         borderRadius: W(16),
-        paddingVertical: H(18),
-        paddingHorizontal: W(20),
-        marginBottom: H(12),
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 4,
         elevation: 2,
+        overflow: 'hidden',
     },
-    menuItemDestructive: {
-        borderWidth: 1,
-        borderColor: 'rgba(239,68,68,0.2)',
-        backgroundColor: colors.ERROR + '10',
+    menuItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: H(16),
+        paddingHorizontal: W(16),
+        borderBottomWidth: 1,
+        borderBottomColor: colors.BORDER,
+    },
+    menuItemLast: {
+        borderBottomWidth: 0,
+    },
+    logoutRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: W(8),
+        paddingVertical: H(16),
+        marginBottom: H(8),
+    },
+    logoutLabel: {
+        fontSize: RF(15),
+        fontFamily: fonts.SEMI_BOLD_PRIMARY,
+        color: colors.ERROR,
     },
     menuLeft: {
         flexDirection: 'row',
@@ -411,9 +468,6 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
         fontSize: RF(16),
         color: colors.TEXT_PRIMARY,
         fontFamily: fonts.SEMI_BOLD_PRIMARY,
-    },
-    menuLabelDestructive: {
-        color: colors.ERROR,
     },
     menuRight: {
         flexDirection: 'row',

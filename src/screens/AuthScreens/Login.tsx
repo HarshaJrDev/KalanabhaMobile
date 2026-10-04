@@ -20,6 +20,7 @@ import { KalanabhaMark } from '@components/KalanabhaMark';
 import { Illustration } from '@components/Illustration';
 import { Images } from '@assets/images';
 import { ADMIN_PANEL_URL } from '@config/env';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { H, S, W, RF } from '@utils/responsive';
 import { useAppTheme } from '@theme/ThemeContext';
@@ -83,7 +84,8 @@ const DEV_CREDENTIALS = {
 
 const Login = () => {
     const { colors, fonts, isDark } = useAppTheme();
-    const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
+    const insets = useSafeAreaInsets();
+    const styles = useMemo(() => makeStyles(colors, fonts, insets), [colors, fonts, insets]);
     const { t } = useTranslation();
     const route = useRoute<RouteProp<RootStackParamList, 'Login'>>();
     const isDriver = route.params?.isDriver ?? false;
@@ -437,7 +439,11 @@ export default Login;
 
 
 
-const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: ReturnType<typeof useAppTheme>['fonts']) => StyleSheet.create({
+const makeStyles = (
+    colors: ReturnType<typeof useAppTheme>['colors'],
+    fonts: ReturnType<typeof useAppTheme>['fonts'],
+    insets: { top: number },
+) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.BACKGROUND,
@@ -449,7 +455,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
 
     
     header: {
-        paddingTop: H(64),
+        paddingTop: insets.top + H(20),
         paddingBottom: H(44),
         alignItems: 'center',
         borderBottomLeftRadius: W(28),

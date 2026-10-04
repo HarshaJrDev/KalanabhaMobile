@@ -34,11 +34,13 @@ import { useAppTheme } from '@theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { Illustration } from '@components/Illustration';
 import { Images } from '@assets/images';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const ForgotPasswordScreen = () => {
     const navigation = useNavigation();
     const { colors, fonts } = useAppTheme();
-    const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
+    const insets = useSafeAreaInsets();
+    const styles = useMemo(() => makeStyles(colors, fonts, insets), [colors, fonts, insets]);
     const { t } = useTranslation();
     const [step, setStep] = useState<'request' | 'reset'>('request');
 
@@ -182,9 +184,13 @@ export default ForgotPasswordScreen;
 
 
 
-const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: ReturnType<typeof useAppTheme>['fonts']) => StyleSheet.create({
+const makeStyles = (
+    colors: ReturnType<typeof useAppTheme>['colors'],
+    fonts: ReturnType<typeof useAppTheme>['fonts'],
+    insets: { top: number },
+) => StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.BACKGROUND },
-    scrollContent: { padding: S(24), paddingTop: H(60), gap: H(16) },
+    scrollContent: { padding: S(24), paddingTop: insets.top + H(16), gap: H(16) },
     backButton: { marginBottom: H(16) },
     illustration: { marginBottom: H(8) },
     title: {

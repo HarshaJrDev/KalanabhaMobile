@@ -21,6 +21,32 @@ export const reverseGeocode = async (
 
 
 
+export interface AddressSuggestion {
+  displayName: string;
+  lat: number;
+  lng: number;
+}
+
+// Up to 5 live suggestions as the user types — the backend's
+// /maps/geocode/search endpoint is deliberately rate-limited per-user
+// specifically for this (see kalanabhaBackend's MapsController comment),
+// separate from forwardGeocode below which only ever wants one result.
+export const searchAddress = async (
+  query: string,
+  signal?: AbortSignal,
+): Promise<AddressSuggestion[]> => {
+  try {
+    const { data } = await apiClient.get('/maps/geocode/search', {
+      params: { q: query },
+      signal,
+      skipGlobalErrorToast: true,
+    });
+    return data.data;
+  } catch {
+    return [];
+  }
+};
+
 export const forwardGeocode = async (
     address: string,
     signal?: AbortSignal,

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { LogOut } from 'lucide-react-native';
@@ -28,6 +28,13 @@ const AdminPanelScreen = () => {
     );
     const [loading, setLoading] = useState(true);
     const { mutate: logout } = useLogout();
+    // The admin panel is a client-side-routed SPA — after the first real
+    // page load, "navigation" (e.g. login -> dashboard) is just
+    // history.pushState, not a real document load. Android's WebView still
+    // fires onLoadStart for that, with no matching onLoadEnd, which would
+    // otherwise leave this spinner stuck forever over an already-working
+    // page. Only the first load should ever show it.
+    const hasLoadedOnce = useRef(false);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -51,8 +58,13 @@ const AdminPanelScreen = () => {
             <WebView
                 source={{ uri: ADMIN_PANEL_URL }}
                 style={styles.webview}
-                onLoadStart={() => setLoading(true)}
-                onLoadEnd={() => setLoading(false)}
+                onLoadStart={() => {
+                    if (!hasLoadedOnce.current) setLoading(true);
+                }}
+                onLoadEnd={() => {
+                    hasLoadedOnce.current = true;
+                    setLoading(false);
+                }}
                 cacheEnabled={false}
                 incognito
             />

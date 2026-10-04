@@ -4,15 +4,21 @@ import { reverseGeocode } from '../services/location';
 import { ensureLocationPermission } from '@utils/locationPermission';
 
 interface UseAutoAddressReturn {
-  getAddress: (onSuccess: (addr: string) => void) => void;
+  // `addr` is null on any failure (permission denied, GPS error, reverse-
+  // geocode error) — callers must handle both branches. Previously this
+  // callback was only ever invoked on success, so a caller with no other
+  // feedback mechanism (e.g. Signup.tsx) saw a silent, permanent hang on
+  // failure — no toast, no re-enabled button, nothing.
+  getAddress: (onResult: (addr: string | null) => void) => void;
 }
 
 export const useAutoAddress = (): UseAutoAddressReturn => {
   const getAddress = useCallback(
-    async (onSuccess: (addr: string) => void) => {
+    async (onResult: (addr: string | null) => void) => {
       const granted = await ensureLocationPermission();
       if (!granted) {
         console.warn('[useAutoAddress] location permission denied');
+        onResult(null);
         return;
       }
 
@@ -22,13 +28,15 @@ export const useAutoAddress = (): UseAutoAddressReturn => {
 
           try {
             const address = await reverseGeocode(latitude, longitude);
-            onSuccess(address);
+            onResult(address);
           } catch (error) {
             console.warn('[useAutoAddress] Reverse geocode failed', error);
+            onResult(null);
           }
         },
         (error) => {
           console.warn('[useAutoAddress] Location error', error);
+          onResult(null);
         },
         {
           enableHighAccuracy: true,

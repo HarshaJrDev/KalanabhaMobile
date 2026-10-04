@@ -8,6 +8,7 @@ import {
     Animated,
     StatusBar,
     Pressable,
+    ActivityIndicator,
 } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import LinearGradient from 'react-native-linear-gradient';
@@ -30,6 +31,11 @@ import { useAlert } from '@ui/alert/useAlert';
 import AlertBanner from '@ui/alert/AlertBanner';
 import { Illustration } from '@components/Illustration';
 import { Images } from '@assets/images';
+import { searchAddress, type AddressSuggestion } from '@services/location';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const ADDRESS_SUGGESTION_MIN_LENGTH = 3;
+const ADDRESS_SUGGESTION_DEBOUNCE_MS = 350;
 
 type FormState = {
     name: string;
@@ -59,7 +65,8 @@ const STEPS = [
 
 const Signup = () => {
     const { colors, fonts, isDark } = useAppTheme();
-    const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
+    const insets = useSafeAreaInsets();
+    const styles = useMemo(() => makeStyles(colors, fonts, insets), [colors, fonts, insets]);
     const { t } = useTranslation();
     const [form, setForm] = useState<FormState>(INITIAL_FORM);
     const [errors, setErrors] = useState<FormErrors>({});
@@ -70,6 +77,12 @@ const Signup = () => {
     
     const [referralCode, setReferralCode] = useState('');
     const [acceptedTerms, setAcceptedTerms] = useState(false);
+    const [locatingAddress, setLocatingAddress] = useState(false);
+    const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
+    const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const suggestionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const suggestionAbortRef = useRef<AbortController | null>(null);
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(30)).current;
@@ -155,12 +168,60 @@ const Signup = () => {
         );
     }, [form, mutate, validate, show, clear, t, referralCode]);
 
+    const handleAddressChange = useCallback((value: string) => {
+        update('address', value);
+        setShowSuggestions(true);
+
+        if (suggestionDebounceRef.current) clearTimeout(suggestionDebounceRef.current);
+        suggestionAbortRef.current?.abort();
+
+        const query = value.trim();
+        if (query.length < ADDRESS_SUGGESTION_MIN_LENGTH) {
+            setAddressSuggestions([]);
+            setSuggestionsLoading(false);
+            return;
+        }
+
+        setSuggestionsLoading(true);
+        suggestionDebounceRef.current = setTimeout(async () => {
+            const controller = new AbortController();
+            suggestionAbortRef.current = controller;
+            const results = await searchAddress(query, controller.signal);
+            if (controller.signal.aborted) return;
+            setAddressSuggestions(results);
+            setSuggestionsLoading(false);
+        }, ADDRESS_SUGGESTION_DEBOUNCE_MS);
+    }, [update]);
+
+    const handleSelectSuggestion = useCallback((suggestion: AddressSuggestion) => {
+        update('address', suggestion.displayName);
+        setShowSuggestions(false);
+        setAddressSuggestions([]);
+    }, [update]);
+
     const handleLocation = useCallback(() => {
+        if (locatingAddress) return;
+        setLocatingAddress(true);
+        // GPS can genuinely hang on some devices (no fix indoors, etc) —
+        // same 12s tolerance HomeHeader.tsx uses, so the button doesn't
+        // stay stuck in a "locating…" state forever if getAddress's own
+        // callback never arrives.
+        const timeout = setTimeout(() => {
+            setLocatingAddress(false);
+            show(t('signup.unableToFetchLocation'));
+        }, 12000);
         getAddress(address => {
-            if (address) update('address', address);
-            else show(t('signup.unableToFetchLocation'));
+            clearTimeout(timeout);
+            setLocatingAddress(false);
+            if (address) {
+                update('address', address);
+                setShowSuggestions(false);
+                setAddressSuggestions([]);
+            } else {
+                show(t('signup.unableToFetchLocation'));
+            }
         });
-    }, [getAddress, update, show, t]);
+    }, [getAddress, update, show, t, locatingAddress]);
 
     const isLoading = isPending;
 
@@ -235,16 +296,56 @@ const Signup = () => {
                         <Text style={styles.sectionTitle}>{t('signup.location')}</Text>
                     </View>
 
-                    <InputField
-                        label={t('signup.address')}
-                        placeholder={t('signup.addressPlaceholder')}
-                        value={form.address}
-                        onChange={v => update('address', v)}
-                        error={errors.address}
-                    />
-                    <Pressable style={styles.locationLinkRow} onPress={handleLocation}>
-                        <MapPin size={14} color={colors.PRIMARY} />
-                        <Text style={styles.locationLink}>{t('signup.useCurrentLocation')}</Text>
+                    <View style={styles.addressFieldWrap}>
+                        <InputField
+                            label={t('signup.address')}
+                            placeholder={t('signup.addressPlaceholder')}
+                            value={form.address}
+                            onChange={handleAddressChange}
+                            onFocus={() => setShowSuggestions(true)}
+                            error={errors.address}
+                        />
+                        {showSuggestions && form.address.trim().length >= ADDRESS_SUGGESTION_MIN_LENGTH && (
+                            <View style={styles.suggestionsPanel}>
+                                {suggestionsLoading ? (
+                                    <View style={styles.suggestionRow}>
+                                        <ActivityIndicator size="small" color={colors.PRIMARY} />
+                                        <Text style={styles.suggestionText}>{t('signup.locatingYou')}</Text>
+                                    </View>
+                                ) : addressSuggestions.length === 0 ? (
+                                    <Text style={[styles.suggestionText, styles.suggestionEmpty]}>
+                                        {t('signup.noAddressMatches')}
+                                    </Text>
+                                ) : (
+                                    addressSuggestions.map((s, i) => (
+                                        <Pressable
+                                            key={`${s.lat}-${s.lng}-${i}`}
+                                            style={styles.suggestionRow}
+                                            onPress={() => handleSelectSuggestion(s)}
+                                        >
+                                            <MapPin size={13} color={colors.TEXT_SECONDARY} />
+                                            <Text style={styles.suggestionText} numberOfLines={2}>
+                                                {s.displayName}
+                                            </Text>
+                                        </Pressable>
+                                    ))
+                                )}
+                            </View>
+                        )}
+                    </View>
+                    <Pressable
+                        style={[styles.locationLinkRow, locatingAddress && styles.locationLinkRowDisabled]}
+                        onPress={handleLocation}
+                        disabled={locatingAddress}
+                    >
+                        {locatingAddress ? (
+                            <ActivityIndicator size="small" color={colors.PRIMARY} />
+                        ) : (
+                            <MapPin size={14} color={colors.PRIMARY} />
+                        )}
+                        <Text style={styles.locationLink}>
+                            {locatingAddress ? t('signup.locatingYou') : t('signup.useCurrentLocation')}
+                        </Text>
                     </Pressable>
 
                     <UserTypeSelector value={type} onChange={setType} />
@@ -323,7 +424,11 @@ export default Signup;
 
 
 
-const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: ReturnType<typeof useAppTheme>['fonts']) => StyleSheet.create({
+const makeStyles = (
+    colors: ReturnType<typeof useAppTheme>['colors'],
+    fonts: ReturnType<typeof useAppTheme>['fonts'],
+    insets: { top: number },
+) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.BACKGROUND,
@@ -332,7 +437,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
         paddingBottom: H(40),
     },
     header: {
-        paddingTop: H(55),
+        paddingTop: insets.top + H(16),
         paddingBottom: H(35),
         paddingHorizontal: S(24),
         borderBottomLeftRadius: W(28),
@@ -402,6 +507,42 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
         gap: 6,
         marginTop: H(4),
         marginBottom: H(12),
+    },
+    locationLinkRowDisabled: {
+        opacity: 0.6,
+    },
+    addressFieldWrap: {
+        position: 'relative',
+        zIndex: 10,
+    },
+    suggestionsPanel: {
+        backgroundColor: colors.SURFACE,
+        borderWidth: 1,
+        borderColor: colors.BORDER,
+        borderRadius: W(12),
+        marginTop: H(-6),
+        marginBottom: H(8),
+        overflow: 'hidden',
+    },
+    suggestionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: S(8),
+        paddingHorizontal: S(12),
+        paddingVertical: H(10),
+        borderBottomWidth: 1,
+        borderBottomColor: colors.BORDER,
+    },
+    suggestionText: {
+        flex: 1,
+        fontSize: RF(12.5),
+        fontFamily: fonts.PRIMARY,
+        color: colors.TEXT_PRIMARY,
+    },
+    suggestionEmpty: {
+        color: colors.TEXT_SECONDARY,
+        paddingHorizontal: S(12),
+        paddingVertical: H(10),
     },
     locationLink: {
         color: colors.PRIMARY,
