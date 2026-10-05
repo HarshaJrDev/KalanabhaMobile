@@ -6,6 +6,7 @@ import {
   getToken,
   onMessage,
   onNotificationOpenedApp,
+  onTokenRefresh,
   getInitialNotification,
   AuthorizationStatus,
 } from '@react-native-firebase/messaging';
@@ -107,13 +108,32 @@ export const setupFCMListeners = () => {
     tapFromData(remote.data);
   });
 
-  
-  
-  
+
+
+
   getInitialNotification(messaging).then(remote => {
     if (!remote) return;
     tapFromData(remote.data);
   });
 
-  return unsub;
+  // Without this, a token rotated by Firebase (periodic rotation, or a
+  // fresh token issued after reinstall/clear-data) never reaches the
+  // backend again — registerFCMToken only ever runs once, at mount/login.
+  // The driver's stored fcmToken silently goes stale and every push after
+  // that point is sent to a dead token, with no visible symptom beyond
+  // "notifications just stopped working" for that one user.
+  const unsubTokenRefresh = onTokenRefresh(messaging, async newToken => {
+    try {
+      if (!getAccessToken()) return;
+      await apiClient.patch('/users/me/fcm-token', { fcmToken: newToken });
+      console.log('[FCM] Token refreshed and re-registered');
+    } catch (e) {
+      console.error('[FCM] token refresh re-registration error:', e);
+    }
+  });
+
+  return () => {
+    unsub();
+    unsubTokenRefresh();
+  };
 };

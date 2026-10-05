@@ -560,6 +560,8 @@
     "statusCancelled": "Cancelled",
     "timelineOrderPlaced": "Order Placed",
     "trackingTimeline": "Tracking Timeline",
+    "viewFullHistory": "View full history",
+    "hideFullHistory": "Hide full history",
     "nextPickupScheduledTitle": "Pickup scheduled",
     "nextPickupScheduledBody": "Pickup is scheduled.",
     "nextPickupScheduledBodyWithDate": "Pickup is planned for {{date}}.",
@@ -673,6 +675,18 @@
     "allTime": "All Time · {{trips}} trips",
     "recentTrips": "Recent Trips",
     "noTripsYet": "No delivered trips yet"
+  },
+  "bankDetails": {
+    "title": "Bank Details",
+    "subtitle": "Add your bank account so payouts can be transferred directly to you.",
+    "accountHolderName": "Account Holder Name",
+    "accountNumber": "Account Number",
+    "ifsc": "IFSC Code",
+    "allFieldsRequired": "All fields are required",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Bank details saved",
+    "saveFailed": "Could not save bank details"
   },
   "driverDocuments": {
     "pendingReview": "Pending review",

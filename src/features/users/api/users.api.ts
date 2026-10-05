@@ -32,6 +32,21 @@ export const setOnlineStatus = async (isOnline: boolean): Promise<StoredUser> =>
 
 
 
+export interface UpdateBankDetailsPayload {
+    bankAccountHolderName: string;
+    bankAccountNumber: string;
+    bankIfsc: string;
+}
+
+// Needed before DriverPayoutsService.createPayout can actually transfer
+// money — without this on file, a payout is recorded (the ledger row
+// always exists) but stays PENDING_TRANSFER.
+export const updateBankDetails = async (payload: UpdateBankDetailsPayload): Promise<void> => {
+    await apiClient.patch<ApiSuccessResponse<null>>('/users/me/bank-details', payload);
+};
+
+
+
 export const getMyReferralCode = async (): Promise<{ referralCode: string }> => {
     const { data } = await apiClient.get<ApiSuccessResponse<{ referralCode: string }>>('/users/me/referral');
     return data.data;

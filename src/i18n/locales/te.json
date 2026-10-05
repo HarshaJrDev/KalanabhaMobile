@@ -560,6 +560,8 @@
     "statusCancelled": "రద్దు చేయబడింది",
     "timelineOrderPlaced": "ఆర్డర్ చేయబడింది",
     "trackingTimeline": "ట్రాకింగ్ టైమ్‌లైన్",
+    "viewFullHistory": "పూర్తి చరిత్రను చూడండి",
+    "hideFullHistory": "పూర్తి చరిత్రను దాచండి",
     "nextPickupScheduledTitle": "Pickup scheduled",
     "nextPickupScheduledBody": "Pickup is scheduled.",
     "nextPickupScheduledBodyWithDate": "Pickup is planned for {{date}}.",
@@ -673,6 +675,18 @@
     "allTime": "మొత్తం · {{trips}} ట్రిప్‌లు",
     "recentTrips": "ఇటీవలి ట్రిప్‌లు",
     "noTripsYet": "ఇంకా డెలివరీ చేసిన ట్రిప్‌లు లేవు"
+  },
+  "bankDetails": {
+    "title": "బ్యాంక్ వివరాలు",
+    "subtitle": "చెల్లింపులు నేరుగా మీకు బదిలీ చేయడానికి మీ బ్యాంక్ ఖాతాను జోడించండి.",
+    "accountHolderName": "ఖాతాదారుని పేరు",
+    "accountNumber": "ఖాతా నంబర్",
+    "ifsc": "IFSC కోడ్",
+    "allFieldsRequired": "అన్ని ఫీల్డ్‌లు తప్పనిసరి",
+    "save": "సేవ్ చేయండి",
+    "saving": "సేవ్ చేస్తోంది…",
+    "saved": "బ్యాంక్ వివరాలు సేవ్ చేయబడ్డాయి",
+    "saveFailed": "బ్యాంక్ వివరాలు సేవ్ చేయలేకపోయింది"
   },
   "driverDocuments": {
     "pendingReview": "సమీక్ష పెండింగ్‌లో ఉంది",

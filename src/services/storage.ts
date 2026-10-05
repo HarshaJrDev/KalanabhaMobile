@@ -16,7 +16,7 @@ const OFFLINE_MAPS_KEY = 'offline_maps_enabled';
 export interface StoredUser {
     id: string;
     email: string;
-    role: 'CUSTOMER' | 'DRIVER' | 'ADMIN' | 'DISPATCHER' | 'WAREHOUSE';
+    role: 'CUSTOMER' | 'DRIVER' | 'ADMIN' | 'DISPATCHER' | 'WAREHOUSE' | 'FLEET_OWNER';
     displayName: string | null;
     phone: string | null;
     address: string | null;

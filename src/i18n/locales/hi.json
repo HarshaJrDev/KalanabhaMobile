@@ -560,6 +560,8 @@
     "statusCancelled": "रद्द किया गया",
     "timelineOrderPlaced": "ऑर्डर दिया गया",
     "trackingTimeline": "ट्रैकिंग टाइमलाइन",
+    "viewFullHistory": "पूरा इतिहास देखें",
+    "hideFullHistory": "पूरा इतिहास छुपाएं",
     "nextPickupScheduledTitle": "Pickup scheduled",
     "nextPickupScheduledBody": "Pickup is scheduled.",
     "nextPickupScheduledBodyWithDate": "Pickup is planned for {{date}}.",
@@ -673,6 +675,18 @@
     "allTime": "कुल समय · {{trips}} यात्राएं",
     "recentTrips": "हाल की यात्राएं",
     "noTripsYet": "अभी तक कोई डिलीवर की गई यात्रा नहीं"
+  },
+  "bankDetails": {
+    "title": "बैंक विवरण",
+    "subtitle": "भुगतान सीधे आपके खाते में ट्रांसफर करने के लिए अपना बैंक खाता जोड़ें।",
+    "accountHolderName": "खाताधारक का नाम",
+    "accountNumber": "खाता संख्या",
+    "ifsc": "IFSC कोड",
+    "allFieldsRequired": "सभी फ़ील्ड आवश्यक हैं",
+    "save": "सहेजें",
+    "saving": "सहेजा जा रहा है…",
+    "saved": "बैंक विवरण सहेजा गया",
+    "saveFailed": "बैंक विवरण सहेज नहीं सका"
   },
   "driverDocuments": {
     "pendingReview": "समीक्षा लंबित",

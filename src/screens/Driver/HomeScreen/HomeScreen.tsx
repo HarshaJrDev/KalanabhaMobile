@@ -11,7 +11,7 @@ import {
     Modal,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useSearchingShipments, useMyShipmentsAsDriver, useAcceptShipment, useCompleteShipmentStop } from '@features/shipments/hooks';
+import { useSearchingShipments, useMyShipmentsAsDriver, useAcceptShipment, useDeclineShipment, useCompleteShipmentStop } from '@features/shipments/hooks';
 import {
     toLogisticsItem,
     useDriverShipmentActions,
@@ -81,13 +81,21 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     
     const navigation = useNavigation();
     const { t } = useTranslation();
+    const driverVehicleType = useAuthStore((s) => s.user?.vehicleType);
     const {
         data: searchingShipments,
         isLoading: loading,
         isRefetching: refreshing,
         error: shipmentsError,
         refetch: refetchShipments,
-    } = useSearchingShipments();
+    } = useSearchingShipments(
+        // Matches acceptShipment's own server-side vehicle-type guard —
+        // no point showing a driver loads they're now blocked from
+        // accepting. Omitted entirely if the driver has no vehicleType
+        // on file (shouldn't happen for an active driver, but fails
+        // open to "show everything" rather than silently empty).
+        driverVehicleType ? { vehicleType: driverVehicleType } : undefined,
+    );
 
     
     
@@ -178,7 +186,19 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
         [shipments, incomingRequest],
     );
     const { mutate: acceptIncoming, isPending: acceptingIncoming } = useAcceptShipment(incomingRequest?.id ?? '');
+    const { mutate: declineIncoming } = useDeclineShipment();
     const [dismissedIncomingId, setDismissedIncomingId] = useState<string | null>(null);
+
+    // Real, server-recorded reject — previously this just hid the card
+    // locally (setDismissedIncomingId alone), so the same shipment kept
+    // reappearing for this driver on every poll. The local dismiss still
+    // happens too, for instant UI feedback while the mutation is in
+    // flight — the query invalidation in useDeclineShipment is what
+    // actually keeps it gone after that.
+    const handleDeclineIncoming = (id: string) => {
+        setDismissedIncomingId(id);
+        declineIncoming(id);
+    };
 
     // Real countdown to the shipment's real, admin-set expiry
     
@@ -516,7 +536,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                                     <Text style={styles.incomingCountdownText}>{countdownLabel}</Text>
                                 </View>
                             )}
-                            <TouchableOpacity onPress={() => setDismissedIncomingId(incomingRequest.id)} hitSlop={8}>
+                            <TouchableOpacity onPress={() => handleDeclineIncoming(incomingRequest.id)} hitSlop={8}>
                                 <X size={16} color="#9CA3AF" />
                             </TouchableOpacity>
                         </View>
@@ -599,7 +619,7 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                         <View style={styles.incomingActionsRow}>
                             <TouchableOpacity
                                 style={styles.declineBtn}
-                                onPress={() => setDismissedIncomingId(incomingRequest.id)}
+                                onPress={() => handleDeclineIncoming(incomingRequest.id)}
                             >
                                 <Text style={styles.declineBtnText}>{t('driverHome.decline')}</Text>
                             </TouchableOpacity>

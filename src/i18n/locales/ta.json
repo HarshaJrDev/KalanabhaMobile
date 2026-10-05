@@ -560,6 +560,8 @@
     "statusCancelled": "ரத்து செய்யப்பட்டது",
     "timelineOrderPlaced": "ஆர்டர் செய்யப்பட்டது",
     "trackingTimeline": "கண்காணிப்பு காலவரிசை",
+    "viewFullHistory": "முழு வரலாற்றைக் காண்க",
+    "hideFullHistory": "முழு வரலாற்றை மறை",
     "nextPickupScheduledTitle": "Pickup scheduled",
     "nextPickupScheduledBody": "Pickup is scheduled.",
     "nextPickupScheduledBodyWithDate": "Pickup is planned for {{date}}.",
@@ -673,6 +675,18 @@
     "allTime": "மொத்தம் · {{trips}} பயணங்கள்",
     "recentTrips": "சமீபத்திய பயணங்கள்",
     "noTripsYet": "இன்னும் டெலிவர் செய்யப்பட்ட பயணங்கள் இல்லை"
+  },
+  "bankDetails": {
+    "title": "வங்கி விவரங்கள்",
+    "subtitle": "பணம் நேரடியாக உங்களுக்கு மாற்றப்பட உங்கள் வங்கிக் கணக்கைச் சேர்க்கவும்.",
+    "accountHolderName": "கணக்குதாரர் பெயர்",
+    "accountNumber": "கணக்கு எண்",
+    "ifsc": "IFSC குறியீடு",
+    "allFieldsRequired": "அனைத்து புலங்களும் தேவை",
+    "save": "சேமி",
+    "saving": "சேமிக்கிறது…",
+    "saved": "வங்கி விவரங்கள் சேமிக்கப்பட்டன",
+    "saveFailed": "வங்கி விவரங்களை சேமிக்க முடியவில்லை"
   },
   "driverDocuments": {
     "pendingReview": "மதிப்பாய்வு நிலுவையில் உள்ளது",

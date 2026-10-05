@@ -85,6 +85,8 @@ import {
   Star,
   Calendar,
   X,
+  ChevronDown,
+  ChevronUp,
   type LucideIcon,
 } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
@@ -226,6 +228,7 @@ const ShipmentDetailsScreen = () => {
     error,
   } = useShipment(shipmentId);
   const { data: historyEntries } = useShipmentHistory(shipmentId);
+  const [fullHistoryExpanded, setFullHistoryExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const { mutate: payForShipment, isPending: payingNow } = usePayForShipment();
   const [podViewerOpen, setPodViewerOpen] = useState(false);
@@ -621,6 +624,59 @@ const ShipmentDetailsScreen = () => {
               </View>
             );
           })}
+        </View>
+      )}
+
+      {/* The 4 dots above only ever show the happy-path milestones —
+          any other real history entry (CANCELLED/FAILED with a reason,
+          a status this shipment passed through more than once) was
+          silently dropped, never shown anywhere on mobile. Admin's
+          ShipmentDetailPage already renders the raw history list; this
+          is the same data, same idea, on the customer/driver side. */}
+      {(historyEntries?.length ?? 0) > 0 && (
+        <View style={styles.fullHistoryWrap}>
+          <TouchableOpacity
+            onPress={() => setFullHistoryExpanded(v => !v)}
+            style={styles.fullHistoryToggle}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.fullHistoryToggleText}>
+              {fullHistoryExpanded
+                ? t('shipmentDetails.hideFullHistory')
+                : t('shipmentDetails.viewFullHistory')}
+            </Text>
+            {fullHistoryExpanded ? (
+              <ChevronUp size={14} color={C.textLight} />
+            ) : (
+              <ChevronDown size={14} color={C.textLight} />
+            )}
+          </TouchableOpacity>
+
+          {fullHistoryExpanded && (
+            <View style={styles.fullHistoryList}>
+              {[...(historyEntries ?? [])]
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .map(entry => {
+                  const cfg = STATUS_CONFIG[entry.status.toLowerCase()];
+                  return (
+                    <View key={entry.id} style={styles.fullHistoryRow}>
+                      <View style={styles.fullHistoryDot} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.fullHistoryStatus}>
+                          {cfg?.label ?? entry.status}
+                        </Text>
+                        {!!entry.reason && (
+                          <Text style={styles.fullHistoryReason}>{entry.reason}</Text>
+                        )}
+                        <Text style={styles.fullHistoryTime}>
+                          {formatDateTime(entry.createdAt)}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })}
+            </View>
+          )}
         </View>
       )}
     </AnimatedCard>
@@ -1828,6 +1884,48 @@ const makeStyles = (C: DetailColors) =>
       color: C.primary,
       fontSize: 10,
       fontFamily: FONTS.BOLD_PRIMARY,
+    },
+
+    fullHistoryWrap: {
+      marginTop: 14,
+      borderTopWidth: 1,
+      borderTopColor: C.border,
+      paddingTop: 10,
+    },
+    fullHistoryToggle: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      alignSelf: 'flex-start',
+    },
+    fullHistoryToggleText: {
+      fontSize: 12,
+      fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+      color: C.textLight,
+    },
+    fullHistoryList: { marginTop: 10, gap: 12 },
+    fullHistoryRow: { flexDirection: 'row', gap: 10 },
+    fullHistoryDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: C.primary,
+      marginTop: 6,
+    },
+    fullHistoryStatus: {
+      fontSize: 12.5,
+      fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+      color: C.text,
+    },
+    fullHistoryReason: {
+      fontSize: 12,
+      color: C.textMid,
+      marginTop: 2,
+    },
+    fullHistoryTime: {
+      fontSize: 11,
+      color: C.textLight,
+      marginTop: 2,
     },
 
     routeWrap: { gap: 4 },

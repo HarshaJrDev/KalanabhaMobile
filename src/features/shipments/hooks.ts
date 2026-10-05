@@ -70,13 +70,30 @@ export const useMyShipmentHistory = () => {
     });
 };
 
-export const useSearchingShipments = () => {
+export const useSearchingShipments = (
+    filters?: shipmentsApi.SearchingShipmentsFilters,
+) => {
     const { isAuthenticated } = useAuthState();
     return useQuery({
-        queryKey: shipmentKeys.searching(),
-        queryFn: async () => (await shipmentsApi.getSearchingShipments()).map(toShipment),
+        queryKey: [...shipmentKeys.searching(), filters ?? {}],
+        queryFn: async () =>
+            (await shipmentsApi.getSearchingShipments(filters)).map(toShipment),
         enabled: isAuthenticated,
         refetchInterval: ACTIVE_SHIPMENT_POLL_MS,
+    });
+};
+
+// See shipments.api.ts's declineShipment comment — this is the real,
+// server-recorded reject; invalidating the searching-pool query means
+// the declined shipment disappears from this driver's list on the next
+// refetch instead of just locally.
+export const useDeclineShipment = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => shipmentsApi.declineShipment(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: shipmentKeys.searching() });
+        },
     });
 };
 

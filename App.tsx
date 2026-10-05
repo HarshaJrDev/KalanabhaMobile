@@ -137,7 +137,7 @@ const App = () => {
                 initialRouteName={
                   showAppFlow && role === 'DRIVER'
                     ? 'DriverTabs'
-                    : showAppFlow && role === 'ADMIN'
+                    : showAppFlow && (role === 'ADMIN' || role === 'FLEET_OWNER')
                       ? 'AdminPanel'
                       : undefined
                 }

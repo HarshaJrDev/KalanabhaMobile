@@ -7,18 +7,20 @@
 
 
 
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
 import { ScreenHeader } from '@components/ScreenHeader';
-import { Wallet, TrendingUp, Package } from 'lucide-react-native';
+import { Wallet, TrendingUp, Package, Landmark } from 'lucide-react-native';
 import { useDriverEarningsSummary } from '@features/shipments/hooks';
 import { AsyncState } from '@components/AsyncState';
 import { EmptyState } from '@components/EmptyState';
 import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
+import { BankDetailsModal } from './BankDetailsModal';
 
 const EarningsScreen = () => {
   const { t } = useTranslation();
+  const [bankModalVisible, setBankModalVisible] = useState(false);
   const {
     data: summary,
     isLoading,
@@ -28,7 +30,14 @@ const EarningsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title={t('earnings.title')} />
+      <ScreenHeader
+        title={t('earnings.title')}
+        rightSlot={
+          <Pressable onPress={() => setBankModalVisible(true)} hitSlop={12}>
+            <Landmark size={20} color="#111827" />
+          </Pressable>
+        }
+      />
 
       <AsyncState
         isLoading={isLoading}
@@ -107,6 +116,11 @@ const EarningsScreen = () => {
           }
         />
       </AsyncState>
+
+      <BankDetailsModal
+        visible={bankModalVisible}
+        onClose={() => setBankModalVisible(false)}
+      />
     </View>
   );
 };

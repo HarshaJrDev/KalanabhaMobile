@@ -49,9 +49,29 @@ export const getMyShipmentHistory = async (): Promise<BackendShipment[]> => {
 };
 
 
-export const getSearchingShipments = async (): Promise<BackendShipment[]> => {
-    const { data } = await apiClient.get<ApiSuccessResponse<BackendShipment[]>>('/shipments/searching');
+export interface SearchingShipmentsFilters {
+    vehicleType?: string;
+    lat?: number;
+    lng?: number;
+    maxDistanceKm?: number;
+    sortBy?: 'recent' | 'price' | 'distance';
+}
+
+export const getSearchingShipments = async (
+    filters?: SearchingShipmentsFilters,
+): Promise<BackendShipment[]> => {
+    const { data } = await apiClient.get<ApiSuccessResponse<BackendShipment[]>>('/shipments/searching', {
+        params: filters,
+    });
     return data.data;
+};
+
+// Real, server-recorded reject — previously the mobile "Decline" button
+// only hid the card locally (setDismissedIncomingId); the backend never
+// knew, so the same shipment kept reappearing for this driver on every
+// poll.
+export const declineShipment = async (id: string): Promise<void> => {
+    await apiClient.post<ApiSuccessResponse<null>>(`/shipments/${id}/decline`);
 };
 
 
