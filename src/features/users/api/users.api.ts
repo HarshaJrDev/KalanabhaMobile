@@ -15,6 +15,7 @@ export interface UpdateProfilePayload {
     displayName?: string;
     phone?: string;
     address?: string;
+    preferredPaymentMode?: string;
 }
 
 export const updateProfile = async (payload: UpdateProfilePayload): Promise<StoredUser> => {

@@ -148,6 +148,7 @@ const TripsScreen = () => {
         emptyIllustration={Images.illustrations.driverNoDeliveries}
       >
         <FlatList
+          showsVerticalScrollIndicator={false}
           data={shipments ?? []}
           keyExtractor={item => item.id}
           renderItem={renderItem}

@@ -57,7 +57,16 @@ const PlacePicker: React.FC<Props> = ({ label, value, areas, onSelect, placehold
     const triggerStyles = useMemo(() => makeTriggerStyles(COLORS), [COLORS]);
     const pickerStyles = useMemo(() => makePickerStyles(COLORS), [COLORS]);
     const [open, setOpen] = useState(false);
-    const { query, setQuery, results: filtered, recents, locateNearestServiceArea, locatingCurrentPosition } = useLocationSearch(areas);
+    const {
+        query,
+        setQuery,
+        results: filtered,
+        recents,
+        locateNearestServiceArea,
+        locatingCurrentPosition,
+        geocodeSuggestions,
+        geocoding,
+    } = useLocationSearch(areas);
     const { data: savedAddresses } = useSavedAddresses();
     const { mutate: createSavedAddress, isPending: savingAddress } = useCreateSavedAddress();
     const [saveLabelFor, setSaveLabelFor] = useState<ServiceArea | null>(null);
@@ -66,6 +75,29 @@ const PlacePicker: React.FC<Props> = ({ label, value, areas, onSelect, placehold
     const handleSelect = (place: ServiceArea) => {
         recordRecentServiceArea(place.id);
         onSelect(place);
+        setOpen(false);
+        setQuery('');
+    };
+
+    // Not one of the admin-configured service areas — a free-form address
+    // the geocoder resolved instead. Shaped as a ServiceArea (synthetic,
+    // never persisted/recorded as "recent") purely so every downstream
+    // consumer (addOrders.tsx, CheckRate.tsx, …) can keep working off a
+    // single ServiceArea-typed value without each needing its own
+    // "or maybe it's a raw address" branch.
+    const handleSelectGeocoded = (suggestion: { displayName: string; lat: number; lng: number }) => {
+        const parts = suggestion.displayName.split(',').map((p) => p.trim()).filter(Boolean);
+        const city = parts.length > 1 ? parts[parts.length - 1] : '';
+        const name = parts.length > 1 ? parts.slice(0, -1).join(', ') : suggestion.displayName;
+        onSelect({
+            id: `geocoded-${suggestion.lat.toFixed(5)}-${suggestion.lng.toFixed(5)}`,
+            name,
+            city,
+            pincode: '',
+            lat: suggestion.lat,
+            lng: suggestion.lng,
+            active: true,
+        } as ServiceArea);
         setOpen(false);
         setQuery('');
     };
@@ -108,7 +140,7 @@ const PlacePicker: React.FC<Props> = ({ label, value, areas, onSelect, placehold
                     >
                         <MapPin color={value ? COLORS.primary : COLORS.textMuted} width={16} height={16} style={triggerStyles.icon} />
                         <Text
-                            style={[triggerStyles.input, { paddingVertical: 0 }, !value && { color: COLORS.placeholder }]}
+                            style={[triggerStyles.input, !value && { color: COLORS.placeholder }]}
                             numberOfLines={1}
                         >
                             {value ? `${value.name}, ${value.city}` : (placeholder ?? t('addOrder.placePickerDefaultPlaceholder'))}
@@ -146,7 +178,7 @@ const PlacePicker: React.FC<Props> = ({ label, value, areas, onSelect, placehold
                         </Text>
                     </TouchableOpacity>
 
-                    <ScrollView keyboardShouldPersistTaps="handled">
+                    <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
                         {!query.trim() && savedAddresses && savedAddresses.length > 0 && (
                             <View>
                                 <Text style={pickerStyles.cityLabel}>{t('addOrder.savedSectionLabel')}</Text>
@@ -187,8 +219,28 @@ const PlacePicker: React.FC<Props> = ({ label, value, areas, onSelect, placehold
                                 ))}
                             </View>
                         )}
-                        {Object.keys(filtered).length === 0 && (
+                        {Object.keys(filtered).length === 0 && geocodeSuggestions.length === 0 && !geocoding && (
                             <Text style={pickerStyles.emptyText}>{t('addOrder.noMatchingLocality')}</Text>
+                        )}
+                        {geocoding && (
+                            <Text style={pickerStyles.emptyText}>{t('addOrder.searchingAddresses')}</Text>
+                        )}
+                        {geocodeSuggestions.length > 0 && (
+                            <View>
+                                <Text style={pickerStyles.cityLabel}>{t('addOrder.otherAddressesSectionLabel')}</Text>
+                                {geocodeSuggestions.map((s) => (
+                                    <TouchableOpacity
+                                        key={`geocoded-${s.lat}-${s.lng}`}
+                                        style={pickerStyles.placeRow}
+                                        onPress={() => handleSelectGeocoded(s)}
+                                    >
+                                        <MapPin size={15} color={COLORS.textMuted} />
+                                        <View style={{ flex: 1, marginLeft: 10 }}>
+                                            <Text style={pickerStyles.placeName} numberOfLines={2}>{s.displayName}</Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                         )}
                         {Object.entries(filtered).map(([city, places]) => (
                             <View key={city}>
@@ -271,7 +323,7 @@ const makeTriggerStyles = (COLORS: PickerColors) => StyleSheet.create({
     },
     rowError: { borderColor: COLORS.danger },
     icon: { marginRight: 8 },
-    input: { flex: 1, fontSize: 14, color: COLORS.text, height: '100%' },
+    input: { flex: 1, fontSize: 14, color: COLORS.text, fontFamily: FONTS.PRIMARY },
     error: { color: COLORS.danger, fontSize: 11, marginTop: 3 },
 });
 
@@ -299,7 +351,19 @@ const makePickerStyles = (COLORS: PickerColors) => StyleSheet.create({
     saveOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 },
     saveCard: { backgroundColor: COLORS.surface, borderRadius: RADIUS.md, padding: 20 },
     saveActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 12 },
-    searchInput: { flex: 1, fontSize: 14, color: COLORS.text },
+    // height:'100%' is what keeps text vertically centered against the
+    // 46px row consistently cross-platform — Android's default
+    // includeFontPadding otherwise lets the text/placeholder sit
+    // slightly off-center, and inconsistent with the 48px InputField
+    // rows used right above this in addOrders.tsx's form.
+    searchInput: {
+        flex: 1,
+        height: '100%',
+        paddingVertical: 0,
+        textAlignVertical: 'center',
+        fontSize: 14,
+        color: COLORS.text,
+    },
     cityLabel: {
         fontSize: 12, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.textMuted,
         letterSpacing: 0.4, textTransform: 'uppercase',

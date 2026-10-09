@@ -1,3 +1,5 @@
+import type { VehicleConfig } from '@features/settings/types';
+
 export type AddOrderPrefill = {
   category?: 'PARCEL' | 'HOUSE_SHIFTING';
   pickup?: string;
@@ -31,6 +33,18 @@ export type RootStackParamList = {
 
   Search: undefined;
   CheckRate: undefined;
+  VehicleDetails: {
+    vehicleId: string;
+    vehicles: VehicleConfig[];
+    onConfirm?: (vehicle: VehicleConfig) => void;
+    popCount?: number;
+  };
+  AllVehicles: {
+    vehicles: VehicleConfig[];
+    selectedName?: string;
+    onConfirm: (vehicle: VehicleConfig) => void;
+  };
+  ShipmentHistory: { initialStatus?: string } | undefined;
   QRScan: undefined;
   Inbox: undefined;
   Settings: undefined;

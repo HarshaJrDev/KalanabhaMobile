@@ -33,6 +33,7 @@ export interface StoredUser {
     notifyOrderUpdates: boolean;
     notifyPromotions: boolean;
     notifyReminders: boolean;
+    preferredPaymentMode: string | null;
     createdAt: string;
     updatedAt: string;
 }

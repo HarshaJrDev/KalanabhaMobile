@@ -194,8 +194,20 @@ export const saveDeliverySignature = async (id: string, strokes: { x: number; y:
 
 
 
-export const cancelShipment = async (id: string, reason?: string): Promise<BackendShipment> => {
-    const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment>>(`/shipments/${id}/cancel`, { reason });
+export interface CancellationPreview {
+    cancellable: boolean;
+    paymentStatus: BackendShipment['paymentStatus'];
+    cancellationFee: number;
+    refundAmount: number;
+}
+
+export const getCancellationPreview = async (id: string): Promise<CancellationPreview> => {
+    const { data } = await apiClient.get<ApiSuccessResponse<CancellationPreview>>(`/shipments/${id}/cancellation-preview`);
+    return data.data;
+};
+
+export const cancelShipment = async (id: string, reason?: string): Promise<BackendShipment & { cancellationFee: number; refundAmount: number }> => {
+    const { data } = await apiClient.post<ApiSuccessResponse<BackendShipment & { cancellationFee: number; refundAmount: number }>>(`/shipments/${id}/cancel`, { reason });
     return data.data;
 };
 

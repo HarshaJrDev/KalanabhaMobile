@@ -20,9 +20,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withDelay,
-  withRepeat,
-  withSequence,
   Easing,
 } from 'react-native-reanimated';
 import {
@@ -97,32 +94,17 @@ export const EmptyState: React.FC<Props> = ({
   const Icon = VARIANT_ICON[variant];
 
   const entrance = useSharedValue(0);
-  const floatY = useSharedValue(0);
 
   useEffect(() => {
     entrance.value = withTiming(1, {
       duration: 420,
       easing: Easing.out(Easing.cubic),
     });
-    floatY.value = withDelay(
-      420,
-      withRepeat(
-        withSequence(
-          withTiming(-6, { duration: 1400, easing: Easing.inOut(Easing.sin) }),
-          withTiming(0, { duration: 1400, easing: Easing.inOut(Easing.sin) }),
-        ),
-        -1,
-        true,
-      ),
-    );
-  }, [entrance, floatY]);
+  }, [entrance]);
 
   const sceneStyle = useAnimatedStyle(() => ({
     opacity: entrance.value,
-    transform: [
-      { scale: 0.85 + entrance.value * 0.15 },
-      { translateY: floatY.value },
-    ],
+    transform: [{ scale: 0.85 + entrance.value * 0.15 }],
   }));
 
   const textStyle = useAnimatedStyle(() => ({

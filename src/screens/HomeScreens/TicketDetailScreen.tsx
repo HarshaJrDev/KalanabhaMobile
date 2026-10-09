@@ -77,6 +77,7 @@ const TicketDetailScreen = () => {
                 <SkeletonDetail />
             ) : (
                 <FlatList
+                    showsVerticalScrollIndicator={false}
                     data={ticket.messages ?? []}
                     keyExtractor={(m) => m.id}
                     contentContainerStyle={styles.list}

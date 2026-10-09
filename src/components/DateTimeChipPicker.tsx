@@ -88,7 +88,12 @@ export const DateTimeChipPicker: React.FC<DateTimeChipPickerProps> = ({ colors, 
             </View>
 
             <Text style={styles.subLabel}>{t('addOrder.scheduleTimeLabel')}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.timeScroll}>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.timeScroll}
+                contentContainerStyle={styles.timeScrollContent}
+            >
                 {SCHEDULE_TIME_OPTIONS.map(({ hour, minute }) => {
                     const label = formatScheduleTime(hour, minute);
                     const current = value ? new Date(value) : null;
@@ -101,7 +106,7 @@ export const DateTimeChipPicker: React.FC<DateTimeChipPickerProps> = ({ colors, 
                                 merged.setHours(hour, minute, 0, 0);
                                 onChange(merged.toISOString());
                             }}
-                            style={[styles.chip, { marginRight: 8 }, isSelected && styles.chipActive]}
+                            style={[styles.chip, isSelected && styles.chipActive]}
                             activeOpacity={0.8}
                         >
                             <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>{label}</Text>
@@ -136,6 +141,14 @@ const makeStyles = (colors: DateTimeChipPickerColors) => StyleSheet.create({
     chipText: { fontSize: 12, color: colors.textSecondary, fontWeight: '500' },
     chipTextActive: { color: colors.primary, fontWeight: '700' },
     timeScroll: { marginBottom: 12 },
+    // Was a hardcoded `{ marginRight: 8 }` inline on each chip instead of
+    // here — meant the spacing wasn't tracked by the shared `chip` style
+    // and the last chip had no trailing space before the screen edge
+    // (chipGrid's wrap layout gets even gaps on all sides via its own
+    // `gap`; this horizontal scroller had none). Same `gap` approach as
+    // chipGrid now, plus real end padding so the list doesn't look
+    // clipped flush against the edge.
+    timeScrollContent: { flexDirection: 'row', gap: 8, paddingRight: 16 },
     summaryRow: {
         flexDirection: 'row', alignItems: 'center', gap: 6,
         backgroundColor: colors.primaryLight, borderRadius: 12,

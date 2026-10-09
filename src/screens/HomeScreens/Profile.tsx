@@ -156,14 +156,22 @@ const ProfileScreen = () => {
             </LinearGradient>
 
             <Animated.View style={[styles.statsContainer, entranceStyle]}>
-                <View style={styles.statCard}>
+                <TouchableOpacity
+                    style={styles.statCard}
+                    activeOpacity={0.75}
+                    onPress={() => (navigation as any).navigate('ShipmentHistory', { initialStatus: 'all' })}
+                >
                     <Text style={styles.statTitle}>{t('profile.totalShipments')}</Text>
                     <Text style={styles.statValue}>{totalShipments}</Text>
-                </View>
-                <View style={styles.statCard}>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.statCard}
+                    activeOpacity={0.75}
+                    onPress={() => (navigation as any).navigate('ShipmentHistory', { initialStatus: 'delivered' })}
+                >
                     <Text style={styles.statTitle}>{t('profile.delivered')}</Text>
                     <Text style={styles.statValue}>{deliveredCount}</Text>
-                </View>
+                </TouchableOpacity>
             </Animated.View>
 
             <ScrollView

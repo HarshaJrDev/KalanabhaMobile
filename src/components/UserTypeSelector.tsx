@@ -102,6 +102,7 @@ const UserTypeSelector: FC<Props> = ({ value, onChange }) => {
                     <Text style={styles.title}>{t('userTypeSelector.selectAccountType')}</Text>
 
                     <FlatList
+                        showsVerticalScrollIndicator={false}
                         data={OPTIONS}
                         keyExtractor={i => i.value}
                         renderItem={renderItem}

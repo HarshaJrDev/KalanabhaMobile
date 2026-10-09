@@ -112,6 +112,7 @@ const NotificationScreen = () => {
         emptyIllustration={Images.illustrations.emptyNotifications}
       >
         <FlatList
+          showsVerticalScrollIndicator={false}
           data={notifications ?? []}
           keyExtractor={item => item.id}
           renderItem={renderItem}

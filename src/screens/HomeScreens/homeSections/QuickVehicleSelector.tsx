@@ -15,10 +15,13 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export const VEHICLE_CARD_WIDTH = SCREEN_WIDTH * 0.72;
 export const VEHICLE_CARD_GAP = SPACING.m;
 
+const HEAVY_CARGO_THRESHOLD_KG = 10_000;
+
 type VehicleCardProps = {
     vehicle: VehicleConfig;
     index: number;
     isFirst: boolean;
+    badge: string | null;
     cardWidth: number;
     cardStep: number;
     scrollX: SharedValue<number>;
@@ -27,7 +30,7 @@ type VehicleCardProps = {
     onPress: () => void;
 };
 
-const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, index, isFirst, cardWidth, cardStep, scrollX, styles, colors: COLORS, onPress }) => {
+const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, index, isFirst, badge, cardWidth, cardStep, scrollX, styles, colors: COLORS, onPress }) => {
     const { t } = useTranslation();
     const animatedStyle = useAnimatedStyle(() => {
         const center = index * cardStep;
@@ -51,23 +54,15 @@ const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, index, isFirst, card
                         backgroundColor={COLORS.primaryLight}
                         iconColor={COLORS.primary}
                     />
-                    {isFirst && (
+                    {badge && (
                         <View style={styles.vehicleFastestTag}>
-                            <Text style={styles.vehicleFastestTagText}>{t('home.fastestDispatch')}</Text>
+                            <Text style={styles.vehicleFastestTagText}>{badge}</Text>
                         </View>
                     )}
                 </View>
 
                 <View style={styles.vehicleCardBody}>
-                    <View style={styles.vehicleTopRow}>
-                        <Text style={styles.vehicleLabel}>{vehicle.name}</Text>
-                        {isFirst && (
-                            <View style={styles.vehicleArrivalRow}>
-                                <View style={styles.vehicleArrivalDot} />
-                                <Text style={styles.vehicleArrivalText}>{t('home.availableNow')}</Text>
-                            </View>
-                        )}
-                    </View>
+                    <Text style={styles.vehicleLabel}>{vehicle.name}</Text>
                     <Text style={styles.vehicleDesc}>
                         {t('home.upToKg', { weight: vehicle.maxWeight })}
                         {vehicle.specialConditions.length > 0 ? ` · ${vehicle.specialConditions.join(', ')}` : ''}
@@ -78,7 +73,7 @@ const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, index, isFirst, card
                             <Text style={styles.vehicleFareValue}>{t('home.fromPrice', { price: Math.round(vehicle.baseRate) })}</Text>
                         </View>
                         <View style={styles.vehicleBookBtn}>
-                            <Text style={styles.vehicleBookBtnText}>{t('home.bookVehicle', { vehicle: vehicle.name })}</Text>
+                            <Text style={styles.vehicleBookBtnText}>{t('home.viewVehicleDetails')}</Text>
                             <ArrowRight size={13} color="#fff" />
                         </View>
                     </View>
@@ -92,14 +87,26 @@ interface Props {
     vehicles: VehicleConfig[];
     scrollX: SharedValue<number>;
     onScroll: (e: any) => void;
-    onSelect: (vehicleName: string) => void;
+    onSelect: (vehicle: VehicleConfig) => void;
+    onViewAll: () => void;
     colors: HomeColors;
     fonts: HomeFonts;
 }
 
-const QuickVehicleSelector: React.FC<Props> = ({ vehicles, scrollX, onScroll, onSelect, colors: COLORS, fonts: FONTS }) => {
+const QuickVehicleSelector: React.FC<Props> = ({ vehicles, scrollX, onScroll, onSelect, onViewAll, colors: COLORS, fonts: FONTS }) => {
     const styles = React.useMemo(() => makeStyles(COLORS, FONTS), [COLORS, FONTS]);
     const { t } = useTranslation();
+
+    const bestValueId = React.useMemo(() => {
+        if (vehicles.length === 0) return null;
+        return vehicles.reduce((best, v) => (v.ratePerKm < best.ratePerKm ? v : best), vehicles[0]).id;
+    }, [vehicles]);
+
+    const badgeFor = (vehicle: VehicleConfig): string | null => {
+        if (vehicle.id === bestValueId) return t('addOrder.vehicleBadgeBestValue');
+        if (vehicle.maxWeight >= HEAVY_CARGO_THRESHOLD_KG) return t('addOrder.vehicleBadgeHeavyCargo');
+        return null;
+    };
 
     if (vehicles.length === 0) return null;
 
@@ -110,7 +117,9 @@ const QuickVehicleSelector: React.FC<Props> = ({ vehicles, scrollX, onScroll, on
                     <Text style={styles.sectionTitle}>{t('home.chooseYourVehicle')}</Text>
                     <Text style={styles.vehicleSectionSubtitle}>{t('home.realAdminRatesHint')}</Text>
                 </View>
-                <Text style={styles.vehicleReadyText}>{t('home.typesReady', { count: vehicles.length })}</Text>
+                <Pressable onPress={onViewAll} hitSlop={8}>
+                    <Text style={styles.vehicleReadyText}>{t('vehicleDetails.viewAll')}</Text>
+                </Pressable>
             </View>
             <Reanimated.ScrollView
                 horizontal
@@ -127,12 +136,13 @@ const QuickVehicleSelector: React.FC<Props> = ({ vehicles, scrollX, onScroll, on
                         vehicle={v}
                         index={index}
                         isFirst={index === 0}
+                        badge={badgeFor(v)}
                         cardWidth={VEHICLE_CARD_WIDTH}
                         cardStep={VEHICLE_CARD_WIDTH + VEHICLE_CARD_GAP}
                         scrollX={scrollX}
                         styles={styles}
                         colors={COLORS}
-                        onPress={() => onSelect(v.name)}
+                        onPress={() => onSelect(v)}
                     />
                 ))}
             </Reanimated.ScrollView>
@@ -153,16 +163,12 @@ const makeStyles = (COLORS: HomeColors, FONTS: HomeFonts) => StyleSheet.create({
         borderWidth: 1, borderColor: COLORS.border,
         shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 4,
     },
-    vehicleCardFeatured: { borderColor: COLORS.primary, borderWidth: 1.5 },
+    vehicleCardFeatured: { borderColor: COLORS.primary },
     bannerWrap: { width: '100%', height: 132, position: 'relative' },
     vehicleFastestTag: { position: 'absolute', top: 0, right: 0, backgroundColor: COLORS.primary, paddingHorizontal: 10, paddingVertical: 5, borderBottomLeftRadius: 10 },
     vehicleFastestTagText: { color: '#fff', fontSize: 9, fontFamily: FONTS.BOLD_PRIMARY, letterSpacing: 0.3 },
     vehicleCardBody: { padding: 16 },
-    vehicleTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
-    vehicleLabel: { fontSize: 17, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.textPrimary },
-    vehicleArrivalRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-    vehicleArrivalDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.success },
-    vehicleArrivalText: { fontSize: 11, fontFamily: FONTS.MEDIUM_PRIMARY, color: COLORS.success },
+    vehicleLabel: { fontSize: 17, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.textPrimary, marginBottom: 8 },
     vehicleDesc: { fontSize: 12, fontFamily: FONTS.PRIMARY, color: COLORS.textSecondary, marginBottom: 14, lineHeight: 17 },
     vehicleFareRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     vehicleFareLabel: { fontSize: 10, fontFamily: FONTS.PRIMARY, color: COLORS.textLight },

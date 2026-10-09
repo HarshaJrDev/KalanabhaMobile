@@ -44,7 +44,7 @@ const ProfileCom: React.FC<ProfileProps> = ({
     };
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
             {}
             <View style={styles.header}>
                 {avatarUrl ? (

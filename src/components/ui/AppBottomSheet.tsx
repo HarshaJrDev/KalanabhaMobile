@@ -58,6 +58,17 @@ export const AppBottomSheet = forwardRef<AppBottomSheetRef, Props>(({ children, 
             handleIndicatorStyle={styles.handle}
             backgroundStyle={styles.background}
             onDismiss={onDismiss}
+            // Every caller (BankDetailsModal, Profile's edit sheet, …) puts
+            // real TextInputs inside this sheet with zero keyboard
+            // accommodation before this — focusing a field risked the
+            // keyboard just covering it instead of the sheet animating
+            // out of the way. "interactive" is @gorhom/bottom-sheet's own
+            // keyboard-aware offset animation, which pairs with this
+            // app's AndroidManifest `adjustPan` (set earlier for the same
+            // keyboard-vs-bottom-UI class of bug elsewhere) rather than
+            // fighting it the way `adjustResize` would.
+            keyboardBehavior="interactive"
+            keyboardBlurBehavior="restore"
         >
             <BottomSheetView style={styles.content}>{children}</BottomSheetView>
         </BottomSheetModal>

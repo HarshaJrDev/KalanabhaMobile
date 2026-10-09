@@ -130,7 +130,7 @@ export const AddressFormModal: React.FC<Props> = ({ visible, onClose, initial, i
                     </Pressable>
                 </View>
 
-                <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
+                <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
                     <Text style={styles.fieldLabel}>{t('savedAddresses.category')}</Text>
                     <View style={styles.typeRow}>
                         {TYPE_OPTIONS.map((opt) => {

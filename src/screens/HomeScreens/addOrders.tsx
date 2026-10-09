@@ -57,6 +57,8 @@ import {
   Pill,
   Tag,
   Calendar,
+  Users,
+  PackageOpen,
   type LucideIcon,
 } from 'lucide-react-native';
 import { registerFCMToken } from '@utils/cm';
@@ -68,6 +70,7 @@ import {
 } from '@features/settings/hooks';
 import { useVehicleSearch } from '@features/vehicles/useVehicleSearch';
 import { useAuthStore } from '@features/store/authStore';
+import { useUpdateProfile } from '@hooks/useUpdateProfile';
 import type { ServiceArea } from '@features/settings/types';
 import VehicleSelectCards from '@components/VehicleSelectCards';
 import PlacePicker from '@components/PlacePicker';
@@ -146,10 +149,13 @@ type PackageForm = {
   quantity: string;
   fragile: boolean;
   insurance: boolean;
+  loadingHelp: boolean;
+  unloadingHelp: boolean;
+  packaging: boolean;
   category: string;
   price: number;
-  
-  
+
+
   helpersCount: number;
 };
 
@@ -390,6 +396,9 @@ const INIT_PACKAGE: PackageForm = {
   quantity: '1',
   fragile: false,
   insurance: false,
+  loadingHelp: false,
+  unloadingHelp: false,
+  packaging: false,
   category: 'Documents',
   price: 0,
   helpersCount: 1,
@@ -406,6 +415,17 @@ const INIT_ORDER: OrderDetailsForm = {
   scheduledAt: '',
   deliveryInstructions: [],
 };
+
+// Dev-only "random test order" fill — see fillRandomTestOrder below.
+// Plain fake names/phones for local testing, never sent anywhere except
+// this device's own backend in a __DEV__ build.
+const DEV_TEST_FIRST_NAMES = ['Arjun', 'Priya', 'Rahul', 'Sneha', 'Vikram', 'Anita', 'Karthik', 'Divya'];
+const DEV_TEST_LAST_NAMES = ['Reddy', 'Sharma', 'Verma', 'Iyer', 'Rao', 'Nair', 'Gupta', 'Patel'];
+const randomDevName = () =>
+  `${DEV_TEST_FIRST_NAMES[Math.floor(Math.random() * DEV_TEST_FIRST_NAMES.length)]} ${
+    DEV_TEST_LAST_NAMES[Math.floor(Math.random() * DEV_TEST_LAST_NAMES.length)]
+  }`;
+const randomDevPhone = () => `9${Math.floor(100000000 + Math.random() * 900000000)}`;
 
 // ─── REUSABLE SUB-COMPONENTS ──────────────────────────────────────────────────
 
@@ -1673,6 +1693,72 @@ const StepPackage = ({
             thumbColor={data.insurance ? COLORS.primary : '#f4f3f4'}
           />
         </View>
+
+        <View style={pkgStyles.divider} />
+
+        <View style={pkgStyles.toggleRow}>
+          <View style={pkgStyles.toggleLeft}>
+            <Users color={COLORS.primary} width={18} height={18} />
+            <View style={{ marginLeft: 10 }}>
+              <Text style={pkgStyles.toggleTitle}>
+                {t('addOrder.loadingHelpTitle')}
+              </Text>
+              <Text style={pkgStyles.toggleSub}>
+                {t('addOrder.loadingHelpSubtitle')}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={data.loadingHelp}
+            onValueChange={v => onChange('loadingHelp', v)}
+            trackColor={{ false: COLORS.border, true: COLORS.primaryLight }}
+            thumbColor={data.loadingHelp ? COLORS.primary : '#f4f3f4'}
+          />
+        </View>
+
+        <View style={pkgStyles.divider} />
+
+        <View style={pkgStyles.toggleRow}>
+          <View style={pkgStyles.toggleLeft}>
+            <Users color={COLORS.primary} width={18} height={18} />
+            <View style={{ marginLeft: 10 }}>
+              <Text style={pkgStyles.toggleTitle}>
+                {t('addOrder.unloadingHelpTitle')}
+              </Text>
+              <Text style={pkgStyles.toggleSub}>
+                {t('addOrder.unloadingHelpSubtitle')}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={data.unloadingHelp}
+            onValueChange={v => onChange('unloadingHelp', v)}
+            trackColor={{ false: COLORS.border, true: COLORS.primaryLight }}
+            thumbColor={data.unloadingHelp ? COLORS.primary : '#f4f3f4'}
+          />
+        </View>
+
+        <View style={pkgStyles.divider} />
+
+        <View style={pkgStyles.toggleRow}>
+          <View style={pkgStyles.toggleLeft}>
+            <PackageOpen color={COLORS.primary} width={18} height={18} />
+            <View style={{ marginLeft: 10 }}>
+              <Text style={pkgStyles.toggleTitle}>
+                {t('addOrder.packagingServiceTitle')}
+              </Text>
+              <Text style={pkgStyles.toggleSub}>
+                {t('addOrder.packagingServiceSubtitle')}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={data.packaging}
+            onValueChange={v => onChange('packaging', v)}
+            trackColor={{ false: COLORS.border, true: COLORS.primaryLight }}
+            thumbColor={data.packaging ? COLORS.primary : '#f4f3f4'}
+          />
+        </View>
       </View>
 
       <NavButtons
@@ -1825,8 +1911,11 @@ const StepOrderDetails = ({
 }) => {
   const { colors: BRAND } = useAppTheme();
   const { t } = useTranslation();
+  const navigation = useNavigation<any>();
   const COLORS = useMemo(() => makeOrderColors(BRAND), [BRAND]);
   const odStyles = useMemo(() => makeOdStyles(COLORS), [COLORS]);
+  const user = useAuthStore(s => s.user);
+  const { mutate: updatePreferredPaymentMode, isPending: savingPaymentPref } = useUpdateProfile();
   const { data: businessSettingsData } = useBusinessSettings();
   const expressSurcharge = Number(
     businessSettingsData?.find(s => s.key === 'service_type_express_surcharge')
@@ -1986,11 +2075,33 @@ const StepOrderDetails = ({
       <VehicleSelectCards
         vehicles={activeVehicleConfigs}
         selectedName={data.vehicleType}
-        onSelect={vt => onChange('vehicleType', vt.name.toLowerCase())}
-        maxWeightLabel={vt =>
-          t('addOrder.vehicleMaxWeightLabel', { maxWeight: vt.maxWeight })
+        onSelect={vt =>
+          navigation.navigate('VehicleDetails', {
+            vehicleId: vt.id,
+            vehicles: activeVehicleConfigs,
+            onConfirm: (v: typeof activeVehicleConfigs[number]) =>
+              onChange('vehicleType', v.name.toLowerCase()),
+          })
         }
       />
+      {activeVehicleConfigs.length > 0 && (
+        <TouchableOpacity
+          style={odStyles.viewAllVehiclesBtn}
+          onPress={() =>
+            navigation.navigate('AllVehicles', {
+              vehicles: activeVehicleConfigs,
+              selectedName: data.vehicleType,
+              onConfirm: (v: typeof activeVehicleConfigs[number]) =>
+                onChange('vehicleType', v.name.toLowerCase()),
+            })
+          }
+          activeOpacity={0.7}
+        >
+          <Text style={odStyles.viewAllVehiclesBtnText}>
+            {t('addOrder.viewAndCompareVehicles')}
+          </Text>
+        </TouchableOpacity>
+      )}
 
       {}
       <SectionHeader title={t('addOrder.paymentMethodSectionTitle')} />
@@ -2034,6 +2145,25 @@ const StepOrderDetails = ({
           </View>
         </TouchableOpacity>
       ))}
+      {user?.preferredPaymentMode !== data.paymentMode && (
+        <TouchableOpacity
+          style={odStyles.setDefaultPaymentBtn}
+          disabled={savingPaymentPref}
+          onPress={() =>
+            updatePreferredPaymentMode(
+              { preferredPaymentMode: data.paymentMode },
+              {
+                onSuccess: () => showToast(t('addOrder.defaultPaymentSaved'), 'success'),
+                onError: () => showToast(t('addOrder.defaultPaymentSaveFailed'), 'error'),
+              },
+            )
+          }
+        >
+          <Text style={odStyles.setDefaultPaymentBtnText}>
+            {savingPaymentPref ? t('addOrder.saving') : t('addOrder.setAsDefaultPayment')}
+          </Text>
+        </TouchableOpacity>
+      )}
 
       {}
       <SectionHeader title={t('addOrder.promoCodeSectionTitle')} />
@@ -2530,6 +2660,24 @@ const StepOrderDetails = ({
               <Text style={odStyles.summVal}>₹{fareEstimate.insurancePremium}</Text>
             </View>
           )}
+          {!!fareEstimate.loadingHelpFee && (
+            <View style={odStyles.summRow}>
+              <Text style={odStyles.summKey}>{t('addOrder.summaryLoadingHelpLabel')}</Text>
+              <Text style={odStyles.summVal}>₹{fareEstimate.loadingHelpFee}</Text>
+            </View>
+          )}
+          {!!fareEstimate.unloadingHelpFee && (
+            <View style={odStyles.summRow}>
+              <Text style={odStyles.summKey}>{t('addOrder.summaryUnloadingHelpLabel')}</Text>
+              <Text style={odStyles.summVal}>₹{fareEstimate.unloadingHelpFee}</Text>
+            </View>
+          )}
+          {!!fareEstimate.packagingFee && (
+            <View style={odStyles.summRow}>
+              <Text style={odStyles.summKey}>{t('addOrder.summaryPackagingLabel')}</Text>
+              <Text style={odStyles.summVal}>₹{fareEstimate.packagingFee}</Text>
+            </View>
+          )}
           {promoDiscount > 0 && (
             <View style={odStyles.summRow}>
               <Text style={[odStyles.summKey, { color: COLORS.success }]}>
@@ -2635,6 +2783,30 @@ const makeOdStyles = (COLORS: OrderColors) =>
     addStopBtnDisabled: { borderColor: COLORS.border },
     addStopBtnText: {
       fontSize: 13,
+      fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+      color: COLORS.primary,
+    },
+    viewAllVehiclesBtn: {
+      alignSelf: 'flex-start',
+      marginTop: 10,
+      marginBottom: 4,
+      paddingVertical: 6,
+      paddingHorizontal: 2,
+    },
+    viewAllVehiclesBtnText: {
+      fontSize: 13,
+      fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+      color: COLORS.primary,
+      textDecorationLine: 'underline',
+    },
+    setDefaultPaymentBtn: {
+      alignSelf: 'flex-start',
+      marginTop: 8,
+      marginBottom: 4,
+      paddingVertical: 6,
+    },
+    setDefaultPaymentBtnText: {
+      fontSize: 12,
       fontFamily: FONTS.SEMI_BOLD_PRIMARY,
       color: COLORS.primary,
     },
@@ -3383,14 +3555,18 @@ const NewOrder = () => {
   const [stops, setStops] = useState<
     { id: string; place: ServiceArea; landmark: string }[]
   >([]);
-  const [orderDetails, setOrderDetails] = useState<OrderDetailsForm>(
-    prefill?.vehicleType
-      ? {
-          ...INIT_ORDER,
-          vehicleType: prefill.vehicleType as OrderDetailsForm['vehicleType'],
-        }
-      : INIT_ORDER,
-  );
+  const [orderDetails, setOrderDetails] = useState<OrderDetailsForm>(() => ({
+    ...INIT_ORDER,
+    ...(prefill?.vehicleType
+      ? { vehicleType: prefill.vehicleType as OrderDetailsForm['vehicleType'] }
+      : null),
+    // A saved preference (Profile > set via the payment step's "Save as
+    // default") pre-selects this step instead of always defaulting to
+    // prepaid — real stored data, not a fake remembered card/UPI method.
+    ...(user?.preferredPaymentMode
+      ? { paymentMode: user.preferredPaymentMode as OrderDetailsForm['paymentMode'] }
+      : null),
+  }));
   const [submitting, setSubmitting] = useState(false);
   const [trackingId, setTrackingId] = useState('');
   const [createdShipmentId, setCreatedShipmentId] = useState('');
@@ -3401,6 +3577,10 @@ const NewOrder = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const { mutateAsync: payForShipment } = usePayForShipment();
   const { mutateAsync: createShipment } = useCreateShipment();
+  // Dev-only "random test order" — see fillRandomTestOrder/the
+  // auto-submit effect below, both gated behind __DEV__.
+  const { data: devVehicleConfigs } = useVehicleConfigs();
+  const [devAutoSubmitPending, setDevAutoSubmitPending] = useState(false);
 
   const slideAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -3429,6 +3609,9 @@ const NewOrder = () => {
     category,
     category === 'HOUSE_SHIFTING' ? pkg.helpersCount : undefined,
     pkg.insurance,
+    pkg.loadingHelp,
+    pkg.unloadingHelp,
+    pkg.packaging,
   );
 
   
@@ -3679,6 +3862,64 @@ const NewOrder = () => {
     [clearSubmitIdempotencyKey],
   );
 
+  // Dev-only: fills every step with real, valid random data (two distinct
+  // real service areas, a real active vehicle type) and flags
+  // devAutoSubmitPending — the effect below waits for the resulting fare
+  // estimate to resolve, then calls handleSubmit itself, so one tap
+  // produces a real created shipment without stepping through the wizard.
+  const fillRandomTestOrder = useCallback(() => {
+    if (activeAreas.length < 2) {
+      showToast('Need at least 2 active service areas to create a random test order', 'error');
+      return;
+    }
+    const shuffledAreas = [...activeAreas].sort(() => Math.random() - 0.5);
+    const pickupArea = shuffledAreas[0];
+    const dropArea = shuffledAreas[1];
+    const activeDevVehicles = (devVehicleConfigs ?? []).filter(v => v.active);
+    const randomVehicle =
+      activeDevVehicles.length > 0
+        ? activeDevVehicles[Math.floor(Math.random() * activeDevVehicles.length)]
+        : null;
+
+    setCategory('PARCEL');
+    setSender(prev => ({
+      ...prev,
+      name: randomDevName(),
+      phone: randomDevPhone(),
+      email: `test.sender.${Date.now()}@example.com`,
+      landmark: '',
+    }));
+    setReceiver({
+      name: randomDevName(),
+      phone: randomDevPhone(),
+      email: `test.receiver.${Date.now()}@example.com`,
+      landmark: '',
+      address: '',
+      city: '',
+      pincode: '',
+    });
+    selectPickupPlace(pickupArea);
+    selectDropPlace(dropArea);
+    setPkg(prev => ({
+      ...prev,
+      weight: String(Math.floor(Math.random() * 20) + 1),
+      quantity: '1',
+    }));
+    if (randomVehicle) {
+      setOrderDetails(prev => ({ ...prev, vehicleType: randomVehicle.name.toLowerCase() }));
+    }
+    // A driver only sees this in their Searching list if their own
+    // vehicleType matches exactly (DispatchService's eligibility guard,
+    // mirrored by useSearchingShipments' query) — the single most common
+    // reason a freshly-booked test order "doesn't reach the driver" is
+    // this not matching the test driver account's vehicle, not a bug.
+    showToast(
+      `Booked as ${randomVehicle?.name ?? orderDetails.vehicleType} — the test driver account needs that same vehicle type to see it in Searching`,
+      'info',
+    );
+    setDevAutoSubmitPending(true);
+  }, [activeAreas, devVehicleConfigs, selectPickupPlace, selectDropPlace, orderDetails.vehicleType]);
+
   const addStop = useCallback(
     (place: ServiceArea, landmark: string) => {
       clearSubmitIdempotencyKey();
@@ -3794,6 +4035,9 @@ const NewOrder = () => {
           helpersCount: isHouseShifting ? pkg.helpersCount : undefined,
           fragile: pkg.fragile,
           insuranceRequested: pkg.insurance,
+          loadingHelpRequested: pkg.loadingHelp,
+          unloadingHelpRequested: pkg.unloadingHelp,
+          packagingRequested: pkg.packaging,
           promoCode: orderDetails.promoCode.trim() || undefined,
           scheduledAt:
             orderDetails.scheduled && orderDetails.scheduledAt
@@ -3860,6 +4104,19 @@ const NewOrder = () => {
     createShipment,
     payForShipment,
   ]);
+
+  // fillRandomTestOrder above sets state and flips this flag; the fare
+  // estimate it depends on resolves asynchronously (debounced network
+  // call), so submission has to wait here rather than firing immediately.
+  useEffect(() => {
+    if (!devAutoSubmitPending || fareEstimate.loading) return;
+    setDevAutoSubmitPending(false);
+    if (fareEstimate.price == null) {
+      showToast('Could not get a fare for the random test order — try again', 'error');
+      return;
+    }
+    handleSubmit();
+  }, [devAutoSubmitPending, fareEstimate.loading, fareEstimate.price, handleSubmit]);
 
   const handleDone = useCallback(() => {
     setShowSuccess(false);
@@ -3966,6 +4223,19 @@ const NewOrder = () => {
         onDone={handleDone}
         onViewOrder={handleViewOrder}
       />
+
+      {__DEV__ && (
+        <TouchableOpacity
+          style={mainStyles.devRandomOrderBtn}
+          onPress={fillRandomTestOrder}
+          disabled={submitting || devAutoSubmitPending}
+          activeOpacity={0.8}
+        >
+          <Text style={mainStyles.devRandomOrderBtnText}>
+            {devAutoSubmitPending || submitting ? 'Booking…' : '🧪 Book Random Order'}
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -3979,5 +4249,24 @@ const makeMainStyles = (COLORS: OrderColors) =>
       flex: 1,
       paddingHorizontal: 20,
       paddingTop: 20,
+    },
+    devRandomOrderBtn: {
+      position: 'absolute',
+      right: 16,
+      bottom: 24,
+      backgroundColor: '#111827',
+      borderRadius: 999,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    devRandomOrderBtnText: {
+      color: '#fff',
+      fontSize: 12,
+      fontWeight: '700',
     },
   });

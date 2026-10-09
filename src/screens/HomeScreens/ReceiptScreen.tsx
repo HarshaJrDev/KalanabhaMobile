@@ -87,7 +87,7 @@ const ReceiptScreen = () => {
                 }
             />
 
-            <ScrollView contentContainerStyle={styles.content}>
+            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
                 <View style={styles.card}>
                     <Text style={styles.brand}>Kalanabha</Text>
                     <Text style={styles.trackingId}>{shipment.trackingId}</Text>

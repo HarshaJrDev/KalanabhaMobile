@@ -168,6 +168,7 @@ const SavedAddressesScreen = () => {
         <SkeletonList />
       ) : (
         <FlatList
+          showsVerticalScrollIndicator={false}
           data={addresses ?? []}
           keyExtractor={a => a.id}
           contentContainerStyle={styles.list}

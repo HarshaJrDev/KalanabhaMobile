@@ -37,12 +37,12 @@ export const useMyShipments = () => {
 
 
 
-export const useMyShipmentsAsDriver = () => {
+export const useMyShipmentsAsDriver = (enabled = true) => {
     const { isAuthenticated } = useAuthState();
     return useQuery({
         queryKey: shipmentKeys.driverMine(),
         queryFn: async () => (await shipmentsApi.getMyShipmentsAsDriver()).map(toShipment),
-        enabled: isAuthenticated,
+        enabled: isAuthenticated && enabled,
         refetchInterval: ACTIVE_SHIPMENT_POLL_MS,
     });
 };
@@ -61,12 +61,12 @@ export const useDriverEarningsSummary = () => {
 
 
 
-export const useMyShipmentHistory = () => {
+export const useMyShipmentHistory = (enabled = true) => {
     const { isAuthenticated } = useAuthState();
     return useQuery({
         queryKey: shipmentKeys.history(),
         queryFn: async () => (await shipmentsApi.getMyShipmentHistory()).map(toShipment),
-        enabled: isAuthenticated,
+        enabled: isAuthenticated && enabled,
     });
 };
 
@@ -234,6 +234,18 @@ export const useCancelShipment = (id: string) => {
     return useMutation({
         mutationFn: (reason?: string) => shipmentsApi.cancelShipment(id, reason),
         onSuccess: invalidate,
+    });
+};
+
+// Fetched when the cancel confirm dialog opens — shows the real fee/refund
+// the backend would actually charge, computed by the same logic cancel()
+// itself uses (ShipmentsService.computeCancellationFee), not guessed
+// client-side.
+export const useCancellationPreview = (id: string, enabled: boolean) => {
+    return useQuery({
+        queryKey: [...shipmentKeys.detail(id), 'cancellation-preview'],
+        queryFn: () => shipmentsApi.getCancellationPreview(id),
+        enabled,
     });
 };
 

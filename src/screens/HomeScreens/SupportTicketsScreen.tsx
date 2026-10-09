@@ -125,6 +125,7 @@ const SupportTicketsScreen = () => {
         <SkeletonList />
       ) : (
         <FlatList
+          showsVerticalScrollIndicator={false}
           data={tickets ?? []}
           keyExtractor={t => t.id}
           contentContainerStyle={styles.list}

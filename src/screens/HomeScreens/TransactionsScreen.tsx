@@ -124,6 +124,7 @@ const TransactionsScreen = () => {
         emptyMessage={t('transactions.paymentsShowHere')}
       >
         <FlatList
+          showsVerticalScrollIndicator={false}
           data={shipments ?? []}
           keyExtractor={item => item.id}
           renderItem={({ item }) => <TransactionRow shipment={item} />}

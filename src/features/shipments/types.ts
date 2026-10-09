@@ -170,8 +170,9 @@ export interface CreateShipmentPayload {
     
     fragile?: boolean;
     insuranceRequested?: boolean;
-    
-    
+    loadingHelpRequested?: boolean;
+    unloadingHelpRequested?: boolean;
+    packagingRequested?: boolean;
     promoCode?: string;
     
     scheduledAt?: string;
@@ -218,19 +219,20 @@ export interface QuoteShipmentPayload {
     category?: string;
     helpersCount?: number;
     insuranceRequested?: boolean;
+    loadingHelpRequested?: boolean;
+    unloadingHelpRequested?: boolean;
+    packagingRequested?: boolean;
 }
 
 export interface ShipmentQuote {
     price: number;
     distanceKm: number;
     helperCost: number;
-    
-    
     serviceSurcharge: number;
-    
-    
-    
     insurancePremium: number;
+    loadingHelpFee: number;
+    unloadingHelpFee: number;
+    packagingFee: number;
 }
 
 

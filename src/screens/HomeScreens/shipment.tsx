@@ -11,6 +11,8 @@ import {
   Pressable,
   TextInput,
   Modal,
+  ActivityIndicator,
+  Share as RNShare,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { SkeletonList } from '@components/ui';
@@ -18,7 +20,7 @@ import { EmptyState } from '@components/EmptyState';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useMyShipments, useCancelShipment, useShipmentPodPdf } from '@features/shipments/hooks';
+import { useMyShipments, useCancelShipment, useCancellationPreview, useShipmentPodPdf } from '@features/shipments/hooks';
 import Share from 'react-native-share';
 import { normalizeError } from '@utils/error';
 import type { Shipment as MyShipment } from '@shipment/types';
@@ -32,8 +34,6 @@ import Animated, {
 import {
   Truck,
   Clock,
-  AlertCircle,
-  CheckCircle2,
   Package,
   Phone,
   Zap,
@@ -49,7 +49,6 @@ import {
   UtensilsCrossed,
   Calendar,
   Check,
-  Hourglass,
   Search,
   SlidersHorizontal,
   Copy,
@@ -125,23 +124,23 @@ const makeStatus = (
     bg: C.warningLight,
     icon: Zap,
   },
+  accepted: {
+    label: t('orders.tabAccepted'),
+    color: C.primary,
+    bg: C.primaryLight,
+    icon: Check,
+  },
+  scheduled: {
+    label: t('orders.tabScheduled'),
+    color: C.textMid,
+    bg: C.bg,
+    icon: Calendar,
+  },
   'in-transit': {
     label: t('orders.tabInTransit'),
     color: C.primary,
     bg: C.primaryLight,
     icon: Truck,
-  },
-  delivered: {
-    label: t('orders.tabDelivered'),
-    color: C.success,
-    bg: C.successLight,
-    icon: CheckCircle2,
-  },
-  expired: {
-    label: t('orders.tabExpired'),
-    color: C.danger,
-    bg: C.dangerLight,
-    icon: AlertCircle,
   },
   pending: {
     label: t('orders.statusPending'),
@@ -157,15 +156,41 @@ const makeStatus = (
   },
 });
 
+// Tabs are restricted to statuses useMyShipments (/shipments/mine) can
+// actually return — that endpoint is deliberately active-only
+// (SCHEDULED/SEARCHING/ACCEPTED/IN_TRANSIT; see the backend repository
+// comment), so a "Delivered" or "Expired" tab here could never show
+// anything (EXPIRED isn't even a real ShipmentStatus). Delivered/cancelled
+// orders live in TransactionsScreen's history view instead.
 const makeTabs = (t: (key: string) => string) => [
   { key: 'all', label: t('orders.tabAll'), icon: List },
-  { key: 'in-transit', label: t('orders.tabInTransit'), icon: Truck },
   { key: 'searching', label: t('orders.tabSearching'), icon: Zap },
-  { key: 'delivered', label: t('orders.tabDelivered'), icon: CheckCircle2 },
-  { key: 'expired', label: t('orders.tabExpired'), icon: Hourglass },
+  { key: 'accepted', label: t('orders.tabAccepted'), icon: Check },
+  { key: 'in-transit', label: t('orders.tabInTransit'), icon: Truck },
+  { key: 'scheduled', label: t('orders.tabScheduled'), icon: Calendar },
 ];
 
 type HomeScreenProp = NativeStackNavigationProp<RootStackParamList, 'Shipment'>;
+
+type DateFilterKey = 'all' | 'today' | 'week' | 'month';
+
+const makeDateFilters = (t: (key: string) => string): { key: DateFilterKey; label: string }[] => [
+  { key: 'all', label: t('orders.allTime') },
+  { key: 'today', label: t('orders.filterToday') },
+  { key: 'week', label: t('orders.filterLast7Days') },
+  { key: 'month', label: t('orders.filterLast30Days') },
+];
+
+const isWithinDateFilter = (createdAtSeconds: number, filter: DateFilterKey): boolean => {
+  if (filter === 'all') return true;
+  const createdAt = new Date(createdAtSeconds * 1000);
+  if (filter === 'today') {
+    const now = new Date();
+    return createdAt.toDateString() === now.toDateString();
+  }
+  const days = filter === 'week' ? 7 : 30;
+  return Date.now() - createdAt.getTime() <= days * 24 * 60 * 60 * 1000;
+};
 
 
 
@@ -204,6 +229,7 @@ const ShipmentScreen = () => {
   const C = useMemo(() => makeC(BRAND), [BRAND]);
   const STATUS = useMemo(() => makeStatus(C, t), [C, t]);
   const TABS = useMemo(() => makeTabs(t), [t]);
+  const DATE_FILTERS = useMemo(() => makeDateFilters(t), [t]);
   const styles = useMemo(() => makeStyles(C), [C]);
   const navigation = useNavigation<HomeScreenProp>();
   const [activeTab, setActiveTab] = useState('all');
@@ -213,6 +239,9 @@ const ShipmentScreen = () => {
     [rawShipments],
   );
   const [searchText, setSearchText] = useState('');
+  const [dateFilter, setDateFilter] = useState<DateFilterKey>('all');
+  const [dateFilterModalOpen, setDateFilterModalOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   // This screen lives under the bottom tab bar (HomeTabs.tsx "Orders")
   // — the list's fixed H(44) bottom padding didn't account for it, so
   
@@ -270,8 +299,11 @@ const ShipmentScreen = () => {
           s.sender?.name?.toLowerCase().includes(q),
       );
     }
+    if (dateFilter !== 'all') {
+      list = list.filter(s => isWithinDateFilter(s.createdAt.seconds, dateFilter));
+    }
     return list;
-  }, [shipments, activeTab, searchText]);
+  }, [shipments, activeTab, searchText, dateFilter]);
 
   
   const counts = TABS.reduce((acc, tab) => {
@@ -411,13 +443,13 @@ const ShipmentScreen = () => {
       {loading ? (
         <SkeletonList />
       ) : filtered.length === 0 ? (
-        <Animated.View style={[{ flex: 1 }, listAnimStyle]}>
+        <View style={{ flex: 1 }}>
           <EmptyState
             variant="package"
             title={t('orders.noShipmentsFound')}
             message={t('orders.nothingInCategory')}
           />
-        </Animated.View>
+        </View>
       ) : (
         <Animated.View style={[{ flex: 1 }, listAnimStyle]}>
           <FlatList
@@ -448,7 +480,7 @@ const ShipmentScreen = () => {
       <View style={styles.footerBar}>
         <Pressable
           style={styles.filterDateBtn}
-          onPress={() => showToast('Date filtering is coming soon', 'info')}
+          onPress={() => setDateFilterModalOpen(true)}
         >
           <CalendarDays size={16} color={C.textMid} />
           <View>
@@ -463,13 +495,37 @@ const ShipmentScreen = () => {
                 { fontFamily: FONTS.SEMI_BOLD_PRIMARY },
               ]}
             >
-              {t('orders.allTime')}
+              {DATE_FILTERS.find(f => f.key === dateFilter)?.label}
             </Text>
           </View>
         </Pressable>
         <Pressable
           style={styles.exportBtn}
-          onPress={() => showToast('Export is not available yet', 'info')}
+          disabled={exporting || filtered.length === 0}
+          onPress={async () => {
+            setExporting(true);
+            try {
+              const header = 'Tracking ID,Status,From,To,Price,Date';
+              const rows = filtered.map(s => {
+                const createdAt = s.createdAt?.seconds
+                  ? new Date(s.createdAt.seconds * 1000).toISOString()
+                  : '';
+                const escape = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+                return [s.trackingId, s.status, s.from, s.to, s.price, createdAt]
+                  .map(escape)
+                  .join(',');
+              });
+              const csv = [header, ...rows].join('\n');
+              await RNShare.share({
+                title: 'Shipment History',
+                message: csv,
+              });
+            } catch (err) {
+              showToast(normalizeError(err) || 'Could not export shipments', 'error');
+            } finally {
+              setExporting(false);
+            }
+          }}
         >
           <Download size={14} color={C.textMid} />
           <Text
@@ -488,6 +544,41 @@ const ShipmentScreen = () => {
           <Plus size={20} color="#fff" />
         </Pressable>
       </View>
+
+      <Modal
+        visible={dateFilterModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDateFilterModalOpen(false)}
+      >
+        <Pressable style={styles.cancelOverlay} onPress={() => setDateFilterModalOpen(false)}>
+          <View style={styles.dateFilterCard}>
+            <Text style={[styles.cancelTitle, { fontFamily: FONTS.BOLD_PRIMARY }]}>
+              {t('orders.filterDate')}
+            </Text>
+            {DATE_FILTERS.map(f => (
+              <Pressable
+                key={f.key}
+                style={[styles.dateFilterOption, dateFilter === f.key && styles.dateFilterOptionActive]}
+                onPress={() => {
+                  setDateFilter(f.key);
+                  setDateFilterModalOpen(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.dateFilterOptionText,
+                    { fontFamily: dateFilter === f.key ? FONTS.BOLD_PRIMARY : FONTS.PRIMARY },
+                    dateFilter === f.key && { color: C.primary },
+                  ]}
+                >
+                  {f.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 };
@@ -528,6 +619,10 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({
   );
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+  const { data: cancellationPreview, isLoading: previewLoading } = useCancellationPreview(
+    item.id,
+    cancelModalOpen,
+  );
 
   const createdDate = item.createdAt?.seconds
     ? new Date(item.createdAt.seconds * 1000)
@@ -570,6 +665,13 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({
   const confirmCancel = () => {
     setCancelModalOpen(false);
     cancelShipment(cancelReason.trim() || undefined, {
+      onSuccess: updated => {
+        if (updated.paymentStatus === 'REFUNDED' && updated.refundAmount > 0) {
+          showToast(`Cancelled — ₹${updated.refundAmount} will be refunded`, 'success');
+        } else {
+          showToast('Order cancelled', 'success');
+        }
+      },
       onError: () => showToast('Could not cancel — try again', 'error'),
     });
   };
@@ -931,6 +1033,21 @@ const ShipmentCard: React.FC<ShipmentCardProps> = ({
               {item.trackingId} will be cancelled. Let us know why (optional) —
               it helps us improve.
             </Text>
+            {previewLoading ? (
+              <ActivityIndicator color={C.primary} size="small" style={{ marginBottom: 10 }} />
+            ) : cancellationPreview && cancellationPreview.paymentStatus === 'PAID' ? (
+              <View style={styles.cancelFeeBox}>
+                {cancellationPreview.cancellationFee > 0 ? (
+                  <Text style={[styles.cancelFeeText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>
+                    A ₹{cancellationPreview.cancellationFee} cancellation fee applies — ₹{cancellationPreview.refundAmount} will be refunded.
+                  </Text>
+                ) : (
+                  <Text style={[styles.cancelFeeText, { fontFamily: FONTS.SEMI_BOLD_PRIMARY }]}>
+                    Free cancellation — the full ₹{cancellationPreview.refundAmount} will be refunded.
+                  </Text>
+                )}
+              </View>
+            ) : null}
             <TextInput
               style={[styles.cancelInput, { fontFamily: FONTS.MEDIUM_PRIMARY }]}
               value={cancelReason}
@@ -1359,6 +1476,26 @@ const makeStyles = (C: ListColors) =>
       padding: 20,
     },
     cancelTitle: { fontSize: 16, color: C.text, marginBottom: 6 },
+    dateFilterCard: {
+      width: '100%',
+      maxWidth: 380,
+      backgroundColor: C.card,
+      borderRadius: 16,
+      padding: 20,
+      gap: 4,
+    },
+    dateFilterOption: {
+      paddingVertical: 12,
+      paddingHorizontal: 10,
+      borderRadius: 10,
+    },
+    dateFilterOptionActive: {
+      backgroundColor: C.primaryLight,
+    },
+    dateFilterOptionText: {
+      fontSize: 14,
+      color: C.text,
+    },
     cancelSubtitle: {
       fontSize: 12,
       color: C.textLight,
@@ -1376,6 +1513,18 @@ const makeStyles = (C: ListColors) =>
       minHeight: 70,
       textAlignVertical: 'top',
       marginBottom: 16,
+    },
+    cancelFeeBox: {
+      backgroundColor: C.warningLight,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      marginBottom: 14,
+    },
+    cancelFeeText: {
+      fontSize: 12,
+      color: C.text,
+      lineHeight: 17,
     },
     cancelActions: { flexDirection: 'row', gap: 10 },
     cancelBackBtn: {

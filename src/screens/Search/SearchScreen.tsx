@@ -48,6 +48,7 @@ const SearchScreen = () => {
           emptyMessage={t('search.checkTrackingId')}
         >
           <FlatList
+            showsVerticalScrollIndicator={false}
             data={results}
             keyExtractor={item => item.id}
             contentContainerStyle={styles.list}

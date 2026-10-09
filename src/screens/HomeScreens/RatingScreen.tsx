@@ -14,7 +14,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, StatusBar } f
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { X, Headphones, CheckCircle2, MapPin, Star, Receipt, ArrowRight } from 'lucide-react-native';
 import { useShipment, useShipmentPodPdf } from '@features/shipments/hooks';
-import { useShipmentRating, useSubmitRating } from '@features/ratings/hooks';
+import { useShipmentRating, useSubmitRating, useTipDriver } from '@features/ratings/hooks';
 import { RATING_TAGS, type RatingTag } from '@features/ratings/types';
 import { useAppTheme } from '@theme/ThemeContext';
 import { showToast } from '@ui/alert/toastStore';
@@ -75,9 +75,14 @@ const RatingScreen = () => {
                 serviceStars: serviceStars > 0 ? serviceStars : undefined,
             },
             {
+                // Was an immediate goBack() — skipped straight past the
+                // "already rated" screen below, which is also where the
+                // real tip flow lives (createTipOrder requires a rating
+                // to already exist). Staying here lets existingRating's
+                // query invalidation flip this screen into that state so
+                // the customer can actually tip right after rating.
                 onSuccess: () => {
                     showToast(t('rating.ratingSubmitted'), 'success');
-                    navigation.goBack();
                 },
                 onError: (err: any) => showToast(err?.message ?? t('rating.submitRatingFailed'), 'error'),
             },
@@ -93,6 +98,8 @@ const RatingScreen = () => {
     }
 
     
+    const driverName = shipment.dispatch?.driverName ?? t('rating.defaultPilotName');
+
     if (existingRating) {
         return (
             <View style={styles.root}>
@@ -100,13 +107,31 @@ const RatingScreen = () => {
                     <CheckCircle2 size={40} color={colors.SUCCESS} />
                     <Text style={styles.doneTitle}>{t('rating.alreadyRatedTitle')}</Text>
                     <Text style={styles.doneSub}>{t('rating.starsThankYou', { stars: existingRating.stars })}</Text>
+
+                    {existingRating.tipAmount > 0 ? (
+                        <View style={styles.tipSentCard}>
+                            <CheckCircle2 size={18} color={colors.SUCCESS} />
+                            <Text style={styles.tipSentText}>
+                                {t('rating.tipSent', { amount: existingRating.tipAmount, name: driverName.split(' ')[0] })}
+                            </Text>
+                        </View>
+                    ) : (
+                        <TipDriverCard
+                            shipmentId={shipmentId!}
+                            driverName={driverName}
+                            customerName={shipment.sender?.name}
+                            customerPhone={shipment.sender?.phone}
+                            colors={colors}
+                            fonts={fonts}
+                            t={t}
+                        />
+                    )}
+
                     <AppButton title={t('rating.done')} onPress={() => navigation.goBack()} style={{ marginTop: 20, width: 160 }} />
                 </View>
             </View>
         );
     }
-
-    const driverName = shipment.dispatch?.driverName ?? t('rating.defaultPilotName');
 
     return (
         <View style={styles.root}>
@@ -214,14 +239,6 @@ const RatingScreen = () => {
                 </View>
 
                 {}
-                <View style={styles.comingSoonCard}>
-                    <Text style={styles.comingSoonTitle}>{t('rating.sendTipTo', { name: driverName.split(' ')[0] })}</Text>
-                    <Text style={styles.comingSoonText}>
-                        {t('rating.tippingComingSoon')}
-                    </Text>
-                </View>
-
-                {}
                 <Text style={styles.tagsTitle}>{t('rating.leaveNote', { name: driverName.split(' ')[0] })}</Text>
                 <TextInput
                     style={styles.noteInput}
@@ -278,6 +295,85 @@ const RatingScreen = () => {
                     <Text style={styles.skipText}>{t('rating.skipForNow')}</Text>
                 </Pressable>
             </ScrollView>
+        </View>
+    );
+};
+
+const TIP_QUICK_AMOUNTS = [20, 50, 100];
+
+const TipDriverCard: React.FC<{
+    shipmentId: string;
+    driverName: string;
+    customerName?: string;
+    customerPhone?: string;
+    colors: ReturnType<typeof useAppTheme>['colors'];
+    fonts: ReturnType<typeof useAppTheme>['fonts'];
+    t: (key: string, opts?: Record<string, unknown>) => string;
+}> = ({ shipmentId, driverName, customerName, customerPhone, colors, fonts, t }) => {
+    const styles = useMemo(() => makeStyles(colors, fonts), [colors, fonts]);
+    const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+    const [customAmount, setCustomAmount] = useState('');
+    const { mutate: tipDriver, isPending } = useTipDriver(shipmentId);
+
+    const amount = selectedAmount ?? (Number(customAmount) || 0);
+
+    const handleTip = () => {
+        if (amount <= 0) {
+            showToast(t('rating.enterValidTipAmount'), 'error');
+            return;
+        }
+        tipDriver(
+            { amount, driverName, customerName, customerPhone },
+            {
+                onSuccess: () => showToast(t('rating.tipSentToast', { name: driverName.split(' ')[0] }), 'success'),
+                onError: (err: any) => {
+                    // RazorpayCheckout rejects its promise on user-cancel too —
+                    // not a real failure, so it stays silent rather than
+                    // showing an "error" toast for someone just backing out.
+                    if (err?.code === 2 || /cancel/i.test(err?.description ?? '')) return;
+                    showToast(normalizeError(err) || t('rating.tipFailed'), 'error');
+                },
+            },
+        );
+    };
+
+    return (
+        <View style={styles.tipCard}>
+            <Text style={styles.tipTitle}>{t('rating.sendTipTo', { name: driverName.split(' ')[0] })}</Text>
+            <View style={styles.tipAmountRow}>
+                {TIP_QUICK_AMOUNTS.map((value) => {
+                    const active = selectedAmount === value;
+                    return (
+                        <Pressable
+                            key={value}
+                            style={[styles.tipAmountChip, active && styles.tipAmountChipActive]}
+                            onPress={() => {
+                                setSelectedAmount(value);
+                                setCustomAmount('');
+                            }}
+                        >
+                            <Text style={[styles.tipAmountChipText, active && styles.tipAmountChipTextActive]}>₹{value}</Text>
+                        </Pressable>
+                    );
+                })}
+            </View>
+            <TextInput
+                style={styles.tipCustomInput}
+                placeholder={t('rating.customTipPlaceholder')}
+                placeholderTextColor={colors.GRAY}
+                keyboardType="number-pad"
+                value={customAmount}
+                onChangeText={(v) => {
+                    setCustomAmount(v.replace(/[^0-9]/g, ''));
+                    setSelectedAmount(null);
+                }}
+            />
+            <AppButton
+                title={isPending ? t('rating.sendingTip') : t('rating.sendTip')}
+                onPress={handleTip}
+                disabled={isPending || amount <= 0}
+                style={{ marginTop: 14 }}
+            />
         </View>
     );
 };
@@ -365,16 +461,49 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
     tagChipText: { fontFamily: fonts.MEDIUM_PRIMARY, fontSize: 12, color: colors.TEXT_SECONDARY },
     tagChipTextSelected: { color: '#fff' },
 
-    comingSoonCard: {
+    tipCard: {
+        width: '100%',
         backgroundColor: colors.SURFACE,
         borderRadius: 14,
         borderWidth: 1,
         borderColor: colors.BORDER,
-        padding: 14,
-        marginBottom: 20,
+        padding: 16,
+        marginTop: 20,
     },
-    comingSoonTitle: { fontFamily: fonts.BOLD_PRIMARY, fontSize: 14, color: colors.TEXT_PRIMARY, marginBottom: 4 },
-    comingSoonText: { fontFamily: fonts.PRIMARY, fontSize: 12, color: colors.TEXT_SECONDARY, lineHeight: 17 },
+    tipTitle: { fontFamily: fonts.BOLD_PRIMARY, fontSize: 14, color: colors.TEXT_PRIMARY, marginBottom: 10, textAlign: 'center' },
+    tipAmountRow: { flexDirection: 'row', gap: 8, justifyContent: 'center' },
+    tipAmountChip: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: colors.BORDER,
+        backgroundColor: colors.BACKGROUND,
+    },
+    tipAmountChipActive: { backgroundColor: colors.PRIMARY, borderColor: colors.PRIMARY },
+    tipAmountChipText: { fontFamily: fonts.SEMI_BOLD_PRIMARY, fontSize: 13, color: colors.TEXT_PRIMARY },
+    tipAmountChipTextActive: { color: '#fff' },
+    tipCustomInput: {
+        marginTop: 10,
+        borderWidth: 1,
+        borderColor: colors.BORDER,
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        fontSize: 13,
+        color: colors.TEXT_PRIMARY,
+    },
+    tipSentCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: colors.SUCCESS + '1A',
+        borderRadius: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        marginTop: 16,
+    },
+    tipSentText: { fontFamily: fonts.SEMI_BOLD_PRIMARY, fontSize: 13, color: colors.TEXT_PRIMARY, flexShrink: 1 },
 
     noteInput: {
         backgroundColor: colors.SURFACE,

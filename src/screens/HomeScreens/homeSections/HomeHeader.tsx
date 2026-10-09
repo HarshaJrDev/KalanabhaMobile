@@ -248,7 +248,7 @@ const makeStyles = (COLORS: HomeColors, FONTS: HomeFonts) => StyleSheet.create({
     heroSub: { color: COLORS.textSecondary, fontSize: 12, lineHeight: 17, fontFamily: FONTS.PRIMARY, marginTop: 8, maxWidth: 172 },
     heroTruck: { width: IS_COMPACT_WIDTH ? 142 : 178, height: IS_COMPACT_WIDTH ? 124 : 156, marginRight: -8, alignSelf: 'flex-end' },
     topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-    locationPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 24, gap: 6, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', marginRight: 40, maxWidth: '68%' },
+    locationPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 24, gap: 6, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', maxWidth: '68%' },
     cityText: { color: '#F1F5F9', fontSize: 13, fontFamily: FONTS.PRIMARY, flexShrink: 1 },
     headerActions: { flexDirection: 'row', gap: 10 },
     notifBtn: { width: 44, height: 44, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },

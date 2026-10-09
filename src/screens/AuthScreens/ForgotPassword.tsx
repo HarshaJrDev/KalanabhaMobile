@@ -96,7 +96,7 @@ const ForgotPasswordScreen = () => {
 
     return (
         <KeyboardAvoidingView style={styles.container} behavior={Platform.select({ ios: 'padding' })}>
-            <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+            <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} hitSlop={12}>
                     <ArrowLeft color={colors.TEXT_PRIMARY} size={22} />
                 </TouchableOpacity>

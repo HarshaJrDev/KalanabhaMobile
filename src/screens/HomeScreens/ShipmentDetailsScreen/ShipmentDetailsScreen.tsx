@@ -49,6 +49,7 @@ import {
   useDispute,
   useFileDispute,
 } from '@features/shipments/hooks';
+import { getCancellationPreview } from '@features/shipments/api/shipments.api';
 import { usePayForShipment } from '@features/payments/hooks';
 import { DateTimeChipPicker } from '@components/DateTimeChipPicker';
 import { useLiveDriverLocation } from '@location/useLiveDriverLocation';
@@ -519,16 +520,36 @@ const ShipmentDetailsScreen = () => {
             activeOpacity={0.85}
             disabled={cancelling}
             onPress={async () => {
+              // Scheduled shipments never actually carry a fee (cancel()
+              // only charges one once a driver has ACCEPTED/started
+              // IN_TRANSIT), but still shows the real refund amount for
+              // a paid order rather than a generic "are you sure".
+              let message = t('shipmentDetails.cancelPickupConfirm');
+              if (shipmentId) {
+                try {
+                  const preview = await getCancellationPreview(shipmentId);
+                  if (preview.paymentStatus === 'PAID') {
+                    message = `${message} ₹${preview.refundAmount} will be refunded.`;
+                  }
+                } catch {
+                  // Preview is best-effort — fall back to the generic message.
+                }
+              }
               const confirmed = await confirmDialog({
                 title: t('shipmentDetails.cancelPickupTitle'),
-                message: t('shipmentDetails.cancelPickupConfirm'),
+                message,
                 confirmText: t('shipmentDetails.cancelPickupConfirmBtn'),
                 destructive: true,
               });
               if (confirmed) {
                 cancelShipment(undefined, {
-                  onSuccess: () =>
-                    showToast(t('shipmentDetails.pickupCancelled'), 'success'),
+                  onSuccess: updated => {
+                    if (updated.paymentStatus === 'REFUNDED' && updated.refundAmount > 0) {
+                      showToast(`${t('shipmentDetails.pickupCancelled')} — ₹${updated.refundAmount} refunded`, 'success');
+                    } else {
+                      showToast(t('shipmentDetails.pickupCancelled'), 'success');
+                    }
+                  },
                   onError: () =>
                     showToast(t('shipmentDetails.pickupCancelFailed'), 'error'),
                 });
@@ -1330,10 +1351,7 @@ const ShipmentDetailsScreen = () => {
               t={t}
             />
             <TouchableOpacity
-              style={[
-                styles.scheduleActionBtn,
-                styles.scheduleActionBtnPrimary,
-              ]}
+              style={styles.confirmNewTimeBtn}
               activeOpacity={0.85}
               disabled={!pendingScheduledAt || rescheduling}
               onPress={() =>
@@ -2083,6 +2101,24 @@ const makeStyles = (C: DetailColors) =>
       fontSize: 13,
       color: C.primary,
       fontFamily: FONTS.BOLD_PRIMARY,
+    },
+    // Was reusing scheduleActionBtn (flex: 1) standalone inside the
+    // reschedule modal's ScrollView — that flex only makes sense
+    // distributing width across the 2-button scheduleActionsRow it was
+    // designed for; here it was inert (no flex-row parent to distribute
+    // within). alignSelf: 'stretch' is the correct way to get the same
+    // full-width look in this column-flow context, without a style meant
+    // for a different layout silently doing nothing.
+    confirmNewTimeBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      alignSelf: 'stretch',
+      gap: 6,
+      borderRadius: 12,
+      paddingVertical: 12,
+      backgroundColor: C.primary,
+      marginTop: 16,
     },
     rescheduleModalContainer: { flex: 1, backgroundColor: C.bg },
     rescheduleModalHeader: {

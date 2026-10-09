@@ -21,7 +21,6 @@ import {
     StatusBar,
     RefreshControl,
     ScrollView,
-    Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -29,6 +28,7 @@ import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimate
 import { useMyShipments, useMyShipmentHistory } from '@features/shipments/hooks';
 import { useUnreadNotificationCount } from '@features/notifications/hooks';
 import { useVehicleConfigs, useServiceAreas } from '@features/settings/hooks';
+import type { VehicleConfig } from '@features/settings/types';
 import { useSavedAddresses } from '@features/savedAddresses/hooks';
 import type { SavedAddress } from '@features/savedAddresses/types';
 import type { ServiceArea } from '@features/settings/types';
@@ -213,6 +213,21 @@ const HomeScreen: React.FC = () => {
         (navigation as any).navigate('AddOrder', { prefill: { vehicleType: vehicleName.toLowerCase() } });
     };
 
+    const openVehicleDetails = (vehicle: VehicleConfig) => {
+        (navigation as any).navigate('VehicleDetails', {
+            vehicleId: vehicle.id,
+            vehicles: activeVehicleConfigs,
+            onConfirm: (v: VehicleConfig) => goBookVehicle(v.name),
+        });
+    };
+
+    const openAllVehicles = () => {
+        (navigation as any).navigate('AllVehicles', {
+            vehicles: activeVehicleConfigs,
+            onConfirm: (v: VehicleConfig) => goBookVehicle(v.name),
+        });
+    };
+
     const goBookAgain = (trip: BackendShipment) => {
         (navigation as any).navigate('AddOrder', {
             prefill: { pickup: trip.pickup.address, drop: trip.drop.address, vehicleType: trip.vehicleType, category: trip.category },
@@ -324,7 +339,8 @@ const HomeScreen: React.FC = () => {
                     vehicles={activeVehicleConfigs}
                     scrollX={vehicleScrollX}
                     onScroll={vehicleScrollHandler}
-                    onSelect={goBookVehicle}
+                    onSelect={openVehicleDetails}
+                    onViewAll={openAllVehicles}
                     colors={COLORS}
                     fonts={FONTS}
                 />
@@ -522,16 +538,6 @@ const makeStyles = (COLORS: HomeColors, FONTS: ReturnType<typeof useAppTheme>['f
     statNumber: { fontSize: 24, fontFamily: FONTS.PRIMARY, marginBottom: 2 },
     statLabel: { fontSize: 12, color: COLORS.textLight, fontFamily: FONTS.PRIMARY, letterSpacing: 0.5 },
     statDivider: { width: 1, backgroundColor: COLORS.border, height: 24, marginVertical: 8 },
-    promoBanner: {
-        marginHorizontal: SPACING.xl, marginTop: SPACING.l,
-        borderRadius: 18, overflow: 'hidden',
-    },
-    promoBannerImage: { width: '100%', aspectRatio: 1000 / 474 },
-    processBanner: {
-        marginHorizontal: SPACING.xl, marginTop: SPACING.m,
-        borderRadius: 18, overflow: 'hidden',
-    },
-    processBannerImage: { width: '100%', aspectRatio: 1000 / 380 },
     mainContent: { paddingHorizontal: SPACING.xl },
     firstBookingCard: {
         flexDirection: 'row', alignItems: 'center', gap: 12,
@@ -546,7 +552,7 @@ const makeStyles = (COLORS: HomeColors, FONTS: ReturnType<typeof useAppTheme>['f
     firstBookingSub: { fontSize: 11, fontFamily: FONTS.PRIMARY, color: 'rgba(255,255,255,0.85)', marginTop: 2 },
     sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
     sectionTitle: { fontSize: 18, fontFamily: FONTS.BOLD_PRIMARY, color: COLORS.textPrimary, letterSpacing: 0.3 },
-    sectionContainer: { marginBottom: 32 },
+    sectionContainer: { marginBottom: SPACING.xxl + 4 },
     driverRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border },
     driverAvatar: { width: 26, height: 26, borderRadius: 13, backgroundColor: COLORS.primaryLight, alignItems: 'center', justifyContent: 'center' },
     driverName: { flex: 1, fontSize: 12, fontFamily: FONTS.MEDIUM_PRIMARY, color: COLORS.textPrimary },

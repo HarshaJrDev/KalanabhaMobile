@@ -15,7 +15,13 @@ import Geolocation from 'react-native-geolocation-service';
 import { storage } from '@services/storage';
 import { haversineDistanceKm } from '@utils/geo';
 import { ensureLocationPermission } from '@utils/locationPermission';
+import { searchAddress, type AddressSuggestion } from '@services/location';
 import type { ServiceArea } from '@features/settings/types';
+
+// Below this, a geocode search is more noise than signal (and the
+// backend's /maps/geocode/search is rate-limited per-user — see
+// searchAddress's own comment).
+const MIN_GEOCODE_QUERY_LENGTH = 4;
 
 const RECENTS_KEY = 'recent_service_areas';
 const MAX_RECENTS = 5;
@@ -52,6 +58,12 @@ export interface UseLocationSearchResult {
         recents: ServiceArea[];
         locateNearestServiceArea: () => Promise<ServiceArea | null>;
     locatingCurrentPosition: boolean;
+    // Live geocode suggestions for when the typed address isn't one of
+    // the admin-configured service areas at all (outside their coverage
+    // list, or just phrased differently) — only populated once the local
+    // area list comes up empty, so it never shadows a real service area.
+    geocodeSuggestions: AddressSuggestion[];
+    geocoding: boolean;
 }
 
 export const useLocationSearch = (areas: ServiceArea[]): UseLocationSearchResult => {
@@ -76,6 +88,25 @@ export const useLocationSearch = (areas: ServiceArea[]): UseLocationSearchResult
         });
         return byCity;
     }, [debouncedQuery, areas]);
+
+    const [geocodeSuggestions, setGeocodeSuggestions] = useState<AddressSuggestion[]>([]);
+    const [geocoding, setGeocoding] = useState(false);
+
+    useEffect(() => {
+        const q = debouncedQuery.trim();
+        const hasLocalMatches = Object.keys(results).length > 0;
+        if (q.length < MIN_GEOCODE_QUERY_LENGTH || hasLocalMatches) {
+            setGeocodeSuggestions([]);
+            setGeocoding(false);
+            return;
+        }
+        const controller = new AbortController();
+        setGeocoding(true);
+        searchAddress(q, controller.signal)
+            .then((suggestions) => setGeocodeSuggestions(suggestions))
+            .finally(() => setGeocoding(false));
+        return () => controller.abort();
+    }, [debouncedQuery, results]);
 
     const recents = useMemo(() => {
         const ids = readRecents();
@@ -119,5 +150,14 @@ export const useLocationSearch = (areas: ServiceArea[]): UseLocationSearchResult
         });
     }, [areas]);
 
-    return { query, setQuery, results, recents, locateNearestServiceArea, locatingCurrentPosition };
+    return {
+        query,
+        setQuery,
+        results,
+        recents,
+        locateNearestServiceArea,
+        locatingCurrentPosition,
+        geocodeSuggestions,
+        geocoding,
+    };
 };

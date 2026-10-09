@@ -13,14 +13,26 @@ export interface FareEstimate {
     error: string | null;
     helperCost: number | null;
     insurancePremium: number | null;
-    
-    
-    
-    
+    loadingHelpFee: number | null;
+    unloadingHelpFee: number | null;
+    packagingFee: number | null;
     etaMinutes: number | null;
 }
 
-const IDLE: FareEstimate = { loading: false, price: null, distanceKm: null, pickup: null, drop: null, error: null, helperCost: null, insurancePremium: null, etaMinutes: null };
+const IDLE: FareEstimate = {
+    loading: false,
+    price: null,
+    distanceKm: null,
+    pickup: null,
+    drop: null,
+    error: null,
+    helperCost: null,
+    insurancePremium: null,
+    loadingHelpFee: null,
+    unloadingHelpFee: null,
+    packagingFee: null,
+    etaMinutes: null,
+};
 
 export interface KnownCoords {
     lat: number;
@@ -53,6 +65,9 @@ export const useFareEstimate = (
     category?: string,
     helpersCount?: number,
     insuranceRequested?: boolean,
+    loadingHelpRequested?: boolean,
+    unloadingHelpRequested?: boolean,
+    packagingRequested?: boolean,
 ): FareEstimate => {
     const [estimate, setEstimate] = useState<FareEstimate>(IDLE);
     const requestId = useRef(0);
@@ -81,7 +96,18 @@ export const useFareEstimate = (
                 }
 
                 const [quote, route] = await Promise.all([
-                    quoteShipment({ pickup, drop, vehicleType, serviceType, category, helpersCount, insuranceRequested }),
+                    quoteShipment({
+                        pickup,
+                        drop,
+                        vehicleType,
+                        serviceType,
+                        category,
+                        helpersCount,
+                        insuranceRequested,
+                        loadingHelpRequested,
+                        unloadingHelpRequested,
+                        packagingRequested,
+                    }),
                     getDrivingRoute(pickup, drop).catch(() => null),
                 ]);
 
@@ -96,6 +122,9 @@ export const useFareEstimate = (
                     error: null,
                     helperCost: quote.helperCost,
                     insurancePremium: quote.insurancePremium,
+                    loadingHelpFee: quote.loadingHelpFee,
+                    unloadingHelpFee: quote.unloadingHelpFee,
+                    packagingFee: quote.packagingFee,
                     etaMinutes: route ? Math.max(1, Math.round(route.durationSeconds / 60)) : null,
                 });
             } catch (err) {
@@ -112,7 +141,7 @@ export const useFareEstimate = (
         
         
         
-    }, [pickupAddress, dropAddress, vehicleType, serviceType, pickupCoords?.lat, pickupCoords?.lng, dropCoords?.lat, dropCoords?.lng, category, helpersCount, insuranceRequested]);
+    }, [pickupAddress, dropAddress, vehicleType, serviceType, pickupCoords?.lat, pickupCoords?.lng, dropCoords?.lat, dropCoords?.lng, category, helpersCount, insuranceRequested, loadingHelpRequested, unloadingHelpRequested, packagingRequested]);
 
     return estimate;
 };

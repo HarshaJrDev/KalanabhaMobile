@@ -21,11 +21,27 @@ export const vehicleIconFor = (name: string): LucideIcon => VEHICLE_ICON_BY_NAME
 
 
 
+// Real branded fleet photos, keyed by VehicleConfig.name lowercased —
+// previously only 4 generic placeholder images existed here (one of
+// them, "mini truck", pointed at a mislabeled Lurry.png). Admin can
+// still add any other vehicle type with just a name + no matching
+// asset here; it simply falls back to the Lucide icon below, same as
+// before this map existed.
 const LOCAL_VEHICLE_IMAGES: Record<string, ImageSourcePropType> = {
     bike: require('../../assets/images/home/Bike.png'),
     van: require('../../assets/images/home/ven.png'),
     truck: require('../../assets/images/home/truck.png'),
-    'mini truck': require('../../assets/images/home/Lurry.png'),
+    pickup: require('../../assets/images/vehicles/pickup_tata_ace.png'),
+    'mini truck': require('../../assets/images/vehicles/mini_truck.png'),
+    '14ft truck': require('../../assets/images/vehicles/truck_14ft.png'),
+    '19ft truck': require('../../assets/images/vehicles/truck_19ft.png'),
+    '32ft truck': require('../../assets/images/vehicles/truck_32ft.png'),
+    'open body truck': require('../../assets/images/vehicles/open_body_truck.png'),
+    container: require('../../assets/images/vehicles/container_truck.png'),
+    'refrigerated truck': require('../../assets/images/vehicles/refrigerated_truck.png'),
+    'low bed trailer': require('../../assets/images/vehicles/low_bed_trailer.png'),
+    'tanker truck': require('../../assets/images/vehicles/tanker_truck.png'),
+    'heavy haul truck': require('../../assets/images/vehicles/heavy_haul_truck.png'),
 };
 
 interface Props {

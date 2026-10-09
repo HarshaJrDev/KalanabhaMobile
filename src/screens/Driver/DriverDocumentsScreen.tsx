@@ -88,6 +88,7 @@ const DriverDocumentsScreen = () => {
                 <SkeletonList />
             ) : (
                 <FlatList
+                    showsVerticalScrollIndicator={false}
                     data={DRIVER_DOCUMENT_TYPES}
                     keyExtractor={(docType) => docType}
                     contentContainerStyle={styles.list}

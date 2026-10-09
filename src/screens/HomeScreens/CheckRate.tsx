@@ -19,12 +19,13 @@
 
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import React, { useEffect, useMemo, useState } from 'react';
+import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 import COLOR from '@utils/color';
 import { H, S } from '@utils/responsive';
-import { ArrowLeft, Home, Package, Plus, Minus, ShieldCheck, Clock3, Route } from 'lucide-react-native';
+import { ArrowLeft, Check, Home, Package, Plus, Minus, ShieldCheck, Clock3, Route } from 'lucide-react-native';
 import CustomLabel from '@components/CustomLabel';
 import Button from '@components/Button';
-import VehicleVisual from '@components/VehicleVisual';
+import VehicleSelectCards from '@components/VehicleSelectCards';
 import PlacePicker from '@components/PlacePicker';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -96,6 +97,22 @@ const CheckRate = () => {
         setDropPlace(pickupPlace);
     };
 
+    const openVehicleDetails = (vehicleId: string) => {
+        (navigation as any).navigate('VehicleDetails', {
+            vehicleId,
+            vehicles: activeVehicleConfigs,
+            onConfirm: (v: typeof activeVehicleConfigs[number]) => setVehicleType(v.name.toLowerCase()),
+        });
+    };
+
+    const openAllVehicles = () => {
+        (navigation as any).navigate('AllVehicles', {
+            vehicles: activeVehicleConfigs,
+            selectedName: vehicleType,
+            onConfirm: (v: typeof activeVehicleConfigs[number]) => setVehicleType(v.name.toLowerCase()),
+        });
+    };
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -135,7 +152,13 @@ const CheckRate = () => {
                                     key={item.key}
                                     style={[styles.segmentButton, selected && styles.segmentButtonSelected]}
                                     onPress={() => setCategory(item.key)}
+                                    activeOpacity={0.8}
                                 >
+                                    {selected && (
+                                        <Animated.View entering={FadeIn.duration(150)} style={styles.segmentCheck}>
+                                            <Check size={10} color="#fff" strokeWidth={3} />
+                                        </Animated.View>
+                                    )}
                                     <Icon size={16} color={selected ? COLOR.PRIMARY : '#6B7280'} />
                                     <Text style={[styles.segmentText, selected && styles.segmentTextSelected]}>{item.label}</Text>
                                 </TouchableOpacity>
@@ -170,43 +193,32 @@ const CheckRate = () => {
                     />
                 </View>
 
-                <View>
-                    <CustomLabel label={t('checkRate.vehicleType')} required />
+                <Animated.View layout={LinearTransition.duration(220)}>
+                    <View style={styles.vehicleHeaderRow}>
+                        <CustomLabel label={t('checkRate.vehicleType')} required />
+                        {activeVehicleConfigs.length > 0 && (
+                            <TouchableOpacity onPress={openAllVehicles}>
+                                <Text style={styles.viewAllLink}>{t('vehicleDetails.viewAll')}</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
                     {vehiclesLoading ? (
                         <View style={styles.vehicleLoadingRow}>
                             <ActivityIndicator color={COLOR.PRIMARY} size="small" />
                         </View>
                     ) : (
-                        <View style={styles.vehicleRow}>
-                            {activeVehicleConfigs.map((vt) => {
-                                const selected = vehicleType === vt.name.toLowerCase();
-                                return (
-                                    <TouchableOpacity
-                                        key={vt.id}
-                                        style={[styles.vehicleCard, selected && styles.vehicleCardSelected]}
-                                        onPress={() => setVehicleType(vt.name.toLowerCase())}
-                                    >
-                                        <VehicleVisual
-                                            vehicle={vt}
-                                            size={44}
-                                            iconSize={22}
-                                            borderRadius={12}
-                                            backgroundColor={selected ? '#EFF6FF' : '#F3F4F6'}
-                                            iconColor={selected ? COLOR.PRIMARY : '#6B7280'}
-                                        />
-                                        <Text style={[styles.vehicleLabel, selected && styles.vehicleLabelSelected]}>
-                                            {vt.name}
-                                        </Text>
-                                        <Text style={styles.vehicleDesc}>{t('checkRate.upToKg', { weight: vt.maxWeight })}</Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
+                        <Animated.View entering={FadeIn.duration(200)} style={{ marginTop: S(8) }}>
+                            <VehicleSelectCards
+                                vehicles={activeVehicleConfigs}
+                                selectedName={vehicleType}
+                                onSelect={(vt) => openVehicleDetails(vt.id)}
+                            />
+                        </Animated.View>
                     )}
-                </View>
+                </Animated.View>
 
                 {category === 'HOUSE_SHIFTING' && (
-                    <View style={styles.helperCard}>
+                    <Animated.View entering={FadeIn.duration(200)} layout={LinearTransition.duration(220)} style={styles.helperCard}>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.helperTitle}>Loading helpers</Text>
                             <Text style={styles.helperSub}>House shifting uses van/truck and adds helper charges in the quote.</Text>
@@ -228,24 +240,24 @@ const CheckRate = () => {
                                 <Plus size={16} color={helpersCount >= 4 ? '#9CA3AF' : COLOR.PRIMARY} />
                             </TouchableOpacity>
                         </View>
-                    </View>
+                    </Animated.View>
                 )}
 
                 {fareEstimate.loading && (
-                    <View style={styles.resultCard}>
+                    <Animated.View entering={FadeIn.duration(200)} layout={LinearTransition.duration(220)} style={styles.resultCard}>
                         <ActivityIndicator color={COLOR.PRIMARY} />
                         <Text style={styles.resultLoadingText}>{t('checkRate.calculatingRate')}</Text>
-                    </View>
+                    </Animated.View>
                 )}
 
                 {!fareEstimate.loading && fareEstimate.error && (
-                    <View style={styles.resultCard}>
+                    <Animated.View entering={FadeIn.duration(200)} layout={LinearTransition.duration(220)} style={styles.resultCard}>
                         <Text style={styles.errorText}>{fareEstimate.error}</Text>
-                    </View>
+                    </Animated.View>
                 )}
 
                 {!fareEstimate.loading && !fareEstimate.error && fareEstimate.price != null && (
-                    <View style={styles.resultCard}>
+                    <Animated.View entering={FadeIn.duration(220)} layout={LinearTransition.duration(220)} style={styles.resultCard}>
                         <Text style={styles.resultLabel}>{t('checkRate.estimatedRate')}</Text>
                         <Text style={styles.resultPrice}>₹{fareEstimate.price}</Text>
                         <Text style={styles.resultDistance}>
@@ -281,7 +293,7 @@ const CheckRate = () => {
                                 }
                             />
                         </View>
-                    </View>
+                    </Animated.View>
                 )}
 
                 {!pickup.trim() || !drop.trim() ? (
@@ -378,10 +390,24 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: S(7),
         paddingHorizontal: S(10),
+        position: 'relative',
     },
     segmentButtonSelected: {
         borderColor: COLOR.PRIMARY,
         backgroundColor: '#FFF7ED',
+    },
+    segmentCheck: {
+        position: 'absolute',
+        top: -6,
+        right: -6,
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        backgroundColor: COLOR.PRIMARY,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: '#fff',
     },
     segmentText: {
         fontSize: 12,
@@ -415,41 +441,20 @@ const styles = StyleSheet.create({
         fontFamily: FONTS.SEMI_BOLD_PRIMARY,
         color: '#4B5563',
     },
-    vehicleRow: {
+    vehicleHeaderRow: {
         flexDirection: 'row',
-        gap: S(10),
-        marginTop: S(8),
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    viewAllLink: {
+        fontSize: 12,
+        fontFamily: FONTS.SEMI_BOLD_PRIMARY,
+        color: COLOR.PRIMARY,
     },
     vehicleLoadingRow: {
         marginTop: S(8),
         paddingVertical: S(20),
         alignItems: 'center',
-    },
-    vehicleCard: {
-        flex: 1,
-        alignItems: 'center',
-        gap: 4,
-        paddingVertical: S(14),
-        borderRadius: S(12),
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        backgroundColor: '#F9FAFB',
-    },
-    vehicleCardSelected: {
-        borderColor: COLOR.PRIMARY,
-        backgroundColor: '#EFF6FF',
-    },
-    vehicleLabel: {
-        fontSize: 13,
-        fontFamily: FONTS.BOLD_PRIMARY,
-        color: '#111827',
-    },
-    vehicleLabelSelected: {
-        color: COLOR.PRIMARY,
-    },
-    vehicleDesc: {
-        fontSize: 10,
-        color: '#9CA3AF',
     },
     helperCard: {
         flexDirection: 'row',

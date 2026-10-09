@@ -65,6 +65,7 @@ const ModalSelectInput: React.FC<ModalSelectInputProps> = ({
                     <Text style={styles.sheetTitle}>{label}</Text>
 
                     <FlatList
+                        showsVerticalScrollIndicator={false}
                         data={options}
                         keyExtractor={(item) => item}
                         renderItem={({ item }) => (

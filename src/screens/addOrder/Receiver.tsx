@@ -23,7 +23,7 @@ const Reciver: React.FC<ReciverProps> = ({ onNext }) => {
     const [packageType, setPackageType] = useState('Documents');
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
+        <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
             {}
             <Text style={styles.sectionTitle}>Reciver Details</Text>
 

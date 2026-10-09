@@ -73,6 +73,7 @@ const InboxScreen = () => {
                 emptyMessage={t('inbox.noConversationsHint')}
             >
                 <FlatList
+                    showsVerticalScrollIndicator={false}
                     data={conversations}
                     keyExtractor={(item) => item.id}
                     renderItem={renderItem}

@@ -21,7 +21,16 @@ export interface Rating {
     
     
     serviceStars: number | null;
+    tipAmount: number;
+    tipPaymentId: string | null;
     createdAt: string;
+}
+
+export interface TipOrder {
+    orderId: string;
+    amount: number;
+    currency: string;
+    keyId: string;
 }
 
 export interface CreateRatingInput {

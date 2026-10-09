@@ -104,6 +104,7 @@ const FuelStationsScreen = () => {
         />
       ) : (
         <FlatList
+          showsVerticalScrollIndicator={false}
           data={stations ?? []}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}

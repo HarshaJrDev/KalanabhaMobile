@@ -52,7 +52,7 @@ const NewTicketScreen = () => {
         <View style={styles.root}>
             <ScreenHeader title={t('support.newTicket')} />
 
-            <ScrollView contentContainerStyle={styles.form}>
+            <ScrollView contentContainerStyle={styles.form} showsVerticalScrollIndicator={false}>
                 <Text style={styles.label}>{t('support.category')}</Text>
                 <View style={styles.categoryRow}>
                     {TICKET_CATEGORIES.map((c) => (

@@ -47,6 +47,7 @@ const EarningsScreen = () => {
         skeleton="stats"
       >
         <FlatList
+          showsVerticalScrollIndicator={false}
           data={summary?.recentTrips ?? []}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}

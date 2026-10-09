@@ -50,6 +50,9 @@ import TicketDetailScreen from '@screens/HomeScreens/TicketDetailScreen';
 import notification from '@screens/HomeScreens/notification';
 import SearchScreen from '@screens/Search/SearchScreen';
 import CheckRate from '@screens/HomeScreens/CheckRate';
+import VehicleDetailsScreen from '@screens/HomeScreens/VehicleDetailsScreen';
+import AllVehiclesScreen from '@screens/HomeScreens/AllVehiclesScreen';
+import ShipmentHistoryScreen from '@screens/HomeScreens/ShipmentHistoryScreen';
 import ShipmentDetailsScreen from '@screens/HomeScreens/ShipmentDetailsScreen/ShipmentDetailsScreen';
 import LocationPinPicker from '@screens/Location/LocationPinPicker';
 import WebViewScreen from '@screens/HomeScreens/WebViewScreen';
@@ -172,6 +175,9 @@ const App = () => {
                     />
                     <Stack.Screen name="Search" component={SearchScreen} />
                     <Stack.Screen name="CheckRate" component={CheckRate} />
+                    <Stack.Screen name="VehicleDetails" component={VehicleDetailsScreen} />
+                    <Stack.Screen name="AllVehicles" component={AllVehiclesScreen} />
+                    <Stack.Screen name="ShipmentHistory" component={ShipmentHistoryScreen} />
                     <Stack.Screen
                       name="ShipmentDetailsScreen"
                       component={ShipmentDetailsScreen}
