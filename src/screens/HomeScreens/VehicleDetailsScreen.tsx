@@ -12,16 +12,12 @@ import VehicleSelectCards from '@components/VehicleSelectCards';
 import type { RootStackParamList } from '../navigation/types';
 import type { VehicleConfig } from '@features/settings/types';
 import { formatFt, formatFt3 } from '@utils/vehicleUnits';
+import { formatVehicleCapacity, getBestValueVehicleId, getVehicleBadge } from '@utils/vehicleBadges';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'VehicleDetails'>;
 type VehicleDetailsRouteProp = RouteProp<RootStackParamList, 'VehicleDetails'>;
 
 type Tab = 'dimensions' | 'load' | 'pricing';
-
-const HEAVY_CARGO_THRESHOLD_KG = 10_000;
-
-const formatCapacity = (maxWeightKg: number): string =>
-    maxWeightKg >= 1000 ? `${(maxWeightKg / 1000).toFixed(maxWeightKg % 1000 === 0 ? 0 : 1)} T` : `${maxWeightKg} kg`;
 
 export const VehicleDetailsScreen: React.FC = () => {
     const navigation = useNavigation<NavigationProp>();
@@ -30,7 +26,7 @@ export const VehicleDetailsScreen: React.FC = () => {
     const { colors, fonts, spacing, radius } = useAppTheme();
     const styles = useMemo(() => makeStyles(colors, fonts, spacing, radius), [colors, fonts, spacing, radius]);
 
-    const { vehicles, onConfirm, popCount } = route.params;
+    const { vehicles, onConfirm, popCount, priceByVehicle } = route.params;
     const [activeId, setActiveId] = useState(route.params.vehicleId);
     const [tab, setTab] = useState<Tab>('dimensions');
 
@@ -39,21 +35,25 @@ export const VehicleDetailsScreen: React.FC = () => {
         [vehicles, activeId],
     );
 
-    const bestValueId = useMemo(() => {
-        if (vehicles.length === 0) return null;
-        return vehicles.reduce((best, v) => (v.ratePerKm < best.ratePerKm ? v : best), vehicles[0]).id;
-    }, [vehicles]);
+    const bestValueId = useMemo(() => getBestValueVehicleId(vehicles), [vehicles]);
 
     const fleetMaxWeight = useMemo(
         () => (vehicles.length === 0 ? 0 : Math.max(...vehicles.map(v => v.maxWeight))),
         [vehicles],
     );
 
-    const badge = vehicle?.id === bestValueId
-        ? t('addOrder.vehicleBadgeBestValue')
-        : vehicle && vehicle.maxWeight >= HEAVY_CARGO_THRESHOLD_KG
-            ? t('addOrder.vehicleBadgeHeavyCargo')
-            : null;
+    const badge = vehicle
+        ? getVehicleBadge(vehicle, bestValueId, {
+            bestValue: t('addOrder.vehicleBadgeBestValue'),
+            heavyCargo: t('addOrder.vehicleBadgeHeavyCargo'),
+        })?.label ?? null
+        : null;
+
+    // Real quoted fare for this route (CheckRate's price-compare quotes),
+    // falling back to the vehicle's static baseRate when opened without a
+    // route context (e.g. from addOrders.tsx).
+    const quotedPrice = vehicle ? priceByVehicle?.[vehicle.name.toLowerCase()] : undefined;
+    const displayPrice = quotedPrice ?? vehicle?.baseRate ?? 0;
 
     const selectVehicle = (next: VehicleConfig) => {
         if (next.id === activeId) return;
@@ -118,7 +118,7 @@ export const VehicleDetailsScreen: React.FC = () => {
                     )}
 
                     <View style={styles.specGrid}>
-                        <SpecTile icon={Weight} label={t('addOrder.vehicleSpecCapacity')} value={formatCapacity(vehicle.maxWeight)} styles={styles} />
+                        <SpecTile icon={Weight} label={t('addOrder.vehicleSpecCapacity')} value={formatVehicleCapacity(vehicle.maxWeight)} styles={styles} />
                         <SpecTile icon={Box} label={t('vehicleDetails.bodyType')} value={vehicle.specialConditions[0] ?? '—'} styles={styles} />
                         <SpecTile icon={Ruler} label={t('vehicleDetails.lengthLabel')} value={formatFt(vehicle.maxLength)} styles={styles} />
                     </View>
@@ -170,7 +170,7 @@ export const VehicleDetailsScreen: React.FC = () => {
                     )}
                     {tab === 'load' && (
                         <>
-                            <DetailRow label={t('addOrder.vehicleSpecCapacity')} value={formatCapacity(vehicle.maxWeight)} styles={styles} />
+                            <DetailRow label={t('addOrder.vehicleSpecCapacity')} value={formatVehicleCapacity(vehicle.maxWeight)} styles={styles} />
                             {fleetMaxWeight > 0 && (
                                 <View style={styles.capacityBarWrap}>
                                     <View style={styles.capacityBarTrack}>
@@ -194,6 +194,9 @@ export const VehicleDetailsScreen: React.FC = () => {
                     )}
                     {tab === 'pricing' && (
                         <>
+                            {quotedPrice != null && (
+                                <DetailRow label={t('vehicleDetails.quotedForThisRoute')} value={`₹${quotedPrice}`} styles={styles} />
+                            )}
                             <DetailRow label={t('addOrder.vehicleSpecBaseRate')} value={`₹${vehicle.baseRate}`} styles={styles} />
                             <DetailRow label={t('addOrder.vehicleSpecRatePerKm')} value={`₹${vehicle.ratePerKm}/km`} styles={styles} />
                         </>
@@ -209,6 +212,7 @@ export const VehicleDetailsScreen: React.FC = () => {
                             vehicles={vehicles}
                             selectedName={vehicle.name}
                             onSelect={selectVehicle}
+                            priceByVehicle={priceByVehicle}
                         />
                     </Animated.View>
                 )}
@@ -216,8 +220,10 @@ export const VehicleDetailsScreen: React.FC = () => {
 
             <View style={styles.footer}>
                 <View>
-                    <Text style={styles.footerPrice}>₹{vehicle.baseRate}</Text>
-                    <Text style={styles.footerPriceLabel}>{t('vehicleDetails.estimatedBaseFare')}</Text>
+                    <Text style={styles.footerPrice}>₹{displayPrice}</Text>
+                    <Text style={styles.footerPriceLabel}>
+                        {quotedPrice != null ? t('vehicleDetails.quotedForThisRoute') : t('vehicleDetails.estimatedBaseFare')}
+                    </Text>
                 </View>
                 <Pressable style={styles.confirmBtn} onPress={handleConfirm}>
                     <Text style={styles.confirmBtnText}>{t('vehicleDetails.confirmVehicle')}</Text>

@@ -12,7 +12,13 @@
     "edit": "संपादित करें",
     "delete": "हटाएं",
     "logout": "लॉग आउट",
-    "confirm": "पुष्टि करें"
+    "confirm": "पुष्टि करें",
+    "call": "कॉल करें",
+    "callSomeone": "{{name}} को कॉल करें?",
+    "thisPerson": "इस व्यक्ति",
+    "callRatingHint": "रेटिंग {{rating}} ★",
+    "phoneNumberNotAvailable": "फ़ोन नंबर उपलब्ध नहीं है",
+    "unableToOpenDialer": "डायलर नहीं खोल सका"
   },
   "tabs": {
     "home": "होम",
@@ -712,7 +718,14 @@
     "thisWeek": "इस सप्ताह",
     "allTime": "कुल समय · {{trips}} यात्राएं",
     "recentTrips": "हाल की यात्राएं",
-    "noTripsYet": "अभी तक कोई डिलीवर की गई यात्रा नहीं"
+    "noTripsYet": "अभी तक कोई डिलीवर की गई यात्रा नहीं",
+    "unpaidAvailable": "₹{{amount}} उपलब्ध · {{trips}} यात्राएं",
+    "nothingPendingPayout": "कोई भुगतान लंबित नहीं है",
+    "payoutHint": "कभी भी भुगतान का अनुरोध करें — एडमिन के अगले बैच का इंतज़ार करने की ज़रूरत नहीं।",
+    "requestPayout": "भुगतान का अनुरोध करें",
+    "payoutProcessing": "₹{{amount}} आपके बैंक खाते में ट्रांसफर किया जा रहा है",
+    "payoutRecorded": "₹{{amount}} भुगतान दर्ज किया गया — आपके बैंक विवरण उपलब्ध होते ही ट्रांसफर हो जाएगा",
+    "payoutRequestFailed": "भुगतान का अनुरोध नहीं किया जा सका — फिर से प्रयास करें"
   },
   "bankDetails": {
     "title": "बैंक विवरण",
@@ -758,6 +771,19 @@
     "litresOptional": "लीटर (वैकल्पिक)",
     "litresPlaceholder": "जैसे 8.5"
   },
+  "tollGates": {
+    "unableToGetLocation": "आपका वर्तमान स्थान प्राप्त करने में असमर्थ",
+    "nearbyTollGates": "आस-पास के टोल गेट",
+    "mapDataUnavailable": "मैप डेटा स्रोत अभी अनुपलब्ध है",
+    "noTollGatesFound": "आस-पास कोई टोल गेट नहीं मिला",
+    "kmAway": "{{km}} किमी दूर",
+    "logToll": "टोल लॉग करें",
+    "enterValidAmount": "एक मान्य राशि दर्ज करें",
+    "tollExpenseLogged": "टोल खर्च लॉग किया गया",
+    "logExpenseFailed": "यह खर्च लॉग नहीं किया जा सका — फिर से प्रयास करें",
+    "amountPaid": "भुगतान की गई राशि (₹)",
+    "amountPaidPlaceholder": "जैसे 65"
+  },
   "turnByTurnNav": {
     "calculatingRoute": "मार्ग की गणना हो रही है…"
   },
@@ -794,9 +820,13 @@
     "fragileHandleWithCare": "नाज़ुक — सावधानी से संभालें",
     "decline": "अस्वीकार करें",
     "acceptLoad": "लोड स्वीकार करें",
+    "demandNearYou": "आपके पास मांग",
+    "demandJobCount": "आस-पास {{count}} काम",
     "accepting": "स्वीकार किया जा रहा है…",
     "findFuelStations": "फ्यूल स्टेशन खोजें",
     "nearbyPetrolBunks": "आस-पास के पेट्रोल पंप · फिल-अप लॉग करें",
+    "findTollGates": "टोल गेट खोजें",
+    "nearbyTollPlazas": "आस-पास के टोल प्लाज़ा · टोल लॉग करें",
     "myDocuments": "मेरे दस्तावेज़",
     "verified": "सत्यापित",
     "uploadForAdminReview": "एडमिन समीक्षा के लिए अपलोड करें",
@@ -907,6 +937,7 @@
     "upToKg": "{{weight}} किग्रा तक",
     "calculatingRate": "दर की गणना हो रही है…",
     "estimatedRate": "अनुमानित दर",
+    "longHaulNotice": "यह एक लंबी दूरी का मार्ग है। डिलीवरी में सामान्य से अधिक समय लग सकता है, और सेम-डे/एक्सप्रेस समय लागू नहीं हो सकता।",
     "bookThisShipment": "यह शिपमेंट बुक करें",
     "enterBothHint": "दर देखने के लिए पिकअप और गंतव्य दोनों दर्ज करें।"
   },
@@ -940,7 +971,9 @@
     "volume": "आयतन",
     "similarVehicles": "समान वाहन",
     "estimatedBaseFare": "अनुमानित आधार किराया",
-    "confirmVehicle": "वाहन की पुष्टि करें"
+    "confirmVehicle": "वाहन की पुष्टि करें",
+    "forThisRoute": "इस मार्ग के लिए",
+    "quotedForThisRoute": "इस मार्ग के लिए कोटेशन"
   },
   "qrScan": {
     "title": "क्यूआर कोड स्कैन करें",
@@ -1086,6 +1119,7 @@
     "arrivalRecorded": "आगमन दर्ज किया गया",
     "couldNotRecordArrival": "आगमन दर्ज नहीं किया जा सका",
     "couldNotGetLocation": "आपका स्थान प्राप्त नहीं हो सका — स्थान अनुमतियां जांचें",
+    "pickupOtpVerifiedCapturePhoto": "OTP सत्यापित — अब पिकअप प्रमाण फ़ोटो लें",
     "cameraPermissionPickup": "पिकअप प्रमाण कैप्चर करने के लिए कैमरा अनुमति आवश्यक है",
     "couldNotCapturePhoto": "फोटो कैप्चर नहीं हो सका — {{reason}}",
     "couldNotCapturePhotoRetry": "फोटो कैप्चर नहीं हो सका — फिर से प्रयास करें",

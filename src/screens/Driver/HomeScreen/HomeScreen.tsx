@@ -37,6 +37,7 @@ import {
     Wallet,
     MessageCircle,
     Fuel,
+    Milestone,
     FileText,
     ShieldAlert,
     MapPin,
@@ -48,6 +49,9 @@ import {
 import { registerFCMToken } from '@utils/cm';
 import { useTranslation } from 'react-i18next';
 import { useDriverLiveLocation } from '@location/useDriverLiveLocation';
+import Geolocation from 'react-native-geolocation-service';
+import { ensureLocationPermission } from '@utils/locationPermission';
+import { NearbyPoiMap } from '@components/NearbyPoiMap';
 import { openGoogleMapsDirections } from '@utils/navigation';
 import { LiveTrackingMap } from '@components/LiveTrackingMap';
 import { TurnByTurnRouteLine, TurnByTurnBanner } from '@components/TurnByTurnNav';
@@ -82,6 +86,29 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
     const navigation = useNavigation();
     const { t } = useTranslation();
     const driverVehicleType = useAuthStore((s) => s.user?.vehicleType);
+
+    // One-shot (not a live watch like useDriverLiveLocation below, which
+    // also pings the tracking endpoint — that's for an active delivery's
+    // customer-visible live map, not for idly browsing the Searching
+    // pool). Powers two real features: sorting the pool by distance so a
+    // driver who just dropped off sees return-direction jobs first
+    // (BlackBuck's "return load matching"), and the demand map below
+    // (Uber/Grab-style "where's demand right now").
+    const [idlePosition, setIdlePosition] = useState<{ lat: number; lng: number } | null>(null);
+    const fetchIdlePosition = useCallback(() => {
+        ensureLocationPermission().then((granted) => {
+            if (!granted) return;
+            Geolocation.getCurrentPosition(
+                (pos) => setIdlePosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                () => {},
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 },
+            );
+        });
+    }, []);
+    useEffect(() => {
+        fetchIdlePosition();
+    }, [fetchIdlePosition]);
+
     const {
         data: searchingShipments,
         isLoading: loading,
@@ -94,7 +121,17 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
         // accepting. Omitted entirely if the driver has no vehicleType
         // on file (shouldn't happen for an active driver, but fails
         // open to "show everything" rather than silently empty).
-        driverVehicleType ? { vehicleType: driverVehicleType } : undefined,
+        // lat/lng + sortBy 'distance' once available — the pool was
+        // always plain recency order before, regardless of where the
+        // driver actually is right now.
+        driverVehicleType
+            ? {
+                  vehicleType: driverVehicleType,
+                  lat: idlePosition?.lat,
+                  lng: idlePosition?.lng,
+                  sortBy: idlePosition ? 'distance' : undefined,
+              }
+            : undefined,
     );
 
     
@@ -637,6 +674,27 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                 )}
 
                 {}
+                {!activeDelivery && idlePosition && !!searchingShipments?.length && (
+                    <View style={styles.demandSection}>
+                        <View style={styles.demandHeaderRow}>
+                            <Text style={styles.demandTitle}>{t('driverHome.demandNearYou')}</Text>
+                            <Text style={styles.demandCount}>
+                                {t('driverHome.demandJobCount', {
+                                    count: searchingShipments.length,
+                                    plural: searchingShipments.length === 1 ? '' : 's',
+                                })}
+                            </Text>
+                        </View>
+                        <NearbyPoiMap
+                            center={idlePosition}
+                            points={searchingShipments.map((s) => ({ id: s.id, lat: s.pickup.lat, lng: s.pickup.lng }))}
+                            height={160}
+                            markerColor="#16A34A"
+                        />
+                    </View>
+                )}
+
+                {}
                 <View style={styles.quickRow}>
                     <TouchableOpacity
                         style={[styles.quickCard, { backgroundColor: '#FEF3C7' }]}
@@ -660,6 +718,20 @@ const HomeScreen: React.FC<HomeScreenProps> = () => {
                         <Text style={styles.quickCardSub}>
                             {documentsVerified ? t('driverHome.verified') : t('driverHome.uploadForAdminReview')}
                         </Text>
+                    </TouchableOpacity>
+                </View>
+
+                {}
+                <View style={styles.quickRow}>
+                    <TouchableOpacity
+                        style={[styles.quickCard, { backgroundColor: '#E0E7FF' }]}
+                        onPress={() => (navigation as any).navigate('TollGates')}
+                    >
+                        <View style={[styles.quickIconWrap, { backgroundColor: '#C7D2FE' }]}>
+                            <Milestone color="#4338CA" size={18} />
+                        </View>
+                        <Text style={styles.quickCardTitle}>{t('driverHome.findTollGates')}</Text>
+                        <Text style={styles.quickCardSub}>{t('driverHome.nearbyTollPlazas')}</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -1097,6 +1169,11 @@ const styles = StyleSheet.create({
         backgroundColor: '#FF7518',
     },
     acceptBtnText: { fontSize: 13, fontFamily: FONTS.BOLD_PRIMARY, color: '#fff' },
+
+    demandSection: { marginHorizontal: 16, marginTop: 16 },
+    demandHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    demandTitle: { fontSize: 14, fontFamily: FONTS.BOLD_PRIMARY, color: '#111827' },
+    demandCount: { fontSize: 12, fontFamily: FONTS.SEMI_BOLD_PRIMARY, color: '#16A34A' },
 
     quickRow: {
         flexDirection: 'row',

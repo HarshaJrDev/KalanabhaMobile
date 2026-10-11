@@ -5,6 +5,8 @@ import { useAuthState } from '@hooks/useAuthState';
 export const mapsKeys = {
     fuelStations: (lat: number, lng: number, radiusKm: number) =>
         ['maps', 'fuel-stations', lat.toFixed(3), lng.toFixed(3), radiusKm] as const,
+    tollGates: (lat: number, lng: number, radiusKm: number) =>
+        ['maps', 'toll-gates', lat.toFixed(3), lng.toFixed(3), radiusKm] as const,
 };
 
 
@@ -16,6 +18,16 @@ export const useNearbyFuelStations = (lat: number | null, lng: number | null, ra
     return useQuery({
         queryKey: mapsKeys.fuelStations(lat ?? 0, lng ?? 0, radiusKm),
         queryFn: () => mapsApi.getNearbyFuelStations(lat!, lng!, radiusKm),
+        enabled: isAuthenticated && lat != null && lng != null,
+        staleTime: 2 * 60 * 1000,
+    });
+};
+
+export const useNearbyTollGates = (lat: number | null, lng: number | null, radiusKm = 15) => {
+    const { isAuthenticated } = useAuthState();
+    return useQuery({
+        queryKey: mapsKeys.tollGates(lat ?? 0, lng ?? 0, radiusKm),
+        queryFn: () => mapsApi.getNearbyTollGates(lat!, lng!, radiusKm),
         enabled: isAuthenticated && lat != null && lng != null,
         staleTime: 2 * 60 * 1000,
     });

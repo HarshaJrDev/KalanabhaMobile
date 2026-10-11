@@ -30,7 +30,6 @@ import {
   Pressable,
   ActivityIndicator,
   Clipboard,
-  Linking,
   Share,
   Modal,
   Image,
@@ -57,6 +56,7 @@ import { useTurnByTurnRoute } from '@features/navigation/useTurnByTurnRoute';
 import { haversineDistanceKm } from '@utils/geo';
 import { openGoogleMapsDirections } from '@utils/navigation';
 import { showToast } from '@ui/alert/toastStore';
+import { confirmCall } from '@utils/confirmCall';
 import { showSuccessModal } from '@ui/alert/successModalStore';
 import { Illustration } from '@components/Illustration';
 import { Images } from '@assets/images';
@@ -1117,14 +1117,11 @@ const ShipmentDetailsScreen = () => {
   };
 
   const handleCallDriver = () => {
-    const phone = shipment.dispatch?.driverPhone;
-    if (!phone) {
+    if (!shipment.dispatch?.driverPhone) {
       showToast(t('shipmentDetails.noDriverAssignedYet'), 'info');
       return;
     }
-    Linking.openURL(`tel:${phone}`).catch(() =>
-      showToast(t('shipmentDetails.unableToOpenDialer'), 'error'),
-    );
+    confirmCall(shipment.dispatch.driverPhone, shipment.dispatch.driverName, shipment.dispatch.driverRating, t);
   };
 
   const handleChatSupport = () => {

@@ -235,6 +235,12 @@ export interface ShipmentQuote {
     packagingFee: number;
 }
 
+export type QuoteAllVehiclesPayload = Omit<QuoteShipmentPayload, 'vehicleType'>;
+
+export interface VehicleQuote extends ShipmentQuote {
+    vehicleType: string;
+}
+
 
 export interface InsuranceClaim {
     id: string;

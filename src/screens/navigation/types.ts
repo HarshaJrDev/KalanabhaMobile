@@ -38,11 +38,13 @@ export type RootStackParamList = {
     vehicles: VehicleConfig[];
     onConfirm?: (vehicle: VehicleConfig) => void;
     popCount?: number;
+    priceByVehicle?: Record<string, number>;
   };
   AllVehicles: {
     vehicles: VehicleConfig[];
     selectedName?: string;
     onConfirm: (vehicle: VehicleConfig) => void;
+    priceByVehicle?: Record<string, number>;
   };
   ShipmentHistory: { initialStatus?: string } | undefined;
   QRScan: undefined;
@@ -67,5 +69,6 @@ export type RootStackParamList = {
   DriverTrips: undefined;
   DriverEarnings: undefined;
   FuelStations: undefined;
+  TollGates: undefined;
   DriverDocuments: undefined;
 };

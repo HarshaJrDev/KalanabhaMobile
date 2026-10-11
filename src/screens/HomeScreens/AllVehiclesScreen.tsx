@@ -22,11 +22,10 @@ import VehicleVisual from '@components/VehicleVisual';
 import type { RootStackParamList } from '../navigation/types';
 import type { VehicleConfig } from '@features/settings/types';
 import { formatFt } from '@utils/vehicleUnits';
+import { HEAVY_CARGO_THRESHOLD_KG, formatVehicleCapacity, getBestValueVehicleId, getVehicleBadge } from '@utils/vehicleBadges';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'AllVehicles'>;
 type AllVehiclesRouteProp = RouteProp<RootStackParamList, 'AllVehicles'>;
-
-const HEAVY_CARGO_THRESHOLD_KG = 10_000;
 
 type CategoryKey = 'all' | 'truck' | 'container' | 'heavy' | 'special';
 
@@ -46,9 +45,6 @@ const categoryOf = (v: VehicleConfig): CategoryKey => {
 
 type SortMode = 'default' | 'priceAsc' | 'priceDesc';
 
-const formatCapacity = (maxWeightKg: number): string =>
-    maxWeightKg >= 1000 ? `${(maxWeightKg / 1000).toFixed(maxWeightKg % 1000 === 0 ? 0 : 1)} T` : `${maxWeightKg} kg`;
-
 export const AllVehiclesScreen: React.FC = () => {
     const navigation = useNavigation<NavigationProp>();
     const route = useRoute<AllVehiclesRouteProp>();
@@ -56,21 +52,18 @@ export const AllVehiclesScreen: React.FC = () => {
     const { colors, fonts, spacing, radius } = useAppTheme();
     const styles = useMemo(() => makeStyles(colors, fonts, spacing, radius), [colors, fonts, spacing, radius]);
 
-    const { vehicles, selectedName, onConfirm } = route.params;
+    const { vehicles, selectedName, onConfirm, priceByVehicle } = route.params;
     const [query, setQuery] = useState('');
     const [category, setCategory] = useState<CategoryKey>('all');
     const [sort, setSort] = useState<SortMode>('default');
 
-    const bestValueId = useMemo(() => {
-        if (vehicles.length === 0) return null;
-        return vehicles.reduce((best, v) => (v.ratePerKm < best.ratePerKm ? v : best), vehicles[0]).id;
-    }, [vehicles]);
+    const bestValueId = useMemo(() => getBestValueVehicleId(vehicles), [vehicles]);
 
-    const badgeFor = (vehicle: VehicleConfig): string | null => {
-        if (vehicle.id === bestValueId) return t('addOrder.vehicleBadgeBestValue');
-        if (vehicle.maxWeight >= HEAVY_CARGO_THRESHOLD_KG) return t('addOrder.vehicleBadgeHeavyCargo');
-        return null;
-    };
+    const badgeFor = (vehicle: VehicleConfig): string | null =>
+        getVehicleBadge(vehicle, bestValueId, {
+            bestValue: t('addOrder.vehicleBadgeBestValue'),
+            heavyCargo: t('addOrder.vehicleBadgeHeavyCargo'),
+        })?.label ?? null;
 
     const categoryCounts = useMemo(() => {
         const counts: Record<CategoryKey, number> = { all: vehicles.length, truck: 0, container: 0, heavy: 0, special: 0 };
@@ -78,13 +71,21 @@ export const AllVehiclesScreen: React.FC = () => {
         return counts;
     }, [vehicles]);
 
+    // Sorts by the real quoted fare for this route when CheckRate has one
+    // (priceByVehicle), falling back to the vehicle's static baseRate when
+    // opened without a route context (e.g. from addOrders.tsx).
+    const priceFor = useMemo(
+        () => (v: VehicleConfig): number => priceByVehicle?.[v.name.toLowerCase()] ?? v.baseRate,
+        [priceByVehicle],
+    );
+
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
         let list = vehicles.filter(v => (category === 'all' || categoryOf(v) === category) && (!q || v.name.toLowerCase().includes(q)));
-        if (sort === 'priceAsc') list = [...list].sort((a, b) => a.baseRate - b.baseRate);
-        if (sort === 'priceDesc') list = [...list].sort((a, b) => b.baseRate - a.baseRate);
+        if (sort === 'priceAsc') list = [...list].sort((a, b) => priceFor(a) - priceFor(b));
+        if (sort === 'priceDesc') list = [...list].sort((a, b) => priceFor(b) - priceFor(a));
         return list;
-    }, [vehicles, query, category, sort]);
+    }, [vehicles, query, category, sort, priceFor]);
 
     const cycleSort = () => {
         setSort(prev => (prev === 'default' ? 'priceAsc' : prev === 'priceAsc' ? 'priceDesc' : 'default'));
@@ -96,6 +97,7 @@ export const AllVehiclesScreen: React.FC = () => {
             vehicles,
             onConfirm,
             popCount: 2,
+            priceByVehicle,
         });
     };
 
@@ -213,7 +215,7 @@ export const AllVehiclesScreen: React.FC = () => {
                                 <View style={styles.specRow}>
                                     <View style={styles.specCol}>
                                         <Weight size={12} color={colors.TEXT_SECONDARY} />
-                                        <Text style={styles.specValue} numberOfLines={1}>{formatCapacity(item.maxWeight)}</Text>
+                                        <Text style={styles.specValue} numberOfLines={1}>{formatVehicleCapacity(item.maxWeight)}</Text>
                                         <Text style={styles.specLabel}>{t('addOrder.vehicleSpecCapacity')}</Text>
                                     </View>
                                     <View style={styles.specCol}>
@@ -229,7 +231,12 @@ export const AllVehiclesScreen: React.FC = () => {
                                 </View>
 
                                 <View style={styles.footerRow}>
-                                    <Text style={styles.price}>₹{item.baseRate}</Text>
+                                    <View>
+                                        <Text style={styles.price}>₹{priceFor(item)}</Text>
+                                        {priceByVehicle?.[item.name.toLowerCase()] != null && (
+                                            <Text style={styles.priceHint}>{t('vehicleDetails.forThisRoute')}</Text>
+                                        )}
+                                    </View>
                                     <View style={styles.arrowBtn}>
                                         <ArrowRight size={16} color={colors.PRIMARY} />
                                     </View>
@@ -310,6 +317,7 @@ const makeStyles = (
             marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.BORDER,
         },
         price: { fontSize: 16, fontFamily: fonts.BOLD_PRIMARY, color: colors.PRIMARY },
+        priceHint: { fontSize: 9, color: colors.TEXT_SECONDARY, marginTop: 1 },
         arrowBtn: {
             width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: colors.PRIMARY,
             alignItems: 'center', justifyContent: 'center',

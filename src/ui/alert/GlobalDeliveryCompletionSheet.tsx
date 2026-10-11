@@ -14,7 +14,7 @@
 
 
 import React, { useRef, useState } from 'react';
-import { Modal, View, Text, StyleSheet, TextInput, Pressable, ActivityIndicator } from 'react-native';
+import { Modal, View, Text, StyleSheet, TextInput, Pressable, ActivityIndicator, ScrollView } from 'react-native';
 import { CheckCircle2, Circle, X } from 'lucide-react-native';
 import { launchCamera } from 'react-native-image-picker';
 import { useAppTheme } from '@theme/ThemeContext';
@@ -180,6 +180,11 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
                             <X size={22} color={colors.TEXT_SECONDARY} />
                         </Pressable>
                     </View>
+                    <ScrollView
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                        contentContainerStyle={styles.scrollContent}
+                    >
                     <Text style={styles.subtitle}>{t('deliveryCompletion.subtitle')}</Text>
 
                     {}
@@ -304,6 +309,7 @@ export const GlobalDeliveryCompletionSheet: React.FC = () => {
                     <Pressable style={[styles.completeBtn, !canComplete && styles.completeBtnDisabled]} disabled={!canComplete} onPress={handleCompleteTrip}>
                         {completing ? <ActivityIndicator color="#fff" /> : <Text style={styles.completeBtnText}>{t('deliveryCompletion.completeTrip')}</Text>}
                     </Pressable>
+                    </ScrollView>
                 </View>
             </View>
         </Modal>
@@ -326,6 +332,7 @@ const makeStyles = (colors: ReturnType<typeof useAppTheme>['colors'], fonts: Ret
     StyleSheet.create({
         overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
         sheet: { backgroundColor: colors.BACKGROUND, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '90%' },
+        scrollContent: { paddingBottom: 12 },
         header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
         title: { fontSize: 17, fontFamily: fonts.BOLD_PRIMARY, color: colors.TEXT_PRIMARY },
         subtitle: { fontSize: 12, color: colors.TEXT_SECONDARY, marginTop: 4, marginBottom: 14 },

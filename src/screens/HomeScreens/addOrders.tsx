@@ -71,6 +71,7 @@ import {
 import { useVehicleSearch } from '@features/vehicles/useVehicleSearch';
 import { useAuthStore } from '@features/store/authStore';
 import { useUpdateProfile } from '@hooks/useUpdateProfile';
+import { getOnlineVehicleTypes } from '@features/users/api/users.api';
 import type { ServiceArea } from '@features/settings/types';
 import VehicleSelectCards from '@components/VehicleSelectCards';
 import PlacePicker from '@components/PlacePicker';
@@ -928,7 +929,7 @@ const StepCategory = ({
   const CATEGORY_OPTIONS = useMemo(() => makeCategoryOptions(t), [t]);
 
   return (
-    <ScrollView showsVerticalScrollIndicator={true}>
+    <ScrollView showsVerticalScrollIndicator={false}>
       {recentOrders.length > 0 && (
         <View style={{ marginBottom: 18 }}>
           <Text style={recentReceiverStyles.label}>
@@ -1147,7 +1148,7 @@ const StepSender = ({
 
   return (
     <ScrollView
-      showsVerticalScrollIndicator={true}
+      showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
       <SectionHeader
@@ -1300,7 +1301,7 @@ const StepReceiver = ({
 
   return (
     <ScrollView
-      showsVerticalScrollIndicator={true}
+      showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
       <SectionHeader
@@ -1467,7 +1468,7 @@ const StepPackage = ({
 
   return (
     <ScrollView
-      showsVerticalScrollIndicator={true}
+      showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
       <SectionHeader
@@ -2018,7 +2019,7 @@ const StepOrderDetails = ({
 
   return (
     <ScrollView
-      showsVerticalScrollIndicator={true}
+      showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
       {}
@@ -3862,24 +3863,43 @@ const NewOrder = () => {
     [clearSubmitIdempotencyKey],
   );
 
+  const [devPickingVehicle, setDevPickingVehicle] = useState(false);
+
   // Dev-only: fills every step with real, valid random data (two distinct
-  // real service areas, a real active vehicle type) and flags
-  // devAutoSubmitPending — the effect below waits for the resulting fare
-  // estimate to resolve, then calls handleSubmit itself, so one tap
-  // produces a real created shipment without stepping through the wizard.
-  const fillRandomTestOrder = useCallback(() => {
+  // real service areas, a vehicle type an actual online driver can take
+  // right now) and flags devAutoSubmitPending — the effect below waits
+  // for the resulting fare estimate to resolve, then calls handleSubmit
+  // itself, so one tap produces a real created shipment that a driver
+  // can actually pick up, not just any random catalog vehicle type.
+  const fillRandomTestOrder = useCallback(async () => {
     if (activeAreas.length < 2) {
       showToast('Need at least 2 active service areas to create a random test order', 'error');
       return;
     }
+    const activeDevVehicles = (devVehicleConfigs ?? []).filter(v => v.active);
+
+    setDevPickingVehicle(true);
+    let onlineTypes: string[] = [];
+    try {
+      onlineTypes = await getOnlineVehicleTypes();
+    } catch {
+      // Best-effort — if the lookup itself fails, fall through to the
+      // "none online" branch below rather than booking blind.
+    } finally {
+      setDevPickingVehicle(false);
+    }
+    const onlineSet = new Set(onlineTypes.map(v => v.toLowerCase()));
+    const availableVehicles = activeDevVehicles.filter(v => onlineSet.has(v.name.toLowerCase()));
+
+    if (availableVehicles.length === 0) {
+      showToast('No driver is online for any vehicle type right now — nothing to demo against', 'error');
+      return;
+    }
+    const randomVehicle = availableVehicles[Math.floor(Math.random() * availableVehicles.length)];
+
     const shuffledAreas = [...activeAreas].sort(() => Math.random() - 0.5);
     const pickupArea = shuffledAreas[0];
     const dropArea = shuffledAreas[1];
-    const activeDevVehicles = (devVehicleConfigs ?? []).filter(v => v.active);
-    const randomVehicle =
-      activeDevVehicles.length > 0
-        ? activeDevVehicles[Math.floor(Math.random() * activeDevVehicles.length)]
-        : null;
 
     setCategory('PARCEL');
     setSender(prev => ({
@@ -3905,20 +3925,10 @@ const NewOrder = () => {
       weight: String(Math.floor(Math.random() * 20) + 1),
       quantity: '1',
     }));
-    if (randomVehicle) {
-      setOrderDetails(prev => ({ ...prev, vehicleType: randomVehicle.name.toLowerCase() }));
-    }
-    // A driver only sees this in their Searching list if their own
-    // vehicleType matches exactly (DispatchService's eligibility guard,
-    // mirrored by useSearchingShipments' query) — the single most common
-    // reason a freshly-booked test order "doesn't reach the driver" is
-    // this not matching the test driver account's vehicle, not a bug.
-    showToast(
-      `Booked as ${randomVehicle?.name ?? orderDetails.vehicleType} — the test driver account needs that same vehicle type to see it in Searching`,
-      'info',
-    );
+    setOrderDetails(prev => ({ ...prev, vehicleType: randomVehicle.name.toLowerCase() }));
+    showToast(`Booked as ${randomVehicle.name} — a driver is online for this vehicle now`, 'info');
     setDevAutoSubmitPending(true);
-  }, [activeAreas, devVehicleConfigs, selectPickupPlace, selectDropPlace, orderDetails.vehicleType]);
+  }, [activeAreas, devVehicleConfigs, selectPickupPlace, selectDropPlace]);
 
   const addStop = useCallback(
     (place: ServiceArea, landmark: string) => {
@@ -4228,11 +4238,15 @@ const NewOrder = () => {
         <TouchableOpacity
           style={mainStyles.devRandomOrderBtn}
           onPress={fillRandomTestOrder}
-          disabled={submitting || devAutoSubmitPending}
+          disabled={submitting || devAutoSubmitPending || devPickingVehicle}
           activeOpacity={0.8}
         >
           <Text style={mainStyles.devRandomOrderBtnText}>
-            {devAutoSubmitPending || submitting ? 'Booking…' : '🧪 Book Random Order'}
+            {devPickingVehicle
+              ? 'Finding available vehicle…'
+              : devAutoSubmitPending || submitting
+              ? 'Booking…'
+              : '🧪 Book Random Order'}
           </Text>
         </TouchableOpacity>
       )}

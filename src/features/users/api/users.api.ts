@@ -8,6 +8,14 @@ export const getMe = async (): Promise<StoredUser> => {
     return data.data;
 };
 
+// Vehicle types with at least one online, location-reporting driver right
+// now — same eligibility DispatchService's real auto-match uses. No admin
+// permission required (leaks no driver identity, just type strings).
+export const getOnlineVehicleTypes = async (): Promise<string[]> => {
+    const { data } = await apiClient.get<ApiSuccessResponse<string[]>>('/users/online-vehicle-types');
+    return data.data;
+};
+
 
 
 

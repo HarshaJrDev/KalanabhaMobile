@@ -12,7 +12,13 @@
     "viewAll": "View all",
     "edit": "Edit",
     "delete": "Delete",
-    "logout": "Log Out"
+    "logout": "Log Out",
+    "call": "Call",
+    "callSomeone": "Call {{name}}?",
+    "thisPerson": "this person",
+    "callRatingHint": "Rated {{rating}} ★",
+    "phoneNumberNotAvailable": "Phone number not available",
+    "unableToOpenDialer": "Unable to open the dialer"
   },
   "tabs": {
     "home": "Home",
@@ -712,7 +718,14 @@
     "thisWeek": "This Week",
     "allTime": "All Time · {{trips}} trips",
     "recentTrips": "Recent Trips",
-    "noTripsYet": "No delivered trips yet"
+    "noTripsYet": "No delivered trips yet",
+    "unpaidAvailable": "₹{{amount}} available · {{trips}} trips",
+    "nothingPendingPayout": "Nothing pending payout",
+    "payoutHint": "Request a payout any time — no need to wait for the admin's next batch.",
+    "requestPayout": "Request Payout",
+    "payoutProcessing": "₹{{amount}} is being transferred to your bank account",
+    "payoutRecorded": "₹{{amount}} payout recorded — it will transfer once your bank details are on file",
+    "payoutRequestFailed": "Could not request payout — try again"
   },
   "bankDetails": {
     "title": "Bank Details",
@@ -758,6 +771,19 @@
     "litresOptional": "Litres (optional)",
     "litresPlaceholder": "e.g. 8.5"
   },
+  "tollGates": {
+    "unableToGetLocation": "Unable to get your current location",
+    "nearbyTollGates": "Nearby Toll Gates",
+    "mapDataUnavailable": "Map data source is unavailable right now",
+    "noTollGatesFound": "No toll gates found nearby",
+    "kmAway": "{{km}} km away",
+    "logToll": "Log toll",
+    "enterValidAmount": "Enter a valid amount",
+    "tollExpenseLogged": "Toll expense logged",
+    "logExpenseFailed": "Could not log this expense — try again",
+    "amountPaid": "Amount paid (₹)",
+    "amountPaidPlaceholder": "e.g. 65"
+  },
   "turnByTurnNav": {
     "calculatingRoute": "Calculating route…"
   },
@@ -794,9 +820,13 @@
     "fragileHandleWithCare": "Fragile — handle with care",
     "decline": "Decline",
     "acceptLoad": "Accept Load",
+    "demandNearYou": "Demand near you",
+    "demandJobCount": "{{count}} job{{plural}} nearby",
     "accepting": "Accepting…",
     "findFuelStations": "Find Fuel Stations",
     "nearbyPetrolBunks": "Nearby petrol bunks · log a fill-up",
+    "findTollGates": "Find Toll Gates",
+    "nearbyTollPlazas": "Nearby toll plazas · log a toll",
     "myDocuments": "My Documents",
     "verified": "Verified",
     "uploadForAdminReview": "Upload for admin review",
@@ -907,6 +937,7 @@
     "upToKg": "Up to {{weight}} kg",
     "calculatingRate": "Calculating rate…",
     "estimatedRate": "Estimated Rate",
+    "longHaulNotice": "This is a long-distance route. Delivery may take longer than usual, and same-day/express timing may not apply.",
     "bookThisShipment": "Book This Shipment",
     "enterBothHint": "Enter both a pickup and destination to see a rate."
   },
@@ -940,7 +971,9 @@
     "volume": "Volume",
     "similarVehicles": "Similar Vehicles",
     "estimatedBaseFare": "Estimated base fare",
-    "confirmVehicle": "Confirm Vehicle"
+    "confirmVehicle": "Confirm Vehicle",
+    "forThisRoute": "For this route",
+    "quotedForThisRoute": "Quoted for this route"
   },
   "qrScan": {
     "title": "Scan QR Code",
@@ -1086,6 +1119,7 @@
     "arrivalRecorded": "Arrival recorded",
     "couldNotRecordArrival": "Could not record arrival",
     "couldNotGetLocation": "Could not get your location — check location permissions",
+    "pickupOtpVerifiedCapturePhoto": "OTP verified — now capture a pickup proof photo",
     "cameraPermissionPickup": "Camera permission is required to capture pickup proof",
     "couldNotCapturePhoto": "Could not capture a photo — {{reason}}",
     "couldNotCapturePhotoRetry": "Could not capture a photo — try again",

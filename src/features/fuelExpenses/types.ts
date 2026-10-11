@@ -1,7 +1,10 @@
 
+export type FuelExpenseCategory = 'FUEL' | 'TOLL';
+
 export interface FuelExpense {
     id: string;
     driverId: string;
+    category: FuelExpenseCategory;
     shipmentId: string | null;
     stationName: string;
     lat: number;
@@ -16,6 +19,7 @@ export interface FuelExpense {
 }
 
 export interface CreateFuelExpenseInput {
+    category?: FuelExpenseCategory;
     stationName: string;
     lat: number;
     lng: number;

@@ -1,28 +1,10 @@
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 import COLOR from '@utils/color';
 import { H, S } from '@utils/responsive';
-import { ArrowLeft, Check, Home, Package, Plus, Minus, ShieldCheck, Clock3, Route } from 'lucide-react-native';
+import { ArrowLeft, Check, Home, Package, Plus, Minus, ShieldCheck, Clock3, Route, TriangleAlert } from 'lucide-react-native';
 import CustomLabel from '@components/CustomLabel';
 import Button from '@components/Button';
 import VehicleSelectCards from '@components/VehicleSelectCards';
@@ -32,12 +14,23 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import FONTS from '@utils/fonts';
 import { useFareEstimate } from '../../location/useFareEstimate';
+import { useAllVehicleQuotes } from '../../location/useAllVehicleQuotes';
 import { useServiceAreas, useVehicleConfigs } from '@features/settings/hooks';
 import type { ServiceArea } from '@features/settings/types';
 import { useTranslation } from 'react-i18next';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'CheckRate'>;
 type ShipmentCategory = 'PARCEL' | 'HOUSE_SHIFTING';
+
+// Nothing in the booking flow actually blocks an intercity trip — pickup
+// and drop are each independently resolved (ServiceArea or free geocode),
+// and price is a plain haversineDistanceKm × ratePerKm with no distance
+// cap. Past this point, same-day/express service-type promises and the
+// "driver arrives shortly" framing stop being realistic, so this is a
+// disclosure, not a block — the system doesn't invent a long-haul pricing
+// tier or refuse the booking, it just stops pretending this is a local
+// delivery.
+const LONG_HAUL_DISTANCE_KM = 100;
 
 const CheckRate = () => {
     const navigation = useNavigation<NavigationProp>();
@@ -92,6 +85,22 @@ const CheckRate = () => {
         category === 'HOUSE_SHIFTING' ? helpersCount : undefined,
     );
 
+    // Porter-style "see every vehicle's real price at once" — every
+    // active vehicle's fare for this exact pickup/drop, shown right on
+    // the vehicle cards below instead of only ever revealing one price
+    // at a time for whichever vehicle happens to be selected.
+    const allVehicleQuotes = useAllVehicleQuotes(
+        pickupPlace ? { lat: pickupPlace.lat, lng: pickupPlace.lng } : null,
+        dropPlace ? { lat: dropPlace.lat, lng: dropPlace.lng } : null,
+        'standard',
+        category,
+        category === 'HOUSE_SHIFTING' ? helpersCount : undefined,
+    );
+    const priceByVehicle = useMemo(
+        () => Object.fromEntries(allVehicleQuotes.quotes.map(q => [q.vehicleType.toLowerCase(), q.price])),
+        [allVehicleQuotes.quotes],
+    );
+
     const swapLocations = () => {
         setPickupPlace(dropPlace);
         setDropPlace(pickupPlace);
@@ -102,6 +111,7 @@ const CheckRate = () => {
             vehicleId,
             vehicles: activeVehicleConfigs,
             onConfirm: (v: typeof activeVehicleConfigs[number]) => setVehicleType(v.name.toLowerCase()),
+            priceByVehicle,
         });
     };
 
@@ -110,6 +120,7 @@ const CheckRate = () => {
             vehicles: activeVehicleConfigs,
             selectedName: vehicleType,
             onConfirm: (v: typeof activeVehicleConfigs[number]) => setVehicleType(v.name.toLowerCase()),
+            priceByVehicle,
         });
     };
 
@@ -212,6 +223,7 @@ const CheckRate = () => {
                                 vehicles={activeVehicleConfigs}
                                 selectedName={vehicleType}
                                 onSelect={(vt) => openVehicleDetails(vt.id)}
+                                priceByVehicle={priceByVehicle}
                             />
                         </Animated.View>
                     )}
@@ -263,6 +275,14 @@ const CheckRate = () => {
                         <Text style={styles.resultDistance}>
                             {fareEstimate.distanceKm} km · {selectedVehicle?.name}
                         </Text>
+                        {fareEstimate.distanceKm != null && fareEstimate.distanceKm > LONG_HAUL_DISTANCE_KM && (
+                            <View style={styles.longHaulNotice}>
+                                <TriangleAlert size={14} color={COLOR.WARNING} />
+                                <Text style={styles.longHaulNoticeText}>
+                                    {t('checkRate.longHaulNotice')}
+                                </Text>
+                            </View>
+                        )}
                         <View style={styles.breakdown}>
                             {}
                             {fareEstimate.etaMinutes != null && (
@@ -527,6 +547,23 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#9CA3AF',
         marginBottom: 8,
+    },
+    longHaulNotice: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: S(6),
+        alignSelf: 'stretch',
+        backgroundColor: '#FFF7ED',
+        borderRadius: S(10),
+        paddingHorizontal: S(10),
+        paddingVertical: S(8),
+        marginBottom: S(8),
+    },
+    longHaulNoticeText: {
+        flex: 1,
+        fontSize: 11,
+        lineHeight: 15,
+        color: '#92660D',
     },
     breakdown: {
         alignSelf: 'stretch',

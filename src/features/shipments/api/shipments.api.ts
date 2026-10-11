@@ -7,9 +7,11 @@ import type {
     DriverEarningsSummary,
     DeliveryDispute,
     InsuranceClaim,
+    QuoteAllVehiclesPayload,
     QuoteShipmentPayload,
     ShipmentQuote,
     ShipmentStatusHistoryEntry,
+    VehicleQuote,
 } from '../types';
 
 
@@ -30,6 +32,11 @@ export const createShipment = async (
 
 export const quoteShipment = async (payload: QuoteShipmentPayload): Promise<ShipmentQuote> => {
     const { data } = await apiClient.post<ApiSuccessResponse<ShipmentQuote>>('/shipments/quote', payload);
+    return data.data;
+};
+
+export const quoteAllVehicles = async (payload: QuoteAllVehiclesPayload): Promise<VehicleQuote[]> => {
+    const { data } = await apiClient.post<ApiSuccessResponse<VehicleQuote[]>>('/shipments/quote-all-vehicles', payload);
     return data.data;
 };
 

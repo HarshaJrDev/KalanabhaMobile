@@ -4,33 +4,28 @@ import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-na
 import { useAppTheme } from '@theme/ThemeContext';
 import VehicleVisual from '@components/VehicleVisual';
 import type { VehicleConfig } from '@features/settings/types';
+import { formatVehicleCapacity, getBestValueVehicleId, getVehicleBadge, type VehicleBadge } from '@utils/vehicleBadges';
 
 interface VehicleSelectCardsProps {
     vehicles: VehicleConfig[];
     selectedName: string;
     onSelect: (vehicle: VehicleConfig) => void;
+    // Real per-vehicle fare (CheckRate's "compare all vehicle prices"
+    // view, POST /shipments/quote-all-vehicles) keyed by lowercased
+    // vehicle name. When provided, replaces the generic capacity line
+    // with the actual price for that vehicle on this route — optional
+    // since most callers (addOrders.tsx, AllVehiclesScreen) don't have a
+    // live quote context to show one.
+    priceByVehicle?: Record<string, number>;
 }
-
-// Capacity is more readable in tons for the heavy-truck classes (9000kg
-// reads easier as "9 T") while staying exact for lighter ones where a
-// fraction-of-a-ton figure would be a worse read than the kg number
-// itself (a 750kg Pickup as "0.75 T" is less immediately legible).
-const formatCapacity = (maxWeightKg: number): string =>
-    maxWeightKg >= 1000 ? `${(maxWeightKg / 1000).toFixed(maxWeightKg % 1000 === 0 ? 0 : 1)} T` : `${maxWeightKg} kg`;
-
-// Heavy Cargo threshold — 10T+ is squarely in the dedicated heavy-haul
-// class (Low Bed Trailer, Heavy Haul Truck, Container), not an arbitrary
-// cutoff picked for marketing effect.
-const HEAVY_CARGO_THRESHOLD_KG = 10_000;
-
-type Badge = { label: string; variant: 'value' | 'heavy' } | null;
 
 const Card: React.FC<{
     vehicle: VehicleConfig;
     isSelected: boolean;
     onPress: () => void;
-    badge: Badge;
-}> = ({ vehicle, isSelected, onPress, badge }) => {
+    badge: VehicleBadge;
+    price?: number;
+}> = ({ vehicle, isSelected, onPress, badge, price }) => {
     const { colors, fonts, radius } = useAppTheme();
     const styles = React.useMemo(() => makeCardStyles(colors, fonts, radius), [colors, fonts, radius]);
     const scale = useSharedValue(1);
@@ -66,8 +61,13 @@ const Card: React.FC<{
                     {vehicle.name}
                 </Text>
                 <Text style={styles.desc} numberOfLines={1}>
-                    {formatCapacity(vehicle.maxWeight)} capacity
+                    {formatVehicleCapacity(vehicle.maxWeight)} capacity
                 </Text>
+                {price != null && (
+                    <Text style={[styles.priceText, isSelected && { color: colors.PRIMARY }]} numberOfLines={1}>
+                        ₹{price}
+                    </Text>
+                )}
                 {tags.length > 0 && (
                     <View style={styles.tagsRow}>
                         {tags.map(tag => (
@@ -91,23 +91,14 @@ export const VehicleSelectCards: React.FC<VehicleSelectCardsProps> = ({
     vehicles,
     selectedName,
     onSelect,
+    priceByVehicle,
 }) => {
     const { spacing } = useAppTheme();
 
-    // "Best Value" needs sibling awareness (lowest ratePerKm among the
-    // options actually on offer), so it's computed once here rather than
-    // inside each Card. Ties aren't broken arbitrarily into multiple
-    // badges — only the first vehicle at the minimum rate gets it.
-    const bestValueId = React.useMemo(() => {
-        if (vehicles.length === 0) return null;
-        return vehicles.reduce((best, v) => (v.ratePerKm < best.ratePerKm ? v : best), vehicles[0]).id;
-    }, [vehicles]);
+    const bestValueId = React.useMemo(() => getBestValueVehicleId(vehicles), [vehicles]);
 
-    const badgeFor = (vehicle: VehicleConfig): Badge => {
-        if (vehicle.id === bestValueId) return { label: 'Best Value', variant: 'value' };
-        if (vehicle.maxWeight >= HEAVY_CARGO_THRESHOLD_KG) return { label: 'Heavy Cargo', variant: 'heavy' };
-        return null;
-    };
+    const badgeFor = (vehicle: VehicleConfig): VehicleBadge =>
+        getVehicleBadge(vehicle, bestValueId, { bestValue: 'Best Value', heavyCargo: 'Heavy Cargo' });
 
     return (
         <ScrollView
@@ -122,6 +113,7 @@ export const VehicleSelectCards: React.FC<VehicleSelectCardsProps> = ({
                     isSelected={selectedName.toLowerCase() === vt.name.toLowerCase()}
                     onPress={() => onSelect(vt)}
                     badge={badgeFor(vt)}
+                    price={priceByVehicle?.[vt.name.toLowerCase()]}
                 />
             ))}
         </ScrollView>
@@ -171,6 +163,12 @@ const makeCardStyles = (
             marginTop: 2,
             textAlign: 'center',
         },
+        priceText: {
+            fontSize: 13,
+            fontFamily: fonts.BOLD_PRIMARY,
+            color: colors.TEXT_PRIMARY,
+            marginTop: 4,
+        },
         tagsRow: {
             flexDirection: 'row',
             flexWrap: 'wrap',
@@ -199,12 +197,14 @@ const makeCardStyles = (
         badge: {
             position: 'absolute',
             top: -8,
+            left: 8,
+            right: 8,
             alignSelf: 'center',
+            alignItems: 'center',
             backgroundColor: colors.PRIMARY,
             borderRadius: 999,
             paddingHorizontal: 8,
             paddingVertical: 3,
-            maxWidth: 124,
             zIndex: 1,
         },
         badgeHeavy: {

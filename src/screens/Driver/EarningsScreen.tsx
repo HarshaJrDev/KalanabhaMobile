@@ -12,11 +12,15 @@ import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
 import { ScreenHeader } from '@components/ScreenHeader';
 import { Wallet, TrendingUp, Package, Landmark } from 'lucide-react-native';
 import { useDriverEarningsSummary } from '@features/shipments/hooks';
+import { useMyUnpaidPayoutSummary, useRequestMyPayout } from '@features/driverPayouts/hooks';
 import { AsyncState } from '@components/AsyncState';
 import { EmptyState } from '@components/EmptyState';
 import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
 import { BankDetailsModal } from './BankDetailsModal';
+import { showToast } from '@ui/alert/toastStore';
+import { normalizeError } from '@utils/error';
+import { ActivityIndicator } from 'react-native';
 
 const EarningsScreen = () => {
   const { t } = useTranslation();
@@ -27,6 +31,24 @@ const EarningsScreen = () => {
     error,
     refetch,
   } = useDriverEarningsSummary();
+  const { data: unpaidSummary, refetch: refetchUnpaid } = useMyUnpaidPayoutSummary();
+  const { mutate: requestPayout, isPending: requestingPayout } = useRequestMyPayout();
+
+  const handleRequestPayout = () => {
+    requestPayout(undefined, {
+      onSuccess: (result) => {
+        showToast(
+          result.transferStatus === 'PROCESSING'
+            ? t('earnings.payoutProcessing', { amount: result.amount })
+            : t('earnings.payoutRecorded', { amount: result.amount }),
+          'success',
+        );
+        refetchUnpaid();
+        refetch();
+      },
+      onError: (err) => showToast(normalizeError(err) || t('earnings.payoutRequestFailed'), 'error'),
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -84,17 +106,29 @@ const EarningsScreen = () => {
               </View>
               <View style={styles.walletPanel}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.walletTitle}>Wallet summary</Text>
+                  <Text style={styles.walletTitle}>
+                    {unpaidSummary && unpaidSummary.amount > 0
+                      ? t('earnings.unpaidAvailable', { amount: unpaidSummary.amount, trips: unpaidSummary.tripCount })
+                      : t('earnings.nothingPendingPayout')}
+                  </Text>
                   <Text style={styles.walletSub}>
-                    Completed trips are sent to admin payouts for settlement.
+                    {t('earnings.payoutHint')}
                   </Text>
                 </View>
-                <View style={styles.walletMetric}>
-                  <Text style={styles.walletMetricValue}>
-                    {summary?.today.trips ?? 0}
-                  </Text>
-                  <Text style={styles.walletMetricLabel}>today trips</Text>
-                </View>
+                <Pressable
+                  style={[
+                    styles.payoutBtn,
+                    (!unpaidSummary || unpaidSummary.amount === 0 || requestingPayout) && styles.payoutBtnDisabled,
+                  ]}
+                  disabled={!unpaidSummary || unpaidSummary.amount === 0 || requestingPayout}
+                  onPress={handleRequestPayout}
+                >
+                  {requestingPayout ? (
+                    <ActivityIndicator size="small" color="#111827" />
+                  ) : (
+                    <Text style={styles.payoutBtnText}>{t('earnings.requestPayout')}</Text>
+                  )}
+                </Pressable>
               </View>
               <Text style={styles.sectionTitle}>
                 {t('earnings.recentTrips')}
@@ -166,16 +200,20 @@ const styles = StyleSheet.create({
     marginTop: 3,
     lineHeight: 16,
   },
-  walletMetric: { alignItems: 'center', minWidth: 64 },
-  walletMetricValue: {
-    fontSize: 20,
-    fontFamily: FONTS.BOLD_PRIMARY,
-    color: '#FBBF24',
+  payoutBtn: {
+    backgroundColor: '#FBBF24',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 96,
   },
-  walletMetricLabel: {
-    fontSize: 10,
-    fontFamily: FONTS.PRIMARY,
-    color: '#D1D5DB',
+  payoutBtnDisabled: { opacity: 0.4 },
+  payoutBtnText: {
+    fontSize: 12,
+    fontFamily: FONTS.BOLD_PRIMARY,
+    color: '#111827',
   },
   sectionTitle: {
     fontSize: 14,

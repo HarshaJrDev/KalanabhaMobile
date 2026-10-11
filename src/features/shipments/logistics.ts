@@ -170,6 +170,14 @@ export const useDriverShipmentActions = () => {
             const otp = await requestOtp('pickup');
             if (!otp) return;
 
+            // Not a bug — confirming the pickup OTP deliberately opens the
+            // camera next, to capture the pickup-proof photo this same
+            // flow uploads below (uploadPickupProof → pickupProofUploadedAt,
+            // which the admin dispatch board and shipment detail screens
+            // already surface). The toast exists so that jump doesn't look
+            // unexplained to the driver.
+            showToast(t('logisticsCard.pickupOtpVerifiedCapturePhoto'), 'info');
+
             const hasCameraPermission = await ensureCameraPermission();
             if (!hasCameraPermission) {
                 showToast(t('logisticsCard.cameraPermissionPickup'), 'error');

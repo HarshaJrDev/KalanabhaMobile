@@ -5,7 +5,6 @@ import {
     StyleSheet,
     Pressable,
     TouchableOpacity,
-    Linking,
     Share,
     Modal,
 } from 'react-native';
@@ -41,6 +40,7 @@ import {
 import { useChatMessages, useChatSocket, useSendMessage } from '@features/chat/hooks';
 import { useTabBarContentPadding } from '../screens/navigation/useTabBarStyle';
 import { showToast } from '@ui/alert/toastStore';
+import { confirmCall } from '@utils/confirmCall';
 import { WEBSITE_URL } from '@config/env';
 import { useTranslation } from 'react-i18next';
 import FONTS from '@utils/fonts';
@@ -158,10 +158,12 @@ const LogisticsCard: React.FC<{
             showToast(isDriver ? t('logisticsCard.customerPhoneNotAvailable') : t('logisticsCard.driverNotAssignedYet'), 'info');
             return;
         }
-        Linking.openURL(`tel:${phone}`).catch(() =>
-            showToast(t('logisticsCard.unableToOpenDialer'), 'error'),
-        );
-    }, [isDriver, item.customerPhone, item.driverPhone, t]);
+        // Customers aren't rated in this app (only drivers are — see the
+        // Rating model), so the rating line just never shows on the
+        // driver-calling-customer path; confirmCall handles a null
+        // rating fine.
+        confirmCall(phone, isDriver ? item.customerName : item.driverName, isDriver ? null : item.driverRating, t);
+    }, [isDriver, item.customerPhone, item.driverPhone, item.customerName, item.driverName, item.driverRating, t]);
 
     
     

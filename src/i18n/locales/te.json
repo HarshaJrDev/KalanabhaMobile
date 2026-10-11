@@ -12,7 +12,13 @@
     "edit": "సవరించండి",
     "delete": "తొలగించండి",
     "logout": "లాగ్ అవుట్",
-    "confirm": "నిర్ధారించండి"
+    "confirm": "నిర్ధారించండి",
+    "call": "కాల్ చేయండి",
+    "callSomeone": "{{name}}కి కాల్ చేయాలా?",
+    "thisPerson": "ఈ వ్యక్తి",
+    "callRatingHint": "రేటింగ్ {{rating}} ★",
+    "phoneNumberNotAvailable": "ఫోన్ నంబర్ అందుబాటులో లేదు",
+    "unableToOpenDialer": "డయలర్‌ను తెరవలేకపోయింది"
   },
   "tabs": {
     "home": "హోమ్",
@@ -712,7 +718,14 @@
     "thisWeek": "ఈ వారం",
     "allTime": "మొత్తం · {{trips}} ట్రిప్‌లు",
     "recentTrips": "ఇటీవలి ట్రిప్‌లు",
-    "noTripsYet": "ఇంకా డెలివరీ చేసిన ట్రిప్‌లు లేవు"
+    "noTripsYet": "ఇంకా డెలివరీ చేసిన ట్రిప్‌లు లేవు",
+    "unpaidAvailable": "₹{{amount}} అందుబాటులో · {{trips}} ట్రిప్‌లు",
+    "nothingPendingPayout": "చెల్లింపు పెండింగ్‌లో ఏమీ లేదు",
+    "payoutHint": "ఎప్పుడైనా చెల్లింపును అభ్యర్థించండి — అడ్మిన్ తదుపరి బ్యాచ్ కోసం వేచి ఉండాల్సిన అవసరం లేదు.",
+    "requestPayout": "చెల్లింపును అభ్యర్థించండి",
+    "payoutProcessing": "₹{{amount}} మీ బ్యాంక్ ఖాతాకు బదిలీ చేయబడుతోంది",
+    "payoutRecorded": "₹{{amount}} చెల్లింపు నమోదు చేయబడింది — మీ బ్యాంక్ వివరాలు అందుబాటులోకి వచ్చిన వెంటనే బదిలీ అవుతుంది",
+    "payoutRequestFailed": "చెల్లింపును అభ్యర్థించలేకపోయాము — మళ్లీ ప్రయత్నించండి"
   },
   "bankDetails": {
     "title": "బ్యాంక్ వివరాలు",
@@ -758,6 +771,19 @@
     "litresOptional": "లీటర్లు (ఐచ్ఛికం)",
     "litresPlaceholder": "ఉదా. 8.5"
   },
+  "tollGates": {
+    "unableToGetLocation": "మీ ప్రస్తుత స్థానాన్ని పొందడం సాధ్యం కాలేదు",
+    "nearbyTollGates": "సమీపంలోని టోల్ గేట్లు",
+    "mapDataUnavailable": "మ్యాప్ డేటా మూలం ప్రస్తుతం అందుబాటులో లేదు",
+    "noTollGatesFound": "సమీపంలో టోల్ గేట్లు కనుగొనబడలేదు",
+    "kmAway": "{{km}} కి.మీ దూరంలో",
+    "logToll": "టోల్‌ను లాగ్ చేయండి",
+    "enterValidAmount": "సరైన మొత్తాన్ని నమోదు చేయండి",
+    "tollExpenseLogged": "టోల్ ఖర్చు నమోదు చేయబడింది",
+    "logExpenseFailed": "ఈ ఖర్చును లాగ్ చేయడం సాధ్యం కాలేదు — మళ్లీ ప్రయత్నించండి",
+    "amountPaid": "చెల్లించిన మొత్తం (₹)",
+    "amountPaidPlaceholder": "ఉదా. 65"
+  },
   "turnByTurnNav": {
     "calculatingRoute": "మార్గం లెక్కిస్తోంది…"
   },
@@ -794,9 +820,13 @@
     "fragileHandleWithCare": "పెళుసైనది — జాగ్రత్తగా నిర్వహించండి",
     "decline": "తిరస్కరించండి",
     "acceptLoad": "లోడ్‌ను ఆమోదించండి",
+    "demandNearYou": "మీ దగ్గర డిమాండ్",
+    "demandJobCount": "సమీపంలో {{count}} పనులు",
     "accepting": "ఆమోదిస్తోంది…",
     "findFuelStations": "ఫ్యూయల్ స్టేషన్‌లను కనుగొనండి",
     "nearbyPetrolBunks": "సమీపంలోని పెట్రోల్ బంక్‌లు · ఫిల్-అప్ లాగ్ చేయండి",
+    "findTollGates": "టోల్ గేట్లను కనుగొనండి",
+    "nearbyTollPlazas": "సమీపంలోని టోల్ ప్లాజాలు · టోల్‌ను లాగ్ చేయండి",
     "myDocuments": "నా పత్రాలు",
     "verified": "ధృవీకరించబడింది",
     "uploadForAdminReview": "అడ్మిన్ సమీక్ష కోసం అప్‌లోడ్ చేయండి",
@@ -907,6 +937,7 @@
     "upToKg": "{{weight}} కిలోల వరకు",
     "calculatingRate": "రేటును లెక్కిస్తోంది…",
     "estimatedRate": "అంచనా రేటు",
+    "longHaulNotice": "ఇది సుదూర మార్గం. డెలివరీకి సాధారణం కంటే ఎక్కువ సమయం పట్టవచ్చు, మరియు అదే-రోజు/ఎక్స్‌ప్రెస్ సమయం వర్తించకపోవచ్చు.",
     "bookThisShipment": "ఈ షిప్‌మెంట్‌ను బుక్ చేయండి",
     "enterBothHint": "రేటును చూడటానికి పికప్ మరియు గమ్యస్థానం రెండింటినీ నమోదు చేయండి."
   },
@@ -940,7 +971,9 @@
     "volume": "వాల్యూమ్",
     "similarVehicles": "సారూప్య వాహనాలు",
     "estimatedBaseFare": "అంచనా బేస్ ఛార్జీ",
-    "confirmVehicle": "వాహనాన్ని నిర్ధారించండి"
+    "confirmVehicle": "వాహనాన్ని నిర్ధారించండి",
+    "forThisRoute": "ఈ మార్గానికి",
+    "quotedForThisRoute": "ఈ మార్గానికి కోట్ చేయబడింది"
   },
   "qrScan": {
     "title": "QR కోడ్‌ను స్కాన్ చేయండి",
@@ -1086,6 +1119,7 @@
     "arrivalRecorded": "రాక నమోదు చేయబడింది",
     "couldNotRecordArrival": "రాకను నమోదు చేయడం సాధ్యం కాలేదు",
     "couldNotGetLocation": "మీ స్థానాన్ని పొందడం సాధ్యం కాలేదు — స్థాన అనుమతులను తనిఖీ చేయండి",
+    "pickupOtpVerifiedCapturePhoto": "OTP ధృవీకరించబడింది — ఇప్పుడు పికప్ రుజువు ఫోటో తీయండి",
     "cameraPermissionPickup": "పికప్ రుజువును క్యాప్చర్ చేయడానికి కెమెరా అనుమతి అవసరం",
     "couldNotCapturePhoto": "ఫోటోను క్యాప్చర్ చేయడం సాధ్యం కాలేదు — {{reason}}",
     "couldNotCapturePhotoRetry": "ఫోటోను క్యాప్చర్ చేయడం సాధ్యం కాలేదు — మళ్లీ ప్రయత్నించండి",

@@ -39,6 +39,7 @@ import DriverSettingsScreen from '@screens/Driver/SettingsScreen';
 import DriverTripsScreen from '@screens/Driver/TripsScreen';
 import DriverEarningsScreen from '@screens/Driver/EarningsScreen';
 import FuelStationsScreen from '@screens/Driver/FuelStationsScreen';
+import TollGatesScreen from '@screens/Driver/TollGatesScreen';
 import DriverDocumentsScreen from '@screens/Driver/DriverDocumentsScreen';
 import RatingScreen from '@screens/HomeScreens/RatingScreen';
 import CustomerSettingsScreen from '@screens/HomeScreens/SettingsScreen';
@@ -220,6 +221,10 @@ const App = () => {
                     <Stack.Screen
                       name="FuelStations"
                       component={FuelStationsScreen}
+                    />
+                    <Stack.Screen
+                      name="TollGates"
+                      component={TollGatesScreen}
                     />
                     <Stack.Screen
                       name="DriverDocuments"

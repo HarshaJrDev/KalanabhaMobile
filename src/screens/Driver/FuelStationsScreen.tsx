@@ -20,6 +20,7 @@ import { SkeletonList } from '@components/ui';
 import { ScreenHeader } from '@components/ScreenHeader';
 import { Fuel, Navigation } from 'lucide-react-native';
 import { useAppTheme } from '@theme/ThemeContext';
+import { NearbyPoiMap } from '@components/NearbyPoiMap';
 import { useNearbyFuelStations } from '@features/maps/hooks';
 import { useLogFuelExpense } from '@features/fuelExpenses/hooks';
 import { ensureLocationPermission } from '@utils/locationPermission';
@@ -79,6 +80,7 @@ const FuelStationsScreen = () => {
     refetch,
   } = useNearbyFuelStations(coords?.lat ?? null, coords?.lng ?? null);
   const [loggingFor, setLoggingFor] = useState<FuelStation | null>(null);
+  const [selectedStationId, setSelectedStationId] = useState<string | null>(null);
 
   return (
     <View style={styles.root}>
@@ -108,8 +110,22 @@ const FuelStationsScreen = () => {
           data={stations ?? []}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
+          ListHeaderComponent={
+            coords && (stations?.length ?? 0) > 0 ? (
+              <NearbyPoiMap
+                center={coords}
+                points={stations ?? []}
+                selectedId={selectedStationId}
+                onSelectPoint={setSelectedStationId}
+                height={200}
+              />
+            ) : null
+          }
           renderItem={({ item }) => (
-            <View style={styles.stationCard}>
+            <Pressable
+              style={[styles.stationCard, selectedStationId === item.id && styles.stationCardSelected]}
+              onPress={() => setSelectedStationId(item.id)}
+            >
               <View style={styles.stationIconWrap}>
                 <Fuel color={colors.PRIMARY} size={20} />
               </View>
@@ -130,7 +146,7 @@ const FuelStationsScreen = () => {
                   {t('fuelStations.logFillUp')}
                 </Text>
               </Pressable>
-            </View>
+            </Pressable>
           )}
           ListEmptyComponent={
             <EmptyState
@@ -247,6 +263,10 @@ const makeStyles = (
       padding: spacing.md,
       borderWidth: 1,
       borderColor: colors.BORDER,
+    },
+    stationCardSelected: {
+      borderColor: colors.PRIMARY,
+      backgroundColor: colors.PRIMARY_LIGHT,
     },
     stationIconWrap: {
       width: 40,

@@ -9,7 +9,6 @@ import {
     StyleSheet,
     KeyboardAvoidingView,
     Platform,
-    Linking,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,6 +31,7 @@ import { AsyncState } from '@components/AsyncState';
 import { useAppTheme } from '@theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { showToast } from '@ui/alert/toastStore';
+import { confirmCall } from '@utils/confirmCall';
 import type { RootStackParamList } from '../navigation/types';
 import FONTS from '@utils/fonts';
 
@@ -153,14 +153,14 @@ const ShipmentChatScreen = () => {
                 <View style={styles.headerRight}>
                     <Pressable
                         style={styles.headerIconBtn}
-                        onPress={() => {
-                            const phone = shipment?.dispatch?.driverPhone;
-                            if (!phone) {
-                                showToast(t('shipmentChat.noDriverPhone'), 'info');
-                                return;
-                            }
-                            Linking.openURL(`tel:${phone}`).catch(() => showToast(t('shipmentChat.unableToOpenDialer'), 'error'));
-                        }}
+                        onPress={() =>
+                            confirmCall(
+                                shipment?.dispatch?.driverPhone,
+                                shipment?.dispatch?.driverName,
+                                shipment?.dispatch?.driverRating,
+                                t,
+                            )
+                        }
                     >
                         <Phone color={colors.TEXT_SECONDARY} size={16} />
                     </Pressable>

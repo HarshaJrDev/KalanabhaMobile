@@ -6,6 +6,7 @@ import type { CreateFuelExpenseInput, FuelExpense } from '../types';
 
 export const createFuelExpense = async (input: CreateFuelExpenseInput): Promise<FuelExpense> => {
     const form = new FormData();
+    form.append('category', input.category ?? 'FUEL');
     form.append('stationName', input.stationName);
     form.append('lat', String(input.lat));
     form.append('lng', String(input.lng));
